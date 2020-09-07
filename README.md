@@ -1,4 +1,6 @@
 # SimulAncient
+DNAncient,
+
 Initial reporsitory for ancient DNA simulator
 
 a.	Choose random location on the genome
