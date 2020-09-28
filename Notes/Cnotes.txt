@@ -1,0 +1,10 @@
+// used to created comments in code
+
+# function
+int multiply(int x, int y)
+{
+  return x*y;
+}
+
+# call it
+multiply(2,3)
