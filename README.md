@@ -21,5 +21,5 @@ SimulAncient -ie XXX.fq -ib XXX.sam -ih XXX.fasta -dm 40 -ds 10 -cov XXX -f XXX 
 -ds / -std : standard error value when creating the gaussian distribution for which the fragment sizes are collected (default == 10)
 -cov : a given coverage to be obtained with simulated fragments
 -f / -frag : number of fragments to simulate
--o / -output : the name and file format of simulated reads.
+-o / -output : the name and file format of simulated reads (fq,fastq,fa,fasta,sam,bam,cram,VCF).
 ~~~
