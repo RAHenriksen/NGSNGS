@@ -3,15 +3,28 @@ DNAncient,
 
 Initial reporsitory for ancient DNA simulator
 
-a.	Choose random location on the genome
+a.	Choose random location on the genome 
+
 b.	Choose length of DNA either randomly or selected from a normal distribution – check the length of aDNA from articles (Thorfinn mentioned 40bp?). The random length will be similar to the fragmentation of the DNA
+
 c.	Introduce errors – Deamination follows an age model? + check errors introduced by sequence platform
+
 d.	Add adapters to the sequences
+
 e.	Use multiple threads to selects chromosomes and the number of reads for the different positions
+
 f.	Check the overlap of the regions to ensure enough coverage for the positions.
+
 g.	Save all the reads continuously in the SAM format
 
-## STEP 7 - Merge Chimeric eccDNA configurations using the coverage file and classified reads
+# DNA damage 
+1) Fragmentation: Remember that some nucleotides are more prone to breakage upon post mortem fragmentation: "It has been shown that sequence alignments of ancient DNA molecules preferentially start and end next to purines in the reference genome (Briggs et al. 2007; Sawyer et al. 2012), suggesting that
+depurination and subsequent breakage of the sugar-phosphate backbone is at least partially responsible for postmortem DNA fragmentation. This pattern is also present in the Vindija 33.19 data analyzed here (Fig. 3; Supplemental Fig. S1), in which guanine and, to a lesser extent, adenine are overrepresented in the flanking bases of the reference genome, irrespective of the inferred structure of the double-stranded DNA fragment"
+
+2) Deamination: here it shoould be possible to add or change nucleotides?
+
+3) Cross-linking: im not sure this is possible to simulate
+## Idea for input
 ~~~bash
 SimulAncient -ie XXX.fq -ib XXX.sam -ih XXX.fasta -dm 40 -ds 10 -cov XXX -f XXX -o XXX.fa
 -ie / -endo : sequence input for endogenous DNA (fq,fastq,fa,fasta,sam,bam,cram,VCF)
