@@ -27,12 +27,12 @@ depurination and subsequent breakage of the sugar-phosphate backbone is at least
 ## Idea for input
 ~~~bash
 SimulAncient -ie XXX.fq -ib XXX.sam -ih XXX.fasta -dm 40 -ds 10 -cov XXX -f XXX -o XXX.fa
--ie / -endo : sequence input for endogenous DNA (fq,fastq,fa,fasta,sam,bam,cram,VCF)
--ib / -bact : sequence input for bacterical contamination (fq,fastq,fa,fasta,sam,bam,cram,VCF)
--ie / -hom : sequence input for present human contamination (fq,fastq,fa,fasta,sam,bam,cram,VCF)
--dm / -mean : mean value when creating the gaussian distribution for which the fragment sizes are collected (default == 40)
--ds / -std : standard error value when creating the gaussian distribution for which the fragment sizes are collected (default == 10)
--cov : a given coverage to be obtained with simulated fragments
--f / -frag : number of fragments to simulate
--o / -output : the name and file format of simulated reads (fq,fastq,fa,fasta,sam,bam,cram,VCF).
+-ie / --endo : sequence input for endogenous DNA (fq,fastq,fa,fasta,sam,bam,cram,VCF)
+-ib / --bact : sequence input for bacterical contamination (fq,fastq,fa,fasta,sam,bam,cram,VCF)
+-ie / --hom : sequence input for present human contamination (fq,fastq,fa,fasta,sam,bam,cram,VCF)
+-dm / --mean : mean value when creating the gaussian distribution for which the fragment sizes are collected (default == 40)
+-ds / --std : standard error value when creating the gaussian distribution for which the fragment sizes are collected (default == 10)
+-c / --cov : a given coverage to be obtained with simulated fragments
+-f / --frag : number of fragments to simulate
+-o / --output : the name and file format of simulated reads (fq,fastq,fa,fasta,sam,bam,cram,VCF).
 ~~~
