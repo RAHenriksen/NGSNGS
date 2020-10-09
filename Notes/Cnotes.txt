@@ -1,3 +1,4 @@
+### Examples of calling functions within the code
 // used to created comments in code
 
 # function
@@ -8,3 +9,9 @@ int multiply(int x, int y)
 
 # call it
 multiply(2,3)
+
+### Creating an calling a c++ script (fasta parser)
+g++ Fasta_test.cpp -o a.out
+./a.out ../../Test.fasta
+
+
