@@ -136,33 +136,44 @@ int main() {
 
     int frag_min = 30;
     int frag_max = 80;
-    int seq_max = 170;
+    //int seq_max = 170;
+    std::string Seq = "ATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGAT";
+                     //ATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTG
+    int seq_max = Seq.size();
+    int sub_str_start = 0;
 
-    std::srand(std::time(nullptr));
-    int rand = std::rand() % (frag_max - frag_min + 1) + frag_min; // creating range: rand() % ( high - low + 1 ) + low
-    std::cout << "random number " << rand << std::endl;
-    int i = rand;
-    while(i <= seq_max){
-        std::cout << i << std::endl;
-        i+=rand;
+    std::srand(std::time(nullptr)); // initialize with computer time
+    while(sub_str_start <= seq_max){
+        // creates random number in the range of the fragment size rand() % ( high - low + 1 ) + low
+        int rand = (std::rand() % (frag_max - frag_min + 1)) + frag_min;
+
+        std::cout << "random number " << rand << std::endl;
+        std::cout << Seq.substr(sub_str_start,rand) << std::endl;
+        std::cout << "size " << Seq.substr(sub_str_start,rand).size() << std::endl;
+        sub_str_start += rand;
+        std::cout << "sub_str_start" << sub_str_start << std::endl;
+        std::srand(rand); // restarts seed everytime with a new random value
     }
 
     /*
-        std::string Seq = "ATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGAT";
     int frag_min = 30;
     int frag_max = 80;
-    int seq_max = 170;
+    //int seq_max = 170;
+    std::string Seq = "ATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGAT";
 
-    std::srand(std::time(nullptr));
-    int rand = std::rand() % (frag_max - frag_min + 1) + frag_min; // creating range: rand() % ( high - low + 1 ) + low
-    std::cout << "random number " << rand << std::endl;
-    int i = rand;
-    int j = 0;
-    while(i <= Seq.size()){
-        std::cout << i << std::endl;
-        i+=rand;
-        std::cout << Seq.substr(j,i) << std::endl;
-        j+=i;
+    int seq_max = Seq.size();
+
+    int sub_str_start = 0;
+
+    while(frag_min <= seq_max){
+        std::srand(std::time(nullptr));
+        int rand = std::rand() % (frag_max - frag_min + 1) + frag_min; // creating range: rand() % ( high - low + 1 ) + low
+        std::cout << "random number " << rand << std::endl;
+        std::cout << frag_min << std::endl;
+        std::cout << Seq.substr(sub_str_start,rand) << std::endl;
+        frag_min += rand;
+        sub_str_start += rand;
+
     }
     */
     return 0;
