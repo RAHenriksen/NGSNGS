@@ -24,19 +24,6 @@ void nt_index(std::vector<int> & Idx_vec, std::string Seq, std::string nt_find)
     }
 }
 
-std::string DNA_fragmentation(std::string Seq,int min_len, int max_len){
-    std::srand(std::time(nullptr));
-    int rand = std::rand() % max_len + min_len;
-    std::cout << "random number" << rand << std::endl;
-    std::cout << Seq.size() << std::endl;
-    std::string DNA_frag;
-    int start = 0;
-    if(Seq.size() > max_len) {
-            DNA_frag = Seq.substr(start,max_len);
-    }
-    return DNA_frag;
-}
-
 std::string DNA_deamination(std::string Seq, std::vector<int> & Idx_vec, int type){
     // initially i though i would create a function with type to define the damage type
 
@@ -51,8 +38,32 @@ std::string DNA_deamination(std::string Seq, std::vector<int> & Idx_vec, int typ
         int rand_index = std::rand() % vec_size; // pick a random index of the T-index vector
         Deamin.replace(Idx_vec[rand_index],1,"U"); // changes the randomly picked T
     }
+    //std::cout << Deamin << std::endl;
     return Deamin;
 }
+
+std::string DNA_fragmentation(std::string Seq,int min_len, int max_len){
+    int seq_max = Seq.size();
+    int sub_str_start = 0;
+
+    std::srand(std::time(nullptr)); // initialize with computer time
+    while(sub_str_start <= seq_max){
+        // creates random number in the range of the fragment size rand() % ( high - low + 1 ) + low
+        int rand = (std::rand() % (max_len - min_len + 1)) + min_len;
+
+        std::string Frag = Seq.substr(sub_str_start,rand);
+        sub_str_start += rand;
+        std::cout << "Random number \n" << rand << std::endl;
+        std::cout << "fragment \n" << Frag << std::endl;
+
+        std::vector<int> Idx_vec; // declaration of unsigned integer vector index
+        nt_index(Idx_vec, Frag , "T"); //the nt_index function assigns position values to the declared Idx_vec
+        std::string test = DNA_deamination(Frag,Idx_vec,2);
+
+        std::srand(rand); // restarts seed everytime with a new random value
+    }
+}
+
 
 std::string fafq_seq(std::string in_name, std::string out_name) {
     std::ifstream myfile(in_name);
@@ -134,47 +145,8 @@ int main() {
     //std::string Seq = "ATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGAT";
     //std::cout << DNA_fragmentation(Seq,10,20);
 
-    int frag_min = 30;
-    int frag_max = 80;
-    //int seq_max = 170;
-    std::string Seq = "ATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGAT";
-                     //ATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTG
-    int seq_max = Seq.size();
-    int sub_str_start = 0;
-
-    std::srand(std::time(nullptr)); // initialize with computer time
-    while(sub_str_start <= seq_max){
-        // creates random number in the range of the fragment size rand() % ( high - low + 1 ) + low
-        int rand = (std::rand() % (frag_max - frag_min + 1)) + frag_min;
-
-        std::cout << "random number " << rand << std::endl;
-        std::cout << Seq.substr(sub_str_start,rand) << std::endl;
-        std::cout << "size " << Seq.substr(sub_str_start,rand).size() << std::endl;
-        sub_str_start += rand;
-        std::cout << "sub_str_start" << sub_str_start << std::endl;
-        std::srand(rand); // restarts seed everytime with a new random value
-    }
-
-    /*
-    int frag_min = 30;
-    int frag_max = 80;
-    //int seq_max = 170;
     std::string Seq = "ATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAATGGATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATTATGGTACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGATACCATAGTGGACCATATCAGCATATCATAATCGTTCGCGAATACTGAT";
 
-    int seq_max = Seq.size();
-
-    int sub_str_start = 0;
-
-    while(frag_min <= seq_max){
-        std::srand(std::time(nullptr));
-        int rand = std::rand() % (frag_max - frag_min + 1) + frag_min; // creating range: rand() % ( high - low + 1 ) + low
-        std::cout << "random number " << rand << std::endl;
-        std::cout << frag_min << std::endl;
-        std::cout << Seq.substr(sub_str_start,rand) << std::endl;
-        frag_min += rand;
-        sub_str_start += rand;
-
-    }
-    */
+    DNA_fragmentation(Seq,30,80);
     return 0;
 }
