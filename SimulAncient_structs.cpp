@@ -8,7 +8,7 @@
 #include<stdio.h>
 
 
-std::vector<std::string> DNA_fragmentation(std::string Seq,std::string nt_Qual,int min_len, int max_len){
+std::vector<std::string> DNA_fragmentation(std::string Seq,std::string nt_qual,int min_len, int max_len){
     int seq_max = Seq.size();
     int sub_str_start = 0;
 
@@ -20,10 +20,12 @@ std::vector<std::string> DNA_fragmentation(std::string Seq,std::string nt_Qual,i
         int rand = (std::rand() % (max_len - min_len + 1)) + min_len;
 
         std::string Frag = Seq.substr(sub_str_start,rand);
+        std::string Qual = nt_qual.substr(sub_str_start,rand);
         sub_str_start += rand;
 
         Frag_Deamin_seq.push_back(Frag);
-        std::cout << Frag << std::endl;
+        Frag_Deamin_seq.push_back(Qual);
+        // std::cout << Frag << std::endl;
         std::srand(rand); // restarts seed everytime with a new random value
     }
     return Frag_Deamin_seq;
@@ -64,13 +66,15 @@ std::istream& operator>>(std::istream& in, FastqFragment& frag){
 std::ostream& operator<<(std::ostream& out, const FastqFragment& frag)
 {
 
-    std::vector<std::string> Damage = DNA_fragmentation(frag.sequence,30,80);
+    std::vector<std::string> Damage = DNA_fragmentation(frag.sequence,frag.quality_value,30,80);
 
-    for (int i=0; i<Damage.size();i++){
-        out << frag.ID << "_" << i+1 << '\n';
+    int j = 1;
+    for (int i=0; i<Damage.size();i+=2){
+        out << frag.ID << "_" << j << '\n';
         out << Damage[i] << '\n';
         out << frag.strand << '\n';
-        out << frag.quality_value << '\n';
+        out << Damage[i+1] << '\n';
+        j += 1;
     }
     return out;
 }
@@ -80,6 +84,7 @@ int main()
     std::ifstream in("example.fq");
 
     std::vector<FastqFragment> frags;
+
     for (FastqFragment tmp; in >> tmp;) {
         frags.push_back(tmp);
     }
