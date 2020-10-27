@@ -1,0 +1,2 @@
+# Calculate length of all sequence from fasta file.
+awk '/^>/{if (l!="") print l; print; l=0; next}{l+=length($0)}END{print l}' GRCh38.fa
