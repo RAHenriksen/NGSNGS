@@ -88,7 +88,7 @@ std::string Qual_random(double *a){
   char Qualities[] = {'#', '\'', '0', '7' ,'<', 'B', 'F','I','\0'};
   std::string Read_qual;
  
-  std::srand(std::time(nullptr));
+  //std::srand(std::time(nullptr)); //this interferes with the random number for the length.
   std::random_device rd;
   std::default_random_engine gen(rd());
   std::discrete_distribution<> d({a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7]});
