@@ -131,7 +131,7 @@ double** create2DArray(int height, int width, const char* filename){
   infile.close();
   return array2D;
 }
-
+/*
 int main(int argc,char **argv){
 
   double** my2DArray = create2DArray(150, 8,"Freq.txt");
@@ -206,49 +206,52 @@ int main(int argc,char **argv){
   }
   //printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
   return 0; 
-}
-
-/*
+}*/
 
 int main(int argc,char **argv){
 
   const char *fastafile = "chr22.fa";
+
+  //Creates a pointer to allocated memomry for the format??
+  htsFormat *fmt_hts =(htsFormat*) calloc(1,sizeof(htsFormat));
   
-  //we use structure faidx_t from htslib to load in a fasta
-  htsFormat *dingding2 =(htsFormat*) calloc(1,sizeof(htsFormat));
-  // Sikre vi kan skifte mellem SAM, CRAM, BAM
-  char out_mode[5]="wb";//if "wc" output is cram
+  //wb -> bam , wc -> cram
+  char out_mode[5]="wb";
+
   const char *outfile_nam = "test.bam";
   samFile *outfile = NULL;
-  // Allokere RAM
+
+  // creates a pointer to generated header
   sam_hdr_t *header = sam_hdr_init();
   if (header == NULL) { fprintf(stderr, "sam_hdr_init"); return 0;}
   char *refName=NULL;
-
+  
   faidx_t *ref = NULL;
   ref  = fai_load(fastafile);
   assert(ref!=NULL);//check that we could load the file
 
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(ref));
-  if ((outfile = sam_open_format(outfile_nam, out_mode, dingding2)) == 0) {
+
+  if ((outfile = sam_open_format(outfile_nam, out_mode, fmt_hts)) == 0) {
     fprintf(stderr,"Error opening file for writing\n");
     exit(0);
   }
+
+  // Creating sam_header
   char *name_len_char =(char*) malloc(1024);
-    // generere header delen af sam filen,
   for(int i=0;i<faidx_nseq(ref);i++){
       const char *name = faidx_iseq(ref,i);
       int name_len =  faidx_seq_len(ref,name);
     // skal være c string i array så vi konvertere int om til char
     snprintf(name_len_char,1024,"%d",name_len);
     //    fprintf(stderr,"ref:%d %d %s\n",i,name,name_len_char);
-    // REFERENCE DELEN I HEADEREN, HTSLIB TAGER HØJ, int r er det for at tjekke at headeren blive tilføjet
+
+    // reference part of the header, int r variable ensures the header is added
     int r = sam_hdr_add_line(header, "SQ", "SN", name, "LN", name_len_char, NULL);
     if (r < 0) { fprintf(stderr,"sam_hdr_add_line"); return 0; }
   }
-  std::cout << "name text " << name_len_char << std::endl;
   
-  // vi gemmer header info i filen
+  // saving the header to the file
   if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile);
     
   // alignment delen, gemt i bam_1 type for at representere hver linje som 1 alignment
@@ -264,14 +267,29 @@ int main(int argc,char **argv){
   double cov = 1.0;
   double init = 1.0;
 
+  //we use structure faidx_t from htslib to load in a fasta
   char* sequence = faidx_fetch_seq(ref,name,start_pos,end_pos,&name_len);
   std::cout << sequence << std::endl;
-  bam_set1(b,strlen(buf),buf,4,0,0,0,0,NULL,0,0,0,end_pos-start_pos,sequence,NULL,0);
+  snprintf(buf,96,"%s:%d-%d",name,start_pos,end_pos);
+  
+  //param bam,param l_qname,param qname,param flag,param tid,param pos,param mapq,param n_cigar,param cigar
+  //param mtid,param mpos,param isize,param l_seq,param seq,param qual,param l_aux 
+
+  // the zero's at the initial pos is not because of the sam format, but the bam_set1() function 
+  // 3 param buf ensures the header is read properly
+  int unmap_flag = 4;
+  int RNAME_chr_ID = 0; // using 0 takes info sam_hdr_t
+  int mapQ = 255; // 255 if unavailable
+  int no_cigar = 0; //number of cigar operations 
+  const uint32_t *cigar = NULL; // cigar data, NULL if unavailable - But how do we then add actual cigar info?
+
+  bam_set1(b,strlen(buf),buf,unmap_flag,RNAME_chr_ID,start_pos-1,mapQ,no_cigar,cigar,0,0,0,end_pos-start_pos,sequence,NULL,0);
+
   sam_write1(outfile,header,b);
 
   sam_hdr_destroy(header);
   sam_close(outfile);
+  
   return 0;
 }
 
-*/

@@ -1,6 +1,8 @@
 # SimulAncient
 DNAncient,
 
+g++ SimulAncient_hslib.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
+
 Initial reporsitory for ancient DNA simulator
 
 a.	Choose random location on the genome 
