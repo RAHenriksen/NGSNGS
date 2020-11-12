@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cassert>
 #include <htslib/faidx.h>
+#include <htslib/sam.h>
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
@@ -84,7 +85,8 @@ void Deamin_char(char* str,char nt[],int seed,
   }
 }
 
-std::string Qual_random(double *a){  
+std::string Qual_random(double *a){
+  //creates a random sequence of nt qualities based on a frequency distribution
   char Qualities[] = {'#', '\'', '0', '7' ,'<', 'B', 'F','I','\0'};
   std::string Read_qual;
  
@@ -96,35 +98,43 @@ std::string Qual_random(double *a){
   return Read_qual;
 }
 
-/*
-double filename(const char* filename){
+void filename(const char* filename){
+  //creates a nt qual string immediately from the frequency file
   std::ifstream infile(filename);
   int row = 150;
   int col = 8;
   double alldata[row][col];
+  std::string Read_qual;
   for(int i = 0; i < row; i++){
     for(int j = 0; j < col; j++){
       infile >> alldata[i][j];
     }
   }
+  for (int row = 0; row < 150; row++){ 
+     //std::cout << Qual_random(alldata[row]) << std::endl;
+     Read_qual += Qual_random(alldata[row]);
+  }
+  std::cout << Read_qual << std::endl;
+}
+
+double** create2DArray(int height, int width, const char* filename){
+  // creates the 2d object with all the frequency values for a given positon of the nt
+  // used to create the nt qual strings.
+  std::ifstream infile(filename);
+  double** array2D = 0;
+  array2D = new double*[height];
+  for (int h = 0; h < height; h++){
+    array2D[h] = new double[width];
+    for (int w = 0; w < width; w++){
+      infile >> array2D[h][w];}
+  }
   infile.close();
-  return alldata;
-}*/
+  return array2D;
+}
 
 int main(int argc,char **argv){
-  
-  std::ifstream infile("Freq.txt");
-  int row = 150;
-  int col = 8;
-  double alldata[row][col];
 
-  for(int i = 0; i < row; i++){
-    for(int j = 0; j < col; j++){
-      infile >> alldata[i][j];
-    }
-  }
-  infile.close();
-  std::string Read_qual;
+  double** my2DArray = create2DArray(150, 8,"Freq.txt");
 
   clock_t tStart = clock();
   const char *fastafile = "chr22.fa";
@@ -147,23 +157,27 @@ int main(int argc,char **argv){
   
   int start_pos = 30000000;
   int end_pos = 30001000; //30001000
+  double cov = 1.0;
+  double init = 1.0;
   
   std::ofstream outfa("output.fa");
   std::ofstream outfq("output.fq");
+
   while(start_pos <= end_pos){
     // creates random number in the range of the fragment size rand() % ( high - low + 1 ) + low
     int rand_len = (std::rand() % (80 - 30 + 1)) + 30;
-    //std::cout << "random number " << rand_len << std::endl;
-        
+    int dist = init/cov * rand_len;
+    
     char* sequence = faidx_fetch_seq(ref,name,start_pos,start_pos+rand_len,&name_len);
     //std::cout << "SEQUENCE \n" << sequence << std::endl;
     char * pch;
     pch = strchr(sequence,'N');
     if (pch != NULL){
       //Disregards any read with 'N' in.. change this to just change the reading position
-      start_pos += rand_len;
+      start_pos += dist + 1;
       }
     else {
+      std::string Read_qual;
       //std::cout << pch << std::endl;
       char nt[] = "tT";
       Deamin_char(sequence,nt,rand_len);
@@ -173,20 +187,91 @@ int main(int argc,char **argv){
       if (length < 150){
         char adapter = 'X';
         double No = (150-length)/2.0;
-
-        outfa << ">" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
-        outfa << std::string(floor(No),adapter) << sequence << std::string(ceil(No),adapter) << std::endl;
-
-        outfq << "@" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
-        outfq << std::string(floor(No),adapter) << sequence << std::string(ceil(No),adapter) << std::endl;
-        outfq << "+" << std::endl;
-        for (int row_idx = 0; row_idx < row; row_idx++){Read_qual += Qual_random(alldata[row_idx]);}
-        outfq << Read_qual << std::endl;
-        Read_qual = "";
+        if (std::strcmp(argv[1], "fa") == 0){
+          outfa << ">" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
+          outfa << std::string(floor(No),adapter) << sequence << std::string(ceil(No),adapter) << std::endl;
         }
-        start_pos += rand_len;
+        else if (std::strcmp(argv[1], "fq") == 0){
+          outfq << "@" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
+          outfq << std::string(floor(No),adapter) << sequence << std::string(ceil(No),adapter) << std::endl;
+          outfq << "+" << std::endl;
+          for (int row_idx = 0; row_idx < 150; row_idx++){Read_qual += Qual_random(my2DArray[row_idx]);}
+          outfq << Read_qual << std::endl;
+          Read_qual = "";
+        }
       }
+      start_pos += dist + 1;
+      //start_pos += rand_len;
     }
-  printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+  }
+  //printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
   return 0; 
 }
+
+/*
+
+int main(int argc,char **argv){
+
+  const char *fastafile = "chr22.fa";
+  
+  //we use structure faidx_t from htslib to load in a fasta
+  htsFormat *dingding2 =(htsFormat*) calloc(1,sizeof(htsFormat));
+  // Sikre vi kan skifte mellem SAM, CRAM, BAM
+  char out_mode[5]="wb";//if "wc" output is cram
+  const char *outfile_nam = "test.bam";
+  samFile *outfile = NULL;
+  // Allokere RAM
+  sam_hdr_t *header = sam_hdr_init();
+  if (header == NULL) { fprintf(stderr, "sam_hdr_init"); return 0;}
+  char *refName=NULL;
+
+  faidx_t *ref = NULL;
+  ref  = fai_load(fastafile);
+  assert(ref!=NULL);//check that we could load the file
+
+  fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(ref));
+  if ((outfile = sam_open_format(outfile_nam, out_mode, dingding2)) == 0) {
+    fprintf(stderr,"Error opening file for writing\n");
+    exit(0);
+  }
+  char *name_len_char =(char*) malloc(1024);
+    // generere header delen af sam filen,
+  for(int i=0;i<faidx_nseq(ref);i++){
+      const char *name = faidx_iseq(ref,i);
+      int name_len =  faidx_seq_len(ref,name);
+    // skal være c string i array så vi konvertere int om til char
+    snprintf(name_len_char,1024,"%d",name_len);
+    //    fprintf(stderr,"ref:%d %d %s\n",i,name,name_len_char);
+    // REFERENCE DELEN I HEADEREN, HTSLIB TAGER HØJ, int r er det for at tjekke at headeren blive tilføjet
+    int r = sam_hdr_add_line(header, "SQ", "SN", name, "LN", name_len_char, NULL);
+    if (r < 0) { fprintf(stderr,"sam_hdr_add_line"); return 0; }
+  }
+  std::cout << "name text " << name_len_char << std::endl;
+  
+  // vi gemmer header info i filen
+  if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile);
+    
+  // alignment delen, gemt i bam_1 type for at representere hver linje som 1 alignment
+  bam1_t *b = bam_init1(); //initialisere bam1_t (type) til hukommelsen!
+
+  char buf[96];
+  int whichref = lrand48() % faidx_nseq(ref);
+  const char *name = faidx_iseq(ref,whichref);
+  int name_len =  faidx_seq_len(ref,name);
+  
+  int start_pos = 30000000;
+  int end_pos = 30000100; //30001000
+  double cov = 1.0;
+  double init = 1.0;
+
+  char* sequence = faidx_fetch_seq(ref,name,start_pos,end_pos,&name_len);
+  std::cout << sequence << std::endl;
+  bam_set1(b,strlen(buf),buf,4,0,0,0,0,NULL,0,0,0,end_pos-start_pos,sequence,NULL,0);
+  sam_write1(outfile,header,b);
+
+  sam_hdr_destroy(header);
+  sam_close(outfile);
+  return 0;
+}
+
+*/
