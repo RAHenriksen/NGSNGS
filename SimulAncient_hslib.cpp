@@ -57,6 +57,10 @@ void Deamin_char(char* str,char nt[],int seed,
 {   // use & to pass by reference to the vector
     // Get the first occurrence
   std::vector<int> Index_vec;
+  std::srand(seed+std::time(nullptr));
+  std::random_device rd;
+  std::default_random_engine generator(rd());
+  std::gamma_distribution<double> distr(alpha,beta);
 
   int i = strcspn(str,nt);
   Index_vec.push_back(i);
@@ -70,10 +74,8 @@ void Deamin_char(char* str,char nt[],int seed,
   }
 
   for (int i = 0; i < Index_vec.size(); i++){
-    std::srand(std::time(nullptr)+i);
-    std::default_random_engine generator(seed);
-    std::gamma_distribution<double> distr(alpha,beta);
-
+    
+    //std::cout << int(distr(generator)) << std::endl;
     if (Index_vec.at(i) == int(distr(generator))) {
       //std::cout << "INDEX " << Index_vec.at(i) << std::endl;
       //std::cout << "rand number " << int(distr(generator)) << std::endl;
@@ -238,6 +240,83 @@ int main(int argc,char **argv){
 }*/
 
 /*
+int main(int argc,char **argv){
+
+  double** my2DArray = create2DArray(150, 8,"Freq.txt");
+
+  clock_t tStart = clock();
+  const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr22.fa";
+  //we use structure faidx_t from htslib to load in a fasta
+  faidx_t *ref = NULL;
+  ref  = fai_load(fastafile);
+  assert(ref!=NULL);//check that we could load the file
+
+  fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(ref));
+  
+  // choosing random sequences using -> random_seq(ref);
+
+  // is lrand48() in order to pick a random sequence if containing more?
+  int whichref = lrand48() % faidx_nseq(ref);
+  std::cout << "reference number " << whichref << std::endl;
+  const char *name = faidx_iseq(ref,whichref);
+  int name_len =  faidx_seq_len(ref,name);
+  std::cout << "chr name " << name << std::endl;
+  std::cout << "size " << name_len << std::endl;
+  
+  int start_pos = 1;
+  int end_pos = name_len; //30001000
+  double cov = 1.0;
+  double init = 1.0;
+  
+  std::ofstream outfa("output.fa");
+  std::ofstream outfq("output.fq");
+
+  while(start_pos <= end_pos){
+    // creates random number in the range of the fragment size rand() % ( high - low + 1 ) + low
+    int rand_len = (std::rand() % (80 - 30 + 1)) + 30;
+    int dist = init/cov * rand_len;
+    
+    char* sequence = faidx_fetch_seq(ref,name,start_pos,start_pos+rand_len,&name_len);
+    //std::cout << "SEQUENCE \n" << sequence << std::endl;
+    char * pch;
+    pch = strchr(sequence,'N');
+    if (pch != NULL){
+      //Disregards any read with 'N' in.. change this to just change the reading position
+      start_pos += dist + 1;
+      }
+    else {
+      std::string Read_qual;
+      //std::cout << pch << std::endl;
+      char nt[] = "tT";
+      Deamin_char(sequence,nt,rand_len);
+      // std::cout << sequence ;
+      // sequence.size(); //we can use .size if we did the std::string approach which we did with deamin_string calling it damage
+      int length = strlen(sequence);
+      if (length < 150){
+        char adapter = 'X';
+        double No = (150-length)/2.0;
+        if (std::strcmp(argv[1], "fa") == 0){
+          outfa << ">" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
+          outfa << std::string(floor(No),adapter) << sequence << std::string(ceil(No),adapter) << std::endl;
+        }
+        else if (std::strcmp(argv[1], "fq") == 0){
+          outfq << "@" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
+          outfq << std::string(floor(No),adapter) << sequence << std::string(ceil(No),adapter) << std::endl;
+          outfq << "+" << std::endl;
+          for (int row_idx = 0; row_idx < 150; row_idx++){Read_qual += Qual_random(my2DArray[row_idx]);}
+          outfq << Read_qual << std::endl;
+          Read_qual = "";
+        }
+      }
+      start_pos += dist + 1;
+      //start_pos += rand_len;
+    }
+  }
+  printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+  return 0; 
+}
+*/
+
 
 int main(int argc,char **argv){
 
@@ -313,34 +392,4 @@ int main(int argc,char **argv){
   }
   printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
   return 0; 
-}*/
-
-int main(int argc,char **argv){
-
-  clock_t tStart = clock();
-  const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr2122.fa";
-  //we use structure faidx_t from htslib to load in a fasta
-  faidx_t *ref = NULL;
-  ref  = fai_load(fastafile);
-  assert(ref!=NULL);//check that we could load the file
-
-  fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(ref));
-  while
-  const char *name = faidx_iseq(ref,0);
-  std::cout << "chromosome " << name << std::endl;
-  /*
-  // is lrand48() in order to pick a random sequence if containing more?
-  int whichref = lrand48() % faidx_nseq(ref);
-  std::cout << "reference number " << whichref << std::endl;
-  const char *name = faidx_iseq(ref,1);
-  std::cout << "name " << name << std::endl;
-  int name_len =  faidx_seq_len(ref,name);
-  std::cout << "chr name " << name << std::endl;
-  std::cout << "size " << name_len << std::endl;
-  
-  int start_pos = 1;
-  int end_pos = name_len; //30001000
-  double cov = 1.0;
-  double init = 1.0;*/
-  return 0;
 }
