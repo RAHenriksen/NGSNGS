@@ -169,6 +169,192 @@ void DNA_complement(char seq[]){
   }
 }
 
+void fafa(const char* fastafile,const char* outname,double cov=1.0){  
+  //we use structure faidx_t from htslib to load in a fasta
+  faidx_t *ref = NULL;
+  ref  = fai_load(fastafile);
+  assert(ref!=NULL);//check that we could load the file
+
+  fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(ref));
+  double init = 1.0;
+  int chr_no = 0;
+  //create the file for saving
+  std::ofstream outfa(outname);
+
+  //std::srand(std::time(nullptr));
+  while (chr_no < faidx_nseq(ref)){
+    std::cout << "reference number " << chr_no << std::endl;
+    const char *name = faidx_iseq(ref,chr_no);
+    int name_len =  faidx_seq_len(ref,name);
+    std::cout << "chr name " << name << std::endl;
+    std::cout << "size " << name_len << std::endl;
+    int start_pos = 1;
+    int end_pos = name_len; //30001000
+
+    while(start_pos <= end_pos){
+      std::srand(start_pos+std::time(nullptr));
+      // Seed random number generator
+      int rand_len = (std::rand() % (80 - 30 + 1)) + 30;
+      //std::cout << " random " << rand_len << std::endl;
+      int dist = init/cov * rand_len; 
+      char* sequence = faidx_fetch_seq(ref,name,start_pos,start_pos+rand_len,&name_len);
+      // creates random number in the range of the fragment size rand() % ( high - low + 1 ) + low
+      
+      //std::cout << "SEQUENCE \n" << sequence << std::endl;
+      char * pch;
+      pch = strchr(sequence,'N');
+      if (pch != NULL){
+        //Disregards any read with 'N' in.. change this to just change the reading position
+        start_pos += dist + 1;
+        }
+      else {
+        char nt[] = "tT";
+        Deamin_char(sequence,nt,rand_len);
+        // sequence.size(); //we can use .size if we did the std::string approach which we did with deamin_string calling it damage
+        int length = strlen(sequence);
+        
+        outfa << ">" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
+        outfa << sequence << std::endl;
+      }
+    start_pos += dist + 1;
+    }
+  chr_no++;
+  }
+  return; 
+}
+
+
+void fafq(const char* fastafile,const char* outname,const char* nt_profile,
+          bool flag=false, double cov=1.0){
+  double** my2DArray = create2DArray(150, 8,nt_profile);
+
+  //we use structure faidx_t from htslib to load in a fasta
+  faidx_t *ref = NULL;
+  ref  = fai_load(fastafile);
+  assert(ref!=NULL);//check that we could load the file
+
+  fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(ref));
+  double init = 1.0;
+  int chr_no = 0;
+  //create the file for saving
+  
+  std::ofstream outfqr1("output_r1.fq");
+  std::ofstream outfqr2("output_r2.fq");
+
+  while (chr_no < faidx_nseq(ref)){
+    const char *name = faidx_iseq(ref,chr_no);
+    int name_len =  faidx_seq_len(ref,name);
+    std::cout << "chr name " << name << std::endl;
+    std::cout << "size " << name_len << std::endl;
+    int start_pos = 1;
+    int end_pos = name_len; //30001000
+
+    while(start_pos <= end_pos){
+      std::srand(start_pos+std::time(nullptr));
+      // Seed random number generator
+      int rand_len = (std::rand() % (80 - 30 + 1)) + 30;
+      //std::cout << " random " << rand_len << std::endl;
+      int dist = init/cov * rand_len; 
+      char* sequence = faidx_fetch_seq(ref,name,start_pos,start_pos+rand_len,&name_len);
+      // creates random number in the range of the fragment size rand() % ( high - low + 1 ) + low
+      
+      //std::cout << "SEQUENCE \n" << sequence << std::endl;
+      char * pch;
+      pch = strchr(sequence,'N');
+      if (pch != NULL){
+        //Disregards any read with 'N' in.. change this to just change the reading position
+        start_pos += dist + 1;
+        }
+      else {
+        char nt[] = "tT";
+        Deamin_char(sequence,nt,rand_len);
+        // sequence.size(); //we can use .size if we did the std::string approach which we did with deamin_string calling it damage
+        int length = strlen(sequence);
+
+        std::string Read_qual;
+        if(flag==true){
+          char adapter[] = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+
+          char Ill_r1[75];
+          char *read1 = (char*) malloc(1024);
+          strcpy(read1, sequence);
+          strcat(read1, adapter);
+          strncpy(Ill_r1,read1, sizeof(Ill_r1));
+          outfqr1 << "@" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
+          outfqr1 << Ill_r1 << std::endl;
+          outfqr1 << "+" << std::endl;
+          for (int row_idx = 0; row_idx < 75; row_idx++){Read_qual += Qual_random(my2DArray[row_idx]);}
+          outfqr1 << Read_qual << std::endl;
+          Read_qual = "";
+
+          char Ill_r2[75];
+          char *read2 = (char*) malloc(1024);
+          strcpy(read2, sequence);
+          DNA_complement(read2);
+          std::reverse(read2, read2 + strlen(read2));
+          strcat(read2, adapter);
+          strncpy(Ill_r2,read2, sizeof(Ill_r2));
+          outfqr2 << "@" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
+          outfqr2 << Ill_r2 << std::endl;
+          outfqr2 << "+" << std::endl;
+          for (int row_idx = 75; row_idx < 150; row_idx++){Read_qual += Qual_random(my2DArray[row_idx]);}
+          outfqr2 << Read_qual << std::endl;
+          Read_qual = "";
+        }
+        else {
+          int length = strlen(sequence);
+          char Ill_r1[75];
+          strncpy(Ill_r1,sequence,sizeof(Ill_r1));
+          //std::cout << "sequence " << Ill_r1 << std::endl;
+          //std::cout << "lenght " << length << std::endl;
+          outfqr1 << "@" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
+          outfqr1 << Ill_r1 << std::endl;
+          outfqr1 << "+" << std::endl;
+          for (int row_idx = 0; row_idx < std::min(length,75); row_idx++){Read_qual += Qual_random(my2DArray[row_idx]);}
+          outfqr1 << Read_qual << std::endl;
+          Read_qual = "";
+
+          char Ill_r2[75];
+          char *read2 = (char*) malloc(1024);
+          strcpy(read2, sequence);
+          DNA_complement(read2);
+          std::reverse(read2, read2 + strlen(read2));
+          strncpy(Ill_r2,read2, sizeof(Ill_r2));
+          outfqr2 << "@" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
+          outfqr2 << Ill_r2 << std::endl;
+          outfqr2 << "+" << std::endl;
+          for (int row_idx = 150-std::min(length,75); row_idx < 150; row_idx++){Read_qual += Qual_random(my2DArray[row_idx]);}
+          outfqr2 << Read_qual << std::endl;
+          Read_qual = "";
+        }
+      }
+    start_pos += dist + 1;
+    }
+  chr_no++;
+  }
+  return; 
+}
+
+void faBam(const char* fastafile,const char* outname,const char* nt_profile,double cov=1.0){
+  return;
+}
+
+int main(int argc,char **argv){
+  clock_t tStart = clock();
+  const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr22.fa";
+  if (std::strcmp(argv[1], "fa") == 0){
+    fafa(fastafile,argv[2]);
+    printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+  }
+  else if (std::strcmp(argv[1], "fq") == 0){
+    const char *Profile = "/home/wql443/WP1/hslib_test/Freq.txt";
+    fafq(fastafile,argv[2],Profile,false);
+    printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+  }
+}
+
+
+
 /*
 int main(int argc,char **argv){
   std::srand(std::time(nullptr));
@@ -349,7 +535,7 @@ int main(int argc,char **argv){
   return 0; 
 }*/
 
-
+/*
 int main(int argc,char **argv){
 
   double** my2DArray = create2DArray(150, 8,"Freq.txt");
@@ -413,13 +599,13 @@ int main(int argc,char **argv){
         else if (std::strcmp(argv[1], "fq") == 0){
           std::string Read_qual;
           char adapter[] = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-          /*
+          
           outfq << "@" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
           outfq << sequence << std::endl;
           outfq << "+" << std::endl;
           for (int row_idx = 0; row_idx < 150; row_idx++){Read_qual += Qual_random(my2DArray[row_idx]);}
           outfq << Read_qual << std::endl;
-          Read_qual = "";*/
+          Read_qual = "";
 
           char Ill_r1[75];
           char *read1 = (char*) malloc(1024);
@@ -457,4 +643,4 @@ int main(int argc,char **argv){
   }
   printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
   return 0; 
-}
+}*/ 
