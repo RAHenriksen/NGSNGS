@@ -2,6 +2,8 @@
 #include <cassert>
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
+#include <htslib/vcf.h>
+#include <htslib/kstring.h>
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
@@ -236,9 +238,15 @@ void fafq(const char* fastafile,const char* outname,const char* nt_profile,
   double init = 1.0;
   int chr_no = 0;
   //create the file for saving
-  
-  std::ofstream outfqr1("output_r1.fq");
-  std::ofstream outfqr2("output_r2.fq");
+
+  //std::ofstream outfqr1("output_r1.fq");
+  //std::ofstream outfqr2("output_r2.fq");
+  char *outname1 =(char*) malloc(10 + strlen(outname) + 1);    
+  sprintf(outname1, "%s_r1.fq", outname);
+  char *outname2 =(char*) malloc(10 + strlen(outname) + 1);    
+  sprintf(outname2, "%s_r2.fq", outname);
+  std::ofstream outfqr1(outname1);
+  std::ofstream outfqr2(outname2);
 
   while (chr_no < faidx_nseq(ref)){
     const char *name = faidx_iseq(ref,chr_no);
@@ -450,9 +458,11 @@ void faBam(const char* fastafile,const char* nt_profile,double cov=1.0){
   return; 
 }
 
+/*
 int main(int argc,char **argv){
   clock_t tStart = clock();
   const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr22.fa";
+
   if (std::strcmp(argv[1], "fa") == 0){
     fafa(fastafile,argv[2]);
     printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
@@ -467,4 +477,138 @@ int main(int argc,char **argv){
     faBam(fastafile,Profile);
     printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
   }
+}*/
+
+void VCF(const char* fastafile,double cov=1.0){  
+  //we use structure faidx_t from htslib to load in a fasta
+  faidx_t *ref = NULL;
+  ref  = fai_load(fastafile);
+  assert(ref!=NULL);//check that we could load the file
+
+  fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(ref));
+  double init = 1.0;
+  int chr_no = 0;
+
+  // initiate VCF
+  htsFile *test_vcf = NULL;
+  bcf_hdr_t *test_header = NULL;
+  bcf1_t *test_record = bcf_init();
+  test_vcf = vcf_open("/home/wql443/WP1/data/ALL.chr14.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.vcf.gz", "r");
+  test_header = bcf_hdr_read(test_vcf);
+  
+  while(chr_no < faidx_nseq(ref) && bcf_read(test_vcf, test_header, test_record) == 0){
+    const char *name = faidx_iseq(ref,chr_no);
+    std::cout << " name " << name << std::endl;
+    std::cout << " chrom " << bcf_hdr_id2name(test_header, test_record->rid);
+  }
+  //create the proper chromosome name
+  char vcfchr[10];   // array to hold the result.
+  const char *chr = "chr";
+  const char *chrno = bcf_hdr_id2name(test_header, test_record->rid);
+  std::cout << " tets " << test_record->rid << std::endl;
+  strcpy(vcfchr,chr);
+  strcat(vcfchr,chrno);
+
+  // extract the first position!
+  int vcfstruct = bcf_read(test_vcf, test_header, test_record);
+  
+  std::cout << ":" <<test_record->pos+1 << std::endl;
+  vcfstruct = bcf_read(test_vcf, test_header, test_record);
+  std::cout << ":" <<test_record->pos+1 << std::endl;
+  const char *name = faidx_iseq(ref,chr_no);
+  const char *lol = "chr14";
+  std::cout << "chr name " << name << std::endl;
+  if (std::strcmp(vcfchr,name) == 0){
+    std::cout << "Lol" << std::endl;
+  }
+  /*
+  while (chr_no < faidx_nseq(ref)){
+    const char *name = faidx_iseq(ref,chr_no);
+    int name_len =  faidx_seq_len(ref,name);
+    std::cout << "chr name " << name << std::endl;
+    std::cout << "size " << name_len << std::endl;
+    int start_pos = 19178900;
+    int end_pos = 19179200;
+    if (std::strcmp(vcfchr,name) != 0){
+
+    }
+    
+    while(start_pos <= end_pos){
+      std::srand(start_pos+std::time(nullptr));
+      // Seed random number generator
+      int rand_len = (std::rand() % (80 - 30 + 1)) + 30;
+      //std::cout << " random " << rand_len << std::endl;
+      int dist = init/cov * rand_len; 
+      char* sequence = faidx_fetch_seq(ref,name,start_pos,start_pos+rand_len,&name_len);
+      // creates random number in the range of the fragment size rand() % ( high - low + 1 ) + low
+      
+      //std::cout << "SEQUENCE \n" << sequence << std::endl;
+      char * pch;
+      pch = strchr(sequence,'N');
+      if (pch != NULL){
+        //Disregards any read with 'N' in.. change this to just change the reading position
+        start_pos += dist + 1;
+        }
+      else {
+        char nt[] = "tT";
+        Deamin_char(sequence,nt,rand_len);
+        // sequence.size(); //we can use .size if we did the std::string approach which we did with deamin_string calling it damage
+        int length = strlen(sequence);
+        std::cout << ">" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
+        std::cout << sequence << std::endl;
+      }
+    start_pos += dist + 1;
+    }
+  chr_no++;
+  }*/
+  return; 
 }
+
+int main(int argc,char **argv){
+  const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr14.fa";
+  VCF(fastafile);
+  /*
+  htsFile *test_vcf = NULL;
+  // creates header
+  bcf_hdr_t *test_header = NULL;
+  // initialize and allocate bcf1_t object
+  bcf1_t *test_record = bcf_init();
+
+  // test_vcf = vcf_open("/home/wql443/WP1/data/chr14_full.vcf", "r");
+  test_vcf = vcf_open("/home/wql443/WP1/data/ALL.chr14.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.vcf.gz", "r");
+  // returning a bcf_hdr_t struct 
+  test_header = bcf_hdr_read(test_vcf);
+  // htsFile *fp = test_vcf = vcf_open(),   bcf1_t *v = test_record = bcf_init()
+  // const bcf_hdr_t *h = test_header = bcf_hdr_read(test_vcf)
+  
+  for (int i = 0; i < 3; i++) {
+    bcf_read(test_vcf, test_header, test_record);
+    std::cout << "chr" << bcf_hdr_id2name(test_header, test_record->rid) << ":" <<test_record->pos+1 << std::endl;
+  }
+  
+  while(bcf_read(test_vcf, test_header, test_record) == 0){
+    std::cout << "chr" << bcf_hdr_id2name(test_header, test_record->rid) << ":" <<test_record->pos+1 << std::endl;
+    // std::cout << "allele " << test_record->n_allele << std::endl; // I assume this is because i have info in both column 4 and 5 (diploid)
+    bcf_unpack((bcf1_t*)test_record, BCF_UN_ALL); // bcf_unpack((bcf1_t*)v, BCF_UN_ALL);
+    char* ref;
+    char* alt;
+    if (test_record->n_allele > 1){
+      ref = test_record->d.allele[0];
+      alt = test_record->d.allele[1];
+    }
+  }
+
+  bcf_hdr_destroy(test_header);
+  bcf_destroy(test_record); 
+  bcf_close(test_vcf);*/
+  return 0;
+}
+
+/*
+  
+  std::ofstream outfile("hello.txt.gz", std::ios_base::out | std::ios_base::binary);
+  //std::ofstream outfile("Hello.txt");
+  //std::ofstream outfile("hello.txt.gz", std::ios_base::out | std::ios_base::binary);
+  outfile << "my text here!" << std::endl;
+  outfile.close();
+*/
