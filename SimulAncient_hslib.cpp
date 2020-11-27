@@ -488,12 +488,14 @@ void VCF(const char* fastafile,double cov=1.0){
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(ref));
   double init = 1.0;
   int chr_no = 0;
+  std::ofstream outfa("vcftest2.fa");
 
   // initiate VCF
   htsFile *test_vcf = NULL;
   bcf_hdr_t *test_header = NULL;
   bcf1_t *test_record = bcf_init();
-  test_vcf = vcf_open("/home/wql443/WP1/data/ALL.chr14.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.vcf.gz", "r");
+  //test_vcf = vcf_open("/home/wql443/WP1/data/ALL.chr14.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.vcf.gz", "r");
+  test_vcf = vcf_open("/home/wql443/WP1/data/chr14_full.vcf", "r");
   test_header = bcf_hdr_read(test_vcf);
 
   while (chr_no < faidx_nseq(ref)){
@@ -501,15 +503,15 @@ void VCF(const char* fastafile,double cov=1.0){
     const char *name = faidx_iseq(ref,chr_no);
     int name_len =  faidx_seq_len(ref,name);
 
-    int start_pos = 19000000;
-    int end_pos = 19000100; //name_len
+    int start_pos = 19000000;//19066080
+    int end_pos = 19001000; //19088300
     
     //create the proper chromosome name for VCF format
     int vcfstruct = bcf_read(test_vcf, test_header, test_record);
     char vcfchr[10];   // array to hold the result.
     const char *chr = "chr";
     const char *chrno = bcf_hdr_id2name(test_header, test_record->rid);
-    std::cout << "ts" << chrno << std::endl;
+    //std::cout << "ts" << chrno << std::endl;
     strcpy(vcfchr,chr);
     strcat(vcfchr,chrno);
 
@@ -526,87 +528,69 @@ void VCF(const char* fastafile,double cov=1.0){
         int rand_len = (std::rand() % (80 - 30 + 1)) + 30;
         //std::cout << " random " << rand_len << std::endl;
         int dist = init/cov * rand_len; 
-        std::cout << "------------------" << std::endl;
+        std::cout << "-------------" << std::endl;
         std::cout << "start " << start_pos << "-" << start_pos+dist+1 << std::endl;
+
         char* sequence = faidx_fetch_seq(ref,name,start_pos,start_pos+rand_len,&name_len);
         char * pch;
         pch = strchr(sequence,'N');
         if (pch != NULL){
           //Disregards any read with 'N' in.. change this to just change the reading position
           start_pos += dist + 1;
-          }
+        }
         else {
+          // i'm not putting the deamination inside the while loop since that would for each ALT perform deamination
+          char nt[] = "tT";
+          std::cout << "original " << std::endl << sequence << std::endl;
+          Deamin_char(sequence,nt,rand_len);
+          std::string Seq_str(sequence);
+          int length = strlen(sequence);
           while (vcfpos <= start_pos+rand_len){
-            std::cout << "vcf pos" << vcfpos << std::endl;
+            //std::cout << "vcf pos" << vcfpos << std::endl;
             bcf_unpack((bcf1_t*)test_record, BCF_UN_ALL); // bcf_unpack((bcf1_t*)v, BCF_UN_ALL);
             char* ref;
             char* alt;
             if (test_record->n_allele > 1){
-              int alt_pos = vcfpos-start_pos;
-              //std::cout << "alter "<< alt_pos << std::endl;
-              //std::cout << "seq ref alt pos "<< sequence[alt_pos-1] << std::endl;
-              //std::cout << sequence << std::endl;
               //NB! my alt_pos is an integer like 18, but it will be converted into an 0-index thus count 19 nt in the sequence
+              int alt_pos;
+              if (vcfpos-start_pos > 0){
+                alt_pos = vcfpos-start_pos-1;
+              }
+              else
+              {
+                alt_pos = vcfpos-start_pos;
+              }
+                     
               ref = test_record->d.allele[0];
               alt = test_record->d.allele[1];
-              char test[100];
-              strcpy(test, alt);
-              std::cout << "test " << test << std::endl;
-              std::cout << sequence << std::endl;
-              //sequence[alt_pos-1] = test;
-              std::cout << sequence << std::endl;
-              std::cout << "ref " << ref << std::endl;
-              std::cout << "alt " << alt << std::endl;
+
+              //Conver char* to strings in order to perform SNV or indels based on the reference and alternative.
+              std::string refstr(ref);
+              std::string altstr(alt);
+              std::cout << "pos " << alt_pos << " ref " << refstr << " alt " << altstr << std::endl;
+              Seq_str = Seq_str.replace(alt_pos,strlen(ref),altstr);
             }
             vcfstruct = bcf_read(test_vcf, test_header, test_record);
             vcfpos = test_record->pos+1;
           }
+        std::cout << "vcf" << std::endl << Seq_str << std::endl;
+        outfa << ">" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
+        outfa << Seq_str << std::endl;
         }
         start_pos += dist + 1;
       }
     }
     chr_no++;
-  }  
+  }
+  //bcf_hdr_destroy(test_header);
+  //bcf_destroy(test_record); 
+  //bcf_close(test_vcf);  
   return; 
 }
 
 int main(int argc,char **argv){
   const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr14.fa";
   VCF(fastafile);
-  /*
-  htsFile *test_vcf = NULL;
-  // creates header
-  bcf_hdr_t *test_header = NULL;
-  // initialize and allocate bcf1_t object
-  bcf1_t *test_record = bcf_init();
-
-  // test_vcf = vcf_open("/home/wql443/WP1/data/chr14_full.vcf", "r");
-  test_vcf = vcf_open("/home/wql443/WP1/data/ALL.chr14.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.vcf.gz", "r");
-  // returning a bcf_hdr_t struct 
-  test_header = bcf_hdr_read(test_vcf);
-  // htsFile *fp = test_vcf = vcf_open(),   bcf1_t *v = test_record = bcf_init()
-  // const bcf_hdr_t *h = test_header = bcf_hdr_read(test_vcf)
-  
-  for (int i = 0; i < 3; i++) {
-    bcf_read(test_vcf, test_header, test_record);
-    std::cout << "chr" << bcf_hdr_id2name(test_header, test_record->rid) << ":" <<test_record->pos+1 << std::endl;
-  }
-  
-  while(bcf_read(test_vcf, test_header, test_record) == 0){
-    std::cout << "chr" << bcf_hdr_id2name(test_header, test_record->rid) << ":" <<test_record->pos+1 << std::endl;
-    // std::cout << "allele " << test_record->n_allele << std::endl; // I assume this is because i have info in both column 4 and 5 (diploid)
-    bcf_unpack((bcf1_t*)test_record, BCF_UN_ALL); // bcf_unpack((bcf1_t*)v, BCF_UN_ALL);
-    char* ref;
-    char* alt;
-    if (test_record->n_allele > 1){
-      ref = test_record->d.allele[0];
-      alt = test_record->d.allele[1];
-    }
-  }
-
-  bcf_hdr_destroy(test_header);
-  bcf_destroy(test_record); 
-  bcf_close(test_vcf);*/
   return 0;
 }
 
