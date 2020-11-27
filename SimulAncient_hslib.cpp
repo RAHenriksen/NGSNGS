@@ -10,7 +10,7 @@
 #include <sstream>
 #include <string>
 #include <cstring>
-#include <string.h>
+#include <string>
 #include <vector>
 #include <stdio.h>
 #include <typeinfo>
@@ -495,72 +495,78 @@ void VCF(const char* fastafile,double cov=1.0){
   bcf1_t *test_record = bcf_init();
   test_vcf = vcf_open("/home/wql443/WP1/data/ALL.chr14.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.vcf.gz", "r");
   test_header = bcf_hdr_read(test_vcf);
-  
-  while(chr_no < faidx_nseq(ref) && bcf_read(test_vcf, test_header, test_record) == 0){
-    const char *name = faidx_iseq(ref,chr_no);
-    std::cout << " name " << name << std::endl;
-    std::cout << " chrom " << bcf_hdr_id2name(test_header, test_record->rid);
-  }
-  //create the proper chromosome name
-  char vcfchr[10];   // array to hold the result.
-  const char *chr = "chr";
-  const char *chrno = bcf_hdr_id2name(test_header, test_record->rid);
-  std::cout << " tets " << test_record->rid << std::endl;
-  strcpy(vcfchr,chr);
-  strcat(vcfchr,chrno);
 
-  // extract the first position!
-  int vcfstruct = bcf_read(test_vcf, test_header, test_record);
-  
-  std::cout << ":" <<test_record->pos+1 << std::endl;
-  vcfstruct = bcf_read(test_vcf, test_header, test_record);
-  std::cout << ":" <<test_record->pos+1 << std::endl;
-  const char *name = faidx_iseq(ref,chr_no);
-  const char *lol = "chr14";
-  std::cout << "chr name " << name << std::endl;
-  if (std::strcmp(vcfchr,name) == 0){
-    std::cout << "Lol" << std::endl;
-  }
-  /*
   while (chr_no < faidx_nseq(ref)){
+    // The fasta file from the references
     const char *name = faidx_iseq(ref,chr_no);
     int name_len =  faidx_seq_len(ref,name);
-    std::cout << "chr name " << name << std::endl;
-    std::cout << "size " << name_len << std::endl;
-    int start_pos = 19178900;
-    int end_pos = 19179200;
-    if (std::strcmp(vcfchr,name) != 0){
 
-    }
+    int start_pos = 19000000;
+    int end_pos = 19000100; //name_len
     
-    while(start_pos <= end_pos){
-      std::srand(start_pos+std::time(nullptr));
-      // Seed random number generator
-      int rand_len = (std::rand() % (80 - 30 + 1)) + 30;
-      //std::cout << " random " << rand_len << std::endl;
-      int dist = init/cov * rand_len; 
-      char* sequence = faidx_fetch_seq(ref,name,start_pos,start_pos+rand_len,&name_len);
-      // creates random number in the range of the fragment size rand() % ( high - low + 1 ) + low
-      
-      //std::cout << "SEQUENCE \n" << sequence << std::endl;
-      char * pch;
-      pch = strchr(sequence,'N');
-      if (pch != NULL){
-        //Disregards any read with 'N' in.. change this to just change the reading position
-        start_pos += dist + 1;
+    //create the proper chromosome name for VCF format
+    int vcfstruct = bcf_read(test_vcf, test_header, test_record);
+    char vcfchr[10];   // array to hold the result.
+    const char *chr = "chr";
+    const char *chrno = bcf_hdr_id2name(test_header, test_record->rid);
+    std::cout << "ts" << chrno << std::endl;
+    strcpy(vcfchr,chr);
+    strcat(vcfchr,chrno);
+
+    //ensure same chromosome from fasta and VCF
+    if (std::strcmp(vcfchr,name) == 0){
+      int vcfpos = test_record->pos+1;
+      //vcfstruct = bcf_read(test_vcf, test_header, test_record);
+      //vcfpos = test_record->pos+1;
+      //std::cout << vcfpos << std::endl;
+
+      while(start_pos < end_pos){
+        std::srand(start_pos+std::time(nullptr));
+        // Seed random number generator
+        int rand_len = (std::rand() % (80 - 30 + 1)) + 30;
+        //std::cout << " random " << rand_len << std::endl;
+        int dist = init/cov * rand_len; 
+        std::cout << "------------------" << std::endl;
+        std::cout << "start " << start_pos << "-" << start_pos+dist+1 << std::endl;
+        char* sequence = faidx_fetch_seq(ref,name,start_pos,start_pos+rand_len,&name_len);
+        char * pch;
+        pch = strchr(sequence,'N');
+        if (pch != NULL){
+          //Disregards any read with 'N' in.. change this to just change the reading position
+          start_pos += dist + 1;
+          }
+        else {
+          while (vcfpos <= start_pos+rand_len){
+            std::cout << "vcf pos" << vcfpos << std::endl;
+            bcf_unpack((bcf1_t*)test_record, BCF_UN_ALL); // bcf_unpack((bcf1_t*)v, BCF_UN_ALL);
+            char* ref;
+            char* alt;
+            if (test_record->n_allele > 1){
+              int alt_pos = vcfpos-start_pos;
+              //std::cout << "alter "<< alt_pos << std::endl;
+              //std::cout << "seq ref alt pos "<< sequence[alt_pos-1] << std::endl;
+              //std::cout << sequence << std::endl;
+              //NB! my alt_pos is an integer like 18, but it will be converted into an 0-index thus count 19 nt in the sequence
+              ref = test_record->d.allele[0];
+              alt = test_record->d.allele[1];
+              char test[100];
+              strcpy(test, alt);
+              std::cout << "test " << test << std::endl;
+              std::cout << sequence << std::endl;
+              //sequence[alt_pos-1] = test;
+              std::cout << sequence << std::endl;
+              std::cout << "ref " << ref << std::endl;
+              std::cout << "alt " << alt << std::endl;
+            }
+            vcfstruct = bcf_read(test_vcf, test_header, test_record);
+            vcfpos = test_record->pos+1;
+          }
         }
-      else {
-        char nt[] = "tT";
-        Deamin_char(sequence,nt,rand_len);
-        // sequence.size(); //we can use .size if we did the std::string approach which we did with deamin_string calling it damage
-        int length = strlen(sequence);
-        std::cout << ">" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
-        std::cout << sequence << std::endl;
+        start_pos += dist + 1;
       }
-    start_pos += dist + 1;
     }
-  chr_no++;
-  }*/
+    chr_no++;
+  }  
   return; 
 }
 
@@ -604,6 +610,7 @@ int main(int argc,char **argv){
   return 0;
 }
 
+
 /*
   
   std::ofstream outfile("hello.txt.gz", std::ios_base::out | std::ios_base::binary);
@@ -612,3 +619,18 @@ int main(int argc,char **argv){
   outfile << "my text here!" << std::endl;
   outfile.close();
 */
+
+/*
+int main(int argc,char **argv){
+  char *Seq1 =(char*) malloc(100);
+  sprintf(Seq1, "ATGGTAT");
+  std::string Seq(Seq1);
+  char *Seq2 =(char*) malloc(100);
+  sprintf(Seq2, "XXXX");
+  std::string SeqX(Seq2);
+  std::cout << "test " << Seq << std::endl;
+  Seq.replace(2,1,SeqX);
+  std::cout << Seq << std::endl;   
+  return 0;
+}*/
+
