@@ -503,8 +503,8 @@ void VCF(const char* fastafile,double cov=1.0){
     const char *name = faidx_iseq(ref,chr_no);
     int name_len =  faidx_seq_len(ref,name);
 
-    int start_pos = 19000000;//19066080
-    int end_pos = 19001000; //19088300
+    int start_pos = 19135000; //19000000; //19066080;
+    int end_pos = 19136000; //19001000; //19088300;
     
     //create the proper chromosome name for VCF format
     int vcfstruct = bcf_read(test_vcf, test_header, test_record);
@@ -528,9 +528,17 @@ void VCF(const char* fastafile,double cov=1.0){
         int rand_len = (std::rand() % (80 - 30 + 1)) + 30;
         //std::cout << " random " << rand_len << std::endl;
         int dist = init/cov * rand_len; 
+        /*
         std::cout << "-------------" << std::endl;
         std::cout << "start " << start_pos << "-" << start_pos+dist+1 << std::endl;
-
+        vcfstruct = bcf_read(test_vcf, test_header, test_record);
+        std::cout << "1 " << test_record->pos+1 << std::endl;
+        vcfstruct = bcf_read(test_vcf, test_header, test_record);
+        std::cout << "2 " << test_record->pos+1 << std::endl;
+        vcfstruct = bcf_read(test_vcf, test_header, test_record);
+        std::cout << "3 " << test_record->pos+1 << std::endl;
+        */
+        
         char* sequence = faidx_fetch_seq(ref,name,start_pos,start_pos+rand_len,&name_len);
         char * pch;
         pch = strchr(sequence,'N');
@@ -538,7 +546,8 @@ void VCF(const char* fastafile,double cov=1.0){
           //Disregards any read with 'N' in.. change this to just change the reading position
           start_pos += dist + 1;
         }
-        else {
+        else if (start_pos <= vcfpos){
+          std::cout << "else if" << std::endl;
           // i'm not putting the deamination inside the while loop since that would for each ALT perform deamination
           char nt[] = "tT";
           std::cout << "original " << std::endl << sequence << std::endl;
@@ -546,6 +555,7 @@ void VCF(const char* fastafile,double cov=1.0){
           std::string Seq_str(sequence);
           int length = strlen(sequence);
           while (vcfpos <= start_pos+rand_len){
+            std::cout << "while 1" << std::endl;
             //std::cout << "vcf pos" << vcfpos << std::endl;
             bcf_unpack((bcf1_t*)test_record, BCF_UN_ALL); // bcf_unpack((bcf1_t*)v, BCF_UN_ALL);
             char* ref;
@@ -567,6 +577,7 @@ void VCF(const char* fastafile,double cov=1.0){
               //Conver char* to strings in order to perform SNV or indels based on the reference and alternative.
               std::string refstr(ref);
               std::string altstr(alt);
+              std::cout << "test"
               std::cout << "pos " << alt_pos << " ref " << refstr << " alt " << altstr << std::endl;
               Seq_str = Seq_str.replace(alt_pos,strlen(ref),altstr);
             }
@@ -574,8 +585,17 @@ void VCF(const char* fastafile,double cov=1.0){
             vcfpos = test_record->pos+1;
           }
         std::cout << "vcf" << std::endl << Seq_str << std::endl;
-        outfa << ">" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
+        std::cout << Seq_str.length() << std::endl;
+        outfa << ">" << name << ":" << start_pos << "-" << start_pos+name_len << "_len:" << length << "_" << Seq_str.length() << std::endl;
         outfa << Seq_str << std::endl;
+        }
+        else{
+          std::cout << "else " << std::endl;
+          while (vcfpos < start_pos){
+            std::cout << " pos  " << vcfpos << std::endl;
+            vcfstruct = bcf_read(test_vcf, test_header, test_record);
+            vcfpos = test_record->pos+1;
+          }
         }
         start_pos += dist + 1;
       }
