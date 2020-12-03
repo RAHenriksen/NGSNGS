@@ -20,6 +20,7 @@
 #include <chrono>
 #include <time.h>
 #include <algorithm>
+#include <boost>
 
 // I would like to create a function with TK's code since its optimal in case we wish to 
 //simulate a given number of fragments
@@ -503,12 +504,12 @@ void VCF(const char* fastafile,double cov=1.0){
     const char *name = faidx_iseq(ref,chr_no);
     int name_len =  faidx_seq_len(ref,name);
 
-    int start_pos = 19135000; //19000000; //19066080;
-    int end_pos = 19136000; //19001000; //19088300;
+    int start_pos = 19060000;// 19135000; //19000000; //19066080;
+    int end_pos = 19067000;//19136000; //19001000; //19088300;
     
     //create the proper chromosome name for VCF format
     int vcfstruct = bcf_read(test_vcf, test_header, test_record);
-    char vcfchr[10];   // array to hold the result.
+    char vcfchr[4096];   // array to hold the result.
     const char *chr = "chr";
     const char *chrno = bcf_hdr_id2name(test_header, test_record->rid);
     //std::cout << "ts" << chrno << std::endl;
@@ -550,16 +551,18 @@ void VCF(const char* fastafile,double cov=1.0){
           std::cout << "else if" << std::endl;
           // i'm not putting the deamination inside the while loop since that would for each ALT perform deamination
           char nt[] = "tT";
+          std::cout << "-------------" << std::endl;
           std::cout << "original " << std::endl << sequence << std::endl;
           Deamin_char(sequence,nt,rand_len);
           std::string Seq_str(sequence);
           int length = strlen(sequence);
           while (vcfpos <= start_pos+rand_len){
-            std::cout << "while 1" << std::endl;
-            //std::cout << "vcf pos" << vcfpos << std::endl;
+            std::cout << "while loop" << std::endl;
+            std::cout << "vcf pos " << vcfpos << std::endl;
             bcf_unpack((bcf1_t*)test_record, BCF_UN_ALL); // bcf_unpack((bcf1_t*)v, BCF_UN_ALL);
             char* ref;
             char* alt;
+            char* alt2;
             if (test_record->n_allele > 1){
               //NB! my alt_pos is an integer like 18, but it will be converted into an 0-index thus count 19 nt in the sequence
               int alt_pos;
@@ -570,14 +573,17 @@ void VCF(const char* fastafile,double cov=1.0){
               {
                 alt_pos = vcfpos-start_pos;
               }
-                     
               ref = test_record->d.allele[0];
               alt = test_record->d.allele[1];
-
+              alt2 = test_record->d.allele[2];
+              if (alt2!=NULL){
+                std::cout << "multiple alternative" << std::endl;
+                std::cout << alt << " " << alt2 << std::endl;
+              }
+              
               //Conver char* to strings in order to perform SNV or indels based on the reference and alternative.
               std::string refstr(ref);
               std::string altstr(alt);
-              std::cout << "test"
               std::cout << "pos " << alt_pos << " ref " << refstr << " alt " << altstr << std::endl;
               Seq_str = Seq_str.replace(alt_pos,strlen(ref),altstr);
             }
@@ -590,9 +596,10 @@ void VCF(const char* fastafile,double cov=1.0){
         outfa << Seq_str << std::endl;
         }
         else{
-          std::cout << "else " << std::endl;
+          //std::cout << "else " << std::endl;
           while (vcfpos < start_pos){
-            std::cout << " pos  " << vcfpos << std::endl;
+            //iterating through the vcf file
+            //std::cout << " pos  " << vcfpos << std::endl;
             vcfstruct = bcf_read(test_vcf, test_header, test_record);
             vcfpos = test_record->pos+1;
           }
@@ -608,9 +615,17 @@ void VCF(const char* fastafile,double cov=1.0){
   return; 
 }
 
+void randomfunc(int iterat){
+  for(int i=0;i<nreads;i++){
+    std::cout << rand() << std::endl;
+  }
+}
 int main(int argc,char **argv){
-  const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr14.fa";
-  VCF(fastafile);
+  //const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr14.fa";
+  //VCF(fastafile);
+  //std::vector<int> vector1(length, 0);
+  int seed = -1;
+  std::cout << drand48(80) << std::endl;
   return 0;
 }
 
