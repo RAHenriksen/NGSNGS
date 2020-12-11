@@ -20,7 +20,6 @@
 #include <chrono>
 #include <time.h>
 #include <algorithm>
-#include <boost>
 
 // I would like to create a function with TK's code since its optimal in case we wish to 
 //simulate a given number of fragments
@@ -504,9 +503,11 @@ void VCF(const char* fastafile,double cov=1.0){
     const char *name = faidx_iseq(ref,chr_no);
     int name_len =  faidx_seq_len(ref,name);
 
-    int start_pos = 19060000;// 19135000; //19000000; //19066080;
-    int end_pos = 19067000;//19136000; //19001000; //19088300;
+    int start_pos = 19291500; // 19070000; // 19060000;// 19135000; //19000000; //19066080;
+    int end_pos = 19292200;// 19076000; // 19067000;//19136000; //19001000; //19088300;
     
+    // 19291899 -> 14	19291899	.	C	CTGTT	100
+
     //create the proper chromosome name for VCF format
     int vcfstruct = bcf_read(test_vcf, test_header, test_record);
     char vcfchr[4096];   // array to hold the result.
@@ -548,13 +549,14 @@ void VCF(const char* fastafile,double cov=1.0){
           start_pos += dist + 1;
         }
         else if (start_pos <= vcfpos){
-          std::cout << "else if" << std::endl;
           // i'm not putting the deamination inside the while loop since that would for each ALT perform deamination
           char nt[] = "tT";
-          std::cout << "-------------" << std::endl;
           std::cout << "original " << std::endl << sequence << std::endl;
           Deamin_char(sequence,nt,rand_len);
           std::string Seq_str(sequence);
+          std::string Seq_str_alt(sequence);
+          int alt_bool = 0;
+
           int length = strlen(sequence);
           while (vcfpos <= start_pos+rand_len){
             std::cout << "while loop" << std::endl;
@@ -576,24 +578,54 @@ void VCF(const char* fastafile,double cov=1.0){
               ref = test_record->d.allele[0];
               alt = test_record->d.allele[1];
               alt2 = test_record->d.allele[2];
-              if (alt2!=NULL){
+              std::string refstr(ref);
+              std::string altstr(alt);
+              if (alt2==NULL){
+                //single alternative allele
+                std::cout << "single alternative" << std::endl;
+                std::cout << alt <<  std::endl;
+
+                //std::cout << "pos " << alt_pos << " ref " << refstr << " alt " << altstr << std::endl;
+                Seq_str = Seq_str.replace(alt_pos,strlen(ref),altstr);
+                Seq_str_alt = Seq_str_alt.replace(alt_pos,strlen(ref),altstr);
+              }
+              else if(alt2!=NULL&&(strlen(alt2)==0)){
+                // for some reason some lines are read as having multiple alternatives, but without having one
+                Seq_str = Seq_str.replace(alt_pos,strlen(ref),altstr);
+                Seq_str_alt = Seq_str_alt.replace(alt_pos,strlen(ref),altstr);
+              }
+              else if(alt2!=NULL&&(strlen(alt2)>0)){
+                alt_bool += 1;
+                std::string altstr2(alt2);
+                //multiple alternative
                 std::cout << "multiple alternative" << std::endl;
                 std::cout << alt << " " << alt2 << std::endl;
+                std::cout << "pos " << alt_pos << " ref " << refstr << " alt " << altstr << std::endl;
+                Seq_str = Seq_str.replace(alt_pos,strlen(ref),altstr);
+                Seq_str_alt = Seq_str_alt.replace(alt_pos,strlen(ref),altstr2);
+                std::cout << "---" << std::endl;
               }
               
               //Conver char* to strings in order to perform SNV or indels based on the reference and alternative.
-              std::string refstr(ref);
-              std::string altstr(alt);
-              std::cout << "pos " << alt_pos << " ref " << refstr << " alt " << altstr << std::endl;
-              Seq_str = Seq_str.replace(alt_pos,strlen(ref),altstr);
+
             }
             vcfstruct = bcf_read(test_vcf, test_header, test_record);
             vcfpos = test_record->pos+1;
           }
-        std::cout << "vcf" << std::endl << Seq_str << std::endl;
-        std::cout << Seq_str.length() << std::endl;
-        outfa << ">" << name << ":" << start_pos << "-" << start_pos+name_len << "_len:" << length << "_" << Seq_str.length() << std::endl;
-        outfa << Seq_str << std::endl;
+
+          if (alt_bool == 0){
+            std::cout << "vcf_seq" << std::endl << Seq_str << std::endl;
+            outfa << ">" << name << ":" << start_pos << "-" << start_pos+name_len << "_len:" << length << "_" << Seq_str.length() << std::endl;
+            outfa << Seq_str << std::endl;
+          }
+          else {
+            //for 2 alternatives create two seperate sequences, NB! improve for higher number of alternatives.
+            std::cout << "vcf_seq" << std::endl << Seq_str << std::endl;
+            outfa << ">" << name << ":" << start_pos << "-" << start_pos+name_len << "_len:" << length << "_" << Seq_str.length() << std::endl;
+            outfa << Seq_str << std::endl;
+            outfa << ">" << name << ":" << start_pos << "-" << start_pos+name_len << "_alt2_len:" << length << "_" << Seq_str_alt.length() << std::endl;
+            outfa << Seq_str_alt << std::endl;
+          }
         }
         else{
           //std::cout << "else " << std::endl;
@@ -609,47 +641,16 @@ void VCF(const char* fastafile,double cov=1.0){
     }
     chr_no++;
   }
-  //bcf_hdr_destroy(test_header);
-  //bcf_destroy(test_record); 
-  //bcf_close(test_vcf);  
+  bcf_hdr_destroy(test_header);
+  bcf_destroy(test_record); 
+  bcf_close(test_vcf);  
   return; 
 }
 
-void randomfunc(int iterat){
-  for(int i=0;i<nreads;i++){
-    std::cout << rand() << std::endl;
-  }
-}
 int main(int argc,char **argv){
-  //const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr14.fa";
-  //VCF(fastafile);
-  //std::vector<int> vector1(length, 0);
-  int seed = -1;
-  std::cout << drand48(80) << std::endl;
+  const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr14.fa";
+  VCF(fastafile);
   return 0;
 }
 
-
-/*
-  
-  std::ofstream outfile("hello.txt.gz", std::ios_base::out | std::ios_base::binary);
-  //std::ofstream outfile("Hello.txt");
-  //std::ofstream outfile("hello.txt.gz", std::ios_base::out | std::ios_base::binary);
-  outfile << "my text here!" << std::endl;
-  outfile.close();
-*/
-
-/*
-int main(int argc,char **argv){
-  char *Seq1 =(char*) malloc(100);
-  sprintf(Seq1, "ATGGTAT");
-  std::string Seq(Seq1);
-  char *Seq2 =(char*) malloc(100);
-  sprintf(Seq2, "XXXX");
-  std::string SeqX(Seq2);
-  std::cout << "test " << Seq << std::endl;
-  Seq.replace(2,1,SeqX);
-  std::cout << Seq << std::endl;   
-  return 0;
-}*/
 
