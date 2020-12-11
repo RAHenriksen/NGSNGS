@@ -503,8 +503,8 @@ void VCF(const char* fastafile,double cov=1.0){
     const char *name = faidx_iseq(ref,chr_no);
     int name_len =  faidx_seq_len(ref,name);
 
-    int start_pos = 19291500; // 19070000; // 19060000;// 19135000; //19000000; //19066080;
-    int end_pos = 19292200;// 19076000; // 19067000;//19136000; //19001000; //19088300;
+    int start_pos = 19070000;//19291650; //  // 19060000;// 19135000; //19000000; //19066080;
+    int end_pos = 19076000; //19291900;// // 19067000;//19136000; //19001000; //19088300;
     
     // 19291899 -> 14	19291899	.	C	CTGTT	100
 
@@ -520,9 +520,6 @@ void VCF(const char* fastafile,double cov=1.0){
     //ensure same chromosome from fasta and VCF
     if (std::strcmp(vcfchr,name) == 0){
       int vcfpos = test_record->pos+1;
-      //vcfstruct = bcf_read(test_vcf, test_header, test_record);
-      //vcfpos = test_record->pos+1;
-      //std::cout << vcfpos << std::endl;
 
       while(start_pos < end_pos){
         std::srand(start_pos+std::time(nullptr));
@@ -530,19 +527,9 @@ void VCF(const char* fastafile,double cov=1.0){
         int rand_len = (std::rand() % (80 - 30 + 1)) + 30;
         //std::cout << " random " << rand_len << std::endl;
         int dist = init/cov * rand_len; 
-        /*
-        std::cout << "-------------" << std::endl;
-        std::cout << "start " << start_pos << "-" << start_pos+dist+1 << std::endl;
-        vcfstruct = bcf_read(test_vcf, test_header, test_record);
-        std::cout << "1 " << test_record->pos+1 << std::endl;
-        vcfstruct = bcf_read(test_vcf, test_header, test_record);
-        std::cout << "2 " << test_record->pos+1 << std::endl;
-        vcfstruct = bcf_read(test_vcf, test_header, test_record);
-        std::cout << "3 " << test_record->pos+1 << std::endl;
-        */
         
         char* sequence = faidx_fetch_seq(ref,name,start_pos,start_pos+rand_len,&name_len);
-        char * pch;
+        char* pch;
         pch = strchr(sequence,'N');
         if (pch != NULL){
           //Disregards any read with 'N' in.. change this to just change the reading position
@@ -551,16 +538,17 @@ void VCF(const char* fastafile,double cov=1.0){
         else if (start_pos <= vcfpos){
           // i'm not putting the deamination inside the while loop since that would for each ALT perform deamination
           char nt[] = "tT";
+          std::cout << "-----------" << std::endl;
           std::cout << "original " << std::endl << sequence << std::endl;
           Deamin_char(sequence,nt,rand_len);
           std::string Seq_str(sequence);
           std::string Seq_str_alt(sequence);
           int alt_bool = 0;
-
+          int alt_pos_etd=0;
+          int alt2_pos_etd=0;
+          std::cout << "chr pos " << start_pos << " vcf pos " << vcfpos << std::endl;
           int length = strlen(sequence);
           while (vcfpos <= start_pos+rand_len){
-            std::cout << "while loop" << std::endl;
-            std::cout << "vcf pos " << vcfpos << std::endl;
             bcf_unpack((bcf1_t*)test_record, BCF_UN_ALL); // bcf_unpack((bcf1_t*)v, BCF_UN_ALL);
             char* ref;
             char* alt;
@@ -568,6 +556,7 @@ void VCF(const char* fastafile,double cov=1.0){
             if (test_record->n_allele > 1){
               //NB! my alt_pos is an integer like 18, but it will be converted into an 0-index thus count 19 nt in the sequence
               int alt_pos;
+              
               if (vcfpos-start_pos > 0){
                 alt_pos = vcfpos-start_pos-1;
               }
@@ -580,32 +569,50 @@ void VCF(const char* fastafile,double cov=1.0){
               alt2 = test_record->d.allele[2];
               std::string refstr(ref);
               std::string altstr(alt);
+              int refsize = (int) refstr.size();
+              int altsize = (int) altstr.size();
+
+              std::cout << "alternative extend "<< alt_pos_etd << std::endl;
+              std::cout << "string length" << refstr.size() << " alt " << altstr.size() << " dif " << std::abs((int) altstr.size() - (int) refstr.size()) << std::endl;
               if (alt2==NULL){
                 //single alternative allele
                 std::cout << "single alternative" << std::endl;
-                std::cout << alt <<  std::endl;
+                std::cout << "pos " << alt_pos << " ext "<<alt_pos + alt_pos_etd << " ref " << refstr << " alt " << altstr << std::endl;
 
                 //std::cout << "pos " << alt_pos << " ref " << refstr << " alt " << altstr << std::endl;
-                Seq_str = Seq_str.replace(alt_pos,strlen(ref),altstr);
-                Seq_str_alt = Seq_str_alt.replace(alt_pos,strlen(ref),altstr);
+                Seq_str = Seq_str.replace(alt_pos+alt_pos_etd,strlen(ref),altstr);
+                Seq_str_alt = Seq_str_alt.replace(alt_pos+alt_pos_etd,strlen(ref),altstr);
               }
               else if(alt2!=NULL&&(strlen(alt2)==0)){
                 // for some reason some lines are read as having multiple alternatives, but without having one
-                Seq_str = Seq_str.replace(alt_pos,strlen(ref),altstr);
-                Seq_str_alt = Seq_str_alt.replace(alt_pos,strlen(ref),altstr);
+                std::cout << "single alternative2 " << std::endl;
+                std::cout << "pos " << alt_pos<< " ref " << refstr << " alt " << altstr << std::endl;
+
+                Seq_str = Seq_str.replace(alt_pos+alt_pos_etd,strlen(ref),altstr);
+                Seq_str_alt = Seq_str_alt.replace(alt_pos+alt_pos_etd,strlen(ref),altstr);
               }
               else if(alt2!=NULL&&(strlen(alt2)>0)){
+                //multiple alternative
+
                 alt_bool += 1;
                 std::string altstr2(alt2);
-                //multiple alternative
+                int alt2size = (int) altstr2.size();
+                if(refsize > alt2size){alt2_pos_etd = alt2_pos_etd - std::abs(refsize-alt2size);}
+                else if(refsize <= alt2size){alt2_pos_etd = alt2_pos_etd + std::abs(refsize-alt2size);}
+                //alt2_pos_etd
+                
                 std::cout << "multiple alternative" << std::endl;
-                std::cout << alt << " " << alt2 << std::endl;
                 std::cout << "pos " << alt_pos << " ref " << refstr << " alt " << altstr << std::endl;
-                Seq_str = Seq_str.replace(alt_pos,strlen(ref),altstr);
-                Seq_str_alt = Seq_str_alt.replace(alt_pos,strlen(ref),altstr2);
+                Seq_str = Seq_str.replace(alt_pos+alt_pos_etd,strlen(ref),altstr);
+
+                Seq_str_alt = Seq_str_alt.replace(alt_pos+alt2_pos_etd,strlen(ref),altstr2);
                 std::cout << "---" << std::endl;
               }
-              
+            
+              if(refsize > altsize){alt_pos_etd = alt_pos_etd - std::abs(refsize-altsize);}
+              else if(refsize <= altsize){alt_pos_etd += std::abs(refsize-altsize);}
+              std::cout << "alt pos "<< alt_pos << " extend " << alt_pos_etd << std::endl;
+              std::cout << "----" << std::endl;
               //Conver char* to strings in order to perform SNV or indels based on the reference and alternative.
 
             }
@@ -628,10 +635,8 @@ void VCF(const char* fastafile,double cov=1.0){
           }
         }
         else{
-          //std::cout << "else " << std::endl;
           while (vcfpos < start_pos){
             //iterating through the vcf file
-            //std::cout << " pos  " << vcfpos << std::endl;
             vcfstruct = bcf_read(test_vcf, test_header, test_record);
             vcfpos = test_record->pos+1;
           }
@@ -641,16 +646,52 @@ void VCF(const char* fastafile,double cov=1.0){
     }
     chr_no++;
   }
-  bcf_hdr_destroy(test_header);
-  bcf_destroy(test_record); 
-  bcf_close(test_vcf);  
+  //bcf_hdr_destroy(test_header);
+  //bcf_destroy(test_record); 
+  //bcf_close(test_vcf);  
   return; 
 }
 
 int main(int argc,char **argv){
   const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr14.fa";
   VCF(fastafile);
+  //std::cout << std::abs(10-5) << std::endl;
   return 0;
 }
 
 
+/*
+int main(int argc,char **argv){
+  //const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr14.fa";
+  //VCF(fastafile);
+  int start = 1;
+  int pos1 = 2;  //ref CTG alt C
+  std::string ref1 = "ctg";
+  std::string alt1 = "c";
+  int pos2 = 17; // ref C alt CTGTT
+  std::string ref2 = "c";
+  std::string alt2 = "CTGTT";
+  int pos3 = 18; // ref T alt G
+  std::string ref3 = "t";
+  std::string alt3 = "G";
+  std::string orig = "cactgttgctgggttctctttgtccctcacaaaggattccagagcactgctgcaggtttctta";
+  std::cout << "original " << std::endl << orig << std::endl;
+  orig.replace(pos1,ref1.length(),alt1);
+  std::cout << "alternative 1 " << std::endl << orig << std::endl;
+  orig.replace(pos2-(ref1.size()-alt1.size()),ref2.length(),alt2);
+  std::cout << "alternative 2 " << std::endl << orig << std::endl;
+  
+  //orig.replace(pos2-(alt2.size()-ref2.size()),ref3.length(),alt3);
+  //std::cout << "alternative 3 " << std::endl << orig << std::endl;
+  std::cout << ref1.size() << std::endl;
+  std::cout << (ref1.size()-alt1.size()) << std::endl;
+
+  orig.replace(pos2-pos1,ref2.length(),alt2);
+  std::cout << "alternative 2 " << std::endl << orig << std::endl;
+  std::cout << alt2.length() << std::endl;
+  orig.replace((pos3-pos2),ref3.length(),alt3);
+  //std::cout << orig << std::endl;
+
+  return 0;
+}
+*/
