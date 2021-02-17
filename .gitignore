@@ -1,5 +1,6 @@
 *.fa
 *.fa*
+*.fq
 *.fq*
 *.sam
 *.bam
