@@ -1,0 +1,1100 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 94.53   1135.54  1135.54      238     4.77     4.77  Qual_random(double*, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&)
+  2.46   1165.07    29.53        4     7.38     7.38  Read_Qual(char*, double**, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&)
+  1.24   1179.99    14.92        2     7.46     7.46  Deamin_char(char*, char*, int, double, double, int, int)
+  1.17   1194.10    14.11        1    14.11    21.28  fafq(char const*, char const*, char const*, bool, double)
+  0.60   1201.27     7.17        1     7.17     7.17  create2DArray(int, int, char const*)
+  0.00   1201.27     0.00    12980     0.00     0.00  std::back_insert_iterator<std::vector<double, std::allocator<double> > >::operator=(double const&)
+  0.00   1201.27     0.00     8024     0.00     0.00  std::_Vector_base<double, std::allocator<double> >::_Vector_impl::_Vector_impl(std::allocator<double> const&)
+  0.00   1201.27     0.00     7552     0.00     0.00  std::enable_if<std::allocator_traits<std::allocator<int> >::__maxsize_helper<std::allocator<int> const>::value, unsigned long>::type std::allocator_traits<std::allocator<int> >::_S_max_size<std::allocator<int> const>(std::allocator<int> const&)
+  0.00   1201.27     0.00     7552     0.00     0.00  std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::operator()()
+  0.00   1201.27     0.00     6136     0.00     0.00  unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)
+  0.00   1201.27     0.00     4720     0.00     0.00  double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&)
+  0.00   1201.27     0.00     3076     0.00     0.00  void std::vector<double, std::allocator<double> >::_M_emplace_back_aux<double const&>(double const&)
+  0.00   1201.27     0.00     2696     0.00     0.00  main
+  0.00   1201.27     0.00     2596     0.00     0.00  std::discrete_distribution<int>::param_type::param_type(std::initializer_list<double>)
+  0.00   1201.27     0.00     2124     0.00     0.00  std::vector<double, std::allocator<double> >::_M_check_len(unsigned long, char const*) const
+  0.00   1201.27     0.00     2097     0.00     0.00  std::back_insert_iterator<std::vector<double, std::allocator<double> > > std::partial_sum<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, std::back_insert_iterator<std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, std::back_insert_iterator<std::vector<double, std::allocator<double> > >)
+  0.00   1201.27     0.00     1888     0.00     0.08  __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::operator+=(long const&)
+  0.00   1201.27     0.00     1888     0.00     0.00  __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::operator++()
+  0.00   1201.27     0.00     1888     0.00     0.00  bool __gnu_cxx::operator!=<double*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&)
+  0.00   1201.27     0.00     1888     0.00     0.00  __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::operator*() const
+  0.00   1201.27     0.00     1888     0.00     0.00  std::discrete_distribution<int>::param_type::_M_initialize()
+  0.00   1201.27     0.00     1652     0.00     0.00  std::normal_distribution<double>::param_type::stddev() const
+  0.00   1201.27     0.00     1652     0.00     0.00  int* std::__copy_move<true, true, std::random_access_iterator_tag>::__copy_m<int>(int const*, int const*, int*)
+  0.00   1201.27     0.00     1652     0.00     0.00  std::vector<double, std::allocator<double> >::reserve(unsigned long)
+  0.00   1201.27     0.00     1418     0.00     0.00  std::vector<double, std::allocator<double> >::operator[](unsigned long)
+  0.00   1201.27     0.00     1181     0.00     0.00  std::vector<double, std::allocator<double> >::max_size() const
+  0.00   1201.27     0.00     1180     0.00     0.00  std::back_insert_iterator<std::vector<double, std::allocator<double> > > std::back_inserter<std::vector<double, std::allocator<double> > >(std::vector<double, std::allocator<double> >&)
+  0.00   1201.27     0.00     1112     0.00     0.00  std::enable_if<std::allocator_traits<std::allocator<int> >::__destroy_helper<int>::value, void>::type std::allocator_traits<std::allocator<int> >::_S_destroy<int>(std::allocator<int>&, int*)
+  0.00   1201.27     0.00     1036     0.00     0.00  double* std::vector<double, std::allocator<double> >::_M_allocate_and_copy<std::move_iterator<double*> >(unsigned long, std::move_iterator<double*>, std::move_iterator<double*>)
+  0.00   1201.27     0.00      944     0.00     0.00  void __gnu_cxx::new_allocator<double>::construct<double, double const&>(double*, double const&)
+  0.00   1201.27     0.00      944     0.00     0.00  std::enable_if<std::allocator_traits<std::allocator<double> >::__destroy_helper<double>::value, void>::type std::allocator_traits<std::allocator<double> >::_S_destroy<double>(std::allocator<double>&, double*)
+  0.00   1201.27     0.00      944     0.00     0.00  int* std::__uninitialized_move_if_noexcept_a<int*, int*, std::allocator<int> >(int*, int*, int*, std::allocator<int>&)
+  0.00   1201.27     0.00      753     0.00     0.00  __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > std::lower_bound<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double const&)
+  0.00   1201.27     0.00      738     0.00     0.00  int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::discrete_distribution<int>::param_type const&)
+  0.00   1201.27     0.00      709     0.00     0.00  std::vector<double, std::allocator<double> >::capacity() const
+  0.00   1201.27     0.00      709     0.00     0.00  std::allocator<double>::allocator(std::allocator<double> const&)
+  0.00   1201.27     0.00      708     0.00     0.03  void std::vector<double, std::allocator<double> >::_M_range_initialize<double const*>(double const*, double const*, std::forward_iterator_tag)
+  0.00   1201.27     0.00      708     0.00     0.00  std::vector<double, std::allocator<double> >::vector()
+  0.00   1201.27     0.00      708     0.00     0.00  std::_Miter_base<std::move_iterator<double*> >::iterator_type std::__miter_base<std::move_iterator<double*> >(std::move_iterator<double*>)
+  0.00   1201.27     0.00      572     0.00     0.00  std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const
+  0.00   1201.27     0.00      556     0.00     0.00  __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::operator++()
+  0.00   1201.27     0.00      556     0.00     0.00  std::_Vector_base<double, std::allocator<double> >::_M_allocate(unsigned long)
+  0.00   1201.27     0.00      485     0.00     0.00  std::_Vector_base<int, std::allocator<int> >::_M_allocate(unsigned long)
+  0.00   1201.27     0.00      476     0.00     0.00  __static_initialization_and_destruction_0(int, int)
+  0.00   1201.27     0.00      472     0.00     0.00  std::_Vector_base<double, std::allocator<double> >::_M_get_Tp_allocator() const
+  0.00   1201.27     0.00      472     0.00     0.00  std::initializer_list<double>::end() const
+  0.00   1201.27     0.00      472     0.00     0.00  std::vector<double, std::allocator<double> >::empty() const
+  0.00   1201.27     0.00      472     0.00     0.00  std::vector<int, std::allocator<int> >::size() const
+  0.00   1201.27     0.00      472     0.00     0.00  double std::normal_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&)
+  0.00   1201.27     0.00      472     0.00     0.00  std::back_insert_iterator<std::vector<double, std::allocator<double> > >::back_insert_iterator(std::vector<double, std::allocator<double> >&)
+  0.00   1201.27     0.00      472     0.00     0.00  std::vector<double, std::allocator<double> >::push_back(double const&)
+  0.00   1201.27     0.00      472     0.00     0.00  __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > std::__detail::__normalize<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double const&)
+  0.00   1201.27     0.00      472     0.00     0.00  std::_Niter_base<int*>::iterator_type std::__niter_base<int*>(int*)
+  0.00   1201.27     0.00      472     0.00     0.00  std::iterator_traits<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >::iterator_category std::__iterator_category<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&)
+  0.00   1201.27     0.00      472     0.00     0.08  double* std::__uninitialized_copy_a<std::move_iterator<double*>, double*, double>(std::move_iterator<double*>, std::move_iterator<double*>, double*, std::allocator<double>&)
+  0.00   1201.27     0.00      472     0.00     0.00  double* std::copy<double const*, double*>(double const*, double const*, double*)
+  0.00   1201.27     0.00      294     0.00     0.00  void std::advance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, long>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >&, long)
+  0.00   1201.27     0.00      286     0.00     0.00  __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::difference_type __gnu_cxx::operator-<double const*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&)
+  0.00   1201.27     0.00      278     0.00     0.00  double std::normal_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::normal_distribution<double>::param_type const&)
+  0.00   1201.27     0.00      249     0.00     0.00  std::vector<int, std::allocator<int> >::push_back(int const&)
+  0.00   1201.27     0.00      238     0.00     0.00  double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&)
+  0.00   1201.27     0.00      238     0.00     0.00  void std::reverse<char*>(char*, char*)
+  0.00   1201.27     0.00      238     0.00     0.00  std::operator|(std::_Ios_Openmode, std::_Ios_Openmode)
+  0.00   1201.27     0.00      236     0.00     0.00  __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::__normal_iterator(double* const&)
+  0.00   1201.27     0.00      236     0.00     0.17  bool __gnu_cxx::operator==<double*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&)
+  0.00   1201.27     0.00      236     0.00     0.00  __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::base() const
+  0.00   1201.27     0.00      236     0.00     0.00  std::move_iterator<int*>::base() const
+  0.00   1201.27     0.00      236     0.00     0.00  std::vector<double, std::allocator<double> >::size() const
+  0.00   1201.27     0.00      236     0.00     0.00  std::_Vector_base<double, std::allocator<double> >::_Vector_base(std::allocator<double> const&)
+  0.00   1201.27     0.00      236     0.00     0.00  std::move_iterator<int*>::move_iterator(int*)
+  0.00   1201.27     0.00      236     0.00     0.00  std::enable_if<std::allocator_traits<std::allocator<double> >::__construct_helper<double, double const&>::value, void>::type std::allocator_traits<std::allocator<double> >::_S_construct<double, double const&>(std::allocator<double>&, double*, double const&)
+  0.00   1201.27     0.00      236     0.00     0.00  std::allocator_traits<std::allocator<double> >::max_size(std::allocator<double> const&)
+  0.00   1201.27     0.00      236     0.00     0.00  double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::gamma_distribution<double>::param_type const&)
+  0.00   1201.27     0.00      236     0.00     0.00  std::back_insert_iterator<std::vector<double, std::allocator<double> > >::operator++()
+  0.00   1201.27     0.00      236     0.00     0.00  std::vector<double, std::allocator<double> >::_M_erase_at_end(double*)
+  0.00   1201.27     0.00      236     0.00     0.00  std::iterator_traits<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >::difference_type std::__distance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, std::random_access_iterator_tag)
+  0.00   1201.27     0.00      236     0.00     0.00  std::_Miter_base<double const*>::iterator_type std::__miter_base<double const*>(double const*)
+  0.00   1201.27     0.00      236     0.00     0.00  int* std::__copy_move_a<true, int*, int*>(int*, int*, int*)
+  0.00   1201.27     0.00      236     0.00     0.00  std::log(long double)
+  0.00   1201.27     0.00      236     0.00     0.00  double* std::copy<std::move_iterator<double*>, double*>(std::move_iterator<double*>, std::move_iterator<double*>, double*)
+  0.00   1201.27     0.00      236     0.00     0.00  void std::swap<char>(char&, char&)
+  0.00   1201.27     0.00      236     0.00     0.00  double const& std::forward<double const&>(std::remove_reference<double const&>::type&)
+  0.00   1201.27     0.00      236     0.00     0.00  operator new(unsigned long, void*)
+  0.00   1201.27     0.00       81     0.00     0.00  std::gamma_distribution<double>::gamma_distribution(double, double)
+  0.00   1201.27     0.00       60     0.00     0.00  std::vector<int, std::allocator<int> >::~vector()
+  0.00   1201.27     0.00       48     0.00     0.00  double* std::__uninitialized_move_if_noexcept_a<double*, double*, std::allocator<double> >(double*, double*, double*, std::allocator<double>&)
+  0.00   1201.27     0.00       40     0.00     0.00  bool __gnu_cxx::operator==<double const*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&)
+  0.00   1201.27     0.00       39     0.00     0.00  void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&)
+  0.00   1201.27     0.00       28     0.00     0.00  int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&)
+  0.00   1201.27     0.00       24     0.00     0.00  double* std::__uninitialized_copy<true>::__uninit_copy<double const*, double*>(double const*, double const*, double*)
+  0.00   1201.27     0.00       16     0.00     0.00  __gnu_cxx::new_allocator<double>::deallocate(double*, unsigned long)
+  0.00   1201.27     0.00       16     0.00     0.00  __gnu_cxx::new_allocator<int>::~new_allocator()
+  0.00   1201.27     0.00       16     0.00     0.00  __gnu_cxx::new_allocator<double>::max_size() const
+  0.00   1201.27     0.00       16     0.00     0.00  void std::_Destroy_aux<true>::__destroy<double*>(double*, double*)
+  0.00   1201.27     0.00       16     0.00     0.00  decltype (_S_construct({parm#1}, {parm#2}, (forward<double const&>)({parm#3}))) std::allocator_traits<std::allocator<double> >::construct<double, double const&>(std::allocator<double>&, double*, double const&)
+  0.00   1201.27     0.00       16     0.00     0.00  std::__detail::_Mod<unsigned long, 2147483647ul, 1ul, 0ul, true, true>::__calc(unsigned long)
+  0.00   1201.27     0.00       16     0.00     0.00  std::move_iterator<double*> std::__make_move_if_noexcept_iterator<double*, std::move_iterator<double*> >(double*)
+  0.00   1201.27     0.00       16     0.00     0.04  std::iterator_traits<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >::difference_type std::distance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >)
+  0.00   1201.27     0.00       13     0.00     0.00  std::allocator<int>::~allocator()
+  0.00   1201.27     0.00       13     0.00     0.00  void std::_Destroy<int*, int>(int*, int*, std::allocator<int>&)
+  0.00   1201.27     0.00        8     0.00     0.00  __gnu_cxx::new_allocator<int>::deallocate(int*, unsigned long)
+  0.00   1201.27     0.00        8     0.00     0.00  __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::__normal_iterator(double const* const&)
+  0.00   1201.27     0.00        8     0.00     0.00  std::vector<double, std::allocator<double> >::end() const
+  0.00   1201.27     0.00        8     0.00     0.00  std::_Vector_base<int, std::allocator<int> >::_M_deallocate(int*, unsigned long)
+  0.00   1201.27     0.00        8     0.00     0.00  std::gamma_distribution<double>::param_type::_M_initialize()
+  0.00   1201.27     0.00        8     0.00     0.00  std::normal_distribution<double>::param_type::param_type(double, double)
+  0.00   1201.27     0.00        8     0.00     0.00  double* std::__uninitialized_copy<true>::__uninit_copy<std::move_iterator<double*>, double*>(std::move_iterator<double*>, std::move_iterator<double*>, double*)
+  0.00   1201.27     0.00        8     0.00     0.00  std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::seed(unsigned long)
+  0.00   1201.27     0.00        8     0.00     0.00  std::iterator_traits<double const*>::difference_type std::distance<double const*>(double const*, double const*)
+  0.00   1201.27     0.00        8     0.00     0.00  void std::iter_swap<char*, char*>(char*, char*)
+  0.00   1201.27     0.00        4     0.00     0.00  std::vector<double, std::allocator<double> >::begin() const
+  0.00   1201.27     0.00        4     0.00     0.00  std::_Vector_base<int, std::allocator<int> >::~_Vector_base()
+  0.00   1201.27     0.00        4     0.00     0.00  std::discrete_distribution<int>::discrete_distribution(std::initializer_list<double>)
+  0.00   1201.27     0.00        2     0.00     0.00  _GLOBAL__sub_I__Z11Deamin_charPcS_iddii
+  0.00   1201.27     0.00        2     0.00     0.00  std::_Vector_base<double, std::allocator<double> >::_M_get_Tp_allocator()
+  0.00   1201.27     0.00        2     0.00     0.00  std::_Vector_base<int, std::allocator<int> >::_Vector_impl::_Vector_impl()
+  0.00   1201.27     0.00        2     0.00     0.00  std::random_device::random_device(std::string const&)
+  0.00   1201.27     0.00        2     0.00     0.00  std::random_device::~random_device()
+  0.00   1201.27     0.00        2     0.00     0.00  std::discrete_distribution<int>::param_type::~param_type()
+
+ %         the percentage of the total running time of the
+time       program used by this function.
+
+cumulative a running sum of the number of seconds accounted
+ seconds   for by this function and those listed above it.
+
+ self      the number of seconds accounted for by this
+seconds    function alone.  This is the major sort for this
+           listing.
+
+calls      the number of times this function was invoked, if
+           this function is profiled, else blank.
+
+ self      the average number of milliseconds spent in this
+ms/call    function per call, if this function is profiled,
+	   else blank.
+
+ total     the average number of milliseconds spent in this
+ms/call    function and its descendents per call, if this
+	   function is profiled, else blank.
+
+name       the name of the function.  This is the minor sort
+           for this listing. The index shows the location of
+	   the function in the gprof listing. If the index is
+	   in parenthesis it shows where it would appear in
+	   the gprof listing if it were to be printed.
+
+Copyright (C) 2012-2016 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+		     Call graph (explanation follows)
+
+
+granularity: each sample hit covers 2 byte(s) for 0.00% of 1201.27 seconds
+
+index % time    self  children    called     name
+[1]    100.0 1194.10    7.17   14333+22148   <cycle 1 as a whole> [1]
+             1135.54    0.00     238             Qual_random(double*, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [2]
+               29.53    0.00       4             Read_Qual(char*, double**, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [17]
+               14.11    7.17       1+1           fafq(char const*, char const*, char const*, bool, double) <cycle 1> [19]
+               14.92    0.00       2             Deamin_char(char*, char*, int, double, double, int, int) <cycle 1> [29]
+                0.00    0.00    8024             std::_Vector_base<double, std::allocator<double> >::_Vector_impl::_Vector_impl(std::allocator<double> const&) <cycle 1> [781]
+                0.00    0.00    4720             double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+                0.00    0.00    3076             void std::vector<double, std::allocator<double> >::_M_emplace_back_aux<double const&>(double const&) <cycle 1> [786]
+                0.00    0.00    2696             main <cycle 1> [43]
+                0.00    0.00    2596             std::discrete_distribution<int>::param_type::param_type(std::initializer_list<double>) <cycle 1> [787]
+                0.00    0.00    1888+472         std::discrete_distribution<int>::param_type::_M_initialize() <cycle 1> [793]
+                0.00    0.00    2124             std::vector<double, std::allocator<double> >::_M_check_len(unsigned long, char const*) const <cycle 1> [788]
+                0.00    0.00    1652             std::vector<double, std::allocator<double> >::reserve(unsigned long) <cycle 1> [796]
+                0.00    0.00     236+944         double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::gamma_distribution<double>::param_type const&) <cycle 1> [842]
+                0.00    0.00    1036             double* std::vector<double, std::allocator<double> >::_M_allocate_and_copy<std::move_iterator<double*> >(unsigned long, std::move_iterator<double*>, std::move_iterator<double*>) <cycle 1> [801]
+                0.00    0.00     944             int* std::__uninitialized_move_if_noexcept_a<int*, int*, std::allocator<int> >(int*, int*, int*, std::allocator<int>&) <cycle 1> [804]
+                0.00    0.00     753             __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > std::lower_bound<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double const&) <cycle 1> [805]
+                0.00    0.00     738             int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::discrete_distribution<int>::param_type const&) <cycle 1> [806]
+                0.00    0.00     572             std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const <cycle 1> [811]
+                0.00    0.00     556             std::_Vector_base<double, std::allocator<double> >::_M_allocate(unsigned long) <cycle 1> [813]
+                0.00    0.00     556             __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::operator++() <cycle 1> [812]
+                0.00    0.00     472             std::vector<int, std::allocator<int> >::size() const <cycle 1> [819]
+                0.00    0.00     472             double std::normal_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [820]
+                0.00    0.00     472             std::vector<double, std::allocator<double> >::push_back(double const&) <cycle 1> [822]
+                0.00    0.00     472             std::initializer_list<double>::end() const <cycle 1> [817]
+                0.00    0.00     278             double std::normal_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::normal_distribution<double>::param_type const&) <cycle 1> [829]
+                0.00    0.00     249             std::vector<int, std::allocator<int> >::push_back(int const&) <cycle 1> [830]
+                0.00    0.00     238             double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [831]
+                0.00    0.00     238             std::operator|(std::_Ios_Openmode, std::_Ios_Openmode) <cycle 1> [833]
+                0.00    0.00     238             void std::reverse<char*>(char*, char*) <cycle 1> [832]
+                0.00    0.00     236             std::log(long double) <cycle 1> [848]
+                0.00    0.00     236             std::back_insert_iterator<std::vector<double, std::allocator<double> > >::operator++() <cycle 1> [843]
+                0.00    0.00     236             void std::swap<char>(char&, char&) <cycle 1> [850]
+                0.00    0.00      81             std::gamma_distribution<double>::gamma_distribution(double, double) <cycle 1> [853]
+                0.00    0.00      60             std::vector<int, std::allocator<int> >::~vector() <cycle 1> [854]
+                0.00    0.00      39             void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&) <cycle 1> [857]
+                0.00    0.00      16             std::__detail::_Mod<unsigned long, 2147483647ul, 1ul, 0ul, true, true>::__calc(unsigned long) <cycle 1> [865]
+                0.00    0.00       8             std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::seed(unsigned long) <cycle 1> [876]
+                0.00    0.00       8             std::gamma_distribution<double>::param_type::_M_initialize() <cycle 1> [873]
+                0.00    0.00       8             std::_Vector_base<int, std::allocator<int> >::_M_deallocate(int*, unsigned long) <cycle 1> [872]
+                0.00    0.00       4             std::discrete_distribution<int>::discrete_distribution(std::initializer_list<double>) <cycle 1> [881]
+                0.00    0.00       4             std::_Vector_base<int, std::allocator<int> >::~_Vector_base() <cycle 1> [880]
+                0.00    0.00       2             std::discrete_distribution<int>::param_type::~param_type() <cycle 1> [887]
+                0.00    0.00       2             std::random_device::random_device(std::string const&) <cycle 1> [885]
+-----------------------------------------------
+                                  71             fafq(char const*, char const*, char const*, bool, double) <cycle 1> [19]
+                                  98             Read_Qual(char*, double**, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [17]
+                5.75    0.03      69/14333       DNA_complement(char*) [31]
+[2]     94.5 1135.54    0.00     238         Qual_random(double*, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [2]
+                                 236             main <cycle 1> [43]
+-----------------------------------------------
+                                                 <spontaneous>
+[3]     26.3    0.00  316.47                 void std::vector<double, std::allocator<double> >::_M_initialize_dispatch<double const*>(double const*, double const*, std::__false_type) [3]
+              314.58    1.89    3776/14333       std::_Vector_base<double, std::allocator<double> >::_Vector_impl::_Vector_impl(std::allocator<double> const&) <cycle 1> [781]
+-----------------------------------------------
+                0.00  158.24    1888/1888        int* std::__uninitialized_copy<true>::__uninit_copy<std::move_iterator<int*>, int*>(std::move_iterator<int*>, std::move_iterator<int*>, int*) [5]
+[4]     13.2    0.00  158.24    1888         __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::operator+=(long const&) [4]
+              157.29    0.94    1888/14333       void std::vector<double, std::allocator<double> >::_M_emplace_back_aux<double const&>(double const&) <cycle 1> [786]
+                0.00    0.00    1888/7552        std::enable_if<std::allocator_traits<std::allocator<int> >::__maxsize_helper<std::allocator<int> const>::value, unsigned long>::type std::allocator_traits<std::allocator<int> >::_S_max_size<std::allocator<int> const>(std::allocator<int> const&) [782]
+-----------------------------------------------
+                                                 <spontaneous>
+[5]     13.2    0.00  158.24                 int* std::__uninitialized_copy<true>::__uninit_copy<std::move_iterator<int*>, int*>(std::move_iterator<int*>, std::move_iterator<int*>, int*) [5]
+                0.00  158.24    1888/1888        __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::operator+=(long const&) [4]
+-----------------------------------------------
+                                                 <spontaneous>
+[6]      9.9    0.00  118.68                 std::vector<int, std::allocator<int> >::at(unsigned long) [6]
+              117.97    0.71    1416/14333       std::discrete_distribution<int>::param_type::param_type(std::initializer_list<double>) <cycle 1> [787]
+-----------------------------------------------
+                                                 <spontaneous>
+[7]      6.6    0.00   79.12                 std::vector<double, std::allocator<double> >::vector<double const*, void>(double const*, double const*, std::allocator<double> const&) [7]
+               58.98    0.35     708/14333       double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+               19.66    0.12     236/14333       std::vector<double, std::allocator<double> >::reserve(unsigned long) <cycle 1> [796]
+                0.00    0.00     236/472         __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > std::__detail::__normalize<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double const&) [823]
+-----------------------------------------------
+                                                 <spontaneous>
+[8]      6.6    0.00   79.12                 std::_Vector_base<double, std::allocator<double> >::~_Vector_base() [8]
+               78.65    0.47     944/14333       std::discrete_distribution<int>::param_type::_M_initialize() <cycle 1> [793]
+                0.00    0.00     236/472         std::vector<double, std::allocator<double> >::empty() const [818]
+-----------------------------------------------
+                                                 <spontaneous>
+[9]      4.9    0.00   59.34                 std::gamma_distribution<double>::param_type::beta() const [9]
+               58.98    0.35     708/14333       double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+-----------------------------------------------
+                0.00   39.56     472/472         bool __gnu_cxx::operator==<double*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&) [11]
+[10]     3.3    0.00   39.56     472         double* std::__uninitialized_copy_a<std::move_iterator<double*>, double*, double>(std::move_iterator<double*>, std::move_iterator<double*>, double*, std::allocator<double>&) [10]
+               39.32    0.24     472/14333       void std::vector<double, std::allocator<double> >::_M_emplace_back_aux<double const&>(double const&) <cycle 1> [786]
+-----------------------------------------------
+                0.00   39.56     236/236         __gnu_cxx::new_allocator<int>::max_size() const [12]
+[11]     3.3    0.00   39.56     236         bool __gnu_cxx::operator==<double*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&) [11]
+                0.00   39.56     472/472         double* std::__uninitialized_copy_a<std::move_iterator<double*>, double*, double>(std::move_iterator<double*>, std::move_iterator<double*>, double*, std::allocator<double>&) [10]
+-----------------------------------------------
+                                                 <spontaneous>
+[12]     3.3    0.00   39.56                 __gnu_cxx::new_allocator<int>::max_size() const [12]
+                0.00   39.56     236/236         bool __gnu_cxx::operator==<double*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&) [11]
+-----------------------------------------------
+                                                 <spontaneous>
+[13]     3.3    0.00   39.56                 void std::allocator_traits<std::allocator<int> >::destroy<int>(std::allocator<int>&, int*) [13]
+               39.32    0.24     472/14333       double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+-----------------------------------------------
+                                                 <spontaneous>
+[14]     3.3    0.00   39.56                 std::vector<double, std::allocator<double> >::clear() [14]
+               39.32    0.24     472/14333       std::_Vector_base<double, std::allocator<double> >::_Vector_impl::_Vector_impl(std::allocator<double> const&) <cycle 1> [781]
+-----------------------------------------------
+                                                 <spontaneous>
+[15]     3.3    0.00   39.56                 std::__detail::_Adaptor<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>, double>::operator()() [15]
+               39.32    0.24     472/14333       double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+-----------------------------------------------
+                                                 <spontaneous>
+[16]     2.7    0.00   32.97                 std::vector<double, std::allocator<double> >::end() [16]
+               19.66    0.12     236/14333       std::discrete_distribution<int>::param_type::param_type(std::initializer_list<double>) <cycle 1> [787]
+                0.00   13.19     472/708         void std::vector<double, std::allocator<double> >::_M_range_initialize<double const*>(double const*, double const*, std::forward_iterator_tag) [21]
+-----------------------------------------------
+                                   4             fafq(char const*, char const*, char const*, bool, double) <cycle 1> [19]
+[17]     2.5   29.53    0.00       4         Read_Qual(char*, double**, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [17]
+                0.00    0.00     472/476         __static_initialization_and_destruction_0(int, int) [815]
+                                 236             std::operator|(std::_Ios_Openmode, std::_Ios_Openmode) <cycle 1> [833]
+                                 236             std::vector<int, std::allocator<int> >::push_back(int const&) <cycle 1> [830]
+                                 236             double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [831]
+                                 236             std::log(long double) <cycle 1> [848]
+                                  98             Qual_random(double*, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [2]
+-----------------------------------------------
+                                                 <spontaneous>
+[18]     2.2    0.00   26.37                 std::vector<double, std::allocator<double> >::begin() [18]
+               19.66    0.12     236/14333       double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+                0.00    6.59     236/708         void std::vector<double, std::allocator<double> >::_M_range_initialize<double const*>(double const*, double const*, std::forward_iterator_tag) [21]
+-----------------------------------------------
+                                   1             fafq(char const*, char const*, char const*, bool, double) <cycle 1> [19]
+                                   1             main <cycle 1> [43]
+[19]     1.8   14.11    7.17       1+1       fafq(char const*, char const*, char const*, bool, double) <cycle 1> [19]
+                7.17    0.00       1/1           create2DArray(int, int, char const*) [30]
+                0.00    0.00       2/2           _GLOBAL__sub_I__Z11Deamin_charPcS_iddii [882]
+                                  71             Qual_random(double*, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [2]
+                                   4             Read_Qual(char*, double**, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [17]
+                                   2             Deamin_char(char*, char*, int, double, double, int, int) <cycle 1> [29]
+                                   1             fafq(char const*, char const*, char const*, bool, double) <cycle 1> [19]
+-----------------------------------------------
+                                                 <spontaneous>
+[20]     1.7    0.00   19.95                 std::_Vector_base<int, std::allocator<int> >::_Vector_base() [20]
+               19.83    0.12     238/14333       int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::discrete_distribution<int>::param_type const&) <cycle 1> [806]
+-----------------------------------------------
+                0.00    6.59     236/708         std::vector<double, std::allocator<double> >::begin() [18]
+                0.00   13.19     472/708         std::vector<double, std::allocator<double> >::end() [16]
+[21]     1.6    0.00   19.78     708         void std::vector<double, std::allocator<double> >::_M_range_initialize<double const*>(double const*, double const*, std::forward_iterator_tag) [21]
+               19.66    0.12     236/14333       std::discrete_distribution<int>::param_type::param_type(std::initializer_list<double>) <cycle 1> [787]
+                0.00    0.00     472/472         std::iterator_traits<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >::iterator_category std::__iterator_category<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&) [825]
+                0.00    0.00     236/472         std::back_insert_iterator<std::vector<double, std::allocator<double> > >::back_insert_iterator(std::vector<double, std::allocator<double> >&) [821]
+-----------------------------------------------
+                                                 <spontaneous>
+[22]     1.6    0.00   19.78                 std::_Vector_base<int, std::allocator<int> >::_M_get_Tp_allocator() const [22]
+               19.66    0.12     236/14333       std::discrete_distribution<int>::param_type::param_type(std::initializer_list<double>) <cycle 1> [787]
+-----------------------------------------------
+                                                 <spontaneous>
+[23]     1.6    0.00   19.78                 std::gamma_distribution<double>::param_type::alpha() const [23]
+               19.66    0.12     236/14333       double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+-----------------------------------------------
+                                                 <spontaneous>
+[24]     1.6    0.00   19.78                 std::allocator<double>::allocator() [24]
+               19.66    0.12     236/14333       double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+                0.00    0.00     236/236         std::_Vector_base<double, std::allocator<double> >::_Vector_base(std::allocator<double> const&) [838]
+-----------------------------------------------
+                                                 <spontaneous>
+[25]     1.6    0.00   19.78                 std::_Vector_base<double, std::allocator<double> >::_Vector_impl::~_Vector_impl() [25]
+               19.66    0.12     236/14333       std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const <cycle 1> [811]
+-----------------------------------------------
+                                                 <spontaneous>
+[26]     1.6    0.00   19.78                 double std::accumulate<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double) [26]
+               19.66    0.12     236/14333       std::discrete_distribution<int>::param_type::param_type(std::initializer_list<double>) <cycle 1> [787]
+                0.00    0.00     236/708         std::vector<double, std::allocator<double> >::vector() [809]
+-----------------------------------------------
+                                                 <spontaneous>
+[27]     1.6    0.00   19.78                 std::remove_reference<char&>::type&& std::move<char&>(char&) [27]
+               19.66    0.12     236/14333       double* std::vector<double, std::allocator<double> >::_M_allocate_and_copy<std::move_iterator<double*> >(unsigned long, std::move_iterator<double*>, std::move_iterator<double*>) <cycle 1> [801]
+-----------------------------------------------
+                                                 <spontaneous>
+[28]     1.6    0.00   19.78                 void std::__advance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, long>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >&, long, std::random_access_iterator_tag) [28]
+               19.66    0.12     236/14333       std::vector<double, std::allocator<double> >::push_back(double const&) <cycle 1> [822]
+-----------------------------------------------
+                                   2             fafq(char const*, char const*, char const*, bool, double) <cycle 1> [19]
+[29]     1.2   14.92    0.00       2         Deamin_char(char*, char*, int, double, double, int, int) <cycle 1> [29]
+                0.00    0.00       4/476         __static_initialization_and_destruction_0(int, int) [815]
+                0.00    0.00       2/2           std::random_device::~random_device() [886]
+                                  28             std::gamma_distribution<double>::gamma_distribution(double, double) <cycle 1> [853]
+                                  13             std::vector<int, std::allocator<int> >::~vector() <cycle 1> [854]
+                                  13             std::vector<int, std::allocator<int> >::push_back(int const&) <cycle 1> [830]
+                                   2             std::random_device::random_device(std::string const&) <cycle 1> [885]
+                                   2             main <cycle 1> [43]
+                                   2             std::operator|(std::_Ios_Openmode, std::_Ios_Openmode) <cycle 1> [833]
+                                   2             std::discrete_distribution<int>::param_type::~param_type() <cycle 1> [887]
+-----------------------------------------------
+                7.17    0.00       1/1           fafq(char const*, char const*, char const*, bool, double) <cycle 1> [19]
+[30]     0.6    7.17    0.00       1         create2DArray(int, int, char const*) [30]
+-----------------------------------------------
+                                                 <spontaneous>
+[31]     0.5    0.00    5.78                 DNA_complement(char*) [31]
+                5.75    0.03      69/14333       Qual_random(double*, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [2]
+-----------------------------------------------
+                                                 <spontaneous>
+[32]     0.1    0.00    1.34                 std::vector<int, std::allocator<int> >::_M_range_check(unsigned long) const [32]
+                1.33    0.01      16/14333       std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const <cycle 1> [811]
+-----------------------------------------------
+                                                 <spontaneous>
+[33]     0.1    0.00    1.34                 std::gamma_distribution<double>::param_type::param_type(double, double) [33]
+                0.67    0.00       8/14333       std::vector<int, std::allocator<int> >::~vector() <cycle 1> [854]
+                0.67    0.00       8/14333       std::gamma_distribution<double>::gamma_distribution(double, double) <cycle 1> [853]
+-----------------------------------------------
+                                                 <spontaneous>
+[34]     0.1    0.00    1.34                 void std::_Destroy<int*>(int*, int*) [34]
+                0.67    0.00       8/14333       __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > std::lower_bound<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double const&) <cycle 1> [805]
+                0.67    0.00       8/14333       std::gamma_distribution<double>::gamma_distribution(double, double) <cycle 1> [853]
+-----------------------------------------------
+                                                 <spontaneous>
+[35]     0.1    0.00    1.09                 void __gnu_cxx::new_allocator<int>::construct<int, int const&>(int*, int const&) [35]
+                1.08    0.01      13/14333       std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const <cycle 1> [811]
+-----------------------------------------------
+                                                 <spontaneous>
+[36]     0.1    0.00    1.09                 std::vector<int, std::allocator<int> >::max_size() const [36]
+                1.08    0.01      13/14333       std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const <cycle 1> [811]
+-----------------------------------------------
+                                                 <spontaneous>
+[37]     0.1    0.00    1.09                 int const& std::forward<int const&>(std::remove_reference<int const&>::type&) [37]
+                1.08    0.01      13/14333       void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&) <cycle 1> [857]
+-----------------------------------------------
+                0.00    0.67      16/16          int* std::__uninitialized_copy_a<std::move_iterator<int*>, int*, int>(std::move_iterator<int*>, std::move_iterator<int*>, int*, std::allocator<int>&) [39]
+[38]     0.1    0.00    0.67      16         std::iterator_traits<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >::difference_type std::distance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >) [38]
+                0.67    0.00       8/14333       double* std::vector<double, std::allocator<double> >::_M_allocate_and_copy<std::move_iterator<double*> >(unsigned long, std::move_iterator<double*>, std::move_iterator<double*>) <cycle 1> [801]
+-----------------------------------------------
+                                                 <spontaneous>
+[39]     0.1    0.00    0.67                 int* std::__uninitialized_copy_a<std::move_iterator<int*>, int*, int>(std::move_iterator<int*>, std::move_iterator<int*>, int*, std::allocator<int>&) [39]
+                0.00    0.67      16/16          std::iterator_traits<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >::difference_type std::distance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >) [38]
+                0.00    0.00      16/294         void std::advance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, long>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >&, long) [827]
+-----------------------------------------------
+                                                 <spontaneous>
+[40]     0.0    0.00    0.34                 std::vector<double, std::allocator<double> >::~vector() [40]
+                0.17    0.00       2/14333       double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [831]
+                0.17    0.00       2/14333       int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::discrete_distribution<int>::param_type const&) <cycle 1> [806]
+-----------------------------------------------
+                                                 <spontaneous>
+[41]     0.0    0.00    0.17                 std::vector<int, std::allocator<int> >::vector() [41]
+                0.17    0.00       2/14333       std::_Vector_base<int, std::allocator<int> >::~_Vector_base() <cycle 1> [880]
+-----------------------------------------------
+                                                 <spontaneous>
+[42]     0.0    0.00    0.08                 pool_create [42]
+                0.08    0.00       1/14333       main <cycle 1> [43]
+-----------------------------------------------
+                                   2             Deamin_char(char*, char*, int, double, double, int, int) <cycle 1> [29]
+                                  13             __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > std::lower_bound<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double const&) <cycle 1> [805]
+                                 236             Qual_random(double*, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [2]
+                                 556             double std::normal_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::normal_distribution<double>::param_type const&) <cycle 1> [829]
+                                1888             std::vector<double, std::allocator<double> >::_M_check_len(unsigned long, char const*) const <cycle 1> [788]
+                0.08    0.00       1/14333       pool_create [42]
+[43]     0.0    0.00    0.00    2696         main <cycle 1> [43]
+                                   1             fafq(char const*, char const*, char const*, bool, double) <cycle 1> [19]
+-----------------------------------------------
+                0.00    0.00     236/12980       std::_Vector_base<double, std::allocator<double> >::_Vector_impl::_Vector_impl(std::allocator<double> const&) <cycle 1> [781]
+                0.00    0.00     472/12980       bool __gnu_cxx::operator!=<double*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&) [791]
+                0.00    0.00   12272/12980       unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&) [784]
+[780]    0.0    0.00    0.00   12980         std::back_insert_iterator<std::vector<double, std::allocator<double> > >::operator=(double const&) [780]
+-----------------------------------------------
+                                1888             double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+                                1888             std::vector<double, std::allocator<double> >::reserve(unsigned long) <cycle 1> [796]
+               39.32    0.24     472/14333       std::vector<double, std::allocator<double> >::clear() [14]
+              314.58    1.89    3776/14333       void std::vector<double, std::allocator<double> >::_M_initialize_dispatch<double const*>(double const*, double const*, std::__false_type) [3]
+[781]    0.0    0.00    0.00    8024         std::_Vector_base<double, std::allocator<double> >::_Vector_impl::_Vector_impl(std::allocator<double> const&) <cycle 1> [781]
+                0.00    0.00     236/12980       std::back_insert_iterator<std::vector<double, std::allocator<double> > >::operator=(double const&) [780]
+                                 236             std::back_insert_iterator<std::vector<double, std::allocator<double> > >::operator++() <cycle 1> [843]
+-----------------------------------------------
+                0.00    0.00    1888/7552        __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::operator++() [790]
+                0.00    0.00    1888/7552        __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::operator+=(long const&) [4]
+                0.00    0.00    1888/7552        void std::vector<double, std::allocator<double> >::_M_emplace_back_aux<double const&>(double const&) <cycle 1> [786]
+                0.00    0.00    1888/7552        std::vector<double, std::allocator<double> >::_M_check_len(unsigned long, char const*) const <cycle 1> [788]
+[782]    0.0    0.00    0.00    7552         std::enable_if<std::allocator_traits<std::allocator<int> >::__maxsize_helper<std::allocator<int> const>::value, unsigned long>::type std::allocator_traits<std::allocator<int> >::_S_max_size<std::allocator<int> const>(std::allocator<int> const&) [782]
+-----------------------------------------------
+                0.00    0.00    1888/7552        __gnu_cxx::new_allocator<double>::new_allocator() [891]
+                0.00    0.00    1888/7552        std::vector<double, std::allocator<double> >::reserve(unsigned long) <cycle 1> [796]
+                0.00    0.00    3776/7552        std::_Vector_base<double, std::allocator<double> >::_Vector_base() [914]
+[783]    0.0    0.00    0.00    7552         std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::operator()() [783]
+-----------------------------------------------
+                0.00    0.00    1888/6136        std::vector<double, std::allocator<double> >::reserve(unsigned long) <cycle 1> [796]
+                0.00    0.00    2124/6136        __gnu_cxx::new_allocator<double>::~new_allocator() [892]
+                0.00    0.00    2124/6136        std::vector<double, std::allocator<double> >::size() const [837]
+[784]    0.0    0.00    0.00    6136         unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&) [784]
+                0.00    0.00   12272/12980       std::back_insert_iterator<std::vector<double, std::allocator<double> > >::operator=(double const&) [780]
+-----------------------------------------------
+                                 472             double std::normal_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [820]
+                                1180             int* std::__uninitialized_move_if_noexcept_a<int*, int*, std::allocator<int> >(int*, int*, int*, std::allocator<int>&) <cycle 1> [804]
+               19.66    0.12     236/14333       std::gamma_distribution<double>::param_type::alpha() const [23]
+               19.66    0.12     236/14333       std::allocator<double>::allocator() [24]
+               19.66    0.12     236/14333       std::vector<double, std::allocator<double> >::begin() [18]
+               39.32    0.24     472/14333       void std::allocator_traits<std::allocator<int> >::destroy<int>(std::allocator<int>&, int*) [13]
+               39.32    0.24     472/14333       std::__detail::_Adaptor<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>, double>::operator()() [15]
+               58.98    0.35     708/14333       std::gamma_distribution<double>::param_type::beta() const [9]
+               58.98    0.35     708/14333       std::vector<double, std::allocator<double> >::vector<double const*, void>(double const*, double const*, std::allocator<double> const&) [7]
+[785]    0.0    0.00    0.00    4720         double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+                0.00    0.00    1652/1652        std::normal_distribution<double>::param_type::stddev() const [794]
+                0.00    0.00     556/1112        std::enable_if<std::allocator_traits<std::allocator<int> >::__destroy_helper<int>::value, void>::type std::allocator_traits<std::allocator<int> >::_S_destroy<int>(std::allocator<int>&, int*) [800]
+                0.00    0.00     236/236         __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::base() const [835]
+                0.00    0.00     236/236         std::move_iterator<int*>::move_iterator(int*) [839]
+                                1888             std::_Vector_base<double, std::allocator<double> >::_Vector_impl::_Vector_impl(std::allocator<double> const&) <cycle 1> [781]
+                                 556             __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::operator++() <cycle 1> [812]
+                                 236             void std::swap<char>(char&, char&) <cycle 1> [850]
+-----------------------------------------------
+                                   8             std::_Vector_base<double, std::allocator<double> >::_M_allocate(unsigned long) <cycle 1> [813]
+                                 708             std::vector<double, std::allocator<double> >::push_back(double const&) <cycle 1> [822]
+               39.32    0.24     472/14333       double* std::__uninitialized_copy_a<std::move_iterator<double*>, double*, double>(std::move_iterator<double*>, std::move_iterator<double*>, double*, std::allocator<double>&) [10]
+              157.29    0.94    1888/14333       __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::operator+=(long const&) [4]
+[786]    0.0    0.00    0.00    3076         void std::vector<double, std::allocator<double> >::_M_emplace_back_aux<double const&>(double const&) <cycle 1> [786]
+                0.00    0.00    1888/7552        std::enable_if<std::allocator_traits<std::allocator<int> >::__maxsize_helper<std::allocator<int> const>::value, unsigned long>::type std::allocator_traits<std::allocator<int> >::_S_max_size<std::allocator<int> const>(std::allocator<int> const&) [782]
+                0.00    0.00     236/236         std::enable_if<std::allocator_traits<std::allocator<double> >::__construct_helper<double, double const&>::value, void>::type std::allocator_traits<std::allocator<double> >::_S_construct<double, double const&>(std::allocator<double>&, double*, double const&) [840]
+                0.00    0.00      24/24          double* std::__uninitialized_copy<true>::__uninit_copy<double const*, double*>(double const*, double const*, double*) [859]
+                0.00    0.00      16/16          __gnu_cxx::new_allocator<double>::max_size() const [862]
+                0.00    0.00       8/8           double* std::__uninitialized_copy<true>::__uninit_copy<std::move_iterator<double*>, double*>(std::move_iterator<double*>, std::move_iterator<double*>, double*) [875]
+                                2124             std::vector<double, std::allocator<double> >::_M_check_len(unsigned long, char const*) const <cycle 1> [788]
+-----------------------------------------------
+                                 236             double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [831]
+               19.66    0.12     236/14333       std::vector<double, std::allocator<double> >::end() [16]
+               19.66    0.12     236/14333       double std::accumulate<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double) [26]
+               19.66    0.12     236/14333       std::_Vector_base<int, std::allocator<int> >::_M_get_Tp_allocator() const [22]
+               19.66    0.12     236/14333       void std::vector<double, std::allocator<double> >::_M_range_initialize<double const*>(double const*, double const*, std::forward_iterator_tag) [21]
+              117.97    0.71    1416/14333       std::vector<int, std::allocator<int> >::at(unsigned long) [6]
+[787]    0.0    0.00    0.00    2596         std::discrete_distribution<int>::param_type::param_type(std::initializer_list<double>) <cycle 1> [787]
+                0.00    0.00     472/708         std::vector<double, std::allocator<double> >::vector() [809]
+                                 944             std::discrete_distribution<int>::param_type::_M_initialize() <cycle 1> [793]
+                                 472             std::initializer_list<double>::end() const <cycle 1> [817]
+                                 236             std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const <cycle 1> [811]
+-----------------------------------------------
+                                2124             void std::vector<double, std::allocator<double> >::_M_emplace_back_aux<double const&>(double const&) <cycle 1> [786]
+[788]    0.0    0.00    0.00    2124         std::vector<double, std::allocator<double> >::_M_check_len(unsigned long, char const*) const <cycle 1> [788]
+                0.00    0.00    1888/7552        std::enable_if<std::allocator_traits<std::allocator<int> >::__maxsize_helper<std::allocator<int> const>::value, unsigned long>::type std::allocator_traits<std::allocator<int> >::_S_max_size<std::allocator<int> const>(std::allocator<int> const&) [782]
+                0.00    0.00     472/472         double* std::copy<double const*, double*>(double const*, double const*, double*) [826]
+                0.00    0.00     236/236         double* std::copy<std::move_iterator<double*>, double*>(std::move_iterator<double*>, std::move_iterator<double*>, double*) [849]
+                                1888             main <cycle 1> [43]
+-----------------------------------------------
+                0.00    0.00     236/2097        std::discrete_distribution<int>::param_type::_M_initialize() <cycle 1> [793]
+                0.00    0.00    1861/2097        std::_Vector_base<double, std::allocator<double> >::_M_deallocate(double*, unsigned long) [913]
+[789]    0.0    0.00    0.00    2097         std::back_insert_iterator<std::vector<double, std::allocator<double> > > std::partial_sum<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, std::back_insert_iterator<std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, std::back_insert_iterator<std::vector<double, std::allocator<double> > >) [789]
+                0.00    0.00    1181/1181        std::vector<double, std::allocator<double> >::max_size() const [798]
+                0.00    0.00     709/709         std::vector<double, std::allocator<double> >::capacity() const [807]
+-----------------------------------------------
+                0.00    0.00    1888/1888        std::vector<double, std::allocator<double> >::reserve(unsigned long) <cycle 1> [796]
+[790]    0.0    0.00    0.00    1888         __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::operator++() [790]
+                0.00    0.00    1888/7552        std::enable_if<std::allocator_traits<std::allocator<int> >::__maxsize_helper<std::allocator<int> const>::value, unsigned long>::type std::allocator_traits<std::allocator<int> >::_S_max_size<std::allocator<int> const>(std::allocator<int> const&) [782]
+-----------------------------------------------
+                0.00    0.00    1888/1888        std::vector<double, std::allocator<double> >::reserve(unsigned long) <cycle 1> [796]
+[791]    0.0    0.00    0.00    1888         bool __gnu_cxx::operator!=<double*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&) [791]
+                0.00    0.00     472/12980       std::back_insert_iterator<std::vector<double, std::allocator<double> > >::operator=(double const&) [780]
+-----------------------------------------------
+                0.00    0.00    1888/1888        std::vector<double, std::allocator<double> >::reserve(unsigned long) <cycle 1> [796]
+[792]    0.0    0.00    0.00    1888         __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::operator*() const [792]
+-----------------------------------------------
+                                 472             std::discrete_distribution<int>::param_type::_M_initialize() <cycle 1> [793]
+                                 944             std::discrete_distribution<int>::param_type::param_type(std::initializer_list<double>) <cycle 1> [787]
+               78.65    0.47     944/14333       std::_Vector_base<double, std::allocator<double> >::~_Vector_base() [8]
+[793]    0.0    0.00    0.00    1888+472     std::discrete_distribution<int>::param_type::_M_initialize() <cycle 1> [793]
+                0.00    0.00    1180/1180        std::back_insert_iterator<std::vector<double, std::allocator<double> > > std::back_inserter<std::vector<double, std::allocator<double> > >(std::vector<double, std::allocator<double> >&) [799]
+                0.00    0.00     236/2097        std::back_insert_iterator<std::vector<double, std::allocator<double> > > std::partial_sum<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, std::back_insert_iterator<std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, std::back_insert_iterator<std::vector<double, std::allocator<double> > >) [789]
+                                1416             std::vector<double, std::allocator<double> >::reserve(unsigned long) <cycle 1> [796]
+                                 472             std::discrete_distribution<int>::param_type::_M_initialize() <cycle 1> [793]
+-----------------------------------------------
+                0.00    0.00    1652/1652        double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+[794]    0.0    0.00    0.00    1652         std::normal_distribution<double>::param_type::stddev() const [794]
+-----------------------------------------------
+                0.00    0.00     236/1652        double* std::copy<std::move_iterator<double*>, double*>(std::move_iterator<double*>, std::move_iterator<double*>, double*) [849]
+                0.00    0.00     472/1652        double* std::copy<double const*, double*>(double const*, double const*, double*) [826]
+                0.00    0.00     944/1652        std::enable_if<std::allocator_traits<std::allocator<double> >::__destroy_helper<double>::value, void>::type std::allocator_traits<std::allocator<double> >::_S_destroy<double>(std::allocator<double>&, double*) [803]
+[795]    0.0    0.00    0.00    1652         int* std::__copy_move<true, true, std::random_access_iterator_tag>::__copy_m<int>(int const*, int const*, int*) [795]
+                0.00    0.00     708/708         std::_Miter_base<std::move_iterator<double*> >::iterator_type std::__miter_base<std::move_iterator<double*> >(std::move_iterator<double*>) [810]
+                0.00    0.00     236/236         std::_Miter_base<double const*>::iterator_type std::__miter_base<double const*>(double const*) [846]
+-----------------------------------------------
+                                1416             std::discrete_distribution<int>::param_type::_M_initialize() <cycle 1> [793]
+               19.66    0.12     236/14333       std::vector<double, std::allocator<double> >::vector<double const*, void>(double const*, double const*, std::allocator<double> const&) [7]
+[796]    0.0    0.00    0.00    1652         std::vector<double, std::allocator<double> >::reserve(unsigned long) <cycle 1> [796]
+                0.00    0.00    1888/1888        bool __gnu_cxx::operator!=<double*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&) [791]
+                0.00    0.00    1888/1888        __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::operator++() [790]
+                0.00    0.00    1888/1888        __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::operator*() const [792]
+                0.00    0.00    1888/7552        std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::operator()() [783]
+                0.00    0.00    1888/6136        unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&) [784]
+                0.00    0.00     236/1418        std::vector<double, std::allocator<double> >::operator[](unsigned long) [797]
+                                1888             std::_Vector_base<double, std::allocator<double> >::_Vector_impl::_Vector_impl(std::allocator<double> const&) <cycle 1> [781]
+-----------------------------------------------
+                0.00    0.00       2/1418        std::vector<double, std::allocator<double> >::begin() const [879]
+                0.00    0.00     236/1418        std::vector<double, std::allocator<double> >::reserve(unsigned long) <cycle 1> [796]
+                0.00    0.00     236/1418        std::back_insert_iterator<std::vector<double, std::allocator<double> > > std::back_inserter<std::vector<double, std::allocator<double> > >(std::vector<double, std::allocator<double> >&) [799]
+                0.00    0.00     944/1418        std::vector<double, std::allocator<double> >::empty() const [818]
+[797]    0.0    0.00    0.00    1418         std::vector<double, std::allocator<double> >::operator[](unsigned long) [797]
+-----------------------------------------------
+                0.00    0.00    1181/1181        std::back_insert_iterator<std::vector<double, std::allocator<double> > > std::partial_sum<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, std::back_insert_iterator<std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, std::back_insert_iterator<std::vector<double, std::allocator<double> > >) [789]
+[798]    0.0    0.00    0.00    1181         std::vector<double, std::allocator<double> >::max_size() const [798]
+-----------------------------------------------
+                0.00    0.00    1180/1180        std::discrete_distribution<int>::param_type::_M_initialize() <cycle 1> [793]
+[799]    0.0    0.00    0.00    1180         std::back_insert_iterator<std::vector<double, std::allocator<double> > > std::back_inserter<std::vector<double, std::allocator<double> > >(std::vector<double, std::allocator<double> >&) [799]
+                0.00    0.00     236/1418        std::vector<double, std::allocator<double> >::operator[](unsigned long) [797]
+-----------------------------------------------
+                0.00    0.00     556/1112        double std::normal_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::normal_distribution<double>::param_type const&) <cycle 1> [829]
+                0.00    0.00     556/1112        double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+[800]    0.0    0.00    0.00    1112         std::enable_if<std::allocator_traits<std::allocator<int> >::__destroy_helper<int>::value, void>::type std::allocator_traits<std::allocator<int> >::_S_destroy<int>(std::allocator<int>&, int*) [800]
+-----------------------------------------------
+                                 236             void std::swap<char>(char&, char&) <cycle 1> [850]
+                                 556             __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::operator++() <cycle 1> [812]
+                0.67    0.00       8/14333       std::iterator_traits<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >::difference_type std::distance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >) [38]
+               19.66    0.12     236/14333       std::remove_reference<char&>::type&& std::move<char&>(char&) [27]
+[801]    0.0    0.00    0.00    1036         double* std::vector<double, std::allocator<double> >::_M_allocate_and_copy<std::move_iterator<double*> >(unsigned long, std::move_iterator<double*>, std::move_iterator<double*>) <cycle 1> [801]
+                0.00    0.00     236/236         std::allocator_traits<std::allocator<double> >::max_size(std::allocator<double> const&) [841]
+                0.00    0.00     236/472         std::_Vector_base<double, std::allocator<double> >::_M_get_Tp_allocator() const [816]
+                0.00    0.00       8/8           std::iterator_traits<double const*>::difference_type std::distance<double const*>(double const*, double const*) [877]
+                                 556             std::_Vector_base<double, std::allocator<double> >::_M_allocate(unsigned long) <cycle 1> [813]
+-----------------------------------------------
+                                 472             void __gnu_cxx::new_allocator<double>::construct<double, double const&>(double*, double const&) [802]
+                0.00    0.00     472/944         std::_Niter_base<int*>::iterator_type std::__niter_base<int*>(int*) [824]
+                0.00    0.00     472/944         int* std::__copy_move_a<true, int*, int*>(int*, int*, int*) [847]
+[802]    0.0    0.00    0.00     944+472     void __gnu_cxx::new_allocator<double>::construct<double, double const&>(double*, double const&) [802]
+                                 472             void __gnu_cxx::new_allocator<double>::construct<double, double const&>(double*, double const&) [802]
+-----------------------------------------------
+                0.00    0.00     236/944         int* std::__copy_move_a<true, int*, int*>(int*, int*, int*) [847]
+                0.00    0.00     708/944         double* std::copy<std::move_iterator<double*>, double*>(std::move_iterator<double*>, std::move_iterator<double*>, double*) [849]
+[803]    0.0    0.00    0.00     944         std::enable_if<std::allocator_traits<std::allocator<double> >::__destroy_helper<double>::value, void>::type std::allocator_traits<std::allocator<double> >::_S_destroy<double>(std::allocator<double>&, double*) [803]
+                0.00    0.00     944/1652        int* std::__copy_move<true, true, std::random_access_iterator_tag>::__copy_m<int>(int const*, int const*, int*) [795]
+-----------------------------------------------
+                                 472             double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::gamma_distribution<double>::param_type const&) <cycle 1> [842]
+                                 472             std::initializer_list<double>::end() const <cycle 1> [817]
+[804]    0.0    0.00    0.00     944         int* std::__uninitialized_move_if_noexcept_a<int*, int*, std::allocator<int> >(int*, int*, int*, std::allocator<int>&) <cycle 1> [804]
+                                1180             double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+-----------------------------------------------
+                                   8             std::gamma_distribution<double>::param_type::_M_initialize() <cycle 1> [873]
+                                  13             std::_Vector_base<int, std::allocator<int> >::_M_deallocate(int*, unsigned long) <cycle 1> [872]
+                                 724             int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::discrete_distribution<int>::param_type const&) <cycle 1> [806]
+                0.67    0.00       8/14333       void std::_Destroy<int*>(int*, int*) [34]
+[805]    0.0    0.00    0.00     753         __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > std::lower_bound<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double const&) <cycle 1> [805]
+                                  13             std::vector<int, std::allocator<int> >::~vector() <cycle 1> [854]
+                                  13             main <cycle 1> [43]
+-----------------------------------------------
+                                   2             std::discrete_distribution<int>::discrete_distribution(std::initializer_list<double>) <cycle 1> [881]
+                                   2             std::_Vector_base<int, std::allocator<int> >::~_Vector_base() <cycle 1> [880]
+                                   8             void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&) <cycle 1> [857]
+                                 486             void std::reverse<char*>(char*, char*) <cycle 1> [832]
+                0.17    0.00       2/14333       std::vector<double, std::allocator<double> >::~vector() [40]
+               19.83    0.12     238/14333       std::_Vector_base<int, std::allocator<int> >::_Vector_base() [20]
+[806]    0.0    0.00    0.00     738         int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::discrete_distribution<int>::param_type const&) <cycle 1> [806]
+                0.00    0.00       8/8           std::vector<double, std::allocator<double> >::end() const [871]
+                0.00    0.00       2/4           std::vector<double, std::allocator<double> >::begin() const [879]
+                                 724             __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > std::lower_bound<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double const&) <cycle 1> [805]
+-----------------------------------------------
+                0.00    0.00     709/709         std::back_insert_iterator<std::vector<double, std::allocator<double> > > std::partial_sum<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, std::back_insert_iterator<std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, std::back_insert_iterator<std::vector<double, std::allocator<double> > >) [789]
+[807]    0.0    0.00    0.00     709         std::vector<double, std::allocator<double> >::capacity() const [807]
+                0.00    0.00     236/472         std::vector<double, std::allocator<double> >::empty() const [818]
+-----------------------------------------------
+                0.00    0.00     709/709         std::move_iterator<double*> std::__make_move_if_noexcept_iterator<double*, std::move_iterator<double*> >(double*) [866]
+[808]    0.0    0.00    0.00     709         std::allocator<double>::allocator(std::allocator<double> const&) [808]
+-----------------------------------------------
+                0.00    0.00     236/708         double std::accumulate<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double) [26]
+                0.00    0.00     472/708         std::discrete_distribution<int>::param_type::param_type(std::initializer_list<double>) <cycle 1> [787]
+[809]    0.0    0.00    0.00     708         std::vector<double, std::allocator<double> >::vector() [809]
+-----------------------------------------------
+                0.00    0.00     708/708         int* std::__copy_move<true, true, std::random_access_iterator_tag>::__copy_m<int>(int const*, int const*, int*) [795]
+[810]    0.0    0.00    0.00     708         std::_Miter_base<std::move_iterator<double*> >::iterator_type std::__miter_base<std::move_iterator<double*> >(std::move_iterator<double*>) [810]
+-----------------------------------------------
+                                  13             double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::gamma_distribution<double>::param_type const&) <cycle 1> [842]
+                                  16             std::__detail::_Mod<unsigned long, 2147483647ul, 1ul, 0ul, true, true>::__calc(unsigned long) <cycle 1> [865]
+                                  29             void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&) <cycle 1> [857]
+                                 236             std::discrete_distribution<int>::param_type::param_type(std::initializer_list<double>) <cycle 1> [787]
+                1.08    0.01      13/14333       void __gnu_cxx::new_allocator<int>::construct<int, int const&>(int*, int const&) [35]
+                1.08    0.01      13/14333       std::vector<int, std::allocator<int> >::max_size() const [36]
+                1.33    0.01      16/14333       std::vector<int, std::allocator<int> >::_M_range_check(unsigned long) const [32]
+               19.66    0.12     236/14333       std::_Vector_base<double, std::allocator<double> >::_Vector_impl::~_Vector_impl() [25]
+[811]    0.0    0.00    0.00     572         std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const <cycle 1> [811]
+                                 278             double std::normal_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::normal_distribution<double>::param_type const&) <cycle 1> [829]
+                                  16             std::__detail::_Mod<unsigned long, 2147483647ul, 1ul, 0ul, true, true>::__calc(unsigned long) <cycle 1> [865]
+-----------------------------------------------
+                                 556             double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+[812]    0.0    0.00    0.00     556         __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::operator++() <cycle 1> [812]
+                                 556             double* std::vector<double, std::allocator<double> >::_M_allocate_and_copy<std::move_iterator<double*> >(unsigned long, std::move_iterator<double*>, std::move_iterator<double*>) <cycle 1> [801]
+-----------------------------------------------
+                                 556             double* std::vector<double, std::allocator<double> >::_M_allocate_and_copy<std::move_iterator<double*> >(unsigned long, std::move_iterator<double*>, std::move_iterator<double*>) <cycle 1> [801]
+[813]    0.0    0.00    0.00     556         std::_Vector_base<double, std::allocator<double> >::_M_allocate(unsigned long) <cycle 1> [813]
+                0.00    0.00       8/16          decltype (_S_construct({parm#1}, {parm#2}, (forward<double const&>)({parm#3}))) std::allocator_traits<std::allocator<double> >::construct<double, double const&>(std::allocator<double>&, double*, double const&) [864]
+                                   8             void std::vector<double, std::allocator<double> >::_M_emplace_back_aux<double const&>(double const&) <cycle 1> [786]
+-----------------------------------------------
+                0.00    0.00     236/485         std::move_iterator<int*>::move_iterator(int*) [839]
+                0.00    0.00     249/485         double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::gamma_distribution<double>::param_type const&) <cycle 1> [842]
+[814]    0.0    0.00    0.00     485         std::_Vector_base<int, std::allocator<int> >::_M_allocate(unsigned long) [814]
+-----------------------------------------------
+                0.00    0.00       4/476         Deamin_char(char*, char*, int, double, double, int, int) <cycle 1> [29]
+                0.00    0.00     472/476         Read_Qual(char*, double**, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [17]
+[815]    0.0    0.00    0.00     476         __static_initialization_and_destruction_0(int, int) [815]
+-----------------------------------------------
+                0.00    0.00     236/472         double* std::vector<double, std::allocator<double> >::_M_allocate_and_copy<std::move_iterator<double*> >(unsigned long, std::move_iterator<double*>, std::move_iterator<double*>) <cycle 1> [801]
+                0.00    0.00     236/472         std::back_insert_iterator<std::vector<double, std::allocator<double> > >::back_insert_iterator(std::vector<double, std::allocator<double> >&) [821]
+[816]    0.0    0.00    0.00     472         std::_Vector_base<double, std::allocator<double> >::_M_get_Tp_allocator() const [816]
+-----------------------------------------------
+                                 472             std::discrete_distribution<int>::param_type::param_type(std::initializer_list<double>) <cycle 1> [787]
+[817]    0.0    0.00    0.00     472         std::initializer_list<double>::end() const <cycle 1> [817]
+                                 472             int* std::__uninitialized_move_if_noexcept_a<int*, int*, std::allocator<int> >(int*, int*, int*, std::allocator<int>&) <cycle 1> [804]
+-----------------------------------------------
+                0.00    0.00     236/472         std::_Vector_base<double, std::allocator<double> >::~_Vector_base() [8]
+                0.00    0.00     236/472         std::vector<double, std::allocator<double> >::capacity() const [807]
+[818]    0.0    0.00    0.00     472         std::vector<double, std::allocator<double> >::empty() const [818]
+                0.00    0.00     944/1418        std::vector<double, std::allocator<double> >::operator[](unsigned long) [797]
+-----------------------------------------------
+                                 472             std::log(long double) <cycle 1> [848]
+[819]    0.0    0.00    0.00     472         std::vector<int, std::allocator<int> >::size() const <cycle 1> [819]
+                                 236             double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::gamma_distribution<double>::param_type const&) <cycle 1> [842]
+-----------------------------------------------
+                                 472             double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::gamma_distribution<double>::param_type const&) <cycle 1> [842]
+[820]    0.0    0.00    0.00     472         double std::normal_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [820]
+                                 472             double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+-----------------------------------------------
+                0.00    0.00     236/472         __gnu_cxx::new_allocator<int>::new_allocator() [895]
+                0.00    0.00     236/472         void std::vector<double, std::allocator<double> >::_M_range_initialize<double const*>(double const*, double const*, std::forward_iterator_tag) [21]
+[821]    0.0    0.00    0.00     472         std::back_insert_iterator<std::vector<double, std::allocator<double> > >::back_insert_iterator(std::vector<double, std::allocator<double> >&) [821]
+                0.00    0.00     236/472         std::_Vector_base<double, std::allocator<double> >::_M_get_Tp_allocator() const [816]
+-----------------------------------------------
+                                 236             std::back_insert_iterator<std::vector<double, std::allocator<double> > >::operator++() <cycle 1> [843]
+               19.66    0.12     236/14333       void std::__advance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, long>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >&, long, std::random_access_iterator_tag) [28]
+[822]    0.0    0.00    0.00     472         std::vector<double, std::allocator<double> >::push_back(double const&) <cycle 1> [822]
+                                 708             void std::vector<double, std::allocator<double> >::_M_emplace_back_aux<double const&>(double const&) <cycle 1> [786]
+-----------------------------------------------
+                0.00    0.00     236/472         std::allocator<double>::~allocator() [902]
+                0.00    0.00     236/472         std::vector<double, std::allocator<double> >::vector<double const*, void>(double const*, double const*, std::allocator<double> const&) [7]
+[823]    0.0    0.00    0.00     472         __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > std::__detail::__normalize<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double const&) [823]
+                0.00    0.00     236/236         std::vector<double, std::allocator<double> >::_M_erase_at_end(double*) [844]
+                0.00    0.00     236/236         __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::__normal_iterator(double* const&) [834]
+-----------------------------------------------
+                0.00    0.00     472/472         std::enable_if<std::allocator_traits<std::allocator<double> >::__construct_helper<double, double const&>::value, void>::type std::allocator_traits<std::allocator<double> >::_S_construct<double, double const&>(std::allocator<double>&, double*, double const&) [840]
+[824]    0.0    0.00    0.00     472         std::_Niter_base<int*>::iterator_type std::__niter_base<int*>(int*) [824]
+                0.00    0.00     472/944         void __gnu_cxx::new_allocator<double>::construct<double, double const&>(double*, double const&) [802]
+-----------------------------------------------
+                0.00    0.00     472/472         void std::vector<double, std::allocator<double> >::_M_range_initialize<double const*>(double const*, double const*, std::forward_iterator_tag) [21]
+[825]    0.0    0.00    0.00     472         std::iterator_traits<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >::iterator_category std::__iterator_category<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&) [825]
+-----------------------------------------------
+                0.00    0.00     472/472         std::vector<double, std::allocator<double> >::_M_check_len(unsigned long, char const*) const <cycle 1> [788]
+[826]    0.0    0.00    0.00     472         double* std::copy<double const*, double*>(double const*, double const*, double*) [826]
+                0.00    0.00     472/1652        int* std::__copy_move<true, true, std::random_access_iterator_tag>::__copy_m<int>(int const*, int const*, int*) [795]
+                0.00    0.00     236/236         std::move_iterator<int*>::base() const [836]
+-----------------------------------------------
+                0.00    0.00      16/294         int* std::__uninitialized_copy_a<std::move_iterator<int*>, int*, int>(std::move_iterator<int*>, std::move_iterator<int*>, int*, std::allocator<int>&) [39]
+                0.00    0.00     278/294         double std::normal_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::normal_distribution<double>::param_type const&) <cycle 1> [829]
+[827]    0.0    0.00    0.00     294         void std::advance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, long>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >&, long) [827]
+-----------------------------------------------
+                0.00    0.00       8/286         std::gamma_distribution<double>::param_type::_M_initialize() <cycle 1> [873]
+                0.00    0.00     278/286         std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::min() [928]
+[828]    0.0    0.00    0.00     286         __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::difference_type __gnu_cxx::operator-<double const*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&) [828]
+                0.00    0.00      16/16          __gnu_cxx::new_allocator<double>::deallocate(double*, unsigned long) [860]
+                0.00    0.00      16/16          void std::_Destroy_aux<true>::__destroy<double*>(double*, double*) [863]
+-----------------------------------------------
+                                 278             std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const <cycle 1> [811]
+[829]    0.0    0.00    0.00     278         double std::normal_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::normal_distribution<double>::param_type const&) <cycle 1> [829]
+                0.00    0.00     556/1112        std::enable_if<std::allocator_traits<std::allocator<int> >::__destroy_helper<int>::value, void>::type std::allocator_traits<std::allocator<int> >::_S_destroy<int>(std::allocator<int>&, int*) [800]
+                0.00    0.00     278/294         void std::advance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, long>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >&, long) [827]
+                                 556             main <cycle 1> [43]
+-----------------------------------------------
+                                  13             Deamin_char(char*, char*, int, double, double, int, int) <cycle 1> [29]
+                                 236             Read_Qual(char*, double**, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [17]
+[830]    0.0    0.00    0.00     249         std::vector<int, std::allocator<int> >::push_back(int const&) <cycle 1> [830]
+                                  26             void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&) <cycle 1> [857]
+-----------------------------------------------
+                                 236             Read_Qual(char*, double**, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [17]
+                0.17    0.00       2/14333       std::vector<double, std::allocator<double> >::~vector() [40]
+[831]    0.0    0.00    0.00     238         double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [831]
+                                 236             std::discrete_distribution<int>::param_type::param_type(std::initializer_list<double>) <cycle 1> [787]
+-----------------------------------------------
+                                 238             std::discrete_distribution<int>::param_type::~param_type() <cycle 1> [887]
+[832]    0.0    0.00    0.00     238         void std::reverse<char*>(char*, char*) <cycle 1> [832]
+                                 486             int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::discrete_distribution<int>::param_type const&) <cycle 1> [806]
+-----------------------------------------------
+                                   2             Deamin_char(char*, char*, int, double, double, int, int) <cycle 1> [29]
+                                 236             Read_Qual(char*, double**, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [17]
+[833]    0.0    0.00    0.00     238         std::operator|(std::_Ios_Openmode, std::_Ios_Openmode) <cycle 1> [833]
+                                   2             std::discrete_distribution<int>::discrete_distribution(std::initializer_list<double>) <cycle 1> [881]
+-----------------------------------------------
+                0.00    0.00     236/236         __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > std::__detail::__normalize<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double const&) [823]
+[834]    0.0    0.00    0.00     236         __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::__normal_iterator(double* const&) [834]
+-----------------------------------------------
+                0.00    0.00     236/236         double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+[835]    0.0    0.00    0.00     236         __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::base() const [835]
+-----------------------------------------------
+                0.00    0.00     236/236         double* std::copy<double const*, double*>(double const*, double const*, double*) [826]
+[836]    0.0    0.00    0.00     236         std::move_iterator<int*>::base() const [836]
+-----------------------------------------------
+                0.00    0.00     236/236         std::allocator<double>::~allocator() [902]
+[837]    0.0    0.00    0.00     236         std::vector<double, std::allocator<double> >::size() const [837]
+                0.00    0.00    2124/6136        unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&) [784]
+-----------------------------------------------
+                0.00    0.00     236/236         std::allocator<double>::allocator() [24]
+[838]    0.0    0.00    0.00     236         std::_Vector_base<double, std::allocator<double> >::_Vector_base(std::allocator<double> const&) [838]
+-----------------------------------------------
+                0.00    0.00     236/236         double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+[839]    0.0    0.00    0.00     236         std::move_iterator<int*>::move_iterator(int*) [839]
+                0.00    0.00     236/485         std::_Vector_base<int, std::allocator<int> >::_M_allocate(unsigned long) [814]
+-----------------------------------------------
+                0.00    0.00     236/236         void std::vector<double, std::allocator<double> >::_M_emplace_back_aux<double const&>(double const&) <cycle 1> [786]
+[840]    0.0    0.00    0.00     236         std::enable_if<std::allocator_traits<std::allocator<double> >::__construct_helper<double, double const&>::value, void>::type std::allocator_traits<std::allocator<double> >::_S_construct<double, double const&>(std::allocator<double>&, double*, double const&) [840]
+                0.00    0.00     472/472         std::_Niter_base<int*>::iterator_type std::__niter_base<int*>(int*) [824]
+                0.00    0.00     236/236         int* std::__copy_move_a<true, int*, int*>(int*, int*, int*) [847]
+-----------------------------------------------
+                0.00    0.00     236/236         double* std::vector<double, std::allocator<double> >::_M_allocate_and_copy<std::move_iterator<double*> >(unsigned long, std::move_iterator<double*>, std::move_iterator<double*>) <cycle 1> [801]
+[841]    0.0    0.00    0.00     236         std::allocator_traits<std::allocator<double> >::max_size(std::allocator<double> const&) [841]
+-----------------------------------------------
+                                 944             double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::gamma_distribution<double>::param_type const&) <cycle 1> [842]
+                                 236             std::vector<int, std::allocator<int> >::size() const <cycle 1> [819]
+[842]    0.0    0.00    0.00     236+944     double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::gamma_distribution<double>::param_type const&) <cycle 1> [842]
+                0.00    0.00     249/485         std::_Vector_base<int, std::allocator<int> >::_M_allocate(unsigned long) [814]
+                                 472             int* std::__uninitialized_move_if_noexcept_a<int*, int*, std::allocator<int> >(int*, int*, int*, std::allocator<int>&) <cycle 1> [804]
+                                 472             double std::normal_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [820]
+                                  13             std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const <cycle 1> [811]
+                                 944             double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::gamma_distribution<double>::param_type const&) <cycle 1> [842]
+-----------------------------------------------
+                                 236             std::_Vector_base<double, std::allocator<double> >::_Vector_impl::_Vector_impl(std::allocator<double> const&) <cycle 1> [781]
+[843]    0.0    0.00    0.00     236         std::back_insert_iterator<std::vector<double, std::allocator<double> > >::operator++() <cycle 1> [843]
+                                 236             std::vector<double, std::allocator<double> >::push_back(double const&) <cycle 1> [822]
+-----------------------------------------------
+                                 236             std::vector<double, std::allocator<double> >::_M_erase_at_end(double*) [844]
+                0.00    0.00     236/236         __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > std::__detail::__normalize<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double const&) [823]
+[844]    0.0    0.00    0.00     236+236     std::vector<double, std::allocator<double> >::_M_erase_at_end(double*) [844]
+                                 236             std::vector<double, std::allocator<double> >::_M_erase_at_end(double*) [844]
+-----------------------------------------------
+                0.00    0.00     236/236         std::_Vector_base<double, std::allocator<double> >::_Vector_impl::_Vector_impl() [912]
+[845]    0.0    0.00    0.00     236         std::iterator_traits<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >::difference_type std::__distance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, std::random_access_iterator_tag) [845]
+-----------------------------------------------
+                0.00    0.00     236/236         int* std::__copy_move<true, true, std::random_access_iterator_tag>::__copy_m<int>(int const*, int const*, int*) [795]
+[846]    0.0    0.00    0.00     236         std::_Miter_base<double const*>::iterator_type std::__miter_base<double const*>(double const*) [846]
+-----------------------------------------------
+                0.00    0.00     236/236         std::enable_if<std::allocator_traits<std::allocator<double> >::__construct_helper<double, double const&>::value, void>::type std::allocator_traits<std::allocator<double> >::_S_construct<double, double const&>(std::allocator<double>&, double*, double const&) [840]
+[847]    0.0    0.00    0.00     236         int* std::__copy_move_a<true, int*, int*>(int*, int*, int*) [847]
+                0.00    0.00     472/944         void __gnu_cxx::new_allocator<double>::construct<double, double const&>(double*, double const&) [802]
+                0.00    0.00     236/944         std::enable_if<std::allocator_traits<std::allocator<double> >::__destroy_helper<double>::value, void>::type std::allocator_traits<std::allocator<double> >::_S_destroy<double>(std::allocator<double>&, double*) [803]
+-----------------------------------------------
+                                 236             Read_Qual(char*, double**, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [17]
+[848]    0.0    0.00    0.00     236         std::log(long double) <cycle 1> [848]
+                0.00    0.00     236/236         operator new(unsigned long, void*) [852]
+                                 472             std::vector<int, std::allocator<int> >::size() const <cycle 1> [819]
+-----------------------------------------------
+                0.00    0.00     236/236         std::vector<double, std::allocator<double> >::_M_check_len(unsigned long, char const*) const <cycle 1> [788]
+[849]    0.0    0.00    0.00     236         double* std::copy<std::move_iterator<double*>, double*>(std::move_iterator<double*>, std::move_iterator<double*>, double*) [849]
+                0.00    0.00     708/944         std::enable_if<std::allocator_traits<std::allocator<double> >::__destroy_helper<double>::value, void>::type std::allocator_traits<std::allocator<double> >::_S_destroy<double>(std::allocator<double>&, double*) [803]
+                0.00    0.00     236/1652        int* std::__copy_move<true, true, std::random_access_iterator_tag>::__copy_m<int>(int const*, int const*, int*) [795]
+-----------------------------------------------
+                                 236             double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) <cycle 1> [785]
+[850]    0.0    0.00    0.00     236         void std::swap<char>(char&, char&) <cycle 1> [850]
+                                 236             double* std::vector<double, std::allocator<double> >::_M_allocate_and_copy<std::move_iterator<double*> >(unsigned long, std::move_iterator<double*>, std::move_iterator<double*>) <cycle 1> [801]
+-----------------------------------------------
+                0.00    0.00     236/236         std::back_insert_iterator<std::vector<double, std::allocator<double> > >::operator*() [925]
+[851]    0.0    0.00    0.00     236         double const& std::forward<double const&>(std::remove_reference<double const&>::type&) [851]
+-----------------------------------------------
+                0.00    0.00     236/236         std::log(long double) <cycle 1> [848]
+[852]    0.0    0.00    0.00     236         operator new(unsigned long, void*) [852]
+-----------------------------------------------
+                                  13             void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&) <cycle 1> [857]
+                                  24             std::gamma_distribution<double>::param_type::_M_initialize() <cycle 1> [873]
+                                  28             Deamin_char(char*, char*, int, double, double, int, int) <cycle 1> [29]
+                0.67    0.00       8/14333       std::gamma_distribution<double>::param_type::param_type(double, double) [33]
+                0.67    0.00       8/14333       void std::_Destroy<int*>(int*, int*) [34]
+[853]    0.0    0.00    0.00      81         std::gamma_distribution<double>::gamma_distribution(double, double) <cycle 1> [853]
+                                   8             std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::seed(unsigned long) <cycle 1> [876]
+-----------------------------------------------
+                                  13             Deamin_char(char*, char*, int, double, double, int, int) <cycle 1> [29]
+                                  13             std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::seed(unsigned long) <cycle 1> [876]
+                                  13             std::_Vector_base<int, std::allocator<int> >::_M_deallocate(int*, unsigned long) <cycle 1> [872]
+                                  13             __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > std::lower_bound<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double const&) <cycle 1> [805]
+                0.67    0.00       8/14333       std::gamma_distribution<double>::param_type::param_type(double, double) [33]
+[854]    0.0    0.00    0.00      60         std::vector<int, std::allocator<int> >::~vector() <cycle 1> [854]
+                                   2             std::_Vector_base<int, std::allocator<int> >::~_Vector_base() <cycle 1> [880]
+-----------------------------------------------
+                0.00    0.00       8/48          double* std::__uninitialized_copy<true>::__uninit_copy<std::move_iterator<double*>, double*>(std::move_iterator<double*>, std::move_iterator<double*>, double*) [875]
+                0.00    0.00      16/48          __gnu_cxx::new_allocator<double>::max_size() const [862]
+                0.00    0.00      24/48          double* std::__uninitialized_copy<true>::__uninit_copy<double const*, double*>(double const*, double const*, double*) [859]
+[855]    0.0    0.00    0.00      48         double* std::__uninitialized_move_if_noexcept_a<double*, double*, std::allocator<double> >(double*, double*, double*, std::allocator<double>&) [855]
+-----------------------------------------------
+                0.00    0.00       8/40          void std::iter_swap<char*, char*>(char*, char*) [878]
+                0.00    0.00      16/40          __gnu_cxx::new_allocator<int>::deallocate(int*, unsigned long) [869]
+                0.00    0.00      16/40          std::move_iterator<double*> std::__make_move_if_noexcept_iterator<double*, std::move_iterator<double*> >(double*) [866]
+[856]    0.0    0.00    0.00      40         bool __gnu_cxx::operator==<double const*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&) [856]
+-----------------------------------------------
+                                  26             std::vector<int, std::allocator<int> >::push_back(int const&) <cycle 1> [830]
+                1.08    0.01      13/14333       int const& std::forward<int const&>(std::remove_reference<int const&>::type&) [37]
+[857]    0.0    0.00    0.00      39         void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&) <cycle 1> [857]
+                                  29             std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const <cycle 1> [811]
+                                  13             std::gamma_distribution<double>::gamma_distribution(double, double) <cycle 1> [853]
+                                   8             int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::discrete_distribution<int>::param_type const&) <cycle 1> [806]
+-----------------------------------------------
+                0.00    0.00       2/28          std::random_device::~random_device() [886]
+                0.00    0.00       2/28          std::random_device::operator()() [918]
+                0.00    0.00       8/28          std::normal_distribution<double>::normal_distribution(double, double) [924]
+                0.00    0.00      16/28          decltype (_S_construct({parm#1}, {parm#2}, (forward<int const&>)({parm#3}))) std::allocator_traits<std::allocator<int> >::construct<int, int const&>(std::allocator<int>&, int*, int const&) [923]
+[858]    0.0    0.00    0.00      28         int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) [858]
+-----------------------------------------------
+                0.00    0.00      24/24          void std::vector<double, std::allocator<double> >::_M_emplace_back_aux<double const&>(double const&) <cycle 1> [786]
+[859]    0.0    0.00    0.00      24         double* std::__uninitialized_copy<true>::__uninit_copy<double const*, double*>(double const*, double const*, double*) [859]
+                0.00    0.00      24/48          double* std::__uninitialized_move_if_noexcept_a<double*, double*, std::allocator<double> >(double*, double*, double*, std::allocator<double>&) [855]
+-----------------------------------------------
+                0.00    0.00      16/16          __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::difference_type __gnu_cxx::operator-<double const*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&) [828]
+[860]    0.0    0.00    0.00      16         __gnu_cxx::new_allocator<double>::deallocate(double*, unsigned long) [860]
+                0.00    0.00      16/16          std::move_iterator<double*> std::__make_move_if_noexcept_iterator<double*, std::move_iterator<double*> >(double*) [866]
+-----------------------------------------------
+                0.00    0.00      16/16          std::enable_if<std::allocator_traits<std::allocator<int> >::__construct_helper<int, int const&>::value, void>::type std::allocator_traits<std::allocator<int> >::_S_construct<int, int const&>(std::allocator<int>&, int*, int const&) [921]
+[861]    0.0    0.00    0.00      16         __gnu_cxx::new_allocator<int>::~new_allocator() [861]
+-----------------------------------------------
+                0.00    0.00      16/16          void std::vector<double, std::allocator<double> >::_M_emplace_back_aux<double const&>(double const&) <cycle 1> [786]
+[862]    0.0    0.00    0.00      16         __gnu_cxx::new_allocator<double>::max_size() const [862]
+                0.00    0.00      16/48          double* std::__uninitialized_move_if_noexcept_a<double*, double*, std::allocator<double> >(double*, double*, double*, std::allocator<double>&) [855]
+-----------------------------------------------
+                0.00    0.00      16/16          __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::difference_type __gnu_cxx::operator-<double const*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&) [828]
+[863]    0.0    0.00    0.00      16         void std::_Destroy_aux<true>::__destroy<double*>(double*, double*) [863]
+-----------------------------------------------
+                0.00    0.00       8/16          std::iterator_traits<double const*>::difference_type std::distance<double const*>(double const*, double const*) [877]
+                0.00    0.00       8/16          std::_Vector_base<double, std::allocator<double> >::_M_allocate(unsigned long) <cycle 1> [813]
+[864]    0.0    0.00    0.00      16         decltype (_S_construct({parm#1}, {parm#2}, (forward<double const&>)({parm#3}))) std::allocator_traits<std::allocator<double> >::construct<double, double const&>(std::allocator<double>&, double*, double const&) [864]
+-----------------------------------------------
+                                  16             std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const <cycle 1> [811]
+[865]    0.0    0.00    0.00      16         std::__detail::_Mod<unsigned long, 2147483647ul, 1ul, 0ul, true, true>::__calc(unsigned long) <cycle 1> [865]
+                0.00    0.00       8/8           __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::__normal_iterator(double const* const&) [870]
+                                  16             std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const <cycle 1> [811]
+-----------------------------------------------
+                0.00    0.00      16/16          __gnu_cxx::new_allocator<double>::deallocate(double*, unsigned long) [860]
+[866]    0.0    0.00    0.00      16         std::move_iterator<double*> std::__make_move_if_noexcept_iterator<double*, std::move_iterator<double*> >(double*) [866]
+                0.00    0.00     709/709         std::allocator<double>::allocator(std::allocator<double> const&) [808]
+                0.00    0.00      16/40          bool __gnu_cxx::operator==<double const*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&) [856]
+-----------------------------------------------
+                0.00    0.00      13/13          std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::seed(unsigned long) <cycle 1> [876]
+[867]    0.0    0.00    0.00      13         std::allocator<int>::~allocator() [867]
+-----------------------------------------------
+                0.00    0.00       5/13          std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::linear_congruential_engine(unsigned long) [929]
+                0.00    0.00       8/13          std::normal_distribution<double>::normal_distribution(double, double) [924]
+[868]    0.0    0.00    0.00      13         void std::_Destroy<int*, int>(int*, int*, std::allocator<int>&) [868]
+                0.00    0.00       2/2           std::_Vector_base<int, std::allocator<int> >::_Vector_impl::_Vector_impl() [884]
+-----------------------------------------------
+                0.00    0.00       8/8           std::enable_if<std::allocator_traits<std::allocator<int> >::__construct_helper<int, int const&>::value, void>::type std::allocator_traits<std::allocator<int> >::_S_construct<int, int const&>(std::allocator<int>&, int*, int const&) [921]
+[869]    0.0    0.00    0.00       8         __gnu_cxx::new_allocator<int>::deallocate(int*, unsigned long) [869]
+                0.00    0.00      16/40          bool __gnu_cxx::operator==<double const*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&) [856]
+-----------------------------------------------
+                0.00    0.00       8/8           std::__detail::_Mod<unsigned long, 2147483647ul, 1ul, 0ul, true, true>::__calc(unsigned long) <cycle 1> [865]
+[870]    0.0    0.00    0.00       8         __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::__normal_iterator(double const* const&) [870]
+-----------------------------------------------
+                0.00    0.00       8/8           int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::discrete_distribution<int>::param_type const&) <cycle 1> [806]
+[871]    0.0    0.00    0.00       8         std::vector<double, std::allocator<double> >::end() const [871]
+-----------------------------------------------
+                                   8             std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::seed(unsigned long) <cycle 1> [876]
+[872]    0.0    0.00    0.00       8         std::_Vector_base<int, std::allocator<int> >::_M_deallocate(int*, unsigned long) <cycle 1> [872]
+                                  13             std::vector<int, std::allocator<int> >::~vector() <cycle 1> [854]
+                                  13             __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > std::lower_bound<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double const&) <cycle 1> [805]
+-----------------------------------------------
+                                   8             std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::seed(unsigned long) <cycle 1> [876]
+[873]    0.0    0.00    0.00       8         std::gamma_distribution<double>::param_type::_M_initialize() <cycle 1> [873]
+                0.00    0.00       8/286         __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::difference_type __gnu_cxx::operator-<double const*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&) [828]
+                                  24             std::gamma_distribution<double>::gamma_distribution(double, double) <cycle 1> [853]
+                                   8             __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > std::lower_bound<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double const&) <cycle 1> [805]
+-----------------------------------------------
+                0.00    0.00       8/8           std::normal_distribution<double>::normal_distribution(double, double) [924]
+[874]    0.0    0.00    0.00       8         std::normal_distribution<double>::param_type::param_type(double, double) [874]
+                0.00    0.00       8/8           void std::iter_swap<char*, char*>(char*, char*) [878]
+-----------------------------------------------
+                0.00    0.00       8/8           void std::vector<double, std::allocator<double> >::_M_emplace_back_aux<double const&>(double const&) <cycle 1> [786]
+[875]    0.0    0.00    0.00       8         double* std::__uninitialized_copy<true>::__uninit_copy<std::move_iterator<double*>, double*>(std::move_iterator<double*>, std::move_iterator<double*>, double*) [875]
+                0.00    0.00       8/48          double* std::__uninitialized_move_if_noexcept_a<double*, double*, std::allocator<double> >(double*, double*, double*, std::allocator<double>&) [855]
+-----------------------------------------------
+                                   8             std::gamma_distribution<double>::gamma_distribution(double, double) <cycle 1> [853]
+[876]    0.0    0.00    0.00       8         std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::seed(unsigned long) <cycle 1> [876]
+                0.00    0.00      13/13          std::allocator<int>::~allocator() [867]
+                                  13             std::vector<int, std::allocator<int> >::~vector() <cycle 1> [854]
+                                   8             std::_Vector_base<int, std::allocator<int> >::_M_deallocate(int*, unsigned long) <cycle 1> [872]
+                                   8             std::gamma_distribution<double>::param_type::_M_initialize() <cycle 1> [873]
+-----------------------------------------------
+                0.00    0.00       8/8           double* std::vector<double, std::allocator<double> >::_M_allocate_and_copy<std::move_iterator<double*> >(unsigned long, std::move_iterator<double*>, std::move_iterator<double*>) <cycle 1> [801]
+[877]    0.0    0.00    0.00       8         std::iterator_traits<double const*>::difference_type std::distance<double const*>(double const*, double const*) [877]
+                0.00    0.00       8/16          decltype (_S_construct({parm#1}, {parm#2}, (forward<double const&>)({parm#3}))) std::allocator_traits<std::allocator<double> >::construct<double, double const&>(std::allocator<double>&, double*, double const&) [864]
+-----------------------------------------------
+                0.00    0.00       8/8           std::normal_distribution<double>::param_type::param_type(double, double) [874]
+[878]    0.0    0.00    0.00       8         void std::iter_swap<char*, char*>(char*, char*) [878]
+                0.00    0.00       8/40          bool __gnu_cxx::operator==<double const*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&) [856]
+-----------------------------------------------
+                0.00    0.00       2/4           void std::_Destroy<double*, double>(double*, double*, std::allocator<double>&) [955]
+                0.00    0.00       2/4           int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::discrete_distribution<int>::param_type const&) <cycle 1> [806]
+[879]    0.0    0.00    0.00       4         std::vector<double, std::allocator<double> >::begin() const [879]
+                0.00    0.00       2/1418        std::vector<double, std::allocator<double> >::operator[](unsigned long) [797]
+-----------------------------------------------
+                                   2             std::vector<int, std::allocator<int> >::~vector() <cycle 1> [854]
+                0.17    0.00       2/14333       std::vector<int, std::allocator<int> >::vector() [41]
+[880]    0.0    0.00    0.00       4         std::_Vector_base<int, std::allocator<int> >::~_Vector_base() <cycle 1> [880]
+                                   2             int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::discrete_distribution<int>::param_type const&) <cycle 1> [806]
+-----------------------------------------------
+                                   2             std::random_device::random_device(std::string const&) <cycle 1> [885]
+                                   2             std::operator|(std::_Ios_Openmode, std::_Ios_Openmode) <cycle 1> [833]
+[881]    0.0    0.00    0.00       4         std::discrete_distribution<int>::discrete_distribution(std::initializer_list<double>) <cycle 1> [881]
+                0.00    0.00       2/2           std::_Vector_base<double, std::allocator<double> >::_M_get_Tp_allocator() [883]
+                                   2             int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::discrete_distribution<int>::param_type const&) <cycle 1> [806]
+-----------------------------------------------
+                0.00    0.00       2/2           fafq(char const*, char const*, char const*, bool, double) <cycle 1> [19]
+[882]    0.0    0.00    0.00       2         _GLOBAL__sub_I__Z11Deamin_charPcS_iddii [882]
+-----------------------------------------------
+                0.00    0.00       2/2           std::discrete_distribution<int>::discrete_distribution(std::initializer_list<double>) <cycle 1> [881]
+[883]    0.0    0.00    0.00       2         std::_Vector_base<double, std::allocator<double> >::_M_get_Tp_allocator() [883]
+-----------------------------------------------
+                0.00    0.00       2/2           void std::_Destroy<int*, int>(int*, int*, std::allocator<int>&) [868]
+[884]    0.0    0.00    0.00       2         std::_Vector_base<int, std::allocator<int> >::_Vector_impl::_Vector_impl() [884]
+-----------------------------------------------
+                                   2             Deamin_char(char*, char*, int, double, double, int, int) <cycle 1> [29]
+[885]    0.0    0.00    0.00       2         std::random_device::random_device(std::string const&) <cycle 1> [885]
+                                   2             std::discrete_distribution<int>::discrete_distribution(std::initializer_list<double>) <cycle 1> [881]
+-----------------------------------------------
+                0.00    0.00       2/2           Deamin_char(char*, char*, int, double, double, int, int) <cycle 1> [29]
+[886]    0.0    0.00    0.00       2         std::random_device::~random_device() [886]
+                0.00    0.00       2/28          int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) [858]
+-----------------------------------------------
+                                   2             Deamin_char(char*, char*, int, double, double, int, int) <cycle 1> [29]
+[887]    0.0    0.00    0.00       2         std::discrete_distribution<int>::param_type::~param_type() <cycle 1> [887]
+                                 238             void std::reverse<char*>(char*, char*) <cycle 1> [832]
+-----------------------------------------------
+
+ This table describes the call tree of the program, and was sorted by
+ the total amount of time spent in each function and its children.
+
+ Each entry in this table consists of several lines.  The line with the
+ index number at the left hand margin lists the current function.
+ The lines above it list the functions that called this function,
+ and the lines below it list the functions this one called.
+ This line lists:
+     index	A unique number given to each element of the table.
+		Index numbers are sorted numerically.
+		The index number is printed next to every function name so
+		it is easier to look up where the function is in the table.
+
+     % time	This is the percentage of the `total' time that was spent
+		in this function and its children.  Note that due to
+		different viewpoints, functions excluded by options, etc,
+		these numbers will NOT add up to 100%.
+
+     self	This is the total amount of time spent in this function.
+
+     children	This is the total amount of time propagated into this
+		function by its children.
+
+     called	This is the number of times the function was called.
+		If the function called itself recursively, the number
+		only includes non-recursive calls, and is followed by
+		a `+' and the number of recursive calls.
+
+     name	The name of the current function.  The index number is
+		printed after it.  If the function is a member of a
+		cycle, the cycle number is printed between the
+		function's name and the index number.
+
+
+ For the function's parents, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the function into this parent.
+
+     children	This is the amount of time that was propagated from
+		the function's children into this parent.
+
+     called	This is the number of times this parent called the
+		function `/' the total number of times the function
+		was called.  Recursive calls to the function are not
+		included in the number after the `/'.
+
+     name	This is the name of the parent.  The parent's index
+		number is printed after it.  If the parent is a
+		member of a cycle, the cycle number is printed between
+		the name and the index number.
+
+ If the parents of the function cannot be determined, the word
+ `<spontaneous>' is printed in the `name' field, and all the other
+ fields are blank.
+
+ For the function's children, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the child into the function.
+
+     children	This is the amount of time that was propagated from the
+		child's children to the function.
+
+     called	This is the number of times the function called
+		this child `/' the total number of times the child
+		was called.  Recursive calls by the child are not
+		listed in the number after the `/'.
+
+     name	This is the name of the child.  The child's index
+		number is printed after it.  If the child is a
+		member of a cycle, the cycle number is printed
+		between the name and the index number.
+
+ If there are any cycles (circles) in the call graph, there is an
+ entry for the cycle-as-a-whole.  This entry shows who called the
+ cycle (as parents) and the members of the cycle (as children.)
+ The `+' recursive calls entry shows the number of function calls that
+ were internal to the cycle, and the calls entry for each member shows,
+ for that member, how many times it was called from other members of
+ the cycle.
+
+Copyright (C) 2012-2016 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+Index by function name
+
+ [882] _GLOBAL__sub_I__Z11Deamin_charPcS_iddii [813] std::_Vector_base<double, std::allocator<double> >::_M_allocate(unsigned long) [801] double* std::vector<double, std::allocator<double> >::_M_allocate_and_copy<std::move_iterator<double*> >(unsigned long, std::move_iterator<double*>, std::move_iterator<double*>)
+  [29] Deamin_char(char*, char*, int, double, double, int, int) [781] std::_Vector_base<double, std::allocator<double> >::_Vector_impl::_Vector_impl(std::allocator<double> const&) [796] std::vector<double, std::allocator<double> >::reserve(unsigned long)
+   [2] Qual_random(double*, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) [883] std::_Vector_base<double, std::allocator<double> >::_M_get_Tp_allocator() [822] std::vector<double, std::allocator<double> >::push_back(double const&)
+  [30] create2DArray(int, int, char const*) [838] std::_Vector_base<double, std::allocator<double> >::_Vector_base(std::allocator<double> const&) [809] std::vector<double, std::allocator<double> >::vector()
+ [815] __static_initialization_and_destruction_0(int, int) [814] std::_Vector_base<int, std::allocator<int> >::_M_allocate(unsigned long) [797] std::vector<double, std::allocator<double> >::operator[](unsigned long)
+  [19] fafq(char const*, char const*, char const*, bool, double) [884] std::_Vector_base<int, std::allocator<int> >::_Vector_impl::_Vector_impl() [857] void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&)
+  [17] Read_Qual(char*, double**, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) [872] std::_Vector_base<int, std::allocator<int> >::_M_deallocate(int*, unsigned long) [830] std::vector<int, std::allocator<int> >::push_back(int const&)
+ [860] __gnu_cxx::new_allocator<double>::deallocate(double*, unsigned long) [880] std::_Vector_base<int, std::allocator<int> >::~_Vector_base() [854] std::vector<int, std::allocator<int> >::~vector()
+ [802] void __gnu_cxx::new_allocator<double>::construct<double, double const&>(double*, double const&) [839] std::move_iterator<int*>::move_iterator(int*) [823] __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > std::__detail::__normalize<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double const&)
+ [869] __gnu_cxx::new_allocator<int>::deallocate(int*, unsigned long) [885] std::random_device::random_device(std::string const&) [865] std::__detail::_Mod<unsigned long, 2147483647ul, 1ul, 0ul, true, true>::__calc(unsigned long)
+ [861] __gnu_cxx::new_allocator<int>::~new_allocator() [886] std::random_device::~random_device() [845] std::iterator_traits<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >::difference_type std::__distance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, std::random_access_iterator_tag)
+ [870] __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::__normal_iterator(double const* const&) [803] std::enable_if<std::allocator_traits<std::allocator<double> >::__destroy_helper<double>::value, void>::type std::allocator_traits<std::allocator<double> >::_S_destroy<double>(std::allocator<double>&, double*) [805] __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > std::lower_bound<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double const&)
+   [4] __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::operator+=(long const&) [840] std::enable_if<std::allocator_traits<std::allocator<double> >::__construct_helper<double, double const&>::value, void>::type std::allocator_traits<std::allocator<double> >::_S_construct<double, double const&>(std::allocator<double>&, double*, double const&) [789] std::back_insert_iterator<std::vector<double, std::allocator<double> > > std::partial_sum<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, std::back_insert_iterator<std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, std::back_insert_iterator<std::vector<double, std::allocator<double> > >)
+ [812] __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::operator++() [841] std::allocator_traits<std::allocator<double> >::max_size(std::allocator<double> const&) [846] std::_Miter_base<double const*>::iterator_type std::__miter_base<double const*>(double const*)
+ [834] __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::__normal_iterator(double* const&) [864] decltype (_S_construct({parm#1}, {parm#2}, (forward<double const&>)({parm#3}))) std::allocator_traits<std::allocator<double> >::construct<double, double const&>(std::allocator<double>&, double*, double const&) [810] std::_Miter_base<std::move_iterator<double*> >::iterator_type std::__miter_base<std::move_iterator<double*> >(std::move_iterator<double*>)
+ [790] __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::operator++() [800] std::enable_if<std::allocator_traits<std::allocator<int> >::__destroy_helper<int>::value, void>::type std::allocator_traits<std::allocator<int> >::_S_destroy<int>(std::allocator<int>&, int*) [824] std::_Niter_base<int*>::iterator_type std::__niter_base<int*>(int*)
+ [856] bool __gnu_cxx::operator==<double const*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&) [782] std::enable_if<std::allocator_traits<std::allocator<int> >::__maxsize_helper<std::allocator<int> const>::value, unsigned long>::type std::allocator_traits<std::allocator<int> >::_S_max_size<std::allocator<int> const>(std::allocator<int> const&) [847] int* std::__copy_move_a<true, int*, int*>(int*, int*, int*)
+  [11] bool __gnu_cxx::operator==<double*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&) [873] std::gamma_distribution<double>::param_type::_M_initialize() [799] std::back_insert_iterator<std::vector<double, std::allocator<double> > > std::back_inserter<std::vector<double, std::allocator<double> > >(std::vector<double, std::allocator<double> >&)
+ [828] __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::difference_type __gnu_cxx::operator-<double const*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&) [853] std::gamma_distribution<double>::gamma_distribution(double, double) [785] double std::generate_canonical<double, 53ul, std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&)
+ [791] bool __gnu_cxx::operator!=<double*, std::vector<double, std::allocator<double> > >(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&, __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > > const&) [831] double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) [825] std::iterator_traits<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >::iterator_category std::__iterator_category<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > const&)
+ [862] __gnu_cxx::new_allocator<double>::max_size() const [842] double std::gamma_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::gamma_distribution<double>::param_type const&) [10] double* std::__uninitialized_copy_a<std::move_iterator<double*>, double*, double>(std::move_iterator<double*>, std::move_iterator<double*>, double*, std::allocator<double>&)
+ [835] __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >::base() const [874] std::normal_distribution<double>::param_type::param_type(double, double) [866] std::move_iterator<double*> std::__make_move_if_noexcept_iterator<double*, std::move_iterator<double*> >(double*)
+ [792] __gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >::operator*() const [820] double std::normal_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) [855] double* std::__uninitialized_move_if_noexcept_a<double*, double*, std::allocator<double> >(double*, double*, double*, std::allocator<double>&)
+ [816] std::_Vector_base<double, std::allocator<double> >::_M_get_Tp_allocator() const [829] double std::normal_distribution<double>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::normal_distribution<double>::param_type const&) [804] int* std::__uninitialized_move_if_noexcept_a<int*, int*, std::allocator<int> >(int*, int*, int*, std::allocator<int>&)
+ [836] std::move_iterator<int*>::base() const [859] double* std::__uninitialized_copy<true>::__uninit_copy<double const*, double*>(double const*, double const*, double*) [848] std::log(long double)
+ [817] std::initializer_list<double>::end() const [875] double* std::__uninitialized_copy<true>::__uninit_copy<std::move_iterator<double*>, double*>(std::move_iterator<double*>, std::move_iterator<double*>, double*) [784] unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)
+ [794] std::normal_distribution<double>::param_type::stddev() const [821] std::back_insert_iterator<std::vector<double, std::allocator<double> > >::back_insert_iterator(std::vector<double, std::allocator<double> >&) [826] double* std::copy<double const*, double*>(double const*, double const*, double*)
+ [788] std::vector<double, std::allocator<double> >::_M_check_len(unsigned long, char const*) const [780] std::back_insert_iterator<std::vector<double, std::allocator<double> > >::operator=(double const&) [849] double* std::copy<std::move_iterator<double*>, double*>(std::move_iterator<double*>, std::move_iterator<double*>, double*)
+ [871] std::vector<double, std::allocator<double> >::end() const [843] std::back_insert_iterator<std::vector<double, std::allocator<double> > >::operator++() [850] void std::swap<char>(char&, char&)
+ [837] std::vector<double, std::allocator<double> >::size() const [793] std::discrete_distribution<int>::param_type::_M_initialize() [827] void std::advance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, long>(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >&, long)
+ [879] std::vector<double, std::allocator<double> >::begin() const [787] std::discrete_distribution<int>::param_type::param_type(std::initializer_list<double>) [851] double const& std::forward<double const&>(std::remove_reference<double const&>::type&)
+ [818] std::vector<double, std::allocator<double> >::empty() const [887] std::discrete_distribution<int>::param_type::~param_type() [832] void std::reverse<char*>(char*, char*)
+ [807] std::vector<double, std::allocator<double> >::capacity() const [881] std::discrete_distribution<int>::discrete_distribution(std::initializer_list<double>) [868] void std::_Destroy<int*, int>(int*, int*, std::allocator<int>&)
+ [798] std::vector<double, std::allocator<double> >::max_size() const [858] int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&) [38] std::iterator_traits<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >::difference_type std::distance<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > > >(__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >)
+ [811] std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const [806] int std::discrete_distribution<int>::operator()<std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul> >(std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>&, std::discrete_distribution<int>::param_type const&) [877] std::iterator_traits<double const*>::difference_type std::distance<double const*>(double const*, double const*)
+ [819] std::vector<int, std::allocator<int> >::size() const [876] std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::seed(unsigned long) [878] void std::iter_swap<char*, char*>(char*, char*)
+ [808] std::allocator<double>::allocator(std::allocator<double> const&) [783] std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 2147483647ul>::operator()() [833] std::operator|(std::_Ios_Openmode, std::_Ios_Openmode)
+ [867] std::allocator<int>::~allocator() [844] std::vector<double, std::allocator<double> >::_M_erase_at_end(double*) [852] operator new(unsigned long, void*)
+ [795] int* std::__copy_move<true, true, std::random_access_iterator_tag>::__copy_m<int>(int const*, int const*, int*) [786] void std::vector<double, std::allocator<double> >::_M_emplace_back_aux<double const&>(double const&) [43] main
+ [863] void std::_Destroy_aux<true>::__destroy<double*>(double*, double*) [21] void std::vector<double, std::allocator<double> >::_M_range_initialize<double const*>(double const*, double const*, std::forward_iterator_tag) [1] <cycle 1>
