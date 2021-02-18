@@ -53,8 +53,6 @@ int Qual_random(double *a,std::default_random_engine &gen){
 
   std::discrete_distribution<> d({a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7]});
   return ASCII_qual[d(gen)];
-  //Read_qual += ASCII_qual[d(gen)];
-  //return Read_qual;
 }
 
 std::string Read_Qual(char *seq,double** Array2d,std::default_random_engine &gen){
@@ -261,7 +259,9 @@ int main(){
   std::cout << "lol \n" << test[0] << std::endl;
   std::cout << "lol \n" << test[1] << std::endl;
 
-  std::cout << Read_Qual3(seqtest,test,gen) << std::endl;
+  std::string lol;
+  lol = Read_Qual3(seqtest,test,gen);
+  std::cout << "string lolg \n"<<lol << std::endl;
   std::cout << Read_Qual3(seqtest2,test,gen) << std::endl;
 
   //test = Distfunc(a,600);
