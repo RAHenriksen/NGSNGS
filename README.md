@@ -1,5 +1,4 @@
-# SimulAncient
-DNAncient,
+# ANCIENT DNA SIMULATIONS
 
 g++ SimulAncient_hslib.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 
@@ -28,7 +27,7 @@ depurination and subsequent breakage of the sugar-phosphate backbone is at least
 3) Cross-linking: im not sure this is possible to simulate
 ## Idea for input
 ~~~bash
-SimulAncient -ie XXX.fq -ib XXX.sam -ih XXX.fasta -dm 40 -ds 10 -cov XXX -f XXX -o XXX.fa
+Simulation_tool -ie XXX.fq -ib XXX.sam -ih XXX.fasta -dm 40 -ds 10 -cov XXX -f XXX -o XXX.fa
 -ie / --endo : sequence input for endogenous DNA (fq,fastq,fa,fasta,sam,bam,cram,VCF)
 -ib / --bact : sequence input for bacterical contamination (fq,fastq,fa,fasta,sam,bam,cram,VCF)
 -ie / --hom : sequence input for present human contamination (fq,fastq,fa,fasta,sam,bam,cram,VCF)

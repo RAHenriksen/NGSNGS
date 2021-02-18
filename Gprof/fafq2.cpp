@@ -325,6 +325,7 @@ void fafq2(const char* fastafile,const char* outname,const char* nt_profile,
   }
   return; 
 }
+
 /*
 int main(int argc,char **argv){
   //gprof
