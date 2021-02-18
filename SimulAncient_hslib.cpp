@@ -1,25 +1,31 @@
+#include <algorithm>
 #include <cstdio>
-#include <cassert>
-#include <htslib/faidx.h>
-#include <htslib/sam.h>
-#include <htslib/vcf.h>
-#include <htslib/kstring.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <cstring>
-#include <string>
-#include <vector>
-#include <stdio.h>
-#include <typeinfo>
+
+#include <htslib/faidx.h>
+#include <htslib/sam.h>
+#include <htslib/vcf.h>
+#include <htslib/kstring.h>
+#include <zlib.h>
+
+#include <cstdlib>
+#include <ctime>
+
+#include <cstdio>
+#include <cassert>
+
 #include <random>
 #include <iterator>
 #include <cmath>
-#include <chrono>
-#include <time.h>
-#include <algorithm>
+
 
 // I would like to create a function with TK's code since its optimal in case we wish to 
 //simulate a given number of fragments
@@ -107,23 +113,6 @@ int Qual_random(double *a){
   //return Read_qual;
 }
 
-void filename(const char* filename){
-  //creates a nt qual string immediately from the frequency file
-  std::ifstream infile(filename);
-  int row = 150;
-  int col = 8;
-  double alldata[row][col];
-  std::string Read_qual;
-  for(int i = 0; i < row; i++){
-    for(int j = 0; j < col; j++){
-      infile >> alldata[i][j];
-    }
-  }
-  for (int row = 0; row < 150; row++){ 
-     Read_qual += Qual_random(alldata[row]);
-  }
-}
-
 double** create2DArray(int height, int width, const char* filename){
   // creates the 2d object with all the frequency values for a given positon of the nt
   // used to create the nt qual strings.
@@ -170,59 +159,87 @@ void DNA_complement(char seq[]){
     ++seq;
   }
 }
+//--------------------------FUNCTIONS FOR SEQUENCES----------------------
 
-void fafa(const char* fastafile,const char* outname,double cov=1.0){  
-  //we use structure faidx_t from htslib to load in a fasta
-  faidx_t *ref = NULL;
-  ref  = fai_load(fastafile);
-  assert(ref!=NULL);//check that we could load the file
-
-  fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(ref));
+void fafa(const char* fastafile, const char* outflag,FILE *fp,gzFile gz){
+  //creates fasta structure
+  faidx_t *seq_ref = NULL;
+  seq_ref  = fai_load(fastafile);
+  assert(seq_ref!=NULL);
+  
   double init = 1.0;
   int chr_no = 0;
-  //create the file for saving
-  std::ofstream outfa(outname);
+  //creates randomized fragment length based on drand seed in main
+  
+  //read entire chromosome
+  
+  //creates sequence of random length for DNA damage
 
-  //std::srand(std::time(nullptr));
-  while (chr_no < faidx_nseq(ref)){
-    std::cout << "reference number " << chr_no << std::endl;
-    const char *name = faidx_iseq(ref,chr_no);
-    int name_len =  faidx_seq_len(ref,name);
-    std::cout << "chr name " << name << std::endl;
-    std::cout << "size " << name_len << std::endl;
+  while (chr_no < faidx_nseq(seq_ref)){
+    //int whichref = lrand48() % faidx_nseq(seq_ref);
+    //const char *name = faidx_iseq(seq_ref,whichref);
+    const char *name = faidx_iseq(seq_ref,chr_no);
+    int name_len =  faidx_seq_len(seq_ref,name);
+    fprintf(stderr,"-> name: \'%s\' name_len: %d\n",name,name_len);
+    char *data = fai_fetch(seq_ref,name,&name_len);
+    
     int start_pos = 1;
     int end_pos = name_len; //30001000
+    char seqmod[1024];
+    
+    //kstring_t kstr;// kstring_t *kstr = new kstr;
+    //kstr.s = NULL; // kstr->s = NULL;
+    //kstr.l = kstr.m = 0; //kstr->l = kstr->m = 0;
 
     while(start_pos <= end_pos){
+      //std::cout << "------------ " << std::endl;
+      //std::cout << "Start " <<start_pos << std::endl;
       std::srand(start_pos+std::time(nullptr));
-      // Seed random number generator
-      int rand_len = (std::rand() % (80 - 30 + 1)) + 30;
-      //std::cout << " random " << rand_len << std::endl;
-      int dist = init/cov * rand_len; 
-      char* sequence = faidx_fetch_seq(ref,name,start_pos,start_pos+rand_len,&name_len);
-      // creates random number in the range of the fragment size rand() % ( high - low + 1 ) + low
+      int readlength = drand48()*(80.0-30.0)+30.0;
+      //std::cout << " random " << readlength << std::endl;
+      int stop = start_pos+(int) readlength;
       
-      //std::cout << "SEQUENCE \n" << sequence << std::endl;
+      //adress of entire array, first element always the same but adding start for query source start, and stop-start : number of elements
+      strncpy(seqmod,data+start_pos,readlength);
+
       char * pch;
-      pch = strchr(sequence,'N');
-      if (pch != NULL){
-        //Disregards any read with 'N' in.. change this to just change the reading position
-        start_pos += dist + 1;
-        }
+      pch = strchr(seqmod,'N');
+      if (pch != NULL){start_pos += readlength + 1;}
       else {
         char nt[] = "tT";
-        Deamin_char(sequence,nt,rand_len);
+        Deamin_char(seqmod,nt,readlength);
         // sequence.size(); //we can use .size if we did the std::string approach which we did with deamin_string calling it damage
-        int length = strlen(sequence);
-        
-        outfa << ">" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
-        outfa << sequence << std::endl;
+        if (std::strcmp(outflag, "gz") == 0){
+          kstring_t kstr;// kstring_t *kstr = new kstr;
+          kstr.s = NULL; // kstr->s = NULL;
+          kstr.l = kstr.m = 0; //kstr->l = kstr->m = 0;
+
+          ksprintf(&kstr,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+          ksprintf(&kstr,"%s\n",seqmod);
+          
+          //if (kstr.l > 4000){
+          //  gzwrite(gz,kstr.s,kstr.l);kstr.l =0;
+          //}
+
+          gzwrite(gz,kstr.s,kstr.l);kstr.l =0;
+
+        }
+        else
+        {
+          fprintf(fp,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+          fprintf(fp,"%s\n",seqmod);
+        }
+        //fprintf(fp,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+        //fprintf(fp,"%s\n",seqmod);
+
+        start_pos += readlength + 1;
+        readlength = 0;
+        memset(seqmod, 0, sizeof seqmod);
       }
-    start_pos += dist + 1;
     }
   chr_no++;
   }
-  return; 
+  //gzclose(gz);
 }
 
 void fafq(const char* fastafile,const char* outname,const char* nt_profile,
@@ -458,7 +475,7 @@ void faBam(const char* fastafile,const char* nt_profile,double cov=1.0){
   return; 
 }
 
-// /home/wql443/WP1/SimulAncient
+/*
 int main(int argc,char **argv){
   clock_t tStart = clock();
   const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/reference_files/Human/hg19canon.fa";
@@ -477,4 +494,44 @@ int main(int argc,char **argv){
     faBam(fastafile,Profile);
     printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
   }
+}*/
+
+
+int main(int argc,char **argv){
+  clock_t tStart = clock();
+  // /willerslev/users-shared/science-snm-willerslev-wql443/reference_files/Human/hg19canon.fa
+  // "/home/wql443/scratch/reference_genome/hg19/chr22.fa"
+  const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr22.fa";
+  int seed = -1;
+  if(argc>4)
+    seed = atoi(argv[4]);
+  else
+    seed = time(NULL);
+
+  fprintf(stderr,"seed is: %d\n",seed);
+  srand48(seed);
+
+  if (std::strcmp(argv[1], "fafa") == 0){
+    if (std::strcmp(argv[2], "gz") == 0){
+      gzFile gz;
+      gz = gzopen(argv[3],"wb");
+      fafa(fastafile,argv[2],NULL,gz); 
+      gzclose(gz);
+    }
+    else if (std::strcmp(argv[2], "fa") == 0){
+      FILE *fp;
+      fp = fopen(argv[3],"wb");
+      fafa(fastafile,argv[2],fp,NULL); 
+      fclose(fp);
+    }
+  }
+  else if (std::strcmp(argv[1], "fq") == 0){
+    const char *Profile = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq.txt";
+    fafq(fastafile,argv[2],Profile,false);
+  }
+  else if (std::strcmp(argv[1],"bam")==0){
+    const char *Profile = "/home/wql443/WP1/hslib_test/Freq.txt";
+    faBam(fastafile,Profile);
+  }
+  printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 }

@@ -179,7 +179,7 @@ std::discrete_distribution<>* Qual_dist(double** Array2d){
 }
 
 // Pass the distribution D as a pointer. but i am not actually dereferencing it. hmm..
-std::string Read_Qual3(char *seq,std::discrete_distribution<>*D,std::default_random_engine &gen){
+std::string Read_Qual3(char *seq,std::discrete_distribution<>*Dist,std::default_random_engine &gen){
   std::string qual;
   int ASCII_qual[] = {35,39,48,55,60,66,70,73};
   int read_length = strlen(seq);
@@ -195,28 +195,28 @@ std::string Read_Qual3(char *seq,std::discrete_distribution<>*D,std::default_ran
       // iterates through every element in seq and creates and extract qual from the given line 
         // of the sequence qual profile. based on the lines number given the Tstart etc..
       case 'A':
-        qual += ASCII_qual[D[row_idx](gen)];
+        qual += ASCII_qual[Dist[row_idx](gen)];
         break;
       case 'a':
-        qual += ASCII_qual[D[row_idx](gen)];
+        qual += ASCII_qual[Dist[row_idx](gen)];
         break;
       case 'T':
-        qual += ASCII_qual[D[row_idx + Tstart](gen)];
+        qual += ASCII_qual[Dist[row_idx + Tstart](gen)];
         break;
       case 't':
-        qual += ASCII_qual[D[row_idx + Tstart](gen)];
+        qual += ASCII_qual[Dist[row_idx + Tstart](gen)];
         break;  
       case 'G':
-        qual += ASCII_qual[D[row_idx + Gstart](gen)];
+        qual += ASCII_qual[Dist[row_idx + Gstart](gen)];
         break;
       case 'g':
-        qual += ASCII_qual[D[row_idx + Gstart](gen)];
+        qual += ASCII_qual[Dist[row_idx + Gstart](gen)];
         break;
       case 'C':
-        qual += ASCII_qual[D[row_idx + Cstart](gen)];
+        qual += ASCII_qual[Dist[row_idx + Cstart](gen)];
         break;
       case 'c':
-        qual += ASCII_qual[D[row_idx + Cstart](gen)];
+        qual += ASCII_qual[Dist[row_idx + Cstart](gen)];
         break;
     }
   }
@@ -233,8 +233,16 @@ std::discrete_distribution<> Distfunc(double** Array2d,int size){
   }
 
   std::cout << "size " << sizeof(dist)/sizeof(dist[0]) << std::endl;
-  std::cout << " test " << dist[1] << std::endl;
+  std::cout << " test " << dist[0] << std::endl;
   return *dist;
+}
+
+void Distfunc2(double** Array2d,std::discrete_distribution<> dist[],int size){
+  for (int row_idx = 0; row_idx < size; row_idx++){
+    std::discrete_distribution<> d({Array2d[row_idx][0],Array2d[row_idx][1],Array2d[row_idx][2],Array2d[row_idx][3],
+                                    Array2d[row_idx][4],Array2d[row_idx][5],Array2d[row_idx][6],Array2d[row_idx][7]});  
+    dist[row_idx] = d;
+  }
 }
 
 int main(){
@@ -247,17 +255,24 @@ int main(){
   double** a = create2DArray(600, 8,"/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt");
   // rækkefølgen er 0-150 "A" -> 150 - 300 "T" ->  300-450 "G" -> 450 - 600 "C"
   
+  int distsize = 600;
+  std::discrete_distribution<> test[distsize];
+  Distfunc2(a,test,distsize);
+  std::cout << "lol \n" << test[0] << std::endl;
+  std::cout << "lol \n" << test[1] << std::endl;
 
-  std::discrete_distribution<> test;
-  test = Distfunc(a,600);
-  std::cout << test << std::endl;
+  std::cout << Read_Qual3(seqtest,test,gen) << std::endl;
+  std::cout << Read_Qual3(seqtest2,test,gen) << std::endl;
+
+  //test = Distfunc(a,600);
+  //std::cout << "test \n " << test << std::endl;
 
 
   std::cout << "lol" << std::endl;
   Qual_dist(a);
   //std::cout << D[1](gen) << std::endl;
-  std::cout << Read_Qual3(seqtest,D,gen) << std::endl;
-  std::cout << Read_Qual3(seqtest2,D,gen) << std::endl;
+  //std::cout << Read_Qual3(seqtest,D,gen) << std::endl;
+  //std::cout << Read_Qual3(seqtest2,D,gen) << std::endl;
 
   /*
   int ASCII_qual[] = {35,39,48,55,60,66,70,73};
