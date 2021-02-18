@@ -7,3 +7,4 @@
 *.vcf
 *.bcf
 *.out
+*.gz
