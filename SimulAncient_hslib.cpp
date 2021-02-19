@@ -30,37 +30,6 @@
 // I would like to create a function with TK's code since its optimal in case we wish to 
 //simulate a given number of fragments
 
-void random_seq(faidx_t *seq_ref){
-  // choose a random sequence -> still ned to change it so it saves the output to a single file.
-  int readlength=35;
-  int nreads = 8;
-  for(int i=0;i<nreads;i++){
-    char buf[96];//assume maxlength for readid is 96bytes
-    int whichref = lrand48() % faidx_nseq(seq_ref);
-    fprintf(stderr,"\t-> Whichref: %d\n",whichref);
-    const char *name = faidx_iseq(seq_ref,whichref);
-    int name_len =  faidx_seq_len(seq_ref,name);
-    fprintf(stderr,"\t-> name: \'%s\' name_len: %d\n",name,name_len);
-
-    int start = lrand48() % name_len;
-    int stop = start+readlength;
-    if(stop>name_len)
-      stop = name_len;
-    snprintf(buf,96,"%s:%d-%d",name,start,stop);
-    fprintf(stderr,"buf: %s\n",buf);
-    fprintf(stdout,"%s\n+\n",buf);
-    char *data = fai_fetch(seq_ref,name,&name_len);
-
-    for(int i=start;i<stop;i++)
-      fprintf(stdout,"%c",data[i]);
-    fprintf(stdout,"\n");
-
-    for(int i=start;i<stop;i++)
-      fprintf(stdout,"F");
-    fprintf(stdout,"\n");
-  }
-}
-
 void Deamin_char(char* str,char nt[],int seed,
               double alpha=1.0,double beta=2.0,int start=0,int end=25)
 {   // use & to pass by reference to the vector
@@ -96,6 +65,53 @@ void Deamin_char(char* str,char nt[],int seed,
   }
 }
 
+std::string Read_Qual(char *seq,std::discrete_distribution<>*Dist,std::default_random_engine &gen){
+  std::string qual;
+  int ASCII_qual[] = {35,39,48,55,60,66,70,73};
+  int read_length = strlen(seq);
+
+  int Tstart = 150;
+  int Gstart = 300;
+  int Cstart = 450;
+  
+  for (int row_idx = 0; row_idx < read_length; row_idx++){
+    //std::cout << "row indx" << seq[row_idx] << std::endl;
+    //std::cout << Qual_random(Array2d[row_idx],gen);
+    switch(seq[row_idx]){
+      // iterates through every element in seq and creates and extract qual from the given line 
+        // of the sequence qual profile. based on the lines number given the Tstart etc..
+      case 'A':
+        qual += ASCII_qual[Dist[row_idx](gen)];
+        break;
+      case 'a':
+        qual += ASCII_qual[Dist[row_idx](gen)];
+        break;
+      case 'T':
+        qual += ASCII_qual[Dist[row_idx + Tstart](gen)];
+        break;
+      case 't':
+        qual += ASCII_qual[Dist[row_idx + Tstart](gen)];
+        break;  
+      case 'G':
+        qual += ASCII_qual[Dist[row_idx + Gstart](gen)];
+        break;
+      case 'g':
+        qual += ASCII_qual[Dist[row_idx + Gstart](gen)];
+        break;
+      case 'C':
+        qual += ASCII_qual[Dist[row_idx + Cstart](gen)];
+        break;
+      case 'c':
+        qual += ASCII_qual[Dist[row_idx + Cstart](gen)];
+        break;
+      case 'N':
+        qual += "!"; //character of 33 decimal or 21 hex
+        break;
+    }
+  }
+  return qual;
+}
+
 int Qual_random(double *a){
   //creates a random sequence of nt qualities based on a frequency distribution
 
@@ -113,7 +129,7 @@ int Qual_random(double *a){
   //return Read_qual;
 }
 
-double** create2DArray(int height, int width, const char* filename){
+double** create2DArray(const char* filename,int width,int height){
   // creates the 2d object with all the frequency values for a given positon of the nt
   // used to create the nt qual strings.
   std::ifstream infile(filename);
@@ -157,6 +173,14 @@ void DNA_complement(char seq[]){
         break;  
     }
     ++seq;
+  }
+}
+
+void Distfunc(double** Array2d,std::discrete_distribution<> dist[],int size){
+  for (int row_idx = 0; row_idx < size; row_idx++){
+    std::discrete_distribution<> d({Array2d[row_idx][0],Array2d[row_idx][1],Array2d[row_idx][2],Array2d[row_idx][3],
+                                    Array2d[row_idx][4],Array2d[row_idx][5],Array2d[row_idx][6],Array2d[row_idx][7]});  
+    dist[row_idx] = d;
   }
 }
 //--------------------------FUNCTIONS FOR SEQUENCES----------------------
@@ -242,126 +266,138 @@ void fafa(const char* fastafile, const char* outflag,FILE *fp,gzFile gz){
   //gzclose(gz);
 }
 
-void fafq(const char* fastafile,const char* outname,const char* nt_profile,
+void fafq(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,const char* r2_profile,
           bool flag=false, double cov=1.0){
-  double** my2DArray = create2DArray(150, 8,nt_profile);
-
+  
   //we use structure faidx_t from htslib to load in a fasta
-  faidx_t *ref = NULL;
-  ref  = fai_load(fastafile);
-  assert(ref!=NULL);//check that we could load the file
+  faidx_t *seq_ref = NULL;
+  seq_ref  = fai_load(fastafile);
+  assert(seq_ref!=NULL);//check that we could load the file
 
-  fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(ref));
+  fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(seq_ref));
   double init = 1.0;
   int chr_no = 0;
-  //create the file for saving
+  //create the file for savin
+  std::ifstream file(r1_profile);
+  int Read_size = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
+  file.close();
+  // int Qualdist_size = 600;
 
-  //std::ofstream outfqr1("output_r1.fq");
-  //std::ofstream outfqr2("output_r2.fq");
-  char *outname1 =(char*) malloc(10 + strlen(outname) + 1);    
-  sprintf(outname1, "%s_r1.fq", outname);
-  char *outname2 =(char*) malloc(10 + strlen(outname) + 1);    
-  sprintf(outname2, "%s_r2.fq", outname);
-  std::ofstream outfqr1(outname1);
-  std::ofstream outfqr2(outname2);
+  double** R1_2Darray = create2DArray(r1_profile,8,Read_size);
+  double** R2_2Darray = create2DArray(r2_profile,8,Read_size);
 
-  while (chr_no < faidx_nseq(ref)){
-    const char *name = faidx_iseq(ref,chr_no);
-    int name_len =  faidx_seq_len(ref,name);
-    std::cout << "chr name " << name << std::endl;
-    std::cout << "size " << name_len << std::endl;
+  std::random_device rd;
+  std::default_random_engine gen(rd()); 
+
+  std::discrete_distribution<> Qualdistr1[Read_size];
+  Distfunc(R1_2Darray,Qualdistr1,Read_size);
+  std::discrete_distribution<> Qualdistr2[Read_size];
+  Distfunc(R2_2Darray,Qualdistr2,Read_size);
+
+  while (chr_no < faidx_nseq(seq_ref)){
+    const char *name = faidx_iseq(seq_ref,chr_no);
+    int name_len =  faidx_seq_len(seq_ref,name);
+    fprintf(stderr,"-> name: \'%s\' name_len: %d\n",name,name_len);
+    char *data = fai_fetch(seq_ref,name,&name_len);
+
     int start_pos = 1;
     int end_pos = name_len; //30001000
+    char seqmod[1024];
 
     while(start_pos <= end_pos){
       std::srand(start_pos+std::time(nullptr));
       // Seed random number generator
-      int rand_len = (std::rand() % (80 - 30 + 1)) + 30;
-      //std::cout << " random " << rand_len << std::endl;
-      int dist = init/cov * rand_len; 
-      char* sequence = faidx_fetch_seq(ref,name,start_pos,start_pos+rand_len,&name_len);
-      // creates random number in the range of the fragment size rand() % ( high - low + 1 ) + low
-      
-      //std::cout << "SEQUENCE \n" << sequence << std::endl;
-      char * pch;
-      pch = strchr(sequence,'N');
-      if (pch != NULL){
-        //Disregards any read with 'N' in.. change this to just change the reading position
-        start_pos += dist + 1;
-        }
+      int readlength = (std::rand() % (80 - 30 + 1)) + 30;
+      //int readlength = drand48()*(80.0-30.0)+30.0;
+      int stop = start_pos+(int) readlength;
+      //int dist = init/cov * rand_len; 
+
+      //extracts the sequence
+      strncpy(seqmod,data+start_pos,readlength);
+
+      char * pch; 
+      pch = strchr(seqmod,'N');
+      if (pch != NULL){start_pos += readlength + 1;}
       else {
         char nt[] = "tT";
-        Deamin_char(sequence,nt,rand_len);
-        // sequence.size(); //we can use .size if we did the std::string approach which we did with deamin_string calling it damage
-        int length = strlen(sequence);
-
+        Deamin_char(seqmod,nt,readlength);
         std::string Read_qual;
         if(flag==true){
-          char adapter[] = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+          char seq[] ="AGGACTTCAGAAGagctgtgagaccttggccaagtcacttcctccttcagGAACATTGCAGTGGGCCTAAGTG";
+          char Adapter1[] = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG";
+          char Adapter2[] = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTNNNNNNNNGTGTAGATCTCGGTGGTCGCCGTATCATT";
+          char read1N[Read_size/4 + 1];
+          char read2N[Read_size/4 + 1];
+          strcpy(read1N, std::string(150, 'N').c_str()); // create read full of N
+          strcpy(read2N, std::string(150, 'N').c_str()); // create read full of N
+          
+          char read1[Read_size/4 + 1];
+          char read2[Read_size/4 + 1];
+          //Copies sequence into both reads
+          strcpy(read1, seqmod);
+          strcpy(read2, seqmod);
 
-          char Ill_r1[75];
-          char *read1 = (char*) malloc(1024);
-          strcpy(read1, sequence);
-          strcat(read1, adapter);
-          strncpy(Ill_r1,read1, sizeof(Ill_r1));
-          outfqr1 << "@" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
-          outfqr1 << Ill_r1 << std::endl;
-          outfqr1 << "+" << std::endl;
-          for (int row_idx = 0; row_idx < 75; row_idx++){Read_qual += Qual_random(my2DArray[row_idx]);}
-          outfqr1 << Read_qual << std::endl;
+          //creates read 1
+          std::strcat(read1,Adapter1); //add adapter to read
+          std::strncpy(read1N, read1, strlen(read1)); //copy read+adapter into N...
+          fprintf(fp1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+          fprintf(fp1,"%s\n",read1N);
+          fprintf(fp1,"%s\n","+");
+          Read_qual = Read_Qual(read1N,Qualdistr1,gen);
+          fprintf(fp1,"%s\n",Read_qual.c_str());
           Read_qual = "";
 
-          char Ill_r2[75];
-          char *read2 = (char*) malloc(1024);
-          strcpy(read2, sequence);
+          //creates read 2
           DNA_complement(read2);
           std::reverse(read2, read2 + strlen(read2));
-          strcat(read2, adapter);
-          strncpy(Ill_r2,read2, sizeof(Ill_r2));
-          outfqr2 << "@" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
-          outfqr2 << Ill_r2 << std::endl;
-          outfqr2 << "+" << std::endl;
-          for (int row_idx = 75; row_idx < 150; row_idx++){Read_qual += Qual_random(my2DArray[row_idx]);}
-          outfqr2 << Read_qual << std::endl;
+          std::strcat(read2,Adapter2);
+          std::strncpy(read2N, read2, strlen(read2)); //copy read+adapter into N...
+
+          fprintf(fp2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+          fprintf(fp2,"%s\n",read2N);
+          fprintf(fp2,"%s\n","+");
+          Read_qual = Read_Qual(read2N,Qualdistr2,gen);
+          fprintf(fp2,"%s\n",Read_qual.c_str());
           Read_qual = "";
         }
-        else {
-          int length = strlen(sequence);
-          char Ill_r1[75];
-          strncpy(Ill_r1,sequence,sizeof(Ill_r1));
-          //std::cout << "sequence " << Ill_r1 << std::endl;
-          //std::cout << "lenght " << length << std::endl;
-          outfqr1 << "@" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
-          outfqr1 << Ill_r1 << std::endl;
-          outfqr1 << "+" << std::endl;
-          for (int row_idx = 0; row_idx < std::min(length,75); row_idx++){Read_qual += Qual_random(my2DArray[row_idx]);}
-          outfqr1 << Read_qual << std::endl;
+        else{
+          //char Ill_r1[150];
+          //strncpy(Ill_r1,seqmod, sizeof(Ill_r1));
+
+          fprintf(fp1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+          fprintf(fp1,"%s\n",seqmod);
+          fprintf(fp1,"%s\n","+");
+          Read_qual = Read_Qual(seqmod,Qualdistr1,gen);
+          fprintf(fp1,"%s\n",Read_qual.c_str());
           Read_qual = "";
 
-          char Ill_r2[75];
-          char *read2 = (char*) malloc(1024);
-          strcpy(read2, sequence);
-          DNA_complement(read2);
-          std::reverse(read2, read2 + strlen(read2));
-          strncpy(Ill_r2,read2, sizeof(Ill_r2));
-          outfqr2 << "@" << name << ":" << start_pos << "-" << start_pos+name_len << "_length:" << length << std::endl;
-          outfqr2 << Ill_r2 << std::endl;
-          outfqr2 << "+" << std::endl;
-          for (int row_idx = 150-std::min(length,75); row_idx < 150; row_idx++){Read_qual += Qual_random(my2DArray[row_idx]);}
-          outfqr2 << Read_qual << std::endl;
+          //char Ill_r2[150];
+          //strncpy(Ill_r2,seqmod, sizeof(Ill_r2));
+          
+          DNA_complement(seqmod);
+          std::reverse(seqmod, seqmod + strlen(seqmod));
+
+          fprintf(fp2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+          fprintf(fp2,"%s\n",seqmod);
+          fprintf(fp2,"%s\n","+");
+          Read_qual = Read_Qual(seqmod,Qualdistr2,gen);
+          fprintf(fp2,"%s\n",Read_qual.c_str());
           Read_qual = "";
+
         }
       }
-    start_pos += dist + 1;
+    start_pos += readlength + 1;
+    readlength = 0;
+    memset(seqmod, 0, sizeof seqmod);
     }
   chr_no++;
   }
-  return; 
+  return;
 }
 
 
 void faBam(const char* fastafile,const char* nt_profile,double cov=1.0){
-  double** my2DArray = create2DArray(150, 8,nt_profile);
+  double** my2DArray = create2DArray(nt_profile,8,150);
   
   //we use structure faidx_t from htslib to load in a fasta
   faidx_t *ref = NULL;
@@ -525,9 +561,23 @@ int main(int argc,char **argv){
       fclose(fp);
     }
   }
-  else if (std::strcmp(argv[1], "fq") == 0){
-    const char *Profile = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq.txt";
-    fafq(fastafile,argv[2],Profile,false);
+  else if (std::strcmp(argv[1], "fafq") == 0){
+    const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr22.fa";
+    const char *Profile1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
+    const char *Profile2 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R2.txt";
+    if (std::strcmp(argv[2], "gz") == 0){
+      std::cout << "YET TO BE IMPLEMENTED" << std::endl;
+    }
+    else if (std::strcmp(argv[2], "fq") == 0){
+      FILE *fp1;
+      FILE *fp2;
+      fp1 = fopen("lol_R1.fq","wb");
+      fp2 = fopen("lol_R2.fq","wb");
+      if (std::strcmp(argv[3], "false") == 0){fafq(fastafile,fp1,fp2,Profile1,Profile2,false);}
+      else if (std::strcmp(argv[3], "true") == 0){fafq(fastafile,fp1,fp2,Profile1,Profile2,true);}
+      fclose(fp1);
+      fclose(fp2);
+    }
   }
   else if (std::strcmp(argv[1],"bam")==0){
     const char *Profile = "/home/wql443/WP1/hslib_test/Freq.txt";

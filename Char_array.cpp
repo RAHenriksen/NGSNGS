@@ -357,6 +357,9 @@ std::string Read_Qual3(char *seq,std::discrete_distribution<>*Dist,std::default_
       case 'c':
         qual += ASCII_qual[Dist[row_idx + Cstart](gen)];
         break;
+      case 'N':
+        qual += "!"; //character of 33 decimal or 21 hex
+        break;
     }
   }
   return qual;
@@ -730,12 +733,11 @@ void fafq4(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,cons
   return;
 }
 
-//const char* fastafile,FILE *fp1,FILE *fp2,const char* nt_profile
 
-double** create2DArray2(int height, int width, std::ifstream &infile){
+double** create2DArray2(const char* filename,int width, int height){
   // creates the 2d object with all the frequency values for a given positon of the nt
   // used to create the nt qual strings.
-  //std::ifstream infile(filename);
+  std::ifstream infile(filename);
   double** array2D = 0;
   array2D = new double*[height];
   for (int h = 0; h < height; h++){
@@ -743,9 +745,9 @@ double** create2DArray2(int height, int width, std::ifstream &infile){
     for (int w = 0; w < width; w++){
       infile >> array2D[h][w];}
   }
+  infile.close();
   return array2D;
 }
-
 
 void fafq5(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,const char* r2_profile,
           bool flag=false, double cov=1.0){
@@ -758,26 +760,22 @@ void fafq5(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,cons
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(seq_ref));
   double init = 1.0;
   int chr_no = 0;
+  //create the file for savin
+  std::ifstream file(r1_profile);
+  int Read_size = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
+  file.close();
+  // int Qualdist_size = 600;
 
-  //create the file for saving
-  std::ifstream profile1;
-  profile1.open(r2_profile);
-  int Qualdist_size = std::count(std::istreambuf_iterator<char>(profile1), std::istreambuf_iterator<char>(), '\n');
-  double** R1_2Darray = create2DArray2(Qualdist_size, 8, profile1);
-  profile1.close();
+  double** R1_2Darray = create2DArray2(r1_profile,8,Read_size);
+  double** R2_2Darray = create2DArray2(r2_profile,8,Read_size);
 
-  std::ifstream profile2;
-  profile2.open(r2_profile);
-  //lines of the read profiles
-  double** R2_2Darray = create2DArray2(Qualdist_size, 8, profile2);
-  profile2.close();
   std::random_device rd;
   std::default_random_engine gen(rd()); 
 
-  std::discrete_distribution<> Qualdistr1[Qualdist_size];
-  Distfunc2(R1_2Darray,Qualdistr1,Qualdist_size);
-  std::discrete_distribution<> Qualdistr2[Qualdist_size];
-  Distfunc2(R2_2Darray,Qualdistr2,Qualdist_size);
+  std::discrete_distribution<> Qualdistr1[Read_size];
+  Distfunc2(R1_2Darray,Qualdistr1,Read_size);
+  std::discrete_distribution<> Qualdistr2[Read_size];
+  Distfunc2(R2_2Darray,Qualdistr2,Read_size);
 
   while (chr_no < faidx_nseq(seq_ref)){
     const char *name = faidx_iseq(seq_ref,chr_no);
@@ -808,31 +806,40 @@ void fafq5(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,cons
         Deamin_char(seqmod,nt,readlength);
         std::string Read_qual;
         if(flag==true){
-          char adapter[] = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-          char Ill_r1[150];
-          char *read1 = (char*) malloc(1024);
+          char seq[] ="AGGACTTCAGAAGagctgtgagaccttggccaagtcacttcctccttcagGAACATTGCAGTGGGCCTAAGTG";
+          char Adapter1[] = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG";
+          char Adapter2[] = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTNNNNNNNNGTGTAGATCTCGGTGGTCGCCGTATCATT";
+          char read1N[Read_size/4 + 1];
+          char read2N[Read_size/4 + 1];
+          strcpy(read1N, std::string(150, 'N').c_str()); // create read full of N
+          strcpy(read2N, std::string(150, 'N').c_str()); // create read full of N
+          
+          char read1[Read_size/4 + 1];
+          char read2[Read_size/4 + 1];
+          //Copies sequence into both reads
           strcpy(read1, seqmod);
-          strncpy(Ill_r1,read1, sizeof(Ill_r1));
+          strcpy(read2, seqmod);
 
+          //creates read 1
+          std::strcat(read1,Adapter1); //add adapter to read
+          std::strncpy(read1N, read1, strlen(read1)); //copy read+adapter into N...
           fprintf(fp1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-          fprintf(fp1,"%s\n",seqmod);
+          fprintf(fp1,"%s\n",read1N);
           fprintf(fp1,"%s\n","+");
-          Read_qual = Read_Qual3(Ill_r1,Qualdistr1,gen);
+          Read_qual = Read_Qual3(read1N,Qualdistr1,gen);
           fprintf(fp1,"%s\n",Read_qual.c_str());
           Read_qual = "";
 
-          char Ill_r2[150];
-          char *read2 = (char*) malloc(1024);
-          strcpy(read2, seqmod);
+          //creates read 2
           DNA_complement(read2);
           std::reverse(read2, read2 + strlen(read2));
-          strcat(read2, adapter);
-          strncpy(Ill_r2,read2, sizeof(Ill_r2));
+          std::strcat(read2,Adapter2);
+          std::strncpy(read2N, read2, strlen(read2)); //copy read+adapter into N...
 
           fprintf(fp2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-          fprintf(fp2,"%s\n",seqmod);
+          fprintf(fp2,"%s\n",read2N);
           fprintf(fp2,"%s\n","+");
-          Read_qual = Read_Qual3(Ill_r2,Qualdistr2,gen);
+          Read_qual = Read_Qual3(read2N,Qualdistr2,gen);
           fprintf(fp2,"%s\n",Read_qual.c_str());
           Read_qual = "";
         }
@@ -888,7 +895,7 @@ int main(int argc,char **argv){
   FILE *fp2;
   fp1 = fopen("R1b.fq","wb");
   fp2 = fopen("R2b.fq","wb");
-  fafq5(fastafile,fp1,fp2,Profile1,Profile2); 
+  fafq5(fastafile,fp1,fp2,Profile1,Profile2,true); 
   //fafq3(fastafile,fp1,fp2,Profile1);
   fclose(fp1);
   fclose(fp2);
@@ -898,24 +905,36 @@ int main(int argc,char **argv){
 
 /*
 int main(){
-  std::ifstream file;
-  file.open("/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt");
+  std::ifstream file("/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt");
   int lines = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
   std::cout << lines << std::endl;
-  double** R1_2Darray = create2DArray2(lines, 8, file);
-  std::cout << R1_2Darray[1] << std::endl;
-  double** R1_2Darray2 = create2DArray(600, 8,"/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt");
-  std::cout << R1_2Darray2[1];
+  std::cout << lines/4 << std::endl;
 
-  char array1[] ="AAA";
-  char array2[] = "XXXXXXXCCCCCCCCFF";
-  char Ill_r1[150];
-  char Ill_r2[] = "NNNNNNNNNNNNNNNNNNNNNN";
-  std::strcat(array1,array2);
-  std::cout << "concatenated " << array1 << std::endl;
-  std::cout << "length " << strlen(array1)<< std::endl;
-  std::strncpy(Ill_r2, array1, strlen(array1));
-  std::cout << "copied " << Ill_r2 << std::endl;
-  std::cout << std::string(20, 'N') << std::endl;
+  char seq[] ="AGGACTTCAGAAGagctgtgagaccttggccaagtcacttcctccttcagGAACATTGCAGTGGGCCTAAGTG";
+  char Adapter1[] = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG";
+  char Adapter2[] = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTNNNNNNNNGTGTAGATCTCGGTGGTCGCCGTATCATT";
+  char Ill_r1[150 + 1];
+  strcpy(Ill_r1, std::string(150, 'N').c_str()); // create read full of N
+  std::strcat(seq,Adapter1); //add adapter to read
+  std::cout << "concatenated " << seq << std::endl;
+  std::cout << "length " << strlen(seq)<< std::endl;
+  std::strncpy(Ill_r1, seq, strlen(seq)); //copy read+adapter into N...
+  std::cout << "copied " << Ill_r1 << std::endl;
+  std::cout << "----------------" << std::endl;
+
   return 0;
 }*/
+
+/*
+  //concatenate read and adapter
+  std::strcat(seq,Adapter1);
+  std::cout << "concatenate " << seq<< std::endl;
+  std::cout << " length " << strlen(seq) << std::endl;
+
+  //Fill empty space by copying into NNN
+  char Ill_r1[150 + 1];
+  strcpy(Ill_r1, std::string(150, 'N').c_str());  //generate NNN read
+  std::cout << "read " << Ill_r1 << std::endl;
+  std::strncpy(Ill_r1,seq, strlen(seq));
+  std::cout << seq << std::endl;
+  std::cout << strlen(Ill_r1) << std::endl;*/
