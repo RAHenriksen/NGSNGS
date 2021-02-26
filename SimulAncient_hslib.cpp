@@ -218,7 +218,7 @@ void fafa(const char* fastafile, const char* outflag,FILE *fp,gzFile gz){
     while(start_pos <= end_pos){
       //std::cout << "------------ " << std::endl;
       //std::cout << "Start " <<start_pos << std::endl;
-      std::srand(start_pos+std::time(nullptr));
+      //std::srand(start_pos+std::time(nullptr));
       int readlength = drand48()*(80.0-30.0)+30.0;
       //std::cout << " random " << readlength << std::endl;
       int stop = start_pos+(int) readlength;
