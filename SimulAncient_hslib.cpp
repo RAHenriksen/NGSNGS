@@ -266,6 +266,56 @@ void fafa(const char* fastafile, const char* outflag,FILE *fp,gzFile gz){
   //gzclose(gz);
 }
 
+void Ill_err(char *seq,std::discrete_distribution<>*Dist,std::default_random_engine &gen){
+  int read_length = strlen(seq);
+  int Tstart = 70;
+  int Gstart = 140;
+  int Cstart = 210;
+  
+  for (int nt_idx = 0; nt_idx < read_length; nt_idx++){
+    //std::cout << "row indx" << seq[row_idx] << std::endl;
+    //std::cout << Qual_random(Array2d[row_idx],gen);
+    switch(seq[nt_idx]){
+      case 'A':
+      case 'a':
+        if (Dist[nt_idx](gen) == 0){seq[nt_idx] = 'A';}
+        else if (Dist[nt_idx](gen) == 1){seq[nt_idx] = 'T';}
+        else if (Dist[nt_idx](gen) == 2){seq[nt_idx] = 'G';}
+        else if (Dist[nt_idx](gen) == 3){seq[nt_idx] = 'C';}
+        break;
+      case 'T':
+      case 't':
+        if (Dist[nt_idx+Tstart](gen) == 0){seq[nt_idx] = 'A';}
+        else if (Dist[nt_idx+Gstart](gen) == 1){seq[nt_idx] = 'T';}
+        else if (Dist[nt_idx+Tstart](gen) == 2){seq[nt_idx] = 'G';}
+        else if (Dist[nt_idx+Tstart](gen) == 3){seq[nt_idx] = 'C';}
+        break;  
+      case 'G':
+      case 'g':
+        if (Dist[nt_idx+Gstart](gen) == 0){seq[nt_idx] = 'A';}
+        else if (Dist[nt_idx+Gstart](gen) == 1){seq[nt_idx] = 'T';}
+        else if (Dist[nt_idx+Gstart](gen) == 2){seq[nt_idx] = 'G';}
+        else if (Dist[nt_idx+Gstart](gen) == 3){seq[nt_idx] = 'C';}
+      case 'C':
+      case 'c':
+        if (Dist[nt_idx+Cstart](gen) == 0){seq[nt_idx] = 'A';}
+        else if (Dist[nt_idx+Cstart](gen) == 1){seq[nt_idx] = 'T';}
+        else if (Dist[nt_idx+Cstart](gen) == 2){seq[nt_idx] = 'G';}
+        else if (Dist[nt_idx+Gstart](gen) == 3){seq[nt_idx] = 'C';}
+    }
+  }
+}
+
+void Seq_err(double** Array2d,std::discrete_distribution<> nt_sub[],int size){
+  for (int row_idx = 0; row_idx < size; row_idx++){
+    std::discrete_distribution<> d({Array2d[row_idx][0],
+                                    Array2d[row_idx][1],
+                                    Array2d[row_idx][2],
+                                    Array2d[row_idx][3]});  
+    nt_sub[row_idx] = d;
+  }
+}
+
 void fafq(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,const char* r2_profile,
           bool flag=false, double cov=1.0){
   
@@ -279,10 +329,12 @@ void fafq(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,const
   int chr_no = 0;
   //create the file for savin
   std::ifstream file(r1_profile);
+  // change Read_size to profile_line
   int Read_size = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
   file.close();
   // int Qualdist_size = 600;
 
+  double** Error_2darray = create2DArray("/home/wql443/WP1/Ill_err.txt",4,280);
   double** R1_2Darray = create2DArray(r1_profile,8,Read_size);
   double** R2_2Darray = create2DArray(r2_profile,8,Read_size);
 
@@ -293,6 +345,9 @@ void fafq(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,const
   Distfunc(R1_2Darray,Qualdistr1,Read_size);
   std::discrete_distribution<> Qualdistr2[Read_size];
   Distfunc(R2_2Darray,Qualdistr2,Read_size);
+
+  std::discrete_distribution<> Error[280];
+  Seq_err(Error_2darray,Error,280);
 
   while (chr_no < faidx_nseq(seq_ref)){
     const char *name = faidx_iseq(seq_ref,chr_no);
@@ -306,8 +361,8 @@ void fafq(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,const
 
     while(start_pos <= end_pos){
       std::srand(start_pos+std::time(nullptr));
-      // Seed random number generator
-      int readlength = (std::rand() % (80 - 30 + 1)) + 30;
+      // Seed random number generator 
+      int readlength = (std::rand() % (60 - 30 + 1)) + 30;
       //int readlength = drand48()*(80.0-30.0)+30.0;
       int stop = start_pos+(int) readlength;
       //int dist = init/cov * rand_len; 
@@ -320,10 +375,10 @@ void fafq(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,const
       if (pch != NULL){start_pos += readlength + 1;}
       else {
         char nt[] = "tT";
-        Deamin_char(seqmod,nt,readlength);
+        Ill_err(seqmod,Error,gen);
+        //Deamin_char(seqmod,nt,readlength);
         std::string Read_qual;
         if(flag==true){
-          char seq[] ="AGGACTTCAGAAGagctgtgagaccttggccaagtcacttcctccttcagGAACATTGCAGTGGGCCTAAGTG";
           char Adapter1[] = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG";
           char Adapter2[] = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTNNNNNNNNGTGTAGATCTCGGTGGTCGCCGTATCATT";
           char read1N[Read_size/4 + 1];
