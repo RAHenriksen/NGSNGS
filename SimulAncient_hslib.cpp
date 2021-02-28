@@ -537,34 +537,38 @@ int main(int argc,char **argv){
   clock_t tStart = clock();
   // /willerslev/users-shared/science-snm-willerslev-wql443/reference_files/Human/hg19canon.fa
   // "/home/wql443/scratch/reference_genome/hg19/chr22.fa"
-  const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr22.fa";
+  const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr21.fa";
   int seed = -1;
-  if(argc>4)
-    seed = atoi(argv[4]);
-  else
-    seed = time(NULL);
-
-  fprintf(stderr,"seed is: %d\n",seed);
-  srand48(seed);
 
   if (std::strcmp(argv[1], "fafa") == 0){
+    // ./a.out fafa fa /home/wql443/scratch/reference_genome/hg19/chr14.fa test.fa
+    if(argc>5){seed = atoi(argv[5]);}
+    else{seed = time(NULL);} 
+    fprintf(stderr,"seed is: %d\n",seed);
+    srand48(seed);
+
+    const char *fastafile = argv[3];
     if (std::strcmp(argv[2], "gz") == 0){
       gzFile gz;
-      gz = gzopen(argv[3],"wb");
+      gz = gzopen(argv[4],"wb");
       fafa(fastafile,argv[2],NULL,gz); 
       gzclose(gz);
     }
     else if (std::strcmp(argv[2], "fa") == 0){
       FILE *fp;
-      fp = fopen(argv[3],"wb");
+      fp = fopen(argv[4],"wb");
       fafa(fastafile,argv[2],fp,NULL); 
       fclose(fp);
     }
   }
   else if (std::strcmp(argv[1], "fafq") == 0){
-    const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr22.fa";
-    const char *Profile1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
-    const char *Profile2 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R2.txt";
+    // ./a.out fafq fq true /home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt /home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R2.txt
+    if(argc>6){seed = atoi(argv[6]);}
+    else{seed = time(NULL);} 
+    fprintf(stderr,"seed is: %d\n",seed);
+    srand48(seed);
+    //const char *Profile1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
+    //const char *Profile2 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R2.txt";
     if (std::strcmp(argv[2], "gz") == 0){
       std::cout << "YET TO BE IMPLEMENTED" << std::endl;
     }
@@ -573,6 +577,10 @@ int main(int argc,char **argv){
       FILE *fp2;
       fp1 = fopen("lol_R1.fq","wb");
       fp2 = fopen("lol_R2.fq","wb");
+      const char *Profile1 = argv[4];
+      const char *Profile2 = argv[5];
+      char Adapter1[] = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG";
+      char Adapter2[] = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTNNNNNNNNGTGTAGATCTCGGTGGTCGCCGTATCATT";
       if (std::strcmp(argv[3], "false") == 0){fafq(fastafile,fp1,fp2,Profile1,Profile2,false);}
       else if (std::strcmp(argv[3], "true") == 0){fafq(fastafile,fp1,fp2,Profile1,Profile2,true);}
       fclose(fp1);
@@ -580,6 +588,10 @@ int main(int argc,char **argv){
     }
   }
   else if (std::strcmp(argv[1],"bam")==0){
+    if(argc>2){seed = atoi(argv[2]);}
+    else{seed = time(NULL);} 
+    fprintf(stderr,"seed is: %d\n",seed);
+    srand48(seed);
     const char *Profile = "/home/wql443/WP1/hslib_test/Freq.txt";
     faBam(fastafile,Profile);
   }
