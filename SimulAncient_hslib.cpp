@@ -271,37 +271,27 @@ void Ill_err(char *seq,std::discrete_distribution<>*Dist,std::default_random_eng
   int Tstart = 70;
   int Gstart = 140;
   int Cstart = 210;
-  
+  const char LookUp_nt[4] = {'A','T','G','C'};
   for (int nt_idx = 0; nt_idx < read_length; nt_idx++){
     //std::cout << "row indx" << seq[row_idx] << std::endl;
     //std::cout << Qual_random(Array2d[row_idx],gen);
     switch(seq[nt_idx]){
       case 'A':
       case 'a':
-        if (Dist[nt_idx](gen) == 0){seq[nt_idx] = 'A';}
-        else if (Dist[nt_idx](gen) == 1){seq[nt_idx] = 'T';}
-        else if (Dist[nt_idx](gen) == 2){seq[nt_idx] = 'G';}
-        else if (Dist[nt_idx](gen) == 3){seq[nt_idx] = 'C';}
+        seq[nt_idx] = LookUp_nt[Dist[nt_idx](gen)];
         break;
       case 'T':
       case 't':
-        if (Dist[nt_idx+Tstart](gen) == 0){seq[nt_idx] = 'A';}
-        else if (Dist[nt_idx+Gstart](gen) == 1){seq[nt_idx] = 'T';}
-        else if (Dist[nt_idx+Tstart](gen) == 2){seq[nt_idx] = 'G';}
-        else if (Dist[nt_idx+Tstart](gen) == 3){seq[nt_idx] = 'C';}
+        seq[nt_idx] = LookUp_nt[Dist[nt_idx+Tstart](gen)];
         break;  
       case 'G':
       case 'g':
-        if (Dist[nt_idx+Gstart](gen) == 0){seq[nt_idx] = 'A';}
-        else if (Dist[nt_idx+Gstart](gen) == 1){seq[nt_idx] = 'T';}
-        else if (Dist[nt_idx+Gstart](gen) == 2){seq[nt_idx] = 'G';}
-        else if (Dist[nt_idx+Gstart](gen) == 3){seq[nt_idx] = 'C';}
+        seq[nt_idx] = LookUp_nt[Dist[nt_idx+Gstart](gen)];
+        break;
       case 'C':
       case 'c':
-        if (Dist[nt_idx+Cstart](gen) == 0){seq[nt_idx] = 'A';}
-        else if (Dist[nt_idx+Cstart](gen) == 1){seq[nt_idx] = 'T';}
-        else if (Dist[nt_idx+Cstart](gen) == 2){seq[nt_idx] = 'G';}
-        else if (Dist[nt_idx+Gstart](gen) == 3){seq[nt_idx] = 'C';}
+        seq[nt_idx] = LookUp_nt[Dist[nt_idx+Cstart](gen)];
+        break;
     }
   }
 }
@@ -652,3 +642,46 @@ int main(int argc,char **argv){
   }
   printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 }
+
+
+/*
+
+void Ill_err2(char *seq,std::discrete_distribution<>*Dist,std::default_random_engine &gen){
+  int read_length = strlen(seq);
+  int Tstart = 70;
+  int Gstart = 140;
+  int Cstart = 210;
+  
+  for (int nt_idx = 0; nt_idx < read_length; nt_idx++){
+    //std::cout << "row indx" << seq[row_idx] << std::endl;
+    //std::cout << Qual_random(Array2d[row_idx],gen);
+    switch(seq[nt_idx]){
+      case 'A':
+      case 'a':
+        if (Dist[nt_idx](gen) == 0){seq[nt_idx] = 'A';}
+        else if (Dist[nt_idx](gen) == 1){seq[nt_idx] = 'T';}
+        else if (Dist[nt_idx](gen) == 2){seq[nt_idx] = 'G';}
+        else if (Dist[nt_idx](gen) == 3){seq[nt_idx] = 'C';}
+        break;
+      case 'T':
+      case 't':
+        if (Dist[nt_idx+Tstart](gen) == 0){seq[nt_idx] = 'A';}
+        else if (Dist[nt_idx+Gstart](gen) == 1){seq[nt_idx] = 'T';}
+        else if (Dist[nt_idx+Tstart](gen) == 2){seq[nt_idx] = 'G';}
+        else if (Dist[nt_idx+Tstart](gen) == 3){seq[nt_idx] = 'C';}
+        break;  
+      case 'G':
+      case 'g':
+        if (Dist[nt_idx+Gstart](gen) == 0){seq[nt_idx] = 'A';}
+        else if (Dist[nt_idx+Gstart](gen) == 1){seq[nt_idx] = 'T';}
+        else if (Dist[nt_idx+Gstart](gen) == 2){seq[nt_idx] = 'G';}
+        else if (Dist[nt_idx+Gstart](gen) == 3){seq[nt_idx] = 'C';}
+      case 'C':
+      case 'c':
+        if (Dist[nt_idx+Cstart](gen) == 0){seq[nt_idx] = 'A';}
+        else if (Dist[nt_idx+Cstart](gen) == 1){seq[nt_idx] = 'T';}
+        else if (Dist[nt_idx+Cstart](gen) == 2){seq[nt_idx] = 'G';}
+        else if (Dist[nt_idx+Gstart](gen) == 3){seq[nt_idx] = 'C';}
+    }
+  }
+}*/
