@@ -81,26 +81,18 @@ std::string Read_Qual(char *seq,std::discrete_distribution<>*Dist,std::default_r
       // iterates through every element in seq and creates and extract qual from the given line 
         // of the sequence qual profile. based on the lines number given the Tstart etc..
       case 'A':
-        qual += ASCII_qual[Dist[row_idx](gen)];
-        break;
       case 'a':
         qual += ASCII_qual[Dist[row_idx](gen)];
         break;
       case 'T':
-        qual += ASCII_qual[Dist[row_idx + Tstart](gen)];
-        break;
       case 't':
         qual += ASCII_qual[Dist[row_idx + Tstart](gen)];
         break;  
       case 'G':
-        qual += ASCII_qual[Dist[row_idx + Gstart](gen)];
-        break;
       case 'g':
         qual += ASCII_qual[Dist[row_idx + Gstart](gen)];
         break;
       case 'C':
-        qual += ASCII_qual[Dist[row_idx + Cstart](gen)];
-        break;
       case 'c':
         qual += ASCII_qual[Dist[row_idx + Cstart](gen)];
         break;
@@ -110,6 +102,43 @@ std::string Read_Qual(char *seq,std::discrete_distribution<>*Dist,std::default_r
     }
   }
   return qual;
+}
+
+
+void Read_Qual2(char *seq,char *qual,std::discrete_distribution<>*Dist,std::default_random_engine &gen){
+  //std::string qual;
+  //char qual[1024] = "";
+  const char* array[8] = {"#", "\'", "0", "7" ,"<", "B", "F","I"};
+
+  int read_length = strlen(seq);
+
+  int Tstart = 150;
+  int Gstart = 300;
+  int Cstart = 450;
+  
+  for (int row_idx = 0; row_idx < read_length; row_idx++){
+    switch(seq[row_idx]){
+      case 'A':
+      case 'a':
+        strncat(qual, array[Dist[row_idx](gen)], 1);
+        break;
+      case 'T':
+      case 't':
+        strncat(qual, array[Dist[row_idx + Tstart](gen)], 1);
+        break;  
+      case 'G':
+      case 'g':
+        strncat(qual, array[Dist[row_idx + Gstart](gen)], 1);
+        break;
+      case 'C':
+      case 'c':
+        strncat(qual, array[Dist[row_idx + Cstart](gen)], 1);
+        break;
+      case 'N':
+        strncat(qual, array[0], 1);;
+        break;
+    }
+  }
 }
 
 int Qual_random(double *a){
@@ -148,28 +177,20 @@ void DNA_complement(char seq[]){
   while (*seq) {
     switch(*seq) {
       case 'A':
+      case 'a':
         *seq = 'T';
         break;
-      case 'a':
-        *seq = 't';
-        break;
       case 'G':
+      case 'g':
         *seq = 'C';
         break;
-      case 'g':
-        *seq = 'c';
-        break;
       case 'C':
+      case 'c':
         *seq = 'G';
         break;
-      case 'c':
-        *seq = 'g';
-        break;
       case 'T':
-        *seq = 'A';
-        break;
       case 't':
-        *seq = 'a';
+        *seq = 'A';
         break;  
     }
     ++seq;
@@ -183,6 +204,47 @@ void Distfunc(double** Array2d,std::discrete_distribution<> dist[],int size){
     dist[row_idx] = d;
   }
 }
+
+void Ill_err(char *seq,std::discrete_distribution<>*Dist,std::default_random_engine &gen){
+  int read_length = strlen(seq);
+  int Tstart = 70;
+  int Gstart = 140;
+  int Cstart = 210;
+  const char LookUp_nt[4] = {'A','T','G','C'};
+  for (int nt_idx = 0; nt_idx < read_length; nt_idx++){
+    //std::cout << "row indx" << seq[row_idx] << std::endl;
+    //std::cout << Qual_random(Array2d[row_idx],gen);
+    switch(seq[nt_idx]){
+      case 'A':
+      case 'a':
+        seq[nt_idx] = LookUp_nt[Dist[nt_idx](gen)];
+        break;
+      case 'T':
+      case 't':
+        seq[nt_idx] = LookUp_nt[Dist[nt_idx+Tstart](gen)];
+        break;  
+      case 'G':
+      case 'g':
+        seq[nt_idx] = LookUp_nt[Dist[nt_idx+Gstart](gen)];
+        break;
+      case 'C':
+      case 'c':
+        seq[nt_idx] = LookUp_nt[Dist[nt_idx+Cstart](gen)];
+        break;
+    }
+  }
+}
+
+void Seq_err(double** Array2d,std::discrete_distribution<> nt_sub[],int size){
+  for (int row_idx = 0; row_idx < size; row_idx++){
+    std::discrete_distribution<> d({Array2d[row_idx][0],
+                                    Array2d[row_idx][1],
+                                    Array2d[row_idx][2],
+                                    Array2d[row_idx][3]});  
+    nt_sub[row_idx] = d;
+  }
+}
+
 //--------------------------FUNCTIONS FOR SEQUENCES----------------------
 
 void fafa(const char* fastafile, const char* outflag,FILE *fp,gzFile gz){
@@ -266,46 +328,6 @@ void fafa(const char* fastafile, const char* outflag,FILE *fp,gzFile gz){
   //gzclose(gz);
 }
 
-void Ill_err(char *seq,std::discrete_distribution<>*Dist,std::default_random_engine &gen){
-  int read_length = strlen(seq);
-  int Tstart = 70;
-  int Gstart = 140;
-  int Cstart = 210;
-  const char LookUp_nt[4] = {'A','T','G','C'};
-  for (int nt_idx = 0; nt_idx < read_length; nt_idx++){
-    //std::cout << "row indx" << seq[row_idx] << std::endl;
-    //std::cout << Qual_random(Array2d[row_idx],gen);
-    switch(seq[nt_idx]){
-      case 'A':
-      case 'a':
-        seq[nt_idx] = LookUp_nt[Dist[nt_idx](gen)];
-        break;
-      case 'T':
-      case 't':
-        seq[nt_idx] = LookUp_nt[Dist[nt_idx+Tstart](gen)];
-        break;  
-      case 'G':
-      case 'g':
-        seq[nt_idx] = LookUp_nt[Dist[nt_idx+Gstart](gen)];
-        break;
-      case 'C':
-      case 'c':
-        seq[nt_idx] = LookUp_nt[Dist[nt_idx+Cstart](gen)];
-        break;
-    }
-  }
-}
-
-void Seq_err(double** Array2d,std::discrete_distribution<> nt_sub[],int size){
-  for (int row_idx = 0; row_idx < size; row_idx++){
-    std::discrete_distribution<> d({Array2d[row_idx][0],
-                                    Array2d[row_idx][1],
-                                    Array2d[row_idx][2],
-                                    Array2d[row_idx][3]});  
-    nt_sub[row_idx] = d;
-  }
-}
-
 void fafq(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,const char* r2_profile,
           bool flag=false, double cov=1.0){
   
@@ -365,6 +387,8 @@ void fafq(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,const
       if (pch != NULL){start_pos += readlength + 1;}
       else {
         char nt[] = "tT";
+        char qual[1024] = "";
+
         Ill_err(seqmod,Error,gen);
         //Deamin_char(seqmod,nt,readlength);
         std::string Read_qual;
@@ -388,9 +412,9 @@ void fafq(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,const
           fprintf(fp1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
           fprintf(fp1,"%s\n",read1N);
           fprintf(fp1,"%s\n","+");
-          Read_qual = Read_Qual(read1N,Qualdistr1,gen);
-          fprintf(fp1,"%s\n",Read_qual.c_str());
-          Read_qual = "";
+          Read_Qual2(read1N,qual,Qualdistr1,gen);
+          fprintf(fp1,"%s\n",qual);
+          memset(qual, 0, sizeof(qual));
 
           //creates read 2
           DNA_complement(read2);
@@ -401,9 +425,9 @@ void fafq(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,const
           fprintf(fp2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
           fprintf(fp2,"%s\n",read2N);
           fprintf(fp2,"%s\n","+");
-          Read_qual = Read_Qual(read2N,Qualdistr2,gen);
-          fprintf(fp2,"%s\n",Read_qual.c_str());
-          Read_qual = "";
+          Read_Qual2(read2N,qual,Qualdistr2,gen);
+          fprintf(fp2,"%s\n",qual);
+          memset(qual, 0, sizeof(qual));
         }
         else{
           //char Ill_r1[150];
@@ -412,9 +436,9 @@ void fafq(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,const
           fprintf(fp1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
           fprintf(fp1,"%s\n",seqmod);
           fprintf(fp1,"%s\n","+");
-          Read_qual = Read_Qual(seqmod,Qualdistr1,gen);
-          fprintf(fp1,"%s\n",Read_qual.c_str());
-          Read_qual = "";
+          Read_Qual2(seqmod,qual,Qualdistr1,gen);
+          fprintf(fp1,"%s\n",qual);
+          memset(qual, 0, sizeof(qual));
 
           //char Ill_r2[150];
           //strncpy(Ill_r2,seqmod, sizeof(Ill_r2));
@@ -425,10 +449,9 @@ void fafq(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,const
           fprintf(fp2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
           fprintf(fp2,"%s\n",seqmod);
           fprintf(fp2,"%s\n","+");
-          Read_qual = Read_Qual(seqmod,Qualdistr2,gen);
-          fprintf(fp2,"%s\n",Read_qual.c_str());
-          Read_qual = "";
-
+          Read_Qual2(seqmod,qual,Qualdistr2,gen);
+          fprintf(fp2,"%s\n",qual);
+          memset(qual, 0, sizeof(qual));
         }
       }
     start_pos += readlength + 1;
@@ -582,7 +605,7 @@ int main(int argc,char **argv){
   clock_t tStart = clock();
   // /willerslev/users-shared/science-snm-willerslev-wql443/reference_files/Human/hg19canon.fa
   // "/home/wql443/scratch/reference_genome/hg19/chr22.fa"
-  const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr21.fa";
+  const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr2122.fa";
   int seed = -1;
 
   if (std::strcmp(argv[1], "fafa") == 0){
@@ -642,46 +665,3 @@ int main(int argc,char **argv){
   }
   printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 }
-
-
-/*
-
-void Ill_err2(char *seq,std::discrete_distribution<>*Dist,std::default_random_engine &gen){
-  int read_length = strlen(seq);
-  int Tstart = 70;
-  int Gstart = 140;
-  int Cstart = 210;
-  
-  for (int nt_idx = 0; nt_idx < read_length; nt_idx++){
-    //std::cout << "row indx" << seq[row_idx] << std::endl;
-    //std::cout << Qual_random(Array2d[row_idx],gen);
-    switch(seq[nt_idx]){
-      case 'A':
-      case 'a':
-        if (Dist[nt_idx](gen) == 0){seq[nt_idx] = 'A';}
-        else if (Dist[nt_idx](gen) == 1){seq[nt_idx] = 'T';}
-        else if (Dist[nt_idx](gen) == 2){seq[nt_idx] = 'G';}
-        else if (Dist[nt_idx](gen) == 3){seq[nt_idx] = 'C';}
-        break;
-      case 'T':
-      case 't':
-        if (Dist[nt_idx+Tstart](gen) == 0){seq[nt_idx] = 'A';}
-        else if (Dist[nt_idx+Gstart](gen) == 1){seq[nt_idx] = 'T';}
-        else if (Dist[nt_idx+Tstart](gen) == 2){seq[nt_idx] = 'G';}
-        else if (Dist[nt_idx+Tstart](gen) == 3){seq[nt_idx] = 'C';}
-        break;  
-      case 'G':
-      case 'g':
-        if (Dist[nt_idx+Gstart](gen) == 0){seq[nt_idx] = 'A';}
-        else if (Dist[nt_idx+Gstart](gen) == 1){seq[nt_idx] = 'T';}
-        else if (Dist[nt_idx+Gstart](gen) == 2){seq[nt_idx] = 'G';}
-        else if (Dist[nt_idx+Gstart](gen) == 3){seq[nt_idx] = 'C';}
-      case 'C':
-      case 'c':
-        if (Dist[nt_idx+Cstart](gen) == 0){seq[nt_idx] = 'A';}
-        else if (Dist[nt_idx+Cstart](gen) == 1){seq[nt_idx] = 'T';}
-        else if (Dist[nt_idx+Cstart](gen) == 2){seq[nt_idx] = 'G';}
-        else if (Dist[nt_idx+Gstart](gen) == 3){seq[nt_idx] = 'C';}
-    }
-  }
-}*/
