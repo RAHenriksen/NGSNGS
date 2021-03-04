@@ -27,13 +27,11 @@
 #include <cmath>
 
 
-// I would like to create a function with TK's code since its optimal in case we wish to 
-//simulate a given number of fragments
+// INPUT THE FUNCTION FOR THE NUMBER OF FRAGMENTS
 
 void Deamin_char(char* str,char nt[],int seed,
-              double alpha=1.0,double beta=2.0,int start=0,int end=25)
-{   // use & to pass by reference to the vector
-    // Get the first occurrence
+              double alpha=1.0,double beta=2.0,int start=0,int end=25){   
+  // Deamination of nucleotides
   std::vector<int> Index_vec;
   std::srand(seed+std::time(nullptr));
   std::random_device rd;
@@ -46,17 +44,12 @@ void Deamin_char(char* str,char nt[],int seed,
   while(i < end) {
     int tmp = strcspn(str+i+1,nt);
     i += tmp + 1;
-      //std::cout << "i" <<tmp <<std::endl;
       Index_vec.push_back(i);
-      //std::cout << "i " << i << std::endl;
   }
 
   for (int i = 0; i < Index_vec.size(); i++){
-    
-    //std::cout << int(distr(generator)) << std::endl;
     if (Index_vec.at(i) == int(distr(generator))) {
-      //std::cout << "INDEX " << Index_vec.at(i) << std::endl;
-      //std::cout << "rand number " << int(distr(generator)) << std::endl;
+      //remember to create an input for the nt so it works for both 5' and 3' 
       str[Index_vec.at(i)]='U';
       }
 		else {
@@ -75,8 +68,7 @@ std::string Read_Qual(char *seq,std::discrete_distribution<>*Dist,std::default_r
   int Cstart = 450;
   
   for (int row_idx = 0; row_idx < read_length; row_idx++){
-    //std::cout << "row indx" << seq[row_idx] << std::endl;
-    //std::cout << Qual_random(Array2d[row_idx],gen);
+
     switch(seq[row_idx]){
       // iterates through every element in seq and creates and extract qual from the given line 
         // of the sequence qual profile. based on the lines number given the Tstart etc..
@@ -106,16 +98,18 @@ std::string Read_Qual(char *seq,std::discrete_distribution<>*Dist,std::default_r
 
 
 void Read_Qual2(char *seq,char *qual,std::discrete_distribution<>*Dist,std::default_random_engine &gen){
-  //std::string qual;
-  //char qual[1024] = "";
+  /* creating the nucleotide quality string for fastq format and bam format */
+
   const char* array[8] = {"#", "\'", "0", "7" ,"<", "B", "F","I"};
 
   int read_length = strlen(seq);
 
+  //the line offset for the distribution *Dist created from the 600*8 2Darray
   int Tstart = 150;
   int Gstart = 300;
   int Cstart = 450;
   
+  // Dist[row_idx](gen) returns values between 0-7 (columns from the error profile the 2d array)
   for (int row_idx = 0; row_idx < read_length; row_idx++){
     switch(seq[row_idx]){
       case 'A':
@@ -142,25 +136,19 @@ void Read_Qual2(char *seq,char *qual,std::discrete_distribution<>*Dist,std::defa
 }
 
 int Qual_random(double *a){
-  //creates a random sequence of nt qualities based on a frequency distribution
+  /* creates a random sequence of nt qualities based on a frequency distribution */
 
-  char Qualities[] = {'#', '\'', '0', '7' ,'<', 'B', 'F','I','\0'};
-  int ASCII_qual[] = {35,39,48,55,60,66,70,73}; //Im choosing the ascii values, since im casting them into string later on
-
-  //std::string Read_qual;
- 
-  //std::srand(std::time(nullptr)); //this interferes with the random number for the length.
   std::random_device rd;
   std::default_random_engine gen(rd());
   std::discrete_distribution<> d({a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7]});
   return ASCII_qual[d(gen)];
-  //Read_qual += ASCII_qual[d(gen)];
-  //return Read_qual;
+
 }
 
 double** create2DArray(const char* filename,int width,int height){
-  // creates the 2d object with all the frequency values for a given positon of the nt
-  // used to create the nt qual strings.
+  /* create 2d objects for a given error profile, with rows being position in read for specific nt
+  and the cells being the frequency values */
+
   std::ifstream infile(filename);
   double** array2D = 0;
   array2D = new double*[height];
@@ -198,6 +186,7 @@ void DNA_complement(char seq[]){
 }
 
 void Distfunc(double** Array2d,std::discrete_distribution<> dist[],int size){
+  /* creating discrete distribution for 2D array */
   for (int row_idx = 0; row_idx < size; row_idx++){
     std::discrete_distribution<> d({Array2d[row_idx][0],Array2d[row_idx][1],Array2d[row_idx][2],Array2d[row_idx][3],
                                     Array2d[row_idx][4],Array2d[row_idx][5],Array2d[row_idx][6],Array2d[row_idx][7]});  
@@ -206,14 +195,14 @@ void Distfunc(double** Array2d,std::discrete_distribution<> dist[],int size){
 }
 
 void Ill_err(char *seq,std::discrete_distribution<>*Dist,std::default_random_engine &gen){
+  /* Similar to Read_Qual2 but for creating substitutions in the string */
   int read_length = strlen(seq);
   int Tstart = 70;
   int Gstart = 140;
   int Cstart = 210;
   const char LookUp_nt[4] = {'A','T','G','C'};
+  
   for (int nt_idx = 0; nt_idx < read_length; nt_idx++){
-    //std::cout << "row indx" << seq[row_idx] << std::endl;
-    //std::cout << Qual_random(Array2d[row_idx],gen);
     switch(seq[nt_idx]){
       case 'A':
       case 'a':
@@ -236,6 +225,7 @@ void Ill_err(char *seq,std::discrete_distribution<>*Dist,std::default_random_eng
 }
 
 void Seq_err(double** Array2d,std::discrete_distribution<> nt_sub[],int size){
+  /* Similar to dist_func creating a nucleotide distribution  */
   for (int row_idx = 0; row_idx < size; row_idx++){
     std::discrete_distribution<> d({Array2d[row_idx][0],
                                     Array2d[row_idx][1],
@@ -339,7 +329,7 @@ void fafq(const char* fastafile,FILE *fp1,FILE *fp2,const char* r1_profile,const
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(seq_ref));
   double init = 1.0;
   int chr_no = 0;
-  //create the file for savin
+
   std::ifstream file(r1_profile);
   // change Read_size to profile_line
   int Read_size = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');

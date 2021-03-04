@@ -8,3 +8,4 @@
 *.bcf
 *.out
 *.gz
+.nfs*
