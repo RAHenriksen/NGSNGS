@@ -334,4 +334,5 @@ int main(int argc,char **argv){
   printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 }
 
-//g++ XXX.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
+// g++ XXX.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
+//  ./a.out fafq fq T Qual_profiles/Freq_R1.txt Qual_profiles/Freq_R2.txt 1614849265
