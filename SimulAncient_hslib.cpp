@@ -137,7 +137,7 @@ void Read_Qual2(char *seq,char *qual,std::discrete_distribution<>*Dist,std::defa
 
 int Qual_random(double *a){
   /* creates a random sequence of nt qualities based on a frequency distribution */
-
+  int ASCII_qual[] = {35,39,48,55,60,66,70,73};
   std::random_device rd;
   std::default_random_engine gen(rd());
   std::discrete_distribution<> d({a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7]});
