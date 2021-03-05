@@ -275,18 +275,39 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
             gzwrite(gz2,kstr2.s,kstr2.l);kstr2.l =0;
           }
           else if (std::strcmp(outflag, "fq") == 0){
-            fprintf(fp1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-            fprintf(fp1,"%s\n",read1N);
-            fprintf(fp1,"%s\n","+");
+            kstring_t kstr1;// kstring_t *kstr = new kstr;
+            kstr1.s = NULL; // kstr->s = NULL;
+            kstr1.l = kstr1.m = 0; //kstr->l = kstr->m = 0;
+
+            kstring_t kstr2;// kstring_t *kstr = new kstr;
+            kstr2.s = NULL; // kstr->s = NULL;
+            kstr2.l = kstr2.m = 0; //kstr->l = kstr->m = 0;
+
+            ksprintf(&kstr1,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            ksprintf(&kstr1,"%s\n",read1N);
+            ksprintf(&kstr1,"%s\n","+");  
             Read_Qual2(read1N,qual,Qualdistr1,gen);
-            fprintf(fp1,"%s\n",qual);
+            ksprintf(&kstr1,"%s\n",qual);    
+            fwrite(kstr1.s,sizeof(char),kstr1.l,fp1);kstr1.l =0;
+            /*fprintf(fp1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            fprintf(fp1,"%s\n",seqmod);
+            fprintf(fp1,"%s\n","+");
+            Read_Qual2(seqmod,qual,Qualdistr1,gen);
+            fprintf(fp1,"%s\n",qual);*/
             memset(qual, 0, sizeof(qual));
 
-            fprintf(fp2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            ksprintf(&kstr2,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            ksprintf(&kstr2,"%s\n",read2N);
+            ksprintf(&kstr2,"%s\n","+");  
+            Read_Qual2(read2N,qual,Qualdistr2,gen);
+            ksprintf(&kstr2,"%s\n",qual);  
+            fwrite(kstr2.s,sizeof(char),kstr2.l,fp2);kstr1.l =0;
+
+            /*fprintf(fp2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
             fprintf(fp2,"%s\n",read2N);
             fprintf(fp2,"%s\n","+");
             Read_Qual2(read2N,qual,Qualdistr2,gen);
-            fprintf(fp2,"%s\n",qual);
+            fprintf(fp2,"%s\n",qual);*/
             memset(qual, 0, sizeof(qual));
           }
         }
@@ -320,21 +341,41 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
             gzwrite(gz2,kstr2.s,kstr2.l);kstr2.l =0;
           }
           else if (std::strcmp(outflag, "fq") == 0){
-            fprintf(fp1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            kstring_t kstr1;// kstring_t *kstr = new kstr;
+            kstr1.s = NULL; // kstr->s = NULL;
+            kstr1.l = kstr1.m = 0; //kstr->l = kstr->m = 0;
+
+            kstring_t kstr2;// kstring_t *kstr = new kstr;
+            kstr2.s = NULL; // kstr->s = NULL;
+            kstr2.l = kstr2.m = 0; //kstr->l = kstr->m = 0;
+
+            ksprintf(&kstr1,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            ksprintf(&kstr1,"%s\n",seqmod);
+            ksprintf(&kstr1,"%s\n","+");  
+            Read_Qual2(seqmod,qual,Qualdistr1,gen);
+            ksprintf(&kstr1,"%s\n",qual);    
+            fwrite(kstr1.s,sizeof(char),kstr1.l,fp1);kstr1.l =0;
+            /*fprintf(fp1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
             fprintf(fp1,"%s\n",seqmod);
             fprintf(fp1,"%s\n","+");
             Read_Qual2(seqmod,qual,Qualdistr1,gen);
-            fprintf(fp1,"%s\n",qual);
+            fprintf(fp1,"%s\n",qual);*/
             memset(qual, 0, sizeof(qual));
             
             DNA_complement(seqmod);
             std::reverse(seqmod, seqmod + strlen(seqmod));
 
-            fprintf(fp2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            ksprintf(&kstr2,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            ksprintf(&kstr2,"%s\n",seqmod);
+            ksprintf(&kstr2,"%s\n","+");  
+            Read_Qual2(seqmod,qual,Qualdistr2,gen);
+            ksprintf(&kstr2,"%s\n",qual);  
+            fwrite(kstr2.s,sizeof(char),kstr2.l,fp1);kstr1.l =0;
+            /*fprintf(fp2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
             fprintf(fp2,"%s\n",seqmod);
             fprintf(fp2,"%s\n","+");
             Read_Qual2(seqmod,qual,Qualdistr2,gen);
-            fprintf(fp2,"%s\n",qual);
+            fprintf(fp2,"%s\n",qual);*/
             memset(qual, 0, sizeof(qual));
           }
         }
