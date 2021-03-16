@@ -175,7 +175,7 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
   std::ifstream file(r1_profile);
   int Line_no = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
   file.close();
-
+  size_t lib_size = Line_no/4; 
   // loading in error profiles for nt substitions and read qual
   double** Error_2darray = create2DArray("/home/wql443/WP1/Ill_err.txt",4,280);
   double** R1_2Darray = create2DArray(r1_profile,8,Line_no);
@@ -192,6 +192,10 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
   std::discrete_distribution<> Error[280];
   Seq_err(Error_2darray,Error,280);
 
+  char qual[1024] = "";
+  kstring_t kstr1; 
+  kstring_t kstr2; 
+
   while (chr_no < faidx_nseq(seq_ref)){
     const char *name = faidx_iseq(seq_ref,chr_no);
     int name_len =  faidx_seq_len(seq_ref,name);
@@ -201,7 +205,7 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
     int start_pos = 1;
     int end_pos = name_len; //30001000
     char seqmod[1024];
-
+    
     while(start_pos <= end_pos){
       //std::srand(start_pos+std::time(nullptr));
       //Seed random number generator 
@@ -215,16 +219,14 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
 
       char * pch; 
       pch = strchr(seqmod,'N');
+      
       if (pch != NULL){start_pos += readlength + 1;}
       else {
-        char nt[] = "tT";
-        char qual[1024] = "";
-
         //Deamination function is no longer needed due to the error profile
         Ill_err(seqmod,Error,gen);
         
         if(flag==true){
-          size_t lib_size = Line_no/4; 
+          
           char read1N[lib_size+1];
           char read2N[lib_size+1];
 
@@ -250,11 +252,10 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
           std::strncpy(read2N, read2, strlen(read2)); //copy read+adapter into N...
 
           if (std::strcmp(outflag, "gz") == 0){
-            kstring_t kstr1;// kstring_t *kstr = new kstr;
-            kstr1.s = NULL; // kstr->s = NULL;
-            kstr1.l = kstr1.m = 0; //kstr->l = kstr->m = 0;
+            kstr1.s = NULL; kstr1.l = kstr1.m = 0; 
+            kstr2.s = NULL; kstr2.l = kstr2.m = 0; 
 
-            ksprintf(&kstr1,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            ksprintf(&kstr1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
             ksprintf(&kstr1,"%s\n",read1N);
             ksprintf(&kstr1,"%s\n","+");  
             Read_Qual2(read1N,qual,Qualdistr1,gen);
@@ -262,11 +263,7 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
             memset(qual, 0, sizeof(qual));    
             gzwrite(gz1,kstr1.s,kstr1.l);kstr1.l =0;
 
-            kstring_t kstr2;// kstring_t *kstr = new kstr;
-            kstr2.s = NULL; // kstr->s = NULL;
-            kstr2.l = kstr2.m = 0; //kstr->l = kstr->m = 0;
-
-            ksprintf(&kstr2,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            ksprintf(&kstr2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
             ksprintf(&kstr2,"%s\n",read2N);
             ksprintf(&kstr2,"%s\n","+");  
             Read_Qual2(read2N,qual,Qualdistr2,gen);
@@ -275,15 +272,10 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
             gzwrite(gz2,kstr2.s,kstr2.l);kstr2.l =0;
           }
           else if (std::strcmp(outflag, "fq") == 0){
-            kstring_t kstr1;// kstring_t *kstr = new kstr;
-            kstr1.s = NULL; // kstr->s = NULL;
-            kstr1.l = kstr1.m = 0; //kstr->l = kstr->m = 0;
+            kstr1.s = NULL; kstr1.l = kstr1.m = 0; 
+            kstr2.s = NULL; kstr2.l = kstr2.m = 0; 
 
-            kstring_t kstr2;// kstring_t *kstr = new kstr;
-            kstr2.s = NULL; // kstr->s = NULL;
-            kstr2.l = kstr2.m = 0; //kstr->l = kstr->m = 0;
-
-            ksprintf(&kstr1,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            ksprintf(&kstr1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
             ksprintf(&kstr1,"%s\n",read1N);
             ksprintf(&kstr1,"%s\n","+");  
             Read_Qual2(read1N,qual,Qualdistr1,gen);
@@ -296,7 +288,7 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
             fprintf(fp1,"%s\n",qual);*/
             memset(qual, 0, sizeof(qual));
 
-            ksprintf(&kstr2,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            ksprintf(&kstr2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
             ksprintf(&kstr2,"%s\n",read2N);
             ksprintf(&kstr2,"%s\n","+");  
             Read_Qual2(read2N,qual,Qualdistr2,gen);
@@ -309,15 +301,19 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
             Read_Qual2(read2N,qual,Qualdistr2,gen);
             fprintf(fp2,"%s\n",qual);*/
             memset(qual, 0, sizeof(qual));
+
+            /*if (kstr1.l > 4000){
+              fwrite(kstr1.s,sizeof(char),kstr1.l,fp1);kstr1.l =0;
+              fwrite(kstr2.s,sizeof(char),kstr2.l,fp2);kstr1.l =0;
+            }*/
           }
         }
         else{
           if (std::strcmp(outflag, "gz") == 0){
-            kstring_t kstr1;// kstring_t *kstr = new kstr;
-            kstr1.s = NULL; // kstr->s = NULL;
-            kstr1.l = kstr1.m = 0; //kstr->l = kstr->m = 0;
+            kstr1.s = NULL; kstr1.l = kstr1.m = 0; 
+            kstr2.s = NULL; kstr2.l = kstr2.m = 0; 
 
-            ksprintf(&kstr1,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            ksprintf(&kstr1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
             ksprintf(&kstr1,"%s\n",seqmod);
             ksprintf(&kstr1,"%s\n","+");  
             Read_Qual2(seqmod,qual,Qualdistr1,gen);
@@ -325,15 +321,11 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
             memset(qual, 0, sizeof(qual));    
             gzwrite(gz1,kstr1.s,kstr1.l);kstr1.l =0;
 
-            kstring_t kstr2;// kstring_t *kstr = new kstr;
-            kstr2.s = NULL; // kstr->s = NULL;
-            kstr2.l = kstr2.m = 0; //kstr->l = kstr->m = 0;
-
             DNA_complement(seqmod);
             std::reverse(seqmod, seqmod + strlen(seqmod));
             Read_Qual2(seqmod,qual,Qualdistr2,gen);
 
-            ksprintf(&kstr2,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            ksprintf(&kstr2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
             ksprintf(&kstr2,"%s\n",seqmod);
             ksprintf(&kstr2,"%s\n","+");  
             ksprintf(&kstr2,"%s\n",qual);    
@@ -341,15 +333,10 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
             gzwrite(gz2,kstr2.s,kstr2.l);kstr2.l =0;
           }
           else if (std::strcmp(outflag, "fq") == 0){
-            kstring_t kstr1;// kstring_t *kstr = new kstr;
-            kstr1.s = NULL; // kstr->s = NULL;
-            kstr1.l = kstr1.m = 0; //kstr->l = kstr->m = 0;
+            kstr1.s = NULL; kstr1.l = kstr1.m = 0; 
+            kstr2.s = NULL; kstr2.l = kstr2.m = 0; 
 
-            kstring_t kstr2;// kstring_t *kstr = new kstr;
-            kstr2.s = NULL; // kstr->s = NULL;
-            kstr2.l = kstr2.m = 0; //kstr->l = kstr->m = 0;
-
-            ksprintf(&kstr1,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            ksprintf(&kstr1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
             ksprintf(&kstr1,"%s\n",seqmod);
             ksprintf(&kstr1,"%s\n","+");  
             Read_Qual2(seqmod,qual,Qualdistr1,gen);
@@ -365,12 +352,12 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
             DNA_complement(seqmod);
             std::reverse(seqmod, seqmod + strlen(seqmod));
 
-            ksprintf(&kstr2,">%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
+            ksprintf(&kstr2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
             ksprintf(&kstr2,"%s\n",seqmod);
             ksprintf(&kstr2,"%s\n","+");  
             Read_Qual2(seqmod,qual,Qualdistr2,gen);
             ksprintf(&kstr2,"%s\n",qual);  
-            fwrite(kstr2.s,sizeof(char),kstr2.l,fp1);kstr1.l =0;
+            fwrite(kstr2.s,sizeof(char),kstr2.l,fp2);kstr1.l =0;
             /*fprintf(fp2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
             fprintf(fp2,"%s\n",seqmod);
             fprintf(fp2,"%s\n","+");
@@ -392,7 +379,6 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
 int main(int argc,char **argv){
   clock_t tStart = clock();
   // /willerslev/users-shared/science-snm-willerslev-wql443/reference_files/Human/hg19canon.fa
-  // "/home/wql443/scratch/reference_genome/hg19/chr2122.fa"
   const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr2122.fa";
   int seed = -1;
 
@@ -406,8 +392,8 @@ int main(int argc,char **argv){
     //const char *Profile2 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R2.txt";
     const char *Profile1 = argv[4];
     const char *Profile2 = argv[5];
-    char Adapter1[] = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG";
-    char Adapter2[] = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTNNNNNNNNGTGTAGATCTCGGTGGTCGCCGTATCATT";
+    char Adapter1[] = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
+    char Adapter2[] = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT";
     if (std::strcmp(argv[2], "gz") == 0){
       gzFile gz1;
       gz1 = gzopen("R1.fq.gz","wb");
@@ -427,16 +413,11 @@ int main(int argc,char **argv){
       FILE *fp2;
       fp1 = fopen("R1.fq","wb");
       fp2 = fopen("R2.fq","wb");
-      //char Adapter1[] = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG";
-      //char Adapter2[] = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTNNNNNNNNGTGTAGATCTCGGTGGTCGCCGTATCATT";
-      //char Adapter1[] = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC";
-      //char Adapter2[] = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT";
-      if (std::strcmp(argv[3], "False") == 0 ||
-          std::strcmp(argv[3], "false") == 0 ||
-          std::strcmp(argv[3], "F") == 0){fafq(fastafile,argv[2],fp1,fp2,NULL,NULL,false,Profile1,Profile2);}
-      else if (std::strcmp(argv[3], "True") == 0 ||
-              std::strcmp(argv[3], "true") == 0 ||
-              std::strcmp(argv[3], "T") == 0){fafq(fastafile,argv[2],fp1,fp2,NULL,NULL,true,Profile1,Profile2,Adapter1,Adapter2);}
+
+      if (std::strcmp(argv[3], "False") == 0 || std::strcmp(argv[3], "false") == 0 || std::strcmp(argv[3], "F") == 0){
+        fafq(fastafile,argv[2],fp1,fp2,NULL,NULL,false,Profile1,Profile2);}
+      else if (std::strcmp(argv[3], "True") == 0 || std::strcmp(argv[3], "true") == 0 || std::strcmp(argv[3], "T") == 0){
+        fafq(fastafile,argv[2],fp1,fp2,NULL,NULL,true,Profile1,Profile2,Adapter1,Adapter2);}
       fclose(fp1);
       fclose(fp2);
     }
@@ -447,26 +428,5 @@ int main(int argc,char **argv){
   printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 }
 
-
-/*
-int main(){
-  int sz_mem = 150;
-  char *N = new char[sz_mem+1];
-  strcpy(N, std::string(sz_mem, 'N').c_str());
-  
-  char *Frag = new char[1024];
-  strcpy(Frag, "AAa");
-  char Adapter1[1024] = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC";
-  
-  std::cout << N << std::endl;
-  strcat(Frag,Adapter1);
-  std::cout << Frag << std::endl;
-  
-  strncpy(N, Frag, strlen(Frag)); //copy read+adapter into N...
-  std::cout << N << std::endl;
-
-  return 0;
-}
-*/
 // g++ XXX.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 //  ./a.out fafq fq T Qual_profiles/Freq_R1.txt Qual_profiles/Freq_R2.txt 1614849265
