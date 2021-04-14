@@ -31,13 +31,15 @@
 #include <mutex>          // std::mutex mtx;
 #include <bits/stdc++.h>
 
+//#include "SimulAncient_func.h"
+
 pthread_mutex_t data_mutex;
 
 struct Parsarg_for_Fafa_thread{
   int chr_idx;
   kstring_t *fqresult;
   faidx_t *seq_ref;
-  const char* Output_type;
+  //const char* Output_type;
 };
 
 //-------------- FUNCTIONS ----------------//
@@ -125,15 +127,16 @@ int main(int argc,char **argv){
   pthread_mutex_init(&data_mutex,NULL);
   
   //creating an array with the arguments to create multiple threads;
-  int nthreads=chr_no;
+  //int nthreads=atai(argv[2]);
+  int nthreads = chr_no;
   pthread_t mythreads[nthreads];
   Parsarg_for_Fafa_thread struct_for_threads[nthreads];
 
   //initialzie values that should be used for each thread
+  
   for(int i=0;i<nthreads;i++){
     struct_for_threads[i].chr_idx = i;
     struct_for_threads[i].seq_ref = seq_ref;
-    struct_for_threads[i].Output_type = "fa";
     struct_for_threads[i].fqresult=new kstring_t;
     struct_for_threads[i].fqresult -> l = 0;
     struct_for_threads[i].fqresult -> m = 0;
@@ -175,6 +178,20 @@ int main(int argc,char **argv){
     fclose(fp);
   }
 }
+
+/*
+  int chr_total = 9;//faidx_nseq(seq_ref);
+  int chr_idx = 0;
+  int chr_no = 0;
+
+  while(chr_idx < chr_total){
+    for (chr_no; chr_no < std::min(chr_idx+thread_no,chr_total);chr_no++){
+      threads -> push_back(std::thread(chrdata,seq_ref,chr_no,fp));
+      std::cout << "chromosome elements "<< chr_no << std::endl;
+    }
+    std::cout << "end of for loop" << std::endl;
+    chr_idx = chr_idx + thread_no;
+  }*/
 
 // g++ TK_threads.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 // cat test.fa | grep '>' | cut -c 1-6 | sort -u
