@@ -43,11 +43,12 @@ double** create2DArray(const char* filename,int width,int height){
   return array2D;
 }
 
-void Read_Qual2(char *seq,char *qual,std::discrete_distribution<>*Dist,std::default_random_engine &gen){
+void Read_Qual2(char *seq,char *qual,std::discrete_distribution<>*Dist,std::default_random_engine &gen,const char* fileflag){
   /* creating the nucleotide quality string for fastq format and bam format using char array*/
-
-  const char* nt_qual[8] = {"#", "\'", "0", "7" ,"<", "B", "F","I"};
-
+  const char* nt_qual[8];
+  if (std::strcmp(fileflag, "fq") == 0){const char* nt_qual[8] = {"#", "\'", "0", "7" ,"<", "B", "F","I"};}
+  else if (std::strcmp(fileflag, "bam") == 0){const char* nt_qual[8] = {"#", "\'", "0", "7" ,"<", "B", "F","("};}
+  //{2,6,15,22,27,33,37,40}
   int read_length = strlen(seq);
 
   //the line offset for the distribution *Dist created from the 600*8 2Darray
@@ -157,10 +158,8 @@ void Ill_err(char *seq,std::discrete_distribution<>*Dist,std::default_random_eng
 }
 
 
-void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile gz1,gzFile gz2,bool flag=false,
-          const char* r1_profile = "Qual_profiles/Freq_R1.txt",
-          const char* r2_profile = "Qual_profiles/Freq_R1.txt",
-          char Adapter1[]=NULL,char Adapter2[]=NULL){
+void faBam(const char* fastafile,const char* Seq_type,double cov=1.0,const char* r1_profile = "Qual_profiles/Freq_R1.txt",
+          const char* r2_profile = "Qual_profiles/Freq_R1.txt"){
   
   //we use structure faidx_t from htslib to load in a fasta
   faidx_t *seq_ref = NULL;
@@ -170,20 +169,22 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(seq_ref));
   double init = 1.0;
   int chr_no = 0;
+  
+  std::random_device rd;
+  std::default_random_engine gen(rd()); 
 
+  // ---------------
+  // creating the error profiles
   // more generalized way identify number of lines for read profile
   std::ifstream file(r1_profile);
   int Line_no = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
   file.close();
   size_t lib_size = Line_no/4; 
+
   // loading in error profiles for nt substitions and read qual
   double** Error_2darray = create2DArray("/home/wql443/WP1/Ill_err.txt",4,280);
   double** R1_2Darray = create2DArray(r1_profile,8,Line_no);
   double** R2_2Darray = create2DArray(r2_profile,8,Line_no);
-
-  // creating random objects for all distributions.
-  std::random_device rd;
-  std::default_random_engine gen(rd()); 
 
   std::discrete_distribution<> Qualdistr1[Line_no];
   Qual_dist(R1_2Darray,Qualdistr1,Line_no);
@@ -194,9 +195,51 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
 
   char qual[1024] = "";
   kstring_t kstr1; 
-  kstring_t kstr2; 
+  kstring_t kstr2;
+  
+  // ---------------
+  //create the file for saving
 
-  while (chr_no < faidx_nseq(seq_ref)){
+  //Creates a pointer to allocated memomry for the format??
+  htsFormat *fmt_hts =(htsFormat*) calloc(1,sizeof(htsFormat));
+  //wb -> bam , wc -> cram
+  char out_mode[5]="wb";
+    
+  const char *outfile_nam = "Test_pe.bam";
+  samFile *outfile = NULL;
+
+  if ((outfile = sam_open_format(outfile_nam, out_mode, fmt_hts)) == 0) {
+    fprintf(stderr,"Error opening file for writing\n");
+    exit(0);
+  }
+  
+  // creates a pointer to generated header
+  sam_hdr_t *header = sam_hdr_init();
+  if (header == NULL) { fprintf(stderr, "sam_hdr_init");}
+  char *refName=NULL;
+    
+  // Creating sam_header
+  char *name_len_char =(char*) malloc(1024);
+  for(int i=0;i<faidx_nseq(seq_ref);i++){
+    const char *name = faidx_iseq(seq_ref,i);
+    int name_len =  faidx_seq_len(seq_ref,name);
+    // skal være c string i array så vi konvertere int om til char
+    snprintf(name_len_char,1024,"%d",name_len);
+    fprintf(stderr,"ref:%d %d %s\n",i,name,name_len_char);
+    // reference part of the header, int r variable ensures the header is added
+    int r = sam_hdr_add_line(header, "SQ", "SN", name, "LN", name_len_char, NULL);
+    if (r < 0) { fprintf(stderr,"sam_hdr_add_line");}
+  }
+  
+  // saving the header to the file
+  if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile);
+  
+  // alignment delen, gemt i bam_1 type for at representere hver linje som 1 alignment
+  bam1_t *bam_file = bam_init1(); //initialisere bam1_t (type) til hukommelsen!
+
+  // ---------------
+  // extracting the sequences
+  while (chr_no < faidx_nseq(seq_ref)){  
     const char *name = faidx_iseq(seq_ref,chr_no);
     int name_len =  faidx_seq_len(seq_ref,name);
     fprintf(stderr,"-> name: \'%s\' name_len: %d\n",name,name_len);
@@ -205,228 +248,91 @@ void fafq(const char* fastafile,const char* outflag,FILE *fp1,FILE *fp2,gzFile g
     int start_pos = 1;
     int end_pos = name_len; //30001000
     char seqmod[1024];
-    
+
     while(start_pos <= end_pos){
-      //std::srand(start_pos+std::time(nullptr));
-      //Seed random number generator 
-      //int readlength = (std::rand() % (60 - 30 + 1)) + 30;
+
       int readlength = drand48()*(70.0-30.0)+30.0;
       int stop = start_pos+(int) readlength;
-      //int dist = init/cov * rand_len; 
 
       //extracts the sequence
       strncpy(seqmod,data+start_pos,readlength);
 
-      char * pch; 
+      char Qname[96]; //read_id
+      snprintf(Qname,96,"%s:%d-%d",name,start_pos,stop);
+
+      char * pch;
       pch = strchr(seqmod,'N');
-      
+
       if (pch != NULL){start_pos += readlength + 1;}
       else {
-        //Deamination function is no longer needed due to the error profile
         Ill_err(seqmod,Error,gen);
+        Read_Qual2(seqmod,qual,Qualdistr1,gen,"bam");
+
+        //ensures proper bam format with 11 mandatory fields mandatory fields
+        // QNAME = char Qname[96] 
+        int Flag = 4; // 4 for unmapped
+        int RNAME = chr_no; // Reference sequence name, chr_no takes chr from sam_hdr_t
+        // POS = int start_pos -1 as it is already 1-based from faidx but bam_set1 converts it further to 1-based
+        int mapQ = 255; // 255 if unavailable du to no mapping
+        const uint32_t *cigar = NULL; // cigar string, NULL if unavailable - But how do we then add actual cigar info?
+        // RNEXT = mtid -> chr_no
+        int Pnext = 0; // position for next mate -> mpos
+        int Tlen = 0; // template length -> isize
+        // SEQ = sequence
+        // QUAL = quality
+        int no_cigar = 0; //number of cigar operations 
+
+        //bam, lqname, qname, flag, tid, pos, mapq, n_cigar, cigar, mtid, mpos, isize, l_seq, seq, qual, l_aux
+        bam_set1(bam_file,strlen(Qname),Qname,Flag,RNAME,start_pos-1,mapQ,no_cigar,cigar,chr_no,Pnext-1,Tlen,readlength,seqmod,qual,0);
+        // -1 for the different positions is because they are made 1 - based with the bam_set
         
-        if(flag==true){
-          
-          char read1N[lib_size+1];
-          char read2N[lib_size+1];
-
-          memset(read1N,'N',lib_size);
-          read1N[lib_size]='\0';
-          memset(read2N,'N',lib_size);
-          read2N[lib_size]='\0';
-
-          char read1[lib_size + 1];
-          char read2[lib_size + 1];
-          //Copies sequence into both reads
-          strcpy(read1, seqmod);
-          strcpy(read2, seqmod);
-
-          //creates read 1
-          std::strcat(read1,Adapter1); //add adapter to read
-          std::strncpy(read1N, read1, strlen(read1)); //copy read+adapter into N...
-
-          //creates read 2
-          DNA_complement(read2);
-          std::reverse(read2, read2 + strlen(read2));
-          std::strcat(read2,Adapter2);
-          std::strncpy(read2N, read2, strlen(read2)); //copy read+adapter into N...
-
-          if (std::strcmp(outflag, "gz") == 0){
-            kstr1.s = NULL; kstr1.l = kstr1.m = 0; 
-            kstr2.s = NULL; kstr2.l = kstr2.m = 0; 
-
-            ksprintf(&kstr1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-            ksprintf(&kstr1,"%s\n",read1N);
-            ksprintf(&kstr1,"%s\n","+");  
-            Read_Qual2(read1N,qual,Qualdistr1,gen);
-            ksprintf(&kstr1,"%s\n",qual);
-            memset(qual, 0, sizeof(qual));    
-            gzwrite(gz1,kstr1.s,kstr1.l);kstr1.l =0;
-
-            ksprintf(&kstr2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-            ksprintf(&kstr2,"%s\n",read2N);
-            ksprintf(&kstr2,"%s\n","+");  
-            Read_Qual2(read2N,qual,Qualdistr2,gen);
-            ksprintf(&kstr2,"%s\n",qual);    
-            memset(qual, 0, sizeof(qual));
-            gzwrite(gz2,kstr2.s,kstr2.l);kstr2.l =0;
-          }
-          else if (std::strcmp(outflag, "fq") == 0){
-            kstr1.s = NULL; kstr1.l = kstr1.m = 0; 
-            kstr2.s = NULL; kstr2.l = kstr2.m = 0; 
-
-            ksprintf(&kstr1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-            ksprintf(&kstr1,"%s\n",read1N);
-            ksprintf(&kstr1,"%s\n","+");  
-            Read_Qual2(read1N,qual,Qualdistr1,gen);
-            ksprintf(&kstr1,"%s\n",qual);    
-            fwrite(kstr1.s,sizeof(char),kstr1.l,fp1);kstr1.l =0;
-            /*fprintf(fp1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-            fprintf(fp1,"%s\n",seqmod);
-            fprintf(fp1,"%s\n","+");
-            Read_Qual2(seqmod,qual,Qualdistr1,gen);
-            fprintf(fp1,"%s\n",qual);*/
-            memset(qual, 0, sizeof(qual));
-
-            ksprintf(&kstr2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-            ksprintf(&kstr2,"%s\n",read2N);
-            ksprintf(&kstr2,"%s\n","+");  
-            Read_Qual2(read2N,qual,Qualdistr2,gen);
-            ksprintf(&kstr2,"%s\n",qual);  
-            fwrite(kstr2.s,sizeof(char),kstr2.l,fp2);kstr1.l =0;
-
-            /*fprintf(fp2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-            fprintf(fp2,"%s\n",read2N);
-            fprintf(fp2,"%s\n","+");
-            Read_Qual2(read2N,qual,Qualdistr2,gen);
-            fprintf(fp2,"%s\n",qual);*/
-            memset(qual, 0, sizeof(qual));
-
-            /*if (kstr1.l > 4000){
-              fwrite(kstr1.s,sizeof(char),kstr1.l,fp1);kstr1.l =0;
-              fwrite(kstr2.s,sizeof(char),kstr2.l,fp2);kstr1.l =0;
-            }*/
-          }
-        }
-        else{
-          if (std::strcmp(outflag, "gz") == 0){
-            kstr1.s = NULL; kstr1.l = kstr1.m = 0; 
-            kstr2.s = NULL; kstr2.l = kstr2.m = 0; 
-
-            ksprintf(&kstr1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-            ksprintf(&kstr1,"%s\n",seqmod);
-            ksprintf(&kstr1,"%s\n","+");  
-            Read_Qual2(seqmod,qual,Qualdistr1,gen);
-            ksprintf(&kstr1,"%s\n",qual);
-            memset(qual, 0, sizeof(qual));    
-            gzwrite(gz1,kstr1.s,kstr1.l);kstr1.l =0;
-
-            DNA_complement(seqmod);
-            std::reverse(seqmod, seqmod + strlen(seqmod));
-            Read_Qual2(seqmod,qual,Qualdistr2,gen);
-
-            ksprintf(&kstr2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-            ksprintf(&kstr2,"%s\n",seqmod);
-            ksprintf(&kstr2,"%s\n","+");  
-            ksprintf(&kstr2,"%s\n",qual);    
-            memset(qual, 0, sizeof(qual));
-            gzwrite(gz2,kstr2.s,kstr2.l);kstr2.l =0;
-          }
-          else if (std::strcmp(outflag, "fq") == 0){
-            kstr1.s = NULL; kstr1.l = kstr1.m = 0; 
-            kstr2.s = NULL; kstr2.l = kstr2.m = 0; 
-
-            ksprintf(&kstr1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-            ksprintf(&kstr1,"%s\n",seqmod);
-            ksprintf(&kstr1,"%s\n","+");  
-            Read_Qual2(seqmod,qual,Qualdistr1,gen);
-            ksprintf(&kstr1,"%s\n",qual);    
-            fwrite(kstr1.s,sizeof(char),kstr1.l,fp1);kstr1.l =0;
-            /*fprintf(fp1,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-            fprintf(fp1,"%s\n",seqmod);
-            fprintf(fp1,"%s\n","+");
-            Read_Qual2(seqmod,qual,Qualdistr1,gen);
-            fprintf(fp1,"%s\n",qual);*/
-            memset(qual, 0, sizeof(qual));
-            
-            DNA_complement(seqmod);
-            std::reverse(seqmod, seqmod + strlen(seqmod));
-
-            ksprintf(&kstr2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-            ksprintf(&kstr2,"%s\n",seqmod);
-            ksprintf(&kstr2,"%s\n","+");  
-            Read_Qual2(seqmod,qual,Qualdistr2,gen);
-            ksprintf(&kstr2,"%s\n",qual);  
-            fwrite(kstr2.s,sizeof(char),kstr2.l,fp2);kstr1.l =0;
-            /*fprintf(fp2,"@%s:%d-%d_length:%d\n",name,start_pos,start_pos+readlength,readlength);
-            fprintf(fp2,"%s\n",seqmod);
-            fprintf(fp2,"%s\n","+");
-            Read_Qual2(seqmod,qual,Qualdistr2,gen);
-            fprintf(fp2,"%s\n",qual);*/
-            memset(qual, 0, sizeof(qual));
-          }
-        }
+        sam_write1(outfile,header,bam_file);
+        memset(qual, 0, sizeof(qual));
       }
-    start_pos += readlength + 1;
-    readlength = 0;
-    memset(seqmod, 0, sizeof seqmod);
+      start_pos += readlength + 1;
     }
-  chr_no++;
+    chr_no++;
   }
-  return;
+  sam_hdr_destroy(header);
+  sam_close(outfile);
+  return; 
 }
+
 
 int main(int argc,char **argv){
   clock_t tStart = clock();
   // /willerslev/users-shared/science-snm-willerslev-wql443/reference_files/Human/hg19canon.fa
+  // "/home/wql443/scratch/reference_genome/hg19/chr22.fa"
   const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr2122.fa";
   int seed = -1;
-
-  if (std::strcmp(argv[1], "fafq") == 0){
-    // ./a.out fafq fq true /home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt /home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R2.txt
-    if(argc>6){seed = atoi(argv[6]);}
+  if (std::strcmp(argv[1],"bam")==0){
+    if(argc>3){seed = atoi(argv[3]);}
     else{seed = time(NULL);} 
     fprintf(stderr,"seed is: %d\n",seed);
     srand48(seed);
-    //const char *Profile1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
-    //const char *Profile2 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R2.txt";
-    const char *Profile1 = argv[4];
-    const char *Profile2 = argv[5];
-    char Adapter1[] = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
-    char Adapter2[] = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT";
-    if (std::strcmp(argv[2], "gz") == 0){
-      gzFile gz1;
-      gz1 = gzopen("R1.fq.gz","wb");
-      gzFile gz2;
-      gz2 = gzopen("R2.fq.gz","wb");
-      if (std::strcmp(argv[3], "False") == 0 || std::strcmp(argv[3], "false") == 0 || std::strcmp(argv[3], "F") == 0){
-        fafq(fastafile,argv[2],NULL,NULL,gz1,gz2,false,Profile1,Profile2);
-      }
-      else if (std::strcmp(argv[3], "True") == 0 || std::strcmp(argv[3], "true") == 0 || std::strcmp(argv[3], "T") == 0){
-        fafq(fastafile,argv[2],NULL,NULL,gz1,gz2,true,Profile1,Profile2,Adapter1,Adapter2);
-      }
-      gzclose(gz1);
-      gzclose(gz2);
-    }
-    else if (std::strcmp(argv[2], "fq") == 0){
-      FILE *fp1;
-      FILE *fp2;
-      fp1 = fopen("R1.fq","wb");
-      fp2 = fopen("R2.fq","wb");
-
-      if (std::strcmp(argv[3], "False") == 0 || std::strcmp(argv[3], "false") == 0 || std::strcmp(argv[3], "F") == 0){
-        fafq(fastafile,argv[2],fp1,fp2,NULL,NULL,false,Profile1,Profile2);}
-      else if (std::strcmp(argv[3], "True") == 0 || std::strcmp(argv[3], "true") == 0 || std::strcmp(argv[3], "T") == 0){
-        fafq(fastafile,argv[2],fp1,fp2,NULL,NULL,true,Profile1,Profile2,Adapter1,Adapter2);}
-      fclose(fp1);
-      fclose(fp2);
-    }
-  }
-  else {
-    printf("use mode fafq\n");
+    faBam(fastafile,"pe");
   }
   printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 }
 
 // g++ XXX.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 //  ./a.out fafq fq T Qual_profiles/Freq_R1.txt Qual_profiles/Freq_R2.txt 1614849265
+
+// TO DO: CREATE SE MODE AND CHECK PE MODE.
+/*
+070 058 044 032 065 074 060 055 045 062 052 071 073
+
+    609 ,
+     72 -
+      2 4
+     24 7
+   1156 :	058
+     32 <
+      4 >
+     70 A
+  24465 F	070
+      1 G
+      4 I
+   2084 J	  065
+ 
+*/
