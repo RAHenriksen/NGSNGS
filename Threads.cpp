@@ -31,29 +31,65 @@
 #include <mutex>          // std::mutex mtx;
 #include <bits/stdc++.h>
 
+pthread_mutex_t data_mutex;
 
 struct pars_for_a_thread{
+  int chr_idx;
   kstring_t *fqresult;
+  faidx_t *seq_ref;
 };
 
 void* thread_runner(void *arg){
   pars_for_a_thread *struct_obj = (pars_for_a_thread*) arg;
 
-  for(int i=0;i<100;i++){
-    ksprintf(struct_obj->fqresult,"@name\nCGTGA\n+\nIIIII\n");
+  int idx = struct_obj->chr_idx;
+  const char *chr_name = faidx_iseq(struct_obj->seq_ref,idx);
+  int chr_len = faidx_seq_len(struct_obj->seq_ref,chr_name);
+  
+  pthread_mutex_lock(&data_mutex);
+  char *data = fai_fetch(struct_obj->seq_ref,chr_name,&chr_len);
+  pthread_mutex_unlock(&data_mutex);
+  
+  int start_pos = 1;
+  int end_pos = chr_len; //30001000
+  char seqmod[1024] = {0};
+
+  while(start_pos <= end_pos){
+    int readlength = 100;
+    int stop = start_pos + readlength;
+    //extracts the sequence
+    strncpy(seqmod,data+start_pos,readlength);
+    ksprintf(struct_obj->fqresult,"@%s:%d-%d_length:%d\n%s\n+\nIIIII\n",chr_name,start_pos,start_pos+readlength,readlength,seqmod);    
+    start_pos += readlength + 1;
   }
+
+  //for(int i=0;i<100000;i++){ksprintf(struct_obj->fqresult,"@%s_%i_%i\nCGTGA\n+\nIIIII\n",chr_name,chr_len,idx);}
   //now we have generated 1mio fq reads.
+  
   return NULL;
 }
 
 int main(){
-  int nthreads=22;
+
+  //Loading in an creating my objects for the sequence files.
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
+  faidx_t *seq_ref = NULL;
+  seq_ref  = fai_load(fastafile);
+  assert(seq_ref!=NULL);
+  int chr_no = faidx_nseq(seq_ref);
+  
+  //initialize mutex
+  pthread_mutex_init(&data_mutex,NULL);
+
   //creating an array with the arguments to create multiple threads;
+  int nthreads=chr_no;
   pthread_t mythreads[nthreads];
   pars_for_a_thread struct_for_threads[nthreads];
 
   //initialzie values that should be used for each thread
   for(int i=0;i<nthreads;i++){
+    struct_for_threads[i].chr_idx = i;
+    struct_for_threads[i].seq_ref = seq_ref;
     struct_for_threads[i].fqresult=new kstring_t;
     struct_for_threads[i].fqresult -> l = 0;
     struct_for_threads[i].fqresult -> m = 0;
@@ -73,7 +109,8 @@ int main(){
   for(int i=0;i<nthreads;i++){
     pthread_join(mythreads[i],NULL);
   }
-      
+
+  pthread_mutex_destroy(&data_mutex);    
     //now all are done and we only write in main program.
     //now write everything
   FILE *fp;
