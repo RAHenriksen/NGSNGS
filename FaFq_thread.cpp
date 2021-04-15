@@ -29,7 +29,6 @@
 
 #include <thread>         // std::thread
 #include <mutex>          // std::mutex mtx;
-#include <bits/stdc++.h>
 
 //#include "SimulAncient_func.h"
 
@@ -189,7 +188,6 @@ void* Fafq_thread_run(void *arg){
   pthread_mutex_lock(&data_mutex);
   char *data = fai_fetch(struct_obj->seq_ref,chr_name,&chr_len);
   pthread_mutex_unlock(&data_mutex);
-  
 
   std::ifstream file(struct_obj->read_err_1);
   int Line_no = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
@@ -219,20 +217,24 @@ void* Fafq_thread_run(void *arg){
   char qual[1024] = "";
   
   while(start_pos <= end_pos){
-    int readlength = drand48()*(80.0-30.0)+30.0;
+    //std::cout << "while loop" << std::endl;
+    int readlength = drand48()*(70.0-30.0)+30.0; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
     int stop = start_pos+(int) readlength;
-
+    
     //extracts the sequence
     strncpy(seqmod,data+start_pos,readlength);
+    //std::cout << "sequence\t" << seqmod << std::endl;
     
     //removes NNN
     char * pch;
     pch = strchr(seqmod,'N');
     if (pch != NULL){start_pos += readlength + 1;}
     else{
+      //std::cout << "else" << std::endl;
       Ill_err(seqmod,Error,gen);
-
+      //std::cout << "error" << std::endl;
       if(struct_obj->Adapter_flag==true){
+        //std::cout << "flag" << std::endl;
         char read1N[lib_size+1];
         char read2N[lib_size+1];
 
@@ -264,27 +266,27 @@ void* Fafq_thread_run(void *arg){
         Read_Qual2(read2N,qual,Qualdistr2,gen);
         ksprintf(struct_obj->fqresult_r2,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+readlength,readlength,read2N,qual);
       }
-      else
-      {
+      else{
+        //std::cout << "non flag "<< std::endl;
         Read_Qual2(seqmod,qual,Qualdistr1,gen);
         ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+readlength,readlength,seqmod,qual);
         memset(qual, 0, sizeof(qual));
-
         DNA_complement(seqmod);
         std::reverse(seqmod, seqmod + strlen(seqmod));
         Read_Qual2(seqmod,qual,Qualdistr2,gen);
-        ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+readlength,readlength,seqmod,qual);
+        ksprintf(struct_obj->fqresult_r2,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+readlength,readlength,seqmod,qual);
         memset(qual, 0, sizeof(qual));        
       }
     }
     start_pos += readlength + 1;
-    readlength = 0;
     memset(seqmod, 0, sizeof seqmod);
+    //std::cout << "start pos "<< start_pos << std::endl;
+    //std::cout << "end pos "<< end_pos << std::endl;
   }
-
+  //std::cout << "out of while" << std::endl;
   //for(int i=0;i<100000;i++){ksprintf(struct_obj->fqresult,"@%s_%i_%i\nCGTGA\n+\nIIIII\n",chr_name,chr_len,idx);}
   //now we have generated 1mio fq reads.
-  
+  std::cout << chr_name << " chromosome done" << std::endl;
   return NULL;
 }
 
@@ -309,7 +311,7 @@ int main(int argc,char **argv){
   for(int i=0;i<nthreads;i++){
     struct_for_threads[i].chr_idx = i;
     struct_for_threads[i].seq_ref = seq_ref;
-    struct_for_threads[i].fqresult_r1=new kstring_t;
+    struct_for_threads[i].fqresult_r1 =new kstring_t;
     struct_for_threads[i].fqresult_r1 -> l = 0;
     struct_for_threads[i].fqresult_r1 -> m = 0;
     struct_for_threads[i].fqresult_r1 -> s = NULL;
@@ -317,22 +319,13 @@ int main(int argc,char **argv){
     struct_for_threads[i].fqresult_r2 -> l = 0;
     struct_for_threads[i].fqresult_r2 -> m = 0;
     struct_for_threads[i].fqresult_r2 -> s = NULL;
-    
+    struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
+    struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
+    struct_for_threads[i].read_err_2 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R2.txt";
+    struct_for_threads[i].Adapter_flag = false;
+    struct_for_threads[i].Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
+    struct_for_threads[i].Adapter_2 = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT";
   }
-
-/*  int chr_idx;
-  kstring_t *fqresult_r1;
-  kstring_t *fqresult_r2;
-  faidx_t *seq_ref;
-  const char* Ill_err;
-  const char* read_err_1;
-  const char* read_err_2;
-  bool Adapter_flag;
-  const char* Adapter_1;
-  const char* Adapter_2;*/
-
-
-
 
   //launch all worker threads
   for(int i=0;i<nthreads;i++){
@@ -342,8 +335,8 @@ int main(int argc,char **argv){
     pthread_create(&mythreads[i],&attr,Fafq_thread_run,&struct_for_threads[i]);
   }
     
-    //right now 22 thread are running at the same time
-    //now join, this means waiting for all worker threads to finish
+  //right now 22 thread are running at the same time
+  //now join, this means waiting for all worker threads to finish
   for(int i=0;i<nthreads;i++){
     pthread_join(mythreads[i],NULL);
   }
@@ -353,20 +346,30 @@ int main(int argc,char **argv){
     //now write everything
 
   if (std::strcmp(argv[1], "gz") == 0){
-    gzFile gz;
-    gz = gzopen("threads_test.fa.gz","wb");
+    gzFile gz1;
+    gzFile gz2;
+    gz1 = gzopen("threads_test_R1.fq.gz","wb");
+    gz2 = gzopen("threads_test_R2.fq.gz","wb");
     for(int i=0;i<nthreads;i++){
-      gzwrite(gz,struct_for_threads[i].fqresult->s,struct_for_threads[i].fqresult->l);
+      gzwrite(gz1,struct_for_threads[i].fqresult_r1->s,struct_for_threads[i].fqresult_r1->l);
+      struct_for_threads[i].fqresult_r1->l = 0;
+      gzwrite(gz2,struct_for_threads[i].fqresult_r2->s,struct_for_threads[i].fqresult_r2->l);
+      struct_for_threads[i].fqresult_r2->l = 0;
     }
-    gzclose(gz);
+    gzclose(gz1);
+    gzclose(gz2);
   }
-  else if (std::strcmp(argv[1], "fa") == 0){
-    FILE *fp;
-    fp = fopen("threads_test.fa","wb");
+  else if (std::strcmp(argv[1], "fq") == 0){
+    FILE *fp1;
+    FILE *fp2;
+    fp1 = fopen("threads_test_R1.fq","wb");
+    fp2 = fopen("threads_test_R2.fq","wb");
     for(int i=0;i<nthreads;i++){
-      fprintf(fp,"%s",struct_for_threads[i].fqresult->s);
+      fprintf(fp1,"%s",struct_for_threads[i].fqresult_r1->s);
+      fprintf(fp2,"%s",struct_for_threads[i].fqresult_r2->s);
     }
-    fclose(fp);
+    fclose(fp1);
+    fclose(fp2);
   }
 }
 
