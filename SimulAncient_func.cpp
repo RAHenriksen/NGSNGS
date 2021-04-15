@@ -1,5 +1,36 @@
-#include "SimulAncient_func.h"
+#include <algorithm>
+#include <cstdio>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <cstring>
+
+#include <htslib/faidx.h>
+#include <htslib/sam.h>
+#include <htslib/vcf.h>
+#include <htslib/kstring.h>
+#include <zlib.h>
+
+#include <cstdlib>
+#include <ctime>
+
+#include <cstdio>
+#include <cassert>
+#include <cstdint>
+
+#include <random>
+#include <iterator>
+#include <cmath>
+
+#include <thread>         // std::thread
+#include <mutex>          // std::mutex mtx;
+
+#include "SimulAncient_func.h"
 void Deamin_char(char* str,char nt[],int seed,double alpha,double beta,int start,int end){   
   // Deamination of nucleotides
   std::vector<int> Index_vec;

@@ -31,7 +31,7 @@
 #include <mutex>          // std::mutex mtx;
 #include <bits/stdc++.h>
 
-//#include "SimulAncient_func.h"
+#include "SimulAncient_func.h"
 
 pthread_mutex_t data_mutex;
 
@@ -43,34 +43,6 @@ struct Parsarg_for_Fafa_thread{
 };
 
 //-------------- FUNCTIONS ----------------//
-void Deamin_char(char* str,char nt[],int seed,
-              double alpha=1.0,double beta=2.0,int start=0,int end=25){   
-  // Deamination of nucleotides
-  std::vector<int> Index_vec;
-  std::srand(seed+std::time(nullptr));
-  std::random_device rd;
-  std::default_random_engine generator(rd());
-  std::gamma_distribution<double> distr(alpha,beta);
-
-  int i = strcspn(str,nt);
-  Index_vec.push_back(i);
-
-  while(i < end) {
-    int tmp = strcspn(str+i+1,nt);
-    i += tmp + 1;
-      Index_vec.push_back(i);
-  }
-
-  for (int i = 0; i < Index_vec.size(); i++){
-    if (Index_vec.at(i) == int(distr(generator))) {
-      //remember to create an input for the nt so it works for both 5' and 3' 
-      str[Index_vec.at(i)]='T';
-      }
-		else {
-      continue;
-		}
-  }
-}
 
 // --------------------- //
 void* Fafa_thread_run(void *arg){
@@ -193,5 +165,5 @@ int main(int argc,char **argv){
     chr_idx = chr_idx + thread_no;
   }*/
 
-// g++ TK_threads.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
-// cat test.fa | grep '>' | cut -c 1-6 | sort -u
+// g++ SimulAncient_func.cpp FaFa_thread.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl -Wall
+// ./a.out fa
