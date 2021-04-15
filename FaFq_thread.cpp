@@ -265,6 +265,7 @@ void* Fafq_thread_run(void *arg){
 
         Read_Qual2(read2N,qual,Qualdistr2,gen);
         ksprintf(struct_obj->fqresult_r2,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+readlength,readlength,read2N,qual);
+        memset(qual, 0, sizeof(qual));    
       }
       else{
         //std::cout << "non flag "<< std::endl;
@@ -299,6 +300,18 @@ int main(int argc,char **argv){
   int chr_no = faidx_nseq(seq_ref);
   //fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(seq_ref));
 
+  bool Adapt_flag;
+  const char* Adapter_1;
+  const char* Adapter_2;
+  if (std::strcmp(argv[2], "False") == 0 || std::strcmp(argv[2], "false") == 0 || std::strcmp(argv[2], "F") == 0){
+    Adapt_flag = false;
+  }
+  else if (std::strcmp(argv[2], "True") == 0 || std::strcmp(argv[2], "true") == 0 || std::strcmp(argv[2], "T") == 0){
+    Adapt_flag = true;
+    Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
+    Adapter_2 = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT";
+  }
+
   //initialize mutex
   pthread_mutex_init(&data_mutex,NULL);
   
@@ -322,9 +335,9 @@ int main(int argc,char **argv){
     struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
     struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
     struct_for_threads[i].read_err_2 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R2.txt";
-    struct_for_threads[i].Adapter_flag = false;
-    struct_for_threads[i].Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
-    struct_for_threads[i].Adapter_2 = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT";
+    struct_for_threads[i].Adapter_flag = Adapt_flag;
+    struct_for_threads[i].Adapter_1 = Adapter_1;
+    struct_for_threads[i].Adapter_2 = Adapter_2;
   }
 
   //launch all worker threads
