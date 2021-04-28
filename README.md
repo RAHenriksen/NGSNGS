@@ -37,3 +37,9 @@ Simulation_tool -ie XXX.fq -ib XXX.sam -ih XXX.fasta -dm 40 -ds 10 -cov XXX -f X
 -f / --frag : number of fragments to simulate
 -o / --output : the name and file format of simulated reads (fq,fastq,fa,fasta,sam,bam,cram,VCF).
 ~~~
+
+# GARGAMMEL
+./gargammel.pl -c 1 --comp 0,0,1 -f src/sizefreq.size.gz -matfile src/matrices/double- -o data/simulation data/
+
+./gargammel.pl -c 1 --comp 0,0,1 -f src/sizefreq.size.gz -damage 0.03,0.4,0.01,0.3 -o data/simulation data/
+
