@@ -36,7 +36,9 @@ pthread_mutex_t data_mutex;
 struct Parsarg_for_Fabam_thread{
   int chr_idx;
   faidx_t *seq_ref;
-  bam1_t *bam_file;
+  bam1_t *bam_format;
+  samFile *bam_out;
+  sam_hdr_t *bam_head;
   const char* Ill_err;
   const char* read_err_1;
   const char* read_err_2;
@@ -115,19 +117,26 @@ void* FaBam_thread_run(void *arg){
       
       //bam, lqname, qname, flag, tid, pos, mapq, n_cigar, cigar, mtid, mpos, isize, l_seq, seq, qual, l_aux
       //struct_obj->bam_line
-      bam_set1(struct_obj->bam_file,strlen(Qname),Qname,Flag,RNAME,start_pos-1,mapQ,no_cigar,cigar,idx,Pnext-1,Tlen,readlength,seqmod,qual,0);
-      //sam_write1(struct_obj->out_bam_name,struct_obj->bam_head,struct_obj->bam_file);
+
+      pthread_mutex_lock(&data_mutex);
+      bam_set1(struct_obj->bam_format,strlen(Qname),Qname,Flag,RNAME,start_pos-1,mapQ,no_cigar,cigar,idx,Pnext-1,Tlen,readlength,seqmod,qual,0);
+      sam_write1(struct_obj->bam_out,struct_obj->bam_head,struct_obj->bam_format);
+      pthread_mutex_unlock(&data_mutex);
+        
       // -1 for the different positions is because they are made 1 - based with the bam_set
     }
     memset(qual, 0, sizeof(qual));
     start_pos += readlength + 1;
   }
+  pthread_exit(0);
 }
 
 
 int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
+  // /home/wql443/scratch/reference_genome/hg19/chr2122.fa
+  // /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr1_5.fa";
   //we use structure faidx_t from htslib to load in a fasta
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
@@ -179,65 +188,41 @@ int main(int argc,char **argv){
   
   //initialzie values that should be used for each thread
   
-  // bam1_t *bam_file_chr = bam_init1();  // Saves 25 lines each with same final output from last chromosome it iterates throug
+  bam1_t *bam_file_chr =bam_init1() ;  // Saves 25 lines each with same final output from last chromosome it iterates throug
   
   for(int i=0;i<nthreads;i++){
     struct_for_threads[i].chr_idx = i;
     struct_for_threads[i].seq_ref = seq_ref;
-    struct_for_threads[i].bam_file = bam_init1(); //bam_init() saves final output from all chromosomes -> still 25 lines
+    struct_for_threads[i].bam_format = bam_file_chr; //bam_init() saves final output from all chromosomes -> still 25 lines
+    struct_for_threads[i].bam_head=header;
+    struct_for_threads[i].bam_out=outfile;
     struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
     struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
     struct_for_threads[i].read_err_2 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R2.txt";
-  }
-  //struct_for_threads[i].bam_file = bam_file_chr(); 
-  //    struct_for_threads[i].out_bam_name = outfile;  struct_for_threads[i].bam_head = header;
-  //launch all worker threads
-  for(int i=0;i<nthreads;i++){
+
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_create(&mythreads[i],&attr,FaBam_thread_run,&struct_for_threads[i]);
   }
+  //struct_for_threads[i].bam_file = bam_file_chr(); 
+  //    struct_for_threads[i].out_bam_name = outfile;  struct_for_threads[i].bam_head = header;
+  //launch all worker threads
 
+  pthread_mutex_destroy(&data_mutex);  
   //right now 22 thread are running at the same time
   //now join, this means waiting for all worker threads to finish
   for(int i=0;i<nthreads;i++){
     pthread_join(mythreads[i],NULL);
+    bam_destroy1(struct_for_threads[i].bam_format);
   }
 
-  pthread_mutex_destroy(&data_mutex);  
   //now all are done and we only write in main program.
-  for(int i=0;i<nthreads;i++){
-    sam_write1(outfile,header,struct_for_threads[i].bam_file);
-  }
+  //for(int i=0;i<nthreads;i++){
+  //  sam_write1(outfile,header,struct_for_threads[i].bam_file);
+  //}
   sam_hdr_destroy(header);
   sam_close(outfile);
 } 
-/*
-  int chr_idx;
-  faidx_t *seq_ref;
-  bam1_t *bam_file;
-  const char* Ill_err;
-  const char* read_err_1;
-  const char* read_err_2;*/
-
-/*
-int main(int argc,char **argv){
-  clock_t tStart = clock();
-  // /willerslev/users-shared/science-snm-willerslev-wql443/reference_files/Human/hg19canon.fa
-  // "/home/wql443/scratch/reference_genome/hg19/chr22.fa"
-  
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
-  int seed = -1;
-  if (std::strcmp(argv[1],"bam")==0){
-    if(argc>3){seed = atoi(argv[3]);}
-    else{seed = time(NULL);} 
-    fprintf(stderr,"seed is: %d\n",seed);
-    srand48(seed);
-    faBam(fastafile,"pe");
-  }
-  printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
-}
-*/
 // g++ SimulAncient_func.cpp FaBam_thread.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl -Wall
 
 /*
