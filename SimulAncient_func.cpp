@@ -42,14 +42,16 @@ void Deamin_char(char* str,char nt[],int seed,double alpha,double beta,int start
 
   int i = strcspn(str,nt);
   Index_vec.push_back(i);
+  unsigned int vector_size;
 
   while(i < end) {
     int tmp = strcspn(str+i+1,nt);
     i += tmp + 1;
       Index_vec.push_back(i);
   }
-
-  for (int i = 0; i < Index_vec.size(); i++){
+  vector_size = Index_vec.size(); //Index_vec
+    
+  for (unsigned int i = 0; i < vector_size; i++){
     if (Index_vec.at(i) == int(distr(generator))) {
       //remember to create an input for the nt so it works for both 5' and 3' 
       str[Index_vec.at(i)]='T';
