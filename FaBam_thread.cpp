@@ -136,13 +136,14 @@ int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
   // /home/wql443/scratch/reference_genome/hg19/chr2122.fa
   // /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr1_5.fa";
+  // chr1_2
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr21_22.fa";
   //we use structure faidx_t from htslib to load in a fasta
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
   assert(seq_ref!=NULL);
   int chr_no = faidx_nseq(seq_ref);
-  
+  std::cout << "chromosome number " << chr_no <<std::endl;
   // Initializing the bam file header
 
   //Creates a pointer to allocated memomry for the format
@@ -173,7 +174,9 @@ int main(int argc,char **argv){
     // reference part of the header, int r variable ensures the header is added
     int r = sam_hdr_add_line(header, "SQ", "SN", name, "LN", name_len_char, NULL);
     if (r < 0) { fprintf(stderr,"sam_hdr_add_line");}
+    std::cout << "done" <<std::endl;
   }
+  free(name_len_char);
   // saving the header to the file
   if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile);
 
@@ -184,10 +187,16 @@ int main(int argc,char **argv){
   pthread_mutex_init(&data_mutex,NULL);
   int nthreads=chr_no;
   pthread_t mythreads[nthreads];
-  Parsarg_for_Fabam_thread struct_for_threads[nthreads];
-  
+
+  Parsarg_for_Fabam_thread struct_for_threads[nthreads]; //should go to the stack
+
+  // creating a pointer to allocated memory by type casting my struct and malloc with the size of all the elements in my struct
+  //struct Parsarg_for_Fabam_thread *struct_for_threads = (struct Parsarg_for_Fabam_thread*) malloc (chr_no * sizeof (struct Parsarg_for_Fabam_thread));
+
+  // New is a similar to malloc
+  //Parsarg_for_Fabam_thread* struct_for_threads = new Parsarg_for_Fabam_thread[nthreads];
+
   //initialzie values that should be used for each thread
-  
   bam1_t *bam_file_chr =bam_init1() ;  // Saves 25 lines each with same final output from last chromosome it iterates throug
   
   for(int i=0;i<nthreads;i++){
@@ -204,8 +213,10 @@ int main(int argc,char **argv){
     pthread_attr_init(&attr);
     pthread_create(&mythreads[i],&attr,FaBam_thread_run,&struct_for_threads[i]);
   }
+  // free(struct_for_threads);
   //struct_for_threads[i].bam_file = bam_file_chr(); 
-  //    struct_for_threads[i].out_bam_name = outfile;  struct_for_threads[i].bam_head = header;
+  //struct_for_threads[i].out_bam_name = outfile;  struct_for_threads[i].bam_head = header;
+
   //launch all worker threads
 
   pthread_mutex_destroy(&data_mutex);  
@@ -215,7 +226,6 @@ int main(int argc,char **argv){
     pthread_join(mythreads[i],NULL);
     bam_destroy1(struct_for_threads[i].bam_format);
   }
-
   //now all are done and we only write in main program.
   //for(int i=0;i<nthreads;i++){
   //  sam_write1(outfile,header,struct_for_threads[i].bam_file);
