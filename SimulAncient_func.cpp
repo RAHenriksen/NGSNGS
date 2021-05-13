@@ -43,7 +43,7 @@ void Deamin_char(char* str,char nt[],int seed,double alpha,double beta,int start
   int i = strcspn(str,nt);
   Index_vec.push_back(i);
   unsigned int vector_size;
-
+  //consider just using signed int, just because they would not be negative..
   while(i < end) {
     int tmp = strcspn(str+i+1,nt);
     i += tmp + 1;
