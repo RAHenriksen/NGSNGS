@@ -116,7 +116,7 @@ void* FaBam_thread_run(void *arg){
       ksprintf(struct_obj->name,"%s.",Qname);
       ksprintf(struct_obj->qualstring,"%s.",qual);
       ksprintf(struct_obj->seq,"%s.",seqmod);
-      //ksprintf(struct_obj->seq,"%s%s%s.",Qname,seqmod,qual);
+      //ksprintf(struct_obj->seq,"%s,%s,%s.",Qname,seqmod,qual);
       //ksprintf(struct_obj->seq,"%s_",Qname,"%s.",seqmod);
       
     }
@@ -126,7 +126,7 @@ void* FaBam_thread_run(void *arg){
   }
 }
 
-
+/*
 int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
   const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
@@ -228,16 +228,16 @@ int main(int argc,char **argv){
     pch_seq = strtok(struct_for_threads[i].seq->s,".");
     pch_qual = strtok(struct_for_threads[i].qualstring->s,".");
 
-    //std::cout << pch_qual << std::endl;
+    std::cout << "-------" << std::endl;
+    std::cout << pch_seq << std::endl;
     //pch_seq = strtok(struct_for_threads[i].seq->,".");
     //pch_qual = strtok(struct_for_threads[i].qual->s,".");
     bam_set1(bam_file_chr,strlen(pch_name),pch_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(pch_seq),pch_seq,pch_qual,0);
     sam_write1(outfile,header,bam_file_chr);
-    
-    /*while (pch_qual != NULL & pch_name!= NULL)
+    / *
+    while (pch_qual != NULL & pch_name!= NULL)
     {
       //printf("%s\n",pch_name);
-      //
       //bam_set1(bam_file_chr,strlen(pch_name),pch_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(pch_seq),pch_seq,pch_seq,0);
       bam_set1(bam_file_chr,strlen(pch_name),pch_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(pch_qual),pch_qual,pch_qual,0);
       sam_write1(outfile,header,bam_file_chr);
@@ -245,12 +245,13 @@ int main(int argc,char **argv){
       //pch_seq = strtok (NULL, ".");
       pch_name = strtok (NULL, ".");
 
-    }*/
+    }
+    * /
   }
   sam_hdr_destroy(header);
   sam_close(outfile);
 } 
-
+*/
 // g++ SimulAncient_func.cpp FaBam_thread.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl -Wall
 
 /*
@@ -298,3 +299,72 @@ int main ()
   }
   return 0;
 }*/
+
+/*
+int main()
+{
+    kstring_t kstr1;
+    kstr1.s = NULL; kstr1.l = 0; kstr1.m = 0;
+    char input[1024] = "READID1_AGAGAG_BBBBBBB.READID2_GGGGGGGG_FFFFFFFF.READID3_CCC_III";
+    ksprintf(&kstr1,"%s",input);
+    char *tokens1;
+    tokens1 = strtok(kstr1.s,".");
+    while (tokens1 != NULL)
+    {
+      std::cout << "while 1 " << tokens1 << std::endl;
+      tokens1 = strtok(NULL, ".");
+    }
+}*/
+
+int main()
+{
+    kstring_t kstr1;kstring_t kstr2;kstring_t kstr3;
+    kstr1.s = NULL; kstr1.l = 0; kstr1.m = 0;
+    kstr2.s = NULL; kstr2.l = 0; kstr2.m = 0;
+    kstr3.s = NULL; kstr3.l = 0; kstr3.m = 0;
+    char name[1024] = "ReadID1.ReadID2.ReadID3";
+    char seq[1024] = "AAAA.GGGG.CCCC";
+    char qual[1024] = "BBBB.FFFF.IIII";
+
+    ksprintf(&kstr1,"%s",name);
+    ksprintf(&kstr2,"%s",seq);
+    ksprintf(&kstr3,"%s",qual);
+
+    char *token1; char *token2;char *token3;
+    char *save_ptr1, *save_ptr2, *save_ptr3;
+
+    token1 = strtok_r(name, ".", &save_ptr1);
+    token2 = strtok_r(seq, ".", &save_ptr2);
+    token3 = strtok_r(qual, ".", &save_ptr3);
+
+    while(token1 != NULL && token2 != NULL && token3 != NULL) {
+      std::cout << token1 << std::endl;
+      std::cout << token2 << std::endl;
+      std::cout << token3 << std::endl;
+      // get next tokens
+      token1 = strtok_r(NULL, ".", &save_ptr1);
+      token2 = strtok_r(NULL, ".", &save_ptr2);
+      token3 = strtok_r(NULL, ".", &save_ptr3);
+      std::cout << "while loop end "<< std::endl;
+    }
+}
+/*
+    char name[1024] = "READID1.READID2.READID3";
+    char seq[1024] = "AAAA_GGGGGG_TTTTTTTT";
+    char qual[1024] = "BBBB,FFFFFF,>>>>>>>>";
+    ksprintf(&kstr1,"%s",name);
+    ksprintf(&kstr2,"%s",seq);
+    ksprintf(&kstr3,"%s",qual);
+    std::cout << kstr1.s << std::endl;
+    char *tokens1; char *tokens2; char *tokens3;
+    tokens1 = strtok(kstr1.s,".");
+    std::cout << tokens1 << std::endl;
+    tokens2 = strtok(kstr2.s,"_");
+    tokens3 = strtok(kstr3.s,",");
+    char * test;
+    while (tokens1 != NULL)
+    {
+      std::cout << "while 1 " << tokens1 << std::endl;
+      tokens1 = strtok(NULL, ".");
+    }
+*/
