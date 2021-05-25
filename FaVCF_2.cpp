@@ -228,10 +228,14 @@ void variant_ref(const char* fastafile,FILE *fp){
 
   const char *name = faidx_iseq(seq_ref,chr_no);
   int name_len =  faidx_seq_len(seq_ref,name);
-  fprintf(stderr,"-> name: \'%s\' name_len: %d\n",name,name_len);
-    
+  //fprintf(stderr,"-> name: \'%s\' name_len: %d\n",name,name_len);
+  
   char *data = fai_fetch(seq_ref,name,&name_len);
   char seqmod[1024];
+
+  kstring_t fa_kstr;
+  fa_kstr.s = NULL; fa_kstr.l = fa_kstr.m = 0;
+
   /*std::cout << data[2] << std::endl;
   data[2] = 'X';
   std::cout << data[2] << std::endl;
@@ -244,7 +248,11 @@ void variant_ref(const char* fastafile,FILE *fp){
   14	19291815	.	T	C
   14	19291845	.	T	C
   14	19291886	.	CTG	C
-  14	19291899	.	C	CTGTT*/
+  14	19291899	.	C	CTGTT
+  14	19325134	.	TA	TAA,T
+  19020697	.	G	A,T
+  14	19054940	.	A	AG,G
+  */
 
   while(bcf_read(test_bcf, test_header, test_record) == 0){
     bcf_unpack((bcf1_t*)test_record, BCF_UN_ALL);
@@ -252,15 +260,86 @@ void variant_ref(const char* fastafile,FILE *fp){
     int pos = (int) test_record->pos + 1;
     int n_allele = (int) test_record->n_allele;
     char* ref = test_record->d.allele[0];
-    char* alt = test_record->d.allele[1];
-    int readlength = drand48()*(80.0-30.0)+30.0;
-    int idx = drand48()*(readlength);
 
+    int readlength = drand48()*(80.0-30.0)+30.0;
+    int idx = drand48()*(readlength); //where the variation is in the read
+    
+    int start = pos-idx-1;
+    int stop = start + readlength;
+    strncpy(seqmod,data+start,readlength);
+    
+    char seqbefore[1024];
+    char seqafter[1024];
+    char seq_indel[1024];
+    //std::cout << n_allele << std::endl;
+
+    if (n_allele < 3)
+    {
+      char* alt = test_record->d.allele[1];
+      if (strlen(ref) == 1)
+      {
+        if (strlen(alt) == 1)
+        {
+          //std::cout << pos << "\t" << ref << "\t" << alt << std::endl;
+          seqmod[idx-1] = *alt;    
+          ksprintf(&fa_kstr,">%s:%d-%d_len:%d_%d_sub\n%s\n",name,start,stop,readlength,strlen(seqmod),seqmod);  
+        }
+        else //insertions
+        {
+          if (idx!=0)
+          {
+            std::cout << "insertion loop " << std::endl;
+            std::cout << "star  " << start << " " << stop << std::endl;
+            std::cout << pos << "\t" << ref << "\t" << alt << std::endl;
+            std::cout << "pos " << pos << std::endl;
+            std::cout << seqmod << std::endl;
+            memcpy(seqbefore, &seqmod[0], idx); //from 1st position to position before the alternative start index
+            memcpy(seqafter, &seqmod[idx+strlen(ref)], strlen(seqmod)); //from after the alternative to the end of the sequence
+            //std::cout << "pos " << pos << std::endl;
+            snprintf(seq_indel,1024,"%s%s%s\n",seqbefore,alt,seqafter);
+
+            std::cout << seq_indel << std::endl;
+            
+          }
+          else
+          {
+            /*std::cout << "insertion loop " << std::endl;
+            std::cout << "star  " << start << " " << stop << std::endl;
+            std::cout << pos << "\t" << ref << "\t" << alt << std::endl;
+            std::cout << "pos " << pos << std::endl;
+            std::cout << seqmod << std::endl;*/
+
+            memcpy(seqbefore, &seqmod[0], idx); //from 1st position to position before the alternative start index
+            memcpy(seqafter, &seqmod[idx+strlen(ref)], strlen(seqmod)); //from after the alternative to the end of the sequence
+            
+            snprintf(seq_indel,1024,"%s%s%s\n",seqbefore,alt,seqafter);
+            //std::cout << seq_indel << std::endl;
+          }
+          
+          //std::cout << seqmod << std::endl;
+          //std::cout << seq_indel << std::endl;
+          memset(seqbefore, 0, sizeof seqbefore);
+          memset(seqafter, 0, sizeof seqafter);
+          memset(seq_indel, 0, sizeof seq_indel);
+        }
+      }
+
+      
+    }
+    
+    /*
+    if (pos == 21444573)
+    {
+      std::cout << pos << "\t" << ref << "\t" << alt << std::endl;
+      std::cout << test_record->d.allele[1] << "\t" << test_record->d.allele[2] << std::endl;
+      std::cout << n_allele << std::endl;
+    }*/
+    
+    /*
     if (pos == 19291899)
     {
       int start = pos-idx;
       int stop = start + readlength;
-      std::cout << "read " << readlength << " idx " << idx << std::endl;
       strncpy(seqmod,data+pos-idx,readlength);
       std::cout << seqmod << std::endl;
       std::cout << pos << "\t" << ref << "\t" << alt << std::endl;
@@ -277,10 +356,10 @@ void variant_ref(const char* fastafile,FILE *fp){
       std::cout << seq << std::endl;
       std::cout << " pos " << start << " end " << stop << " str len "<< strlen(seqmod) << strlen(seq) << std::endl;
       break;
-    }
+    }*/
     memset(seqmod, 0, sizeof seqmod);
   }
-
+  fwrite(fa_kstr.s,sizeof(char),fa_kstr.l,fp);fa_kstr.l =0;  
 }
 
 int main(int argc,char **argv){
