@@ -95,13 +95,12 @@ void* FaBam_thread_run(void *arg){
     if (pch != NULL){start_pos += readlength + 1;}
     else{ 
       char Qname[96]; //read_id
-      snprintf(Qname,96,"%s:%d-%d",chr_name,start_pos,stop);
+      snprintf(Qname,96,"%s:%d-%d",chr_name,start_pos+1,stop);
       Ill_err(seqmod,Error,gen);
       Bam_baseQ(seqmod,qual,Qualdistr1,gen);
       /*std::cout << Qname << std::endl;
       std::cout << seqmod << std::endl;
       std::cout << qual << std::endl;*/
-      
       
       //ensures proper bam format with 11 mandatory fields mandatory fields
       // QNAME = char Qname[96] 
@@ -126,10 +125,9 @@ void* FaBam_thread_run(void *arg){
   }
 }
 
-/*
 int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
   //we use structure faidx_t from htslib to load in a fasta
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
@@ -220,102 +218,38 @@ int main(int argc,char **argv){
   //now all are done and we only write in main program.
   for(int i=0;i<nthreads;i++){
     bam1_t *bam_file_chr = bam_init1();
-    //str
-    char * pch_seq;
-    char * pch_name;
-    char * pch_qual;
-    pch_name = strtok(struct_for_threads[i].name->s,".");
-    pch_seq = strtok(struct_for_threads[i].seq->s,".");
-    pch_qual = strtok(struct_for_threads[i].qualstring->s,".");
+    
+    char *token_name; char *token_seq;char *token_qual;
+    char *save_name_ptr, *save_seq_ptr, *save_qual_ptr;
 
-    std::cout << "-------" << std::endl;
-    std::cout << pch_seq << std::endl;
+    token_name = strtok_r(struct_for_threads[i].name->s, ".", &save_name_ptr);
+    token_seq = strtok_r(struct_for_threads[i].seq->s, ".", &save_seq_ptr);
+    token_qual = strtok_r(struct_for_threads[i].qualstring->s, ".", &save_qual_ptr);
+    while(token_name != NULL && token_seq != NULL && token_qual != NULL) {
+      bam_set1(bam_file_chr,strlen(token_name),token_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(token_seq),token_seq,token_qual,0);
+      sam_write1(outfile,header,bam_file_chr);
+      //extract next tokes
+      token_name = strtok_r(NULL, ".", &save_name_ptr);
+      token_seq = strtok_r(NULL, ".", &save_seq_ptr);
+      token_qual = strtok_r(NULL, ".", &save_qual_ptr);
+      //std::cout << "while loop end "<< std::endl;
+    }
+
     //pch_seq = strtok(struct_for_threads[i].seq->,".");
     //pch_qual = strtok(struct_for_threads[i].qual->s,".");
-    bam_set1(bam_file_chr,strlen(pch_name),pch_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(pch_seq),pch_seq,pch_qual,0);
-    sam_write1(outfile,header,bam_file_chr);
-    / *
-    while (pch_qual != NULL & pch_name!= NULL)
-    {
-      //printf("%s\n",pch_name);
-      //bam_set1(bam_file_chr,strlen(pch_name),pch_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(pch_seq),pch_seq,pch_seq,0);
-      bam_set1(bam_file_chr,strlen(pch_name),pch_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(pch_qual),pch_qual,pch_qual,0);
-      sam_write1(outfile,header,bam_file_chr);
-      pch_qual = strtok (NULL, ".");
-      //pch_seq = strtok (NULL, ".");
-      pch_name = strtok (NULL, ".");
+    
+    //bam_set1(bam_file_chr,strlen(pch_name),pch_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(pch_seq),pch_seq,pch_qual,0);
+    //sam_write1(outfile,header,bam_file_chr);
 
-    }
-    * /
   }
   sam_hdr_destroy(header);
   sam_close(outfile);
 } 
-*/
-// g++ SimulAncient_func.cpp FaBam_thread.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl -Wall
+
+// g++ SimulAncient_func.cpp FaBam_kstrings.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
+
 
 /*
-     int Flag = 4; // 4 for unmapped
-      int RNAME = idx; // Reference sequence name, chr_no takes chr from sam_hdr_t
-      // POS = int start_pos -1 as it is already 1-based from faidx but bam_set1 converts it further to 1-based
-      int mapQ = 255; // 255 if unavailable du to no mapping
-      const uint32_t *cigar = NULL; // cigar string, NULL if unavailable - But how do we then add actual cigar info?
-      // RNEXT = mtid -> chr_no
-      int Pnext = 0; // position for next mate -> mpos
-      int Tlen = 0; // template length -> isize
-      // SEQ = sequence
-      // QUAL = quality
-      int no_cigar = 0; //number of cigar operations 
-      struct_obj->x->name=Qname;
-      struct_obj->x->qual=qual;
-      struct_obj->x->seq = seqmod;
-
-          sam_write1(outfile,header,bam_file);
-  sam_hdr_destroy(header);
-  sam_close(outfile);
-  return; */
-
-/*
-int main ()
-{
-  char str[] ="AAAAGAGAGAGAGAGA.>>>>>>>>>>>>>>";
-  char str2[] ="CCCCCCCCCCCCCCC.XXXXXXXXXXXXX.AAAAAAA";
-  char * pch;
-  pch = strtok (str," .");
-  char * pch2;
-  pch2 = strtok (str2," .");
-  char *str3 = "CCCCCCCCCCCCCCC.XXXXXXXXXXXXX";
-  char *last = strrchr(str3, '.');
-  printf("Last token: '%s'\n", last);
-  printf("Last token: '%s'\n", last+1);
-  printf("Last token: '%s'\n", last+2);
-  while (pch != NULL)
-  {
-    //printf ("%s\n",pch);
-    std::cout << pch << std::endl;
-    pch = strtok (NULL, " .");
-    //std::cout << pch2 << std::endl;
-    //pch2 = strtok (NULL, " .");
-  }
-  return 0;
-}*/
-
-/*
-int main()
-{
-    kstring_t kstr1;
-    kstr1.s = NULL; kstr1.l = 0; kstr1.m = 0;
-    char input[1024] = "READID1_AGAGAG_BBBBBBB.READID2_GGGGGGGG_FFFFFFFF.READID3_CCC_III";
-    ksprintf(&kstr1,"%s",input);
-    char *tokens1;
-    tokens1 = strtok(kstr1.s,".");
-    while (tokens1 != NULL)
-    {
-      std::cout << "while 1 " << tokens1 << std::endl;
-      tokens1 = strtok(NULL, ".");
-    }
-}*/
-
 int main()
 {
     kstring_t kstr1;kstring_t kstr2;kstring_t kstr3;
@@ -348,23 +282,4 @@ int main()
       std::cout << "while loop end "<< std::endl;
     }
 }
-/*
-    char name[1024] = "READID1.READID2.READID3";
-    char seq[1024] = "AAAA_GGGGGG_TTTTTTTT";
-    char qual[1024] = "BBBB,FFFFFF,>>>>>>>>";
-    ksprintf(&kstr1,"%s",name);
-    ksprintf(&kstr2,"%s",seq);
-    ksprintf(&kstr3,"%s",qual);
-    std::cout << kstr1.s << std::endl;
-    char *tokens1; char *tokens2; char *tokens3;
-    tokens1 = strtok(kstr1.s,".");
-    std::cout << tokens1 << std::endl;
-    tokens2 = strtok(kstr2.s,"_");
-    tokens3 = strtok(kstr3.s,",");
-    char * test;
-    while (tokens1 != NULL)
-    {
-      std::cout << "while 1 " << tokens1 << std::endl;
-      tokens1 = strtok(NULL, ".");
-    }
 */
