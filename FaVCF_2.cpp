@@ -199,7 +199,7 @@ static void delete_seq(char *str, size_t seq_len, size_t del_len, size_t pos)
     }
 }
 
-static void instert_seq(char *str, size_t len, char *insert_seq,size_t ins_len, size_t pos)
+static void instert_seq(char *str, size_t len, char insert_seq[],size_t ins_len, size_t pos)
 {
     for (int i = 0; i < ins_len; i++)
     {
@@ -253,15 +253,32 @@ void variant_ref(const char* fastafile,FILE *fp){
     int n_allele = (int) test_record->n_allele;
     char* ref = test_record->d.allele[0];
     char* alt = test_record->d.allele[1];
+    int readlength = drand48()*(80.0-30.0)+30.0;
+    int idx = drand48()*(readlength);
+
     if (pos == 19291899)
     {
+      int start = pos-idx;
+      int stop = start + readlength;
+      std::cout << "read " << readlength << " idx " << idx << std::endl;
+      strncpy(seqmod,data+pos-idx,readlength);
+      std::cout << seqmod << std::endl;
       std::cout << pos << "\t" << ref << "\t" << alt << std::endl;
       std::cout << data[pos-1] << std::endl;
       data[pos-1] = *alt;
       std::cout << data[pos-1] << std::endl;
+      char seqbefore[1024];
+      char seqafter[1024];
+      memcpy(seqbefore, &seqmod[0], idx-1);
+      memcpy(seqafter, &seqmod[idx+strlen(ref)-1], strlen(seqmod));
+      std::cout << seqbefore << " " << seqafter << std::endl;
+      char seq[1024];
+      snprintf(seq,1024,"%s%s%s\n",seqbefore,alt,seqafter);
+      std::cout << seq << std::endl;
+      std::cout << " pos " << start << " end " << stop << " str len "<< strlen(seqmod) << strlen(seq) << std::endl;
       break;
     }
-    
+    memset(seqmod, 0, sizeof seqmod);
   }
 
 }
@@ -271,9 +288,11 @@ int main(int argc,char **argv){
   FILE *fp;
   fp = fopen("favcf.fa","wb");
   //VCF2(fastafile,fp); 
+  srand48(time(NULL));
   variant_ref(fastafile,fp);
   fclose(fp);
   //std::cout << std::abs(10-5) << std::endl;
+
   return 0;
 }
 //g++ FaVCF_2.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
