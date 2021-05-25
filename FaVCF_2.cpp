@@ -281,40 +281,20 @@ void variant_ref(const char* fastafile,FILE *fp){
         if (strlen(alt) == 1)
         {
           //std::cout << pos << "\t" << ref << "\t" << alt << std::endl;
-          seqmod[idx-1] = *alt;    
+          //std::cout << seqmod << std::endl;
+          seqmod[idx] = *alt;    
+          //std::cout << seqmod << std::endl;
           ksprintf(&fa_kstr,">%s:%d-%d_len:%d_%d_sub\n%s\n",name,start,stop,readlength,strlen(seqmod),seqmod);  
         }
         else //insertions
         {
-          if (idx!=0)
-          {
-            std::cout << "insertion loop " << std::endl;
-            std::cout << "star  " << start << " " << stop << std::endl;
-            std::cout << pos << "\t" << ref << "\t" << alt << std::endl;
-            std::cout << "pos " << pos << std::endl;
-            std::cout << seqmod << std::endl;
-            memcpy(seqbefore, &seqmod[0], idx); //from 1st position to position before the alternative start index
-            memcpy(seqafter, &seqmod[idx+strlen(ref)], strlen(seqmod)); //from after the alternative to the end of the sequence
-            //std::cout << "pos " << pos << std::endl;
-            snprintf(seq_indel,1024,"%s%s%s\n",seqbefore,alt,seqafter);
-
-            std::cout << seq_indel << std::endl;
-            
-          }
-          else
-          {
-            /*std::cout << "insertion loop " << std::endl;
-            std::cout << "star  " << start << " " << stop << std::endl;
-            std::cout << pos << "\t" << ref << "\t" << alt << std::endl;
-            std::cout << "pos " << pos << std::endl;
-            std::cout << seqmod << std::endl;*/
-
-            memcpy(seqbefore, &seqmod[0], idx); //from 1st position to position before the alternative start index
-            memcpy(seqafter, &seqmod[idx+strlen(ref)], strlen(seqmod)); //from after the alternative to the end of the sequence
-            
-            snprintf(seq_indel,1024,"%s%s%s\n",seqbefore,alt,seqafter);
-            //std::cout << seq_indel << std::endl;
-          }
+          std::cout << pos << "\t" << ref << "\t" << alt << "\t index " << idx << std::endl;
+          memcpy(seqbefore, &seqmod[0], idx); //from 1st position to position before the alternative start index
+          memcpy(seqafter, &seqmod[idx+strlen(ref)], strlen(seqmod)); //from after the alternative to the end of the sequence
+          std::cout << seqmod << std::endl;
+          snprintf(seq_indel,1024,"%s%s%s\n",seqbefore,alt,seqafter);
+          std::cout << seq_indel << std::endl;
+          std::cout << "-------" << std::endl;
           
           //std::cout << seqmod << std::endl;
           //std::cout << seq_indel << std::endl;
