@@ -221,8 +221,8 @@ void variant_ref(const char* fastafile,FILE *fp){
   // VCF STRUCTURE
   htsFile *test_bcf = NULL;
   bcf_hdr_t *test_header = NULL;
-  //"/home/wql443/WP1/data/Chr14_subset.vcf"
-  test_bcf = bcf_open("/home/wql443/WP1/data/test2.vcf", "r");
+  // "/home/wql443/WP1/data/Chr14_subset.vcf  "/home/wql443/WP1/data/test2.vcf"
+  test_bcf = bcf_open("/home/wql443/WP1/data/chr14_full.vcf", "r");
   test_header = bcf_hdr_read(test_bcf);
   bcf1_t *test_record = bcf_init();
 
@@ -236,30 +236,13 @@ void variant_ref(const char* fastafile,FILE *fp){
   kstring_t fa_kstr;
   fa_kstr.s = NULL; fa_kstr.l = fa_kstr.m = 0;
 
-  /*std::cout << data[2] << std::endl;
-  data[2] = 'X';
-  std::cout << data[2] << std::endl;
-  std::cout << strlen(data) << std::endl;*/
-
-  /*14	19297364	.	TG	T
-  14	19291757	.	G	GC
-  14	19291758	.	AGTG	A
-  14	19291763	.	T	C
-  14	19291815	.	T	C
-  14	19291845	.	T	C
-  14	19291886	.	CTG	C
-  14	19291899	.	C	CTGTT
-  14	19325134	.	TA	TAA,T
-  19020697	.	G	A,T
-  14	19054940	.	A	AG,G
-  */
-
   while(bcf_read(test_bcf, test_header, test_record) == 0){
     bcf_unpack((bcf1_t*)test_record, BCF_UN_ALL);
     // bcf_hdr_id2name(test_header, test_record->rid) << "\t" <<
     int pos = (int) test_record->pos + 1;
     int n_allele = (int) test_record->n_allele;
     char* ref = test_record->d.allele[0];
+    char* alt = test_record->d.allele[1];
 
     int readlength = drand48()*(80.0-30.0)+30.0;
     int idx = drand48()*(readlength); //where the variation is in the read
@@ -275,7 +258,6 @@ void variant_ref(const char* fastafile,FILE *fp){
 
     if (n_allele < 3) // only two alleles -> 1 ref and 1 alternative
     {
-      char* alt = test_record->d.allele[1];
       if (strlen(ref) == 1)
       {
         if (strlen(alt) == 1)
@@ -321,9 +303,13 @@ void variant_ref(const char* fastafile,FILE *fp){
       int min_alt_no = 2;
       int max_alt_no = n_allele;
       int range = max_alt_no-min_alt_no+1; //(n_allele-1) - 1 + 1;
-      int rand_alt = rand() % range + (min_alt_no-1); //-1 due to 0-index
-      char* alt_select = test_record->d.allele[rand_alt];
+      //int rand_alt = rand() % range + (min_alt_no-1); //-1 due to 0-index
 
+      // select random number between 1 -> n_allele-1. 1 is the index of first alternative n_allele - 1 is the number of alternatives
+      int rand_alt = rand() % (n_allele-1) +1;
+      char* alt_select = test_record->d.allele[rand_alt];
+      
+      //std::cout << "random " << rand_alt << std::endl;
       if (strlen(ref) == strlen(alt_select))
       {
         //std::cout << pos << "\t" << ref << "\t" << alt_select << "\t number allelle" << n_allele << std::endl;
@@ -354,45 +340,38 @@ void variant_ref(const char* fastafile,FILE *fp){
         else
         {
           ksprintf(&fa_kstr,">%s:%d-%d_%d_len:%d_%d_del\n%s\n",name,start+1,stop,start+idx+1,strlen(seqmod),strlen(seq_indel)-1,seq_indel);
-        }
-        
+        } 
       }
-      
-      std::cout << "---------------" << std::endl;
-
+      //std::cout << "---------------" << std::endl;
     }
-    
-    /*
-    if (pos == 21444573)
+
+    if (pos == 19112155)
     {
-      std::cout << pos << "\t" << ref << "\t" << alt << std::endl;
-      std::cout << test_record->d.allele[1] << "\t" << test_record->d.allele[2] << std::endl;
-      std::cout << n_allele << std::endl;
-    }*/
-    
-    /*
-    if (pos == 19291899)
-    {
-      char* alt = test_record->d.allele[1];
-      int start = pos-idx;
-      int stop = start + readlength;
-      strncpy(seqmod,data+pos-idx,readlength);
+      std::cout << alt[0] << std::endl;
+      int rand_alt = rand() % (n_allele-1) +1; //-1 due to 0-index
+      std::cout << "random val" << rand_alt << std::endl;
+      char* alt_select = test_record->d.allele[rand_alt];
+      std::cout << "random char " << alt_select << std::endl;
+      int cnv_val = atoi(&test_record->d.allele[rand_alt][3]);
+      std::cout << "ref " << ref << std::endl;
+      char* cnv_char;
+      memset(cnv_char, *ref, cnv_val);
+      cnv_char[cnv_val] = '\0';
+      std::cout << "ref 2 " << cnv_char << std::endl;
       std::cout << seqmod << std::endl;
-      std::cout << pos << "\t" << ref << "\t" << alt << std::endl;
-      std::cout << data[pos-1] << std::endl;
-      data[pos-1] = *alt;
-      std::cout << data[pos-1] << std::endl;
-      char seqbefore[1024];
-      char seqafter[1024];
-      memcpy(seqbefore, &seqmod[0], idx-1);
-      memcpy(seqafter, &seqmod[idx+strlen(ref)-1], strlen(seqmod));
-      std::cout << seqbefore << " " << seqafter << std::endl;
-      char seq[1024];
-      snprintf(seq,1024,"%s%s%s\n",seqbefore,alt,seqafter);
-      std::cout << seq << std::endl;
-      std::cout << " pos " << start << " end " << stop << " str len "<< strlen(seqmod) << strlen(seq) << std::endl;
+      memcpy(seqbefore, &seqmod[0], idx); //from 1st position to position before the alternative start index
+      memcpy(seqafter, &seqmod[idx+strlen(ref)], strlen(seqmod)); //from after the alternative to the end of the sequence
+      snprintf(seq_indel,1024,"%s%s%s\n",seqbefore,cnv_char,seqafter);
+      std::cout << seqmod << std::endl;
+      std::cout << seqbefore << std::endl;
+      std::cout << seqafter << std::endl;
+      std::cout << seq_indel << std::endl;
       break;
-    }*/
+    }
+    //14	19076395	BI_GS_DEL1_B5_P2229_19	T	<CN0>	100
+    //14	19112155	DUP_gs_CNV_14_19112155_19126473	T	<CN2>,<CN3>	100
+
+
     memset(seqmod, 0, sizeof seqmod);
     memset(seqbefore, 0, sizeof seqbefore);
     memset(seqafter, 0, sizeof seqafter);
@@ -407,6 +386,7 @@ int main(int argc,char **argv){
   fp = fopen("favcf.fa","wb");
   //VCF2(fastafile,fp); 
   srand48(time(NULL));
+  srand(time(NULL));
   variant_ref(fastafile,fp);
   fclose(fp);
   //std::cout << std::abs(10-5) << std::endl;
@@ -414,66 +394,3 @@ int main(int argc,char **argv){
   return 0;
 }
 //g++ FaVCF_2.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
-
-/*while (chr_no < faidx_nseq(seq_ref)){
-    //int whichref = lrand48() % faidx_nseq(seq_ref);
-    //const char *name = faidx_iseq(seq_ref,whichref);
-    const char *name = faidx_iseq(seq_ref,chr_no);
-    int name_len =  faidx_seq_len(seq_ref,name);
-    fprintf(stderr,"-> name: \'%s\' name_len: %d\n",name,name_len);
-    char *data = fai_fetch(seq_ref,name,&name_len);
-    
-    int start_pos = 20000000;
-    int end_pos = 22000000;
-    char seqmod[1024];
-
-    while(start_pos <= end_pos){
-      int readlength = drand48()*(80.0-30.0)+30.0;
-      int stop = start_pos+(int) readlength;
-      
-      //adress of entire array, first element always the same but adding start for query source start, and stop-start : number of elements
-      strncpy(seqmod,data+start_pos,readlength);
-
-      char * pch;
-      pch = strchr(seqmod,'N');
-      if (pch != NULL){start_pos += readlength + 1;}
-      else {
-        char nt[] = "tT";
-        //Deamin_char(seqmod,nt,readlength);
-
-        fprintf(fp,">%s:%d-%d_length:%d\n%s\n",name,start_pos,start_pos+readlength,readlength,seqmod);
-        start_pos += readlength + 1;
-        readlength = 0;
-        memset(seqmod, 0, sizeof seqmod);
-      }
-    }
-  chr_no++;
-  }*/
-
-/*
-while(start_pos <= end_pos){
-      int readlength = drand48()*(80.0-30.0)+30.0;
-      int stop = start_pos+(int) readlength;
-      bcf_read(test_bcf, test_header, test_record);
-      int vcf_cur =  test_record->pos;
-      std::cout << "start " << start_pos << " end " << stop << std::endl;
-      while(bcf_read(test_bcf, test_header, test_record) == 0) {
-        std::cout << test_record->pos << std::endl;
-      }
-      /*while (start_pos < vcf_cur < stop)
-      {
-        std::cout << "vcfpos " << vcf_cur << std::endl;
-        bcf_read(test_bcf, test_header, test_record);
-        vcf_cur += test_record->pos;
-        start_pos += readlength + 1;
-      }
-      
-      / *bcf_read(test_bcf, test_header, test_record);
-      std::cout << "vcfpos " << test_record->pos << std::endl;
-      int vcfpos = test_record->pos;
-      std::cout << "start " << start_pos << " end " << stop << std::endl;* /
-      start_pos += readlength + 1;
-      readlength = 0;* /
-      start_pos += readlength + 1;
-    }
-*/
