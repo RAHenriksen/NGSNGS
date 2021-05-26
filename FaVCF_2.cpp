@@ -273,28 +273,29 @@ void variant_ref(const char* fastafile,FILE *fp){
     char seq_indel[1024];
     //std::cout << n_allele << std::endl;
 
-    if (n_allele < 3)
+    if (n_allele < 3) // only two alleles -> 1 ref and 1 alternative
     {
       char* alt = test_record->d.allele[1];
       if (strlen(ref) == 1)
       {
         if (strlen(alt) == 1)
-        {
+        { // Substitutions
           //std::cout << pos << "\t" << ref << "\t" << alt << std::endl;
           //std::cout << seqmod << std::endl;
           seqmod[idx] = *alt;    
           //std::cout << seqmod << std::endl;
-          ksprintf(&fa_kstr,">%s:%d-%d_len:%d_%d_sub\n%s\n",name,start,stop,readlength,strlen(seqmod),seqmod);  
+          ksprintf(&fa_kstr,">%s:%d-%d_%d_len:%d_sub\n%s\n",name,start+1,stop,start+idx+1,strlen(seqmod),seqmod);  
         }
-        else //insertions
-        {
-          std::cout << pos << "\t" << ref << "\t" << alt << "\t index " << idx << std::endl;
+        else
+        { // larger alternative -> insertions
+          //std::cout << pos << "\t" << ref << "\t" << alt << "\t index " << idx << std::endl;
           memcpy(seqbefore, &seqmod[0], idx); //from 1st position to position before the alternative start index
           memcpy(seqafter, &seqmod[idx+strlen(ref)], strlen(seqmod)); //from after the alternative to the end of the sequence
-          std::cout << seqmod << std::endl;
+          //std::cout << seqmod << std::endl;
           snprintf(seq_indel,1024,"%s%s%s\n",seqbefore,alt,seqafter);
-          std::cout << seq_indel << std::endl;
-          std::cout << "-------" << std::endl;
+          ksprintf(&fa_kstr,">%s:%d-%d_%d_len:%d_%d_ins\n%s\n",name,start+1,stop,start+idx+1,strlen(seqmod),strlen(seq_indel)-1,seq_indel);
+          //std::cout << seq_indel << std::endl;
+          //std::cout << "-------" << std::endl;
           
           //std::cout << seqmod << std::endl;
           //std::cout << seq_indel << std::endl;
@@ -303,8 +304,24 @@ void variant_ref(const char* fastafile,FILE *fp){
           memset(seq_indel, 0, sizeof seq_indel);
         }
       }
-
-      
+      else
+      { //larger ref -> deletions
+        //std::cout << pos << "\t" << ref << "\t" << alt << "\t index " << idx << std::endl;
+        memcpy(seqbefore, &seqmod[0], idx); //from 1st position to position before the alternative start index
+        memcpy(seqafter, &seqmod[idx+strlen(ref)], strlen(seqmod)); //from after the alternative to the end of the sequence
+        //std::cout << seqmod << std::endl;
+        snprintf(seq_indel,1024,"%s%s%s\n",seqbefore,alt,seqafter);
+        ksprintf(&fa_kstr,">%s:%d-%d_%d_len:%d_%d_del\n%s\n",name,start+1,stop,start+idx+1,strlen(seqmod),strlen(seq_indel)-1,seq_indel);
+        //std::cout << seq_indel << std::endl;
+        //std::cout << "-------" << std::endl;
+        memset(seqbefore, 0, sizeof seqbefore);
+        memset(seqafter, 0, sizeof seqafter);
+        memset(seq_indel, 0, sizeof seq_indel);
+      }
+    }
+    else{
+      char* alt = test_record->d.allele[1];
+      char* alt2 = test_record->d.allele[2];
     }
     
     /*
@@ -318,6 +335,7 @@ void variant_ref(const char* fastafile,FILE *fp){
     /*
     if (pos == 19291899)
     {
+      char* alt = test_record->d.allele[1];
       int start = pos-idx;
       int stop = start + readlength;
       strncpy(seqmod,data+pos-idx,readlength);
