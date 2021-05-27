@@ -137,7 +137,7 @@ int main(int argc,char **argv){
   // /home/wql443/scratch/reference_genome/hg19/chr2122.fa
   // /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa
   // chr1_2
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr2_5.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
   //we use structure faidx_t from htslib to load in a fasta
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
@@ -176,9 +176,7 @@ int main(int argc,char **argv){
     if (r < 0) { fprintf(stderr,"sam_hdr_add_line");}
     std::cout << "done" <<std::endl;
   }
-  //assert(name_len_char!=NULL);
   free(name_len_char);
-  //name_len_char = NULL;
   // saving the header to the file
   if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile);
 
@@ -232,15 +230,9 @@ int main(int argc,char **argv){
   //for(int i=0;i<nthreads;i++){
   //  sam_write1(outfile,header,struct_for_threads[i].bam_file);
   //}
-  sam_hdr_write(outfile,header);
+  //sam_hdr_t *bam_hdr_read(BGZF *fp);
   sam_hdr_destroy(header);
   sam_close(outfile);
 } 
+
 // g++ SimulAncient_func.cpp FaBam_thread.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl -Wall
-
-/*
-
-          sam_write1(outfile,header,bam_file);
-  sam_hdr_destroy(header);
-  sam_close(outfile);
-  return; */
