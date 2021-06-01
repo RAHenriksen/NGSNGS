@@ -303,7 +303,7 @@ int main(int argc,char **argv){
   clock_t tStart = clock();
   // /willerslev/users-shared/science-snm-willerslev-wql443/reference_files/Human/hg19canon.fa
   // "/home/wql443/scratch/reference_genome/hg19/chr22.fa"
-  const char *fastafile = "/home/wql443/scratch/reference_genome/hg19/chr2122.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
   int seed = -1;
   if (std::strcmp(argv[1],"bam")==0){
     if(argc>3){seed = atoi(argv[3]);}
@@ -317,6 +317,8 @@ int main(int argc,char **argv){
 
 // g++ XXX.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 //  ./a.out fafq fq T Qual_profiles/Freq_R1.txt Qual_profiles/Freq_R2.txt 1614849265
+
+//./a.out bam 
 
 // TO DO: CREATE SE MODE AND CHECK PE MODE.
 /*
