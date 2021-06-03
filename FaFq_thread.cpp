@@ -34,7 +34,7 @@
 
 pthread_mutex_t data_mutex;
 
-struct Parsarg_for_Fafq_thread{
+struct Parsarg_for_Fafq_pe_thread{
   int chr_idx;
   kstring_t *fqresult_r1;
   kstring_t *fqresult_r2;
@@ -43,17 +43,12 @@ struct Parsarg_for_Fafq_thread{
   const char* read_err_1;
   const char* read_err_2;
   bool Adapter_flag;
-  const char* Platform;
   const char* Adapter_1;
   const char* Adapter_2;
 };
 
-void* Platform(int i){
-  std::cout << " function " << i <<std::endl;
-}
-
-void* Fafq_thread_run(void *arg){
-  Parsarg_for_Fafq_thread *struct_obj = (Parsarg_for_Fafq_thread*) arg;
+void* Fafq_thread_pe_run(void *arg){
+  Parsarg_for_Fafq_pe_thread *struct_obj = (Parsarg_for_Fafq_pe_thread*) arg;
 
   int idx = struct_obj->chr_idx;
   const char *chr_name = faidx_iseq(struct_obj->seq_ref,idx);
@@ -63,10 +58,6 @@ void* Fafq_thread_run(void *arg){
   char *data = fai_fetch(struct_obj->seq_ref,chr_name,&chr_len);
   pthread_mutex_unlock(&data_mutex);
 
-  if (struct_obj->Platform==(const char*)"SE"){
-    Platform((int) 2);
-    fprintf(stderr,"SE LORT");
-  }
   std::ifstream file(struct_obj->read_err_1);
   int Line_no = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
   file.close();
@@ -92,6 +83,8 @@ void* Fafq_thread_run(void *arg){
   int end_pos = chr_len; //30001000
 
   char seqmod[1024] = {0};
+  char seqmod2[1024] = {0};
+
   // Creates the random lengths array and distributions //
   std::ifstream infile("Size_freq.txt");
   int* sizearray = Size_select_dist(infile);
@@ -103,18 +96,24 @@ void* Fafq_thread_run(void *arg){
   Size_freq_dist(infile2,SizeDist); //creates the distribution of all the frequencies
   infile2.close();
   // ---------------------- //
-
-  char qual[1024] = "";
   
+  char qual[1024] = "";
+  int lol;
   while(start_pos <= end_pos){
+    //std::cout << " CHECK " << sizearray[SizeDist[1](gen)] << std::endl;
     //std::cout << "while loop" << std::endl;
-    srand(time(NULL)+start_pos);
-    int readlength = drand48()*(70.0-30.0)+30.0; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
+    //srand48(start_pos+std::time(nullptr)); //you could make srand48(start_pos + seed_input)
+    std::cout << "before" << std::endl;
+    int readlength = (int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
+    std::cout << readlength << std::endl;
+    std::cout << "fails" << std::endl;
+    
     // int readlength = sizearray[SizeDist[1](gen)];
     int stop = start_pos+(int) readlength;
     
     //extracts the sequence
     strncpy(seqmod,data+start_pos-1,readlength);
+    std::cout << "extracts sequence" << std::endl;
     //std::cout << "sequence\t" << seqmod << std::endl;
     
     //removes NNN
@@ -181,7 +180,7 @@ void* Fafq_thread_run(void *arg){
   return NULL;
 }
 
-void* Create_pe_threads(const char *fastafile,faidx_t *seq_ref,const char *output,const char* PlatformType,bool Adapt_flag,const char* Adapter_1,const char* Adapter_2,int thread_no,int chr_total){
+void* Create_pe_threads(const char *fastafile,faidx_t *seq_ref,const char *output,bool Adapt_flag,const char* Adapter_1,const char* Adapter_2,int thread_no,int chr_total){
   //Loading in an creating my objects for the sequence files.
   
   int chr_idx = 0;
@@ -193,7 +192,7 @@ void* Create_pe_threads(const char *fastafile,faidx_t *seq_ref,const char *outpu
   //creating an array with the arguments to create multiple threads;
   int nthreads=chr_total;
   pthread_t mythreads[nthreads];
-  Parsarg_for_Fafq_thread struct_for_threads[nthreads];
+  Parsarg_for_Fafq_pe_thread struct_for_threads[nthreads];
 
   int i = 0; int j = 0; int k = 0;
   while(chr_idx < nthreads){
@@ -212,7 +211,6 @@ void* Create_pe_threads(const char *fastafile,faidx_t *seq_ref,const char *outpu
       struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
       struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
       struct_for_threads[i].read_err_2 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R2.txt";
-      struct_for_threads[i].Platform = PlatformType;
       struct_for_threads[i].Adapter_flag = Adapt_flag;
       struct_for_threads[i].Adapter_1 = Adapter_1;
       struct_for_threads[i].Adapter_2 = Adapter_2;
@@ -223,7 +221,7 @@ void* Create_pe_threads(const char *fastafile,faidx_t *seq_ref,const char *outpu
     for (j; j < std::min(chr_idx+thread_no,nthreads);j++){
       pthread_attr_t attr;
       pthread_attr_init(&attr);
-      pthread_create(&mythreads[j],&attr,Fafq_thread_run,&struct_for_threads[j]);
+      pthread_create(&mythreads[j],&attr,Fafq_thread_pe_run,&struct_for_threads[j]);
     }
 
     //now join, this means waiting for all worker threads to finish
@@ -288,13 +286,13 @@ int main(int argc,char **argv){
     Adapt_flag = false;
     const char* Adapter_1 = NULL;
     const char* Adapter_2 = NULL;
-    Create_pe_threads(fastafile,seq_ref,argv[1],PlatformType,Adapt_flag,Adapter_1,Adapter_2,thread_to_run,chr_total);
+    Create_pe_threads(fastafile,seq_ref,argv[1],Adapt_flag,Adapter_1,Adapter_2,thread_to_run,chr_total);
   }
   else if (std::strcmp(argv[2], "True") == 0 || std::strcmp(argv[2], "true") == 0 || std::strcmp(argv[2], "T") == 0){
     Adapt_flag = true;
     const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
     const char* Adapter_2 = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT";
-    Create_pe_threads(fastafile,seq_ref,argv[1],PlatformType,Adapt_flag,Adapter_1,Adapter_2,
+    Create_pe_threads(fastafile,seq_ref,argv[1],Adapt_flag,Adapter_1,Adapter_2,
                     thread_to_run,chr_total);
   }
   //fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(seq_ref));
