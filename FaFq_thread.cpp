@@ -83,11 +83,24 @@ void* Fafq_thread_run(void *arg){
   int end_pos = chr_len; //30001000
 
   char seqmod[1024] = {0};
+  // Creates the random lengths array and distributions //
+  std::ifstream infile("Size_freq.txt");
+  int* sizearray = Size_select_dist(infile);
+  infile.close();
+
+  std::discrete_distribution<> SizeDist[2]; 
+  
+  std::ifstream infile2("Size_freq.txt");
+  Size_freq_dist(infile2,SizeDist); //creates the distribution of all the frequencies
+  infile2.close();
+  // ---------------------- //
+
   char qual[1024] = "";
   
   while(start_pos <= end_pos){
     //std::cout << "while loop" << std::endl;
     int readlength = drand48()*(70.0-30.0)+30.0; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
+    // int readlength = sizearray[SizeDist[1](gen)];
     int stop = start_pos+(int) readlength;
     
     //extracts the sequence
@@ -162,7 +175,8 @@ void* Fafq_thread_run(void *arg){
 
 int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
+  // chr1_2.fa  hg19canon.fa
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr1_2.fa";
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
   assert(seq_ref!=NULL);
@@ -256,4 +270,4 @@ int main(int argc,char **argv){
 }
 
 // g++ SimulAncient_func.cpp FaFq_thread.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl -Wall
-
+// ./a.out fq F

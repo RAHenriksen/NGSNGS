@@ -59,8 +59,23 @@ void* Fafa_thread_run(void *arg){
   int end_pos = chr_len; //30001000
   char seqmod[1024] = {0};
 
+  // Creates the random lengths array and distributions //
+  std::ifstream infile("Size_freq.txt");
+  int* sizearray = Size_select_dist(infile);
+  infile.close();
+
+  std::random_device rd;
+  std::default_random_engine gen(rd());
+  std::discrete_distribution<> SizeDist[2]; 
+  
+  std::ifstream infile2("Size_freq.txt");
+  Size_freq_dist(infile2,SizeDist); //creates the distribution of all the frequencies
+  infile2.close();
+  // ---------------------- //
+
   while(start_pos <= end_pos){
-    int readlength = drand48()*(80.0-30.0)+30.0;
+    //int readlength = drand48()*(80.0-30.0)+30.0;
+    int readlength = sizearray[SizeDist[1](gen)];
     int stop = start_pos+(int) readlength;
 
     //extracts the sequence
@@ -157,7 +172,8 @@ void* Create_threads(const char *fastafile,faidx_t *seq_ref,const char *output,i
 
 // --------------------- //
 int main(int argc,char **argv){
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
+  // "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr1_2.fa" // hg19canon.fa
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr1_2.fa";
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
   assert(seq_ref!=NULL);
