@@ -183,7 +183,7 @@ int main(int argc,char **argv){
     int thread_to_run = atoi(argv[2]);
     if (thread_to_run > chr_total)
     {
-      fprintf(stderr,"The number of threads (%i) cannot exceed the number of chromosomes (%i) in the reference file\n",thread_to_run,chr_total);
+      fprintf(stderr,"The number of threads (%i) cannot exceed the number of chromosomes (%i) in the input fasta file\n",thread_to_run,chr_total);
     }
     else
     {

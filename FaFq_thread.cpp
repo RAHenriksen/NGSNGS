@@ -98,80 +98,139 @@ void* Fafq_thread_pe_run(void *arg){
   // ---------------------- //
   
   char qual[1024] = "";
-  int lol;
+  
   while(start_pos <= end_pos){
-    //std::cout << " CHECK " << sizearray[SizeDist[1](gen)] << std::endl;
-    //std::cout << "while loop" << std::endl;
     //srand48(start_pos+std::time(nullptr)); //you could make srand48(start_pos + seed_input)
+   
+    int fraglength = (int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
+    /*std::cout << "_-------------------" << std::endl;
     std::cout << "before" << std::endl;
-    int readlength = (int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
-    std::cout << readlength << std::endl;
-    std::cout << "fails" << std::endl;
+    std::cout << " fragment length " << fraglength << std::endl;
+    std::cout << "fails" << std::endl;*/
     
     // int readlength = sizearray[SizeDist[1](gen)];
-    int stop = start_pos+(int) readlength;
+    int stop = start_pos+(int) fraglength;
     
-    //extracts the sequence
-    strncpy(seqmod,data+start_pos-1,readlength);
-    std::cout << "extracts sequence" << std::endl;
-    //std::cout << "sequence\t" << seqmod << std::endl;
-    
-    //removes NNN
+    // case 1
+    if (fraglength > 2*150){
+      //std::cout << "lolrt" << std::endl;
+      strncpy(seqmod,data+start_pos-1,150);
+      strncpy(seqmod2,data+fraglength-1-150,150); //it needs to be reversed!
+    }
+    else if (150 < fraglength && fraglength < 2*150) //case 2
+    {
+      strncpy(seqmod,data+start_pos-1,150);
+      strncpy(seqmod2,data+start_pos+fraglength-1-150,150);
+    }
+    else if (fraglength <= 150)
+    {
+      strncpy(seqmod,data+start_pos-1,fraglength);
+      strncpy(seqmod2,data+start_pos-1,fraglength);
+    }
+
+    //removes reads with NNN
     char * pch;
     pch = strchr(seqmod,'N');
-    if (pch != NULL){start_pos += readlength;} // readlength + 1
+    if (pch != NULL){start_pos += fraglength+1;} // readlength + 1
     else{
-      //std::cout << "else" << std::endl;
+      std::cout << "--------------- ELSE --------------" << std::endl;
+      std::cout << " FRAGMENT LENGTH  " << fraglength << std::endl;
       Ill_err(seqmod,Error,gen);
-      //std::cout << "error" << std::endl;
-      if(struct_obj->Adapter_flag==true){        
-        //std::cout << "flag" << std::endl;
-        char read1N[lib_size+1];
-        char read2N[lib_size+1];
+      std::cout << "seqmod\n" << seqmod << std::endl;
+      std::cout << "length 2 \n" << strlen(seqmod2) << std::endl;
+      std::reverse(seqmod2, seqmod2 + strlen(seqmod2)); // jeg bliver vel nødt til med det samme at revertere den!
+      std::cout << "seqmod 2 \n" << seqmod2 << std::endl;
+      Ill_err(seqmod2,Error,gen);
+      std::cout << "seqmod 2222 \n" << seqmod2 << std::endl;
 
-        memset(read1N,'N',lib_size);
-        read1N[lib_size]='\0';
-        memset(read2N,'N',lib_size);
-        read2N[lib_size]='\0';
+      if(struct_obj->Adapter_flag==true){  
+        if (fraglength < 150){ // for reads to be added with adapter
+          /*std::cout << "above 150" << std::endl;
+          std::cout << fraglength << std::endl;
+          std::cout << seqmod << std::endl;*/
+          char read1N[lib_size+1];
+          char read2N[lib_size+1];
+          char read1[lib_size + 1];
+          char read2[lib_size + 1];
 
-        char read1[lib_size + 1];
-        char read2[lib_size + 1];
-        //Copies sequence into both reads
-        strcpy(read1, seqmod);
-        strcpy(read2, seqmod);
+          memset(read1N,'N',lib_size);
+          read1N[lib_size]='\0';
+          memset(read2N,'N',lib_size);
+          read2N[lib_size]='\0';
 
-        //creates read 1
-        std::strcat(read1,struct_obj->Adapter_1); //add adapter to read
-        std::strncpy(read1N, read1, strlen(read1)); //copy read+adapter into N...
+          //Copies sequence into both reads
+          strcpy(read1, seqmod);
+          std::strcat(read1,struct_obj->Adapter_1);
 
-        DNA_complement(read2);
-        std::reverse(read2, read2 + strlen(read2));
-        std::strcat(read2,struct_obj->Adapter_2);
-        std::strncpy(read2N, read2, strlen(read2)); //copy read+adapter into N...
+          /*strcpy(read1, struct_obj->Adapter_1); //adds adapter to the beginning of 5' before the sequence
+          std::strcat(read1,seqmod);*/
+          DNA_complement(seqmod2);
 
-        //Creating read quality
-        Read_Qual2(read1N,qual,Qualdistr1,gen);
-        ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+readlength-1,readlength,read1N,qual);
-        memset(qual, 0, sizeof(qual));    
+          /*std::cout << "read 1 \n" << read1 << std::endl;
+          std::cout << strlen(read1) << std::endl;*/
+          
+          if (strlen(read1) >= 150){
+            //std::cout << "second if "<< std::endl;
+            //std::cout << read1 << std::endl;
+            std::strncpy(read1N, read1, 150);
+            //std::cout << read1N << std::endl;
+            //std::cout << "read 2 " << std::endl;
+            strcpy(read2, seqmod2);
+            //std::cout << read2 << std::endl;
+            std::reverse(read2, read2 + strlen(read2));
+            std::strcat(read2, struct_obj->Adapter_2);
+            //std::cout << read2 << std::endl;
+            std::strncpy(read2N, read2, 150);
+            //std::cout << read2N << std::endl;
+            //std::cout << "--------------" << std::endl;
+          }
+          else{
+            //std::cout << "else " << std::endl;
+            //std::cout << "read1 v2 \n" << read1 << std::endl;
+            std::strncpy(read1N, read1, strlen(read1)); //copy read+adapter into N...
+            //std::cout << read1N << std::endl;
+            DNA_complement(read2);
+            std::reverse(read2, read2 + strlen(read2));
+            std::strcat(read2,struct_obj->Adapter_2);
+            std::strncpy(read2N, read2, strlen(read2)); 
+          }
+          
+          //Creating read quality
+          Read_Qual2(read1N,qual,Qualdistr1,gen);
+          ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+fraglength-1,fraglength,read1N,qual);
+          memset(qual, 0, sizeof(qual));    
 
-        Read_Qual2(read2N,qual,Qualdistr2,gen);
-        ksprintf(struct_obj->fqresult_r2,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+readlength-1,readlength,read2N,qual);
-        memset(qual, 0, sizeof(qual));    
+          Read_Qual2(read2N,qual,Qualdistr2,gen);
+          ksprintf(struct_obj->fqresult_r2,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+fraglength-1,fraglength,read2N,qual);
+          memset(qual, 0, sizeof(qual));    
+        }
+        else{
+          std::cout << "else loop" << std::endl;
+          Read_Qual2(seqmod,qual,Qualdistr1,gen);
+          ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+fraglength-1,fraglength,seqmod,qual);
+          memset(qual, 0, sizeof(qual));
+          DNA_complement(seqmod);
+          std::reverse(seqmod, seqmod + strlen(seqmod));
+          Read_Qual2(seqmod,qual,Qualdistr2,gen);
+          ksprintf(struct_obj->fqresult_r2,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+fraglength-1,fraglength,seqmod,qual);
+          memset(qual, 0, sizeof(qual)); 
+        }
       }
       else{
         //std::cout << "non flag "<< std::endl;
         Read_Qual2(seqmod,qual,Qualdistr1,gen);
-        ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+readlength-1,readlength,seqmod,qual);
+        ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+fraglength-1,fraglength,seqmod,qual);
         memset(qual, 0, sizeof(qual));
         DNA_complement(seqmod);
         std::reverse(seqmod, seqmod + strlen(seqmod));
         Read_Qual2(seqmod,qual,Qualdistr2,gen);
-        ksprintf(struct_obj->fqresult_r2,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+readlength-1,readlength,seqmod,qual);
+        ksprintf(struct_obj->fqresult_r2,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,start_pos,start_pos+fraglength-1,fraglength,seqmod,qual);
         memset(qual, 0, sizeof(qual));        
       }
     }
-    start_pos += readlength;
+    start_pos += fraglength;
     memset(seqmod, 0, sizeof seqmod);
+    memset(seqmod2, 0, sizeof seqmod2);
   }
   //std::cout << "out of while" << std::endl;
   //for(int i=0;i<100000;i++){ksprintf(struct_obj->fqresult,"@%s_%i_%i\nCGTGA\n+\nIIIII\n",chr_name,chr_len,idx);}
@@ -281,7 +340,7 @@ int main(int argc,char **argv){
   const char* PlatformType;
   PlatformType = "SE";
 
-  int thread_to_run = 3;
+  int thread_to_run = 1;
   if (std::strcmp(argv[2], "False") == 0 || std::strcmp(argv[2], "false") == 0 || std::strcmp(argv[2], "F") == 0){
     Adapt_flag = false;
     const char* Adapter_1 = NULL;
