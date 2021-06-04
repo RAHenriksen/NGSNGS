@@ -537,27 +537,83 @@ int main(int argc,char **argv){
   assert(seq_ref!=NULL);
   int chr_total = faidx_nseq(seq_ref);
 
+  fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
+  
   bool Adapt_flag;
-  const char* PlatformType;
-  PlatformType = "SE";
 
-  int thread_to_run = 1;
-  if (std::strcmp(argv[2], "False") == 0 || std::strcmp(argv[2], "false") == 0 || std::strcmp(argv[2], "F") == 0){
-    Adapt_flag = false;
-    const char* Adapter_1 = NULL;
-    const char* Adapter_2 = NULL;
-    //Create_pe_threads(fastafile,seq_ref,argv[1],Adapt_flag,Adapter_1,Adapter_2,thread_to_run,chr_total);
-    Create_se_threads(fastafile,seq_ref,argv[1],Adapt_flag,Adapter_1,thread_to_run,chr_total);
+  if(argc>4){
+    int thread_to_run = atoi(argv[4]);
+    if (thread_to_run > chr_total)
+    {
+      fprintf(stderr,"The number of threads (%i) cannot exceed the number of chromosomes (%i) in the input fasta file\n",thread_to_run,chr_total);
+    }
+    else
+    {
+      if (std::strcmp(argv[2], "SE") == 0 || std::strcmp(argv[2], "single") == 0 || std::strcmp(argv[2], "single-end") == 0)
+      {
+        if (std::strcmp(argv[3], "False") == 0 || std::strcmp(argv[3], "false") == 0 || std::strcmp(argv[3], "F") == 0)
+        {
+          Adapt_flag = false;
+          const char* Adapter_1 = NULL;
+          Create_se_threads(fastafile,seq_ref,argv[1],Adapt_flag,Adapter_1,thread_to_run,chr_total);
+        }
+        else if (std::strcmp(argv[3], "True") == 0 || std::strcmp(argv[3], "true") == 0 || std::strcmp(argv[3], "T") == 0)
+        {
+          Adapt_flag = true;
+          const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
+          Create_se_threads(fastafile,seq_ref,argv[1],Adapt_flag,Adapter_1,thread_to_run,chr_total);
+        }
+      }
+      else if (std::strcmp(argv[2], "PE") == 0 || std::strcmp(argv[2], "paired") == 0 || std::strcmp(argv[2], "paired-end") == 0)
+      {
+        if (std::strcmp(argv[3], "False") == 0 || std::strcmp(argv[3], "false") == 0 || std::strcmp(argv[3], "F") == 0)
+        {
+          Adapt_flag = false;
+          const char* Adapter_1 = NULL;
+          const char* Adapter_2 = NULL;
+          Create_pe_threads(fastafile,seq_ref,argv[1],Adapt_flag,Adapter_1,Adapter_2,thread_to_run,chr_total);
+        }
+        else if (std::strcmp(argv[3], "True") == 0 || std::strcmp(argv[3], "true") == 0 || std::strcmp(argv[3], "T") == 0)
+        {
+          Adapt_flag = true;
+          const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
+          const char* Adapter_2 = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT";
+          Create_pe_threads(fastafile,seq_ref,argv[1],Adapt_flag,Adapter_1,Adapter_2,thread_to_run,chr_total);
+        }
+      }
+      //Create_threads(fastafile,seq_ref,argv[1],thread_to_run,chr_total);
+    }
   }
-  else if (std::strcmp(argv[2], "True") == 0 || std::strcmp(argv[2], "true") == 0 || std::strcmp(argv[2], "T") == 0){
-    Adapt_flag = true;
-    const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
-    const char* Adapter_2 = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT";
-    //Create_pe_threads(fastafile,seq_ref,argv[1],Adapt_flag,Adapter_1,Adapter_2,thread_to_run,chr_total);
-    Create_se_threads(fastafile,seq_ref,argv[1],Adapt_flag,Adapter_1,thread_to_run,chr_total);
-  }
-  //fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,faidx_nseq(seq_ref));
+  else{
+    if (std::strcmp(argv[2], "SE") == 0 || std::strcmp(argv[2], "single") == 0 || std::strcmp(argv[2], "single-end") == 0){
+      if (std::strcmp(argv[3], "False") == 0 || std::strcmp(argv[3], "false") == 0 || std::strcmp(argv[3], "F") == 0){
+        Adapt_flag = false;
+        const char* Adapter_1 = NULL;
+        Create_se_threads(fastafile,seq_ref,argv[1],Adapt_flag,Adapter_1,chr_total,chr_total);
+      }
+      else if (std::strcmp(argv[3], "True") == 0 || std::strcmp(argv[3], "true") == 0 || std::strcmp(argv[3], "T") == 0){
+        Adapt_flag = true;
+        const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
+        Create_se_threads(fastafile,seq_ref,argv[1],Adapt_flag,Adapter_1,chr_total,chr_total);
+      }
+    }
+    else if (std::strcmp(argv[2], "PE") == 0 || std::strcmp(argv[2], "paired") == 0 || std::strcmp(argv[2], "paired-end") == 0){
+      if (std::strcmp(argv[3], "False") == 0 || std::strcmp(argv[3], "false") == 0 || std::strcmp(argv[3], "F") == 0){
+        Adapt_flag = false;
+        const char* Adapter_1 = NULL;
+        const char* Adapter_2 = NULL;
+        Create_pe_threads(fastafile,seq_ref,argv[1],Adapt_flag,Adapter_1,Adapter_2,chr_total,chr_total);
+      }
+      else if (std::strcmp(argv[3], "True") == 0 || std::strcmp(argv[3], "true") == 0 || std::strcmp(argv[3], "T") == 0){
+        Adapt_flag = true;
+        const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
+        const char* Adapter_2 = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT";
+        Create_pe_threads(fastafile,seq_ref,argv[1],Adapt_flag,Adapter_1,Adapter_2,chr_total,chr_total);
+      }
+    }
+    //Create_threads(fastafile,seq_ref,argv[1],chr_total,chr_total);
+  } 
 }
 
 // g++ SimulAncient_func.cpp FaFq_thread.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl -Wall
-// ./a.out fq F
+// ./a.out fq SE F 3

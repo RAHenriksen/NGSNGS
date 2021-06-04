@@ -132,7 +132,7 @@ void* FaBam_thread_run(void *arg){
 
 int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr21_22.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
   //we use structure faidx_t from htslib to load in a fasta
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
