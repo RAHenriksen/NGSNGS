@@ -174,7 +174,7 @@ void* Create_threads(faidx_t *seq_ref,int thread_no,int chr_total){
   pthread_t mythreads[nthreads];
   Parsarg_for_Fabam_thread struct_for_threads[nthreads];
   
-  //initialzie values that should be used for each thread
+  //initialize values that should be used for each thread
   for(int i=0;i<nthreads;i++){
     struct_for_threads[i].chr_idx = i;
     struct_for_threads[i].seq_ref = seq_ref;
@@ -216,11 +216,14 @@ void* Create_threads(faidx_t *seq_ref,int thread_no,int chr_total){
     
     char *token_name; char *token_seq;char *token_qual;
     char *save_name_ptr, *save_seq_ptr, *save_qual_ptr;
-
     token_name = strtok_r(struct_for_threads[i].name->s, ".", &save_name_ptr);
     token_seq = strtok_r(struct_for_threads[i].seq->s, ".", &save_seq_ptr);
     token_qual = strtok_r(struct_for_threads[i].qualstring->s, ".", &save_qual_ptr);
+    //std::cout << struct_for_threads[i].name->l << std::endl;
+    //std::cout << struct_for_threads[i].seq->l << std::endl;
+    
     while(token_name != NULL && token_seq != NULL && token_qual != NULL) {
+      //std::cout << token_seq<< std::endl;
       bam_set1(bam_file_chr,strlen(token_name),token_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(token_seq),token_seq,token_qual,0);
       sam_write1(outfile,header,bam_file_chr);
       //extract next tokes
@@ -238,7 +241,8 @@ void* Create_threads(faidx_t *seq_ref,int thread_no,int chr_total){
 
 int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr12_15.fa";
+  //chr12_15
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
   //we use structure faidx_t from htslib to load in a fasta
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
