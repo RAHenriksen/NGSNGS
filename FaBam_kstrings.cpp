@@ -125,19 +125,32 @@ void* FaBam_thread_run(void *arg){
   }
 }
 
-int main(int argc,char **argv){
-  //Loading in an creating my objects for the sequence files.
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr1_5.fa";
-  //we use structure faidx_t from htslib to load in a fasta
-  faidx_t *seq_ref = NULL;
-  seq_ref  = fai_load(fastafile);
-  assert(seq_ref!=NULL);
-  int chr_no = faidx_nseq(seq_ref);
-  
+void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total){
+  // Creates a header for the bamfile. The header is initialized before the function is called //
+
+  if (header == NULL) { fprintf(stderr, "sam_hdr_init");}
+    
+  // Creating header information
+  char *name_len_char =(char*) malloc(1024);
+  for(int i=0;i<chr_total;i++){
+    const char *name = faidx_iseq(seq_ref,i);
+    int name_len =  faidx_seq_len(seq_ref,name);
+    snprintf(name_len_char,1024,"%d",name_len);
+    fprintf(stderr,"ref:%d %d %s\n",i,name,name_len_char);
+    // reference part of the header, int r variable ensures the header is added
+    int r = sam_hdr_add_line(header, "SQ", "SN", name, "LN", name_len_char, NULL);
+    if (r < 0) { fprintf(stderr,"sam_hdr_add_line");}
+  }
+  // saving the header to the file
+  if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile);
+}
+
+void* Create_threads(faidx_t *seq_ref,int thread_no,int chr_total){
   // Initializing the bam file header
 
   //Creates a pointer to allocated memomry for the format
   htsFormat *fmt_hts =(htsFormat*) calloc(1,sizeof(htsFormat));
+  
   //wb -> bam , wc -> cram
   char out_mode[5]="wb";
     
@@ -151,35 +164,17 @@ int main(int argc,char **argv){
   
   // creates a pointer to generated header
   sam_hdr_t *header = sam_hdr_init();
-  if (header == NULL) { fprintf(stderr, "sam_hdr_init");}
-  char *refName=NULL;
-    
-  // Creating header information
-  char *name_len_char =(char*) malloc(1024);
-  for(int i=0;i<chr_no;i++){
-    const char *name = faidx_iseq(seq_ref,i);
-    int name_len =  faidx_seq_len(seq_ref,name);
-    snprintf(name_len_char,1024,"%d",name_len);
-    fprintf(stderr,"ref:%d %d %s\n",i,name,name_len_char);
-    // reference part of the header, int r variable ensures the header is added
-    int r = sam_hdr_add_line(header, "SQ", "SN", name, "LN", name_len_char, NULL);
-    if (r < 0) { fprintf(stderr,"sam_hdr_add_line");}
-  }
-  // saving the header to the file
-  if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile);
-
-  // Initializing the alignment information in a bam_1 type to memory, with each line representing one alignment 
-  //bam1_t *bam_file = bam_init1();
+  // add info to the header
+  Header_func(fmt_hts,outfile_nam,outfile,header,seq_ref,chr_total);
 
   //initialize mutex
   pthread_mutex_init(&data_mutex,NULL);
-  int nthreads=chr_no;
+
+  int nthreads = chr_total;
   pthread_t mythreads[nthreads];
   Parsarg_for_Fabam_thread struct_for_threads[nthreads];
   
   //initialzie values that should be used for each thread
-  
-  //bam1_t *bam_file_chr = ;  // Saves 25 lines each with same final output from last chromosome it iterates throug
   for(int i=0;i<nthreads;i++){
     struct_for_threads[i].chr_idx = i;
     struct_for_threads[i].seq_ref = seq_ref;
@@ -199,8 +194,7 @@ int main(int argc,char **argv){
     struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
     struct_for_threads[i].read_err_2 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R2.txt";
   }
-  //struct_for_threads[i].bam_file = bam_file_chr(); 
-  //    struct_for_threads[i].out_bam_name = outfile;  struct_for_threads[i].bam_head = header;
+
   //launch all worker threads
   for(int i=0;i<nthreads;i++){
     pthread_attr_t attr;
@@ -215,6 +209,7 @@ int main(int argc,char **argv){
   }
 
   pthread_mutex_destroy(&data_mutex);  
+
   //now all are done and we only write in main program.
   for(int i=0;i<nthreads;i++){
     bam1_t *bam_file_chr = bam_init1();
@@ -234,52 +229,25 @@ int main(int argc,char **argv){
       token_qual = strtok_r(NULL, ".", &save_qual_ptr);
       //std::cout << "while loop end "<< std::endl;
     }
-
-    //pch_seq = strtok(struct_for_threads[i].seq->,".");
-    //pch_qual = strtok(struct_for_threads[i].qual->s,".");
-    
-    //bam_set1(bam_file_chr,strlen(pch_name),pch_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(pch_seq),pch_seq,pch_qual,0);
-    //sam_write1(outfile,header,bam_file_chr);
-
   }
+
   sam_hdr_destroy(header);
   sam_close(outfile);
+}
+
+
+int main(int argc,char **argv){
+  //Loading in an creating my objects for the sequence files.
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr12_15.fa";
+  //we use structure faidx_t from htslib to load in a fasta
+  faidx_t *seq_ref = NULL;
+  seq_ref  = fai_load(fastafile);
+  assert(seq_ref!=NULL);
+  int chr_total = faidx_nseq(seq_ref);
+  
+  // Creates the threads and writes to the files
+  Create_threads(seq_ref,2,chr_total);
+
 } 
 
 // g++ SimulAncient_func.cpp FaBam_kstrings.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
-
-
-/*
-int main()
-{
-    kstring_t kstr1;kstring_t kstr2;kstring_t kstr3;
-    kstr1.s = NULL; kstr1.l = 0; kstr1.m = 0;
-    kstr2.s = NULL; kstr2.l = 0; kstr2.m = 0;
-    kstr3.s = NULL; kstr3.l = 0; kstr3.m = 0;
-    char name[1024] = "ReadID1.ReadID2.ReadID3";
-    char seq[1024] = "AAAA.GGGG.CCCC";
-    char qual[1024] = "BBBB.FFFF.IIII";
-
-    ksprintf(&kstr1,"%s",name);
-    ksprintf(&kstr2,"%s",seq);
-    ksprintf(&kstr3,"%s",qual);
-
-    char *token1; char *token2;char *token3;
-    char *save_ptr1, *save_ptr2, *save_ptr3;
-
-    token1 = strtok_r(name, ".", &save_ptr1);
-    token2 = strtok_r(seq, ".", &save_ptr2);
-    token3 = strtok_r(qual, ".", &save_ptr3);
-
-    while(token1 != NULL && token2 != NULL && token3 != NULL) {
-      std::cout << token1 << std::endl;
-      std::cout << token2 << std::endl;
-      std::cout << token3 << std::endl;
-      // get next tokens
-      token1 = strtok_r(NULL, ".", &save_ptr1);
-      token2 = strtok_r(NULL, ".", &save_ptr2);
-      token3 = strtok_r(NULL, ".", &save_ptr3);
-      std::cout << "while loop end "<< std::endl;
-    }
-}
-*/
