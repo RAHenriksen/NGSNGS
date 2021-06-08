@@ -387,10 +387,12 @@ void* Fafq_thread_se_run(void *arg){
       //std::cout << "lolrt" << std::endl;
       strncpy(seqmod,data+start_pos-1,150);
     }
+    // case 2
     else if (150 < fraglength && fraglength < 2*150) //case 2
     {
       strncpy(seqmod,data+start_pos-1,150);
     }
+    // case 3
     else if (fraglength <= 150)
     {
       strncpy(seqmod,data+start_pos-1,fraglength);

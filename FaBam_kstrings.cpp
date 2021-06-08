@@ -77,6 +77,18 @@ void* FaBam_thread_run(void *arg){
   std::discrete_distribution<> Error[280];
   Seq_err(Error_2darray,Error,280);
 
+  // Creates the random lengths array and distributions //
+  std::ifstream infile("Size_freq.txt");
+  int* sizearray = Size_select_dist(infile);
+  infile.close();
+
+  std::discrete_distribution<> SizeDist[2]; 
+  
+  std::ifstream infile2("Size_freq.txt");
+  Size_freq_dist(infile2,SizeDist); //creates the distribution of all the frequencies
+  infile2.close();
+  // ---------------------- //
+
   int start_pos = 1;
   int end_pos = chr_len;
 
@@ -84,18 +96,36 @@ void* FaBam_thread_run(void *arg){
   char qual[1024] = "";
 
   while(start_pos <= end_pos){
-    int readlength = drand48()*(70.0-30.0)+30.0;
-    int stop = start_pos+(int) readlength;
+    int fraglength = (int) sizearray[SizeDist[1](gen)];
+    //int readlength = drand48()*(70.0-30.0)+30.0;
+    int stop = start_pos+(int) fraglength;
 
+    // extract the sequences and limits to a maximum size of 150
+    // case 1
+    if (fraglength > 2*150){
+      //std::cout << "lolrt" << std::endl;
+      strncpy(seqmod,data+start_pos,150);
+    }
+    // case 2
+    else if (150 < fraglength && fraglength < 2*150) //case 2
+    {
+      strncpy(seqmod,data+start_pos,150);
+    }
+    // case 3
+    else if (fraglength <= 150)
+    {
+      strncpy(seqmod,data+start_pos,fraglength);
+    }
     //extracts the sequence
-    strncpy(seqmod,data+start_pos,readlength);
+    //strncpy(seqmod,data+start_pos,readlength);
+
     //removes NNN
     char * pch;
     pch = strchr(seqmod,'N');
-    if (pch != NULL){start_pos += readlength + 1;}
+    if (pch != NULL){start_pos += fraglength + 1;}
     else{ 
       char Qname[96]; //read_id
-      snprintf(Qname,96,"%s:%d-%d",chr_name,start_pos+1,stop);
+      snprintf(Qname,96,"%s:%d-%d_length:%d",chr_name,start_pos+1,stop,fraglength);
       Ill_err(seqmod,Error,gen);
       Bam_baseQ(seqmod,qual,Qualdistr1,gen);
       /*std::cout << Qname << std::endl;
@@ -111,7 +141,7 @@ void* FaBam_thread_run(void *arg){
       //bam_set1(struct_obj->bam_format,strlen(Qname),Qname,Flag,RNAME,start_pos-1,mapQ,no_cigar,cigar,idx,Pnext-1,Tlen,readlength,seqmod,qual,0);
       //sam_write1(struct_obj->bam_out,struct_obj->bam_head,struct_obj->bam_format);
       // -1 for the different positions is because they are made 1 - based with the bam_set
-      int len = start_pos+readlength;
+      int len = start_pos+fraglength;
       ksprintf(struct_obj->name,"%s.",Qname);
       ksprintf(struct_obj->qualstring,"%s.",qual);
       ksprintf(struct_obj->seq,"%s.",seqmod);
@@ -121,7 +151,7 @@ void* FaBam_thread_run(void *arg){
     }
     memset(seqmod, 0, sizeof(seqmod));
     memset(qual, 0, sizeof(qual));
-    start_pos += readlength + 1;
+    start_pos += fraglength;
   }
 }
 
@@ -146,6 +176,8 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
 }
 
 void* Create_threads(faidx_t *seq_ref,int thread_no,int chr_total){
+  int chr_idx = 0;
+
   // Initializing the bam file header
 
   //Creates a pointer to allocated memomry for the format
@@ -174,40 +206,45 @@ void* Create_threads(faidx_t *seq_ref,int thread_no,int chr_total){
   pthread_t mythreads[nthreads];
   Parsarg_for_Fabam_thread struct_for_threads[nthreads];
   
-  //initialize values that should be used for each thread
-  for(int i=0;i<nthreads;i++){
-    struct_for_threads[i].chr_idx = i;
-    struct_for_threads[i].seq_ref = seq_ref;
-    struct_for_threads[i].name =new kstring_t;
-    struct_for_threads[i].name -> l = 0;
-    struct_for_threads[i].name -> m = 0;
-    struct_for_threads[i].name -> s = NULL;
-    struct_for_threads[i].qualstring=new kstring_t;
-    struct_for_threads[i].qualstring -> l = 0;
-    struct_for_threads[i].qualstring -> m = 0;
-    struct_for_threads[i].qualstring -> s = NULL;
-    struct_for_threads[i].seq=new kstring_t;
-    struct_for_threads[i].seq -> l = 0;
-    struct_for_threads[i].seq -> m = 0;
-    struct_for_threads[i].seq -> s = NULL;
-    struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
-    struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
-    struct_for_threads[i].read_err_2 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R2.txt";
-  }
+  int i = 0; int j = 0; int k = 0;
+  while(chr_idx < nthreads){
+    //initialize values that should be used for each thread
+    for(i; i < std::min(chr_idx+thread_no,nthreads);i++){
+      struct_for_threads[i].chr_idx = i;
+      struct_for_threads[i].seq_ref = seq_ref;
+      struct_for_threads[i].name =new kstring_t;
+      struct_for_threads[i].name -> l = 0;
+      struct_for_threads[i].name -> m = 0;
+      struct_for_threads[i].name -> s = NULL;
+      struct_for_threads[i].qualstring=new kstring_t;
+      struct_for_threads[i].qualstring -> l = 0;
+      struct_for_threads[i].qualstring -> m = 0;
+      struct_for_threads[i].qualstring -> s = NULL;
+      struct_for_threads[i].seq=new kstring_t;
+      struct_for_threads[i].seq -> l = 0;
+      struct_for_threads[i].seq -> m = 0;
+      struct_for_threads[i].seq -> s = NULL;
+      struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
+      struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
+      struct_for_threads[i].read_err_2 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R2.txt";
+      std::cout << "chr_no" << i << std::endl;
+    }
+    //launch worker threads
+    for (j; j < std::min(chr_idx+thread_no,nthreads);j++){
+      std::cout << "launc for loop " << std::endl;
+      pthread_attr_t attr;
+      pthread_attr_init(&attr);
+      pthread_create(&mythreads[j],&attr,FaBam_thread_run,&struct_for_threads[j]);
+    }
 
-  //launch all worker threads
-  for(int i=0;i<nthreads;i++){
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_create(&mythreads[i],&attr,FaBam_thread_run,&struct_for_threads[i]);
+     //now join, this means waiting for all worker threads to finish
+    for(k;k<std::min(chr_idx+thread_no,nthreads);k++){
+      pthread_join(mythreads[k],NULL);
+    }
+    std::cout << "end of for loop" << std::endl;
+    chr_idx = chr_idx + thread_no;
   }
-
-  //right now 22 thread are running at the same time
-  //now join, this means waiting for all worker threads to finish
-  for(int i=0;i<nthreads;i++){
-    pthread_join(mythreads[i],NULL);
-  }
-
+  
   pthread_mutex_destroy(&data_mutex);  
 
   //now all are done and we only write in main program.
@@ -250,7 +287,7 @@ int main(int argc,char **argv){
   int chr_total = faidx_nseq(seq_ref);
   
   // Creates the threads and writes to the files
-  Create_threads(seq_ref,2,chr_total);
+  Create_threads(seq_ref,chr_total,chr_total);
 
 } 
 
