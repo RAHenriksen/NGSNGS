@@ -332,6 +332,7 @@ void* Fafq_thread_se_run(void *arg){
   char *data = fai_fetch(struct_obj->seq_ref,chr_name,&chr_len);
   pthread_mutex_unlock(&data_mutex);
 
+  //just load in first file to count number of lines
   std::ifstream file(struct_obj->read_err_1);
   int Line_no = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
   file.close();
