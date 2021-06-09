@@ -19,7 +19,7 @@
 
 void coverage(int cov){
 
-  const int N = 10;
+  const int N = 100;
   int frag_len[N] = {0};
 
   float cov_current = 0;
@@ -48,7 +48,6 @@ void coverage(int cov){
     nread++;
     fprintf(stderr,"count %i and sum %i \n",count,sum);
     cov_current = (float) sum / (float) count;
-    std::cout << cov_current << std::endl;
     std::cout << "number of reads "<< nread << std::endl;
     //std::cout << "cov 2 "<< (float) sum / (float) N << std::endl;
     std::cout << "-----------" << std::endl;
@@ -123,7 +122,7 @@ void Size_freq_dist(std::ifstream &infile, std::discrete_distribution<> dist[]){
 }
 
 int main(int argc,char **argv){
-  //coverage(5);
+  coverage(2);
 
   /*for (size_t i = 0; i < 1000; i++)
   {
@@ -144,6 +143,7 @@ int main(int argc,char **argv){
     }
     
   }*/
+  /*
   std::ifstream infile("Size_freq.txt");
   int* sizearray = Size_select_dist(infile);
   infile.close();
@@ -163,7 +163,7 @@ int main(int argc,char **argv){
     std::cout << " a " << a  << std::endl;
     std::cout << sizearray[a] << std::endl;
     std::cout << "----------" << std::endl;
-  }
+  }*/
   //std::cout << sizearray[0] << std::endl;
   return 0;
 }
