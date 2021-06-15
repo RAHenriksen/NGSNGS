@@ -486,10 +486,10 @@ void* Create_pe_threads(faidx_t *seq_ref,int thread_no,int chr_total){
     bam1_t *bam_file_chr = bam_init1();
     
     char *token_name; char *token_seq_r1;char *token_qual_r1;
-    char *save_name_ptr, *save_seq_r1_ptr, *save_qual_r1_ptr;
+    char *save_name_ptr; char *save_seq_r1_ptr; char *save_qual_r1_ptr;
     
-    char *token_seq_r2;char *token_qual_r2;
-    char *save_seq_r2_ptr, *save_qual_r2_ptr;
+    char *token_seq_r2; char *token_qual_r2;
+    char *save_seq_r2_ptr; char *save_qual_r2_ptr;
 
     token_name = strtok_r(struct_for_threads[i].name->s, ".", &save_name_ptr);
     token_seq_r1 = strtok_r(struct_for_threads[i].seq_r1->s, ".", &save_seq_r1_ptr);
@@ -501,21 +501,44 @@ void* Create_pe_threads(faidx_t *seq_ref,int thread_no,int chr_total){
    
     std::cout << "CIFGAR" << std::endl;
     while(token_name != NULL && token_seq_r1 != NULL && token_qual_r1 != NULL) {
-      //std::cout << token_seq<< std::endl;
-      int a = strlen(token_seq_r1);
+      //std::cout << token_name<< std::endl;
+      //std::cout << strtok(token_name,":") << std::endl;
+      //std::cout << strtok(NULL,"-") << std::endl;
+      /*int a = strlen(token_seq_r1);
       const uint32_t arr[] = {a};
       const uint32_t *cigar = arr;
-      std::cout << "-----------" << std::endl;
+      /std::cout << "-----------" << std::endl;
       std::cout << cigar << std::endl;
       std::cout << &cigar << std::endl;
       std::cout << *cigar << std::endl;
-      std::cout << a << " " << token_seq_r1 << std::endl;
-      bam_set1(bam_file_chr,strlen(token_name),token_name,99,-1,-1,0,a,arr,-1,-1,0,strlen(token_seq_r1),token_seq_r1,token_qual_r1,0);
+      std::cout << a << " " << token_seq_r1 << std::endl;*/
+
+      hts_pos_t min_beg, max_end;
+      //char *qname = token_name;
+      //size_t l_qname = strlen(qname);
+      uint16_t flag = 4;
+      int32_t tid = -1;//atoi(strtok(qname,":"));
+      min_beg = 10;//atoi(strtok(NULL,"-"));
+      uint8_t mapq = 60;
+      size_t n_cigar = strlen(token_seq_r1);
+      size_t l_aux = 0; // auxiliary field for supp data etc?? 
+      bam_set1(bam_file_chr,strlen(token_name),token_name,flag,-1,min_beg,0,0,NULL,tid,-1,0,strlen(token_seq_r1),token_seq_r1,token_qual_r1,l_aux);
       sam_write1(outfile,header,bam_file_chr);
+      //bam_set1(bam_file_chr,strlen(token_name),token_name,flag,-1,min_beg,mapq,0,NULL,tid,-1,0,strlen(token_seq_r2),token_seq_r2,token_qual_r2,l_aux);
+      //sam_write1(outfile,header,bam_file_chr);
+      
+      /*bam_set1(bam_file_chr,strlen(token_name),token_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(token_seq_r1),token_seq_r1,token_qual_r1,0);
+      sam_write1(outfile,header,bam_file_chr);
+      bam_set1(bam_file_chr,strlen(token_name),token_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(token_seq_r1),token_seq_r1,token_qual_r1,0);
+      sam_write1(outfile,header,bam_file_chr);*/
+      
+      // MEN DISSE TOKENS OVERSKRIVER DE GAMLE!
       //extract next tokes
       token_name = strtok_r(NULL, ".", &save_name_ptr);
       token_seq_r1 = strtok_r(NULL, ".", &save_seq_r1_ptr);
       token_qual_r1 = strtok_r(NULL, ".", &save_qual_r1_ptr);
+      token_seq_r2 = strtok_r(NULL, ".", &save_seq_r2_ptr);
+      token_qual_r2 = strtok_r(NULL, ".", &save_qual_r2_ptr);
       //std::cout << "while loop end "<< std::endl;
     }
   }
