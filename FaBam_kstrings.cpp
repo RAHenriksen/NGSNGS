@@ -491,16 +491,24 @@ void* Create_pe_threads(faidx_t *seq_ref,int thread_no,int chr_total){
     char *token_seq_r2; char *token_qual_r2;
     char *save_seq_r2_ptr; char *save_qual_r2_ptr;
 
+    //char *qname;
+
     token_name = strtok_r(struct_for_threads[i].name->s, ".", &save_name_ptr);
+    //qname = strtok_r(struct_for_threads[i].name->s, ".", &save_qname_ptr);
     token_seq_r1 = strtok_r(struct_for_threads[i].seq_r1->s, ".", &save_seq_r1_ptr);
     token_qual_r1 = strtok_r(struct_for_threads[i].qualstring_r1->s, ".", &save_qual_r1_ptr);
     token_seq_r2 = strtok_r(struct_for_threads[i].seq_r2->s, ".", &save_seq_r2_ptr);
     token_qual_r2 = strtok_r(struct_for_threads[i].qualstring_r2->s, ".", &save_qual_r2_ptr);
+    
     //std::cout << struct_for_threads[i].name->l << std::endl;
     //std::cout << struct_for_threads[i].seq->l << std::endl;
-   
+    char *save_qname_ptr;
+    char* qname = (char*) malloc(1024); 
+    strcpy(qname, token_name);
+
     std::cout << "CIFGAR" << std::endl;
     while(token_name != NULL && token_seq_r1 != NULL && token_qual_r1 != NULL) {
+      
       //std::cout << token_name<< std::endl;
       //std::cout << strtok(token_name,":") << std::endl;
       //std::cout << strtok(NULL,"-") << std::endl;
@@ -514,18 +522,23 @@ void* Create_pe_threads(faidx_t *seq_ref,int thread_no,int chr_total){
       std::cout << a << " " << token_seq_r1 << std::endl;*/
 
       hts_pos_t min_beg, max_end;
-      //char *qname = token_name;
-      //size_t l_qname = strlen(qname);
+      
+      size_t l_qname = strlen(qname);
       uint16_t flag = 4;
-      int32_t tid = -1;//atoi(strtok(qname,":"));
-      min_beg = 10;//atoi(strtok(NULL,"-"));
+      //std::cout << "qname before " << qname << std::endl;
+      int32_t tid = atoi(strtok_r(qname, ":", &save_qname_ptr));
+      /*std::cout << "qname after " << qname << std::endl;
+      std::cout << strtok_r(NULL, "-", &save_qname_ptr) << std::endl;
+      std::cout << "qname after 2 " << qname << std::endl;*/
+      min_beg = 100; //atoi(strtok_r(NULL, "-", &save_qname_ptr)); 
       uint8_t mapq = 60;
       size_t n_cigar = strlen(token_seq_r1);
+      uint32_t arr[] = {0};
+      //memset(arr, 0, sizeof(arr)*n_cigar);
+      const uint32_t *cigar = arr;
       size_t l_aux = 0; // auxiliary field for supp data etc?? 
-      bam_set1(bam_file_chr,strlen(token_name),token_name,flag,-1,min_beg,0,0,NULL,tid,-1,0,strlen(token_seq_r1),token_seq_r1,token_qual_r1,l_aux);
+      bam_set1(bam_file_chr,strlen(token_name),token_name,flag,-1,min_beg,mapq,n_cigar,cigar,tid,-1,0,strlen(token_seq_r1),token_seq_r1,token_qual_r1,l_aux);
       sam_write1(outfile,header,bam_file_chr);
-      //bam_set1(bam_file_chr,strlen(token_name),token_name,flag,-1,min_beg,mapq,0,NULL,tid,-1,0,strlen(token_seq_r2),token_seq_r2,token_qual_r2,l_aux);
-      //sam_write1(outfile,header,bam_file_chr);
       
       /*bam_set1(bam_file_chr,strlen(token_name),token_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(token_seq_r1),token_seq_r1,token_qual_r1,0);
       sam_write1(outfile,header,bam_file_chr);
