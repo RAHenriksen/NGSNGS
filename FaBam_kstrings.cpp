@@ -96,13 +96,13 @@ void* FaBam_thread_se_run(void *arg){
   Seq_err(Error_2darray,Error,280);
 
   // Creates the random lengths array and distributions //
-  std::ifstream infile("Size_freq.txt");
+  std::ifstream infile("/home/wql443/WP1/SimulAncient/Size_dist/Size_freq.txt");
   int* sizearray = Size_select_dist(infile);
   infile.close();
 
   std::discrete_distribution<> SizeDist[2]; 
   
-  std::ifstream infile2("Size_freq.txt");
+  std::ifstream infile2("/home/wql443/WP1/SimulAncient/Size_dist/Size_freq.txt");
   Size_freq_dist(infile2,SizeDist); //creates the distribution of all the frequencies
   infile2.close();
   // ---------------------- //
@@ -328,13 +328,13 @@ void* FaBam_thread_pe_run(void *arg){
   Seq_err(Error_2darray,Error,280);
 
   // Creates the random lengths array and distributions //
-  std::ifstream infile("Size_freq.txt");
+  std::ifstream infile("/home/wql443/WP1/SimulAncient/Size_dist/Size_freq.txt");
   int* sizearray = Size_select_dist(infile);
   infile.close();
 
   std::discrete_distribution<> SizeDist[2]; 
   
-  std::ifstream infile2("Size_freq.txt");
+  std::ifstream infile2("/home/wql443/WP1/SimulAncient/Size_dist/Size_freq.txt");
   Size_freq_dist(infile2,SizeDist); //creates the distribution of all the frequencies
   infile2.close();
   // ---------------------- //
@@ -509,33 +509,60 @@ void* Create_pe_threads(faidx_t *seq_ref,int thread_no,int chr_total){
     std::cout << "CIFGAR" << std::endl;
     while(token_name != NULL && token_seq_r1 != NULL && token_qual_r1 != NULL) {
       strcpy(qname, token_name);
+      //std::cout << token_name<< std::endl;
+      //std::cout << strtok(token_name,":") << std::endl;
+      //std::cout << strtok(NULL,"-") << std::endl;
+      /*int a = strlen(token_seq_r1);
+      const uint32_t arr[] = {a};
+      const uint32_t *cigar = arr;
+      /std::cout << "-----------" << std::endl;
+      std::cout << cigar << std::endl;
+      std::cout << &cigar << std::endl;
+      std::cout << *cigar << std::endl;
+      std::cout << a << " " << token_seq_r1 << std::endl;*/
 
-      hts_pos_t min_beg, max_end, insert;      
+      hts_pos_t min_beg, max_end, insert;
+      
+      size_t l_qname = strlen(qname);
       uint16_t flag = 4;
+      //std::cout << "qname before " << qname << std::endl;
       int32_t tid = atoi(strtok_r(qname, ":", &save_qname_ptr));
+      /*std::cout << "qname after " << qname << std::endl;
+      std::cout << strtok_r(NULL, "-", &save_qname_ptr) << std::endl
+      std::cout << strtok_r(NULL, "_", &save_qname_ptr) << std::endl;
+      std::cout << strtok_r(NULL, "_", &save_qname_ptr) << std::endl;
+      std::cout << strtok_r(NULL, ":", &save_qname_ptr) << std::endl;
+      std::cout << "SECOND QNAME " << qname << std::endl;*/
       min_beg = atoi(strtok_r(NULL, "-", &save_qname_ptr))-1; //atoi(strtok_r(NULL, "-", &save_qname_ptr)); 
       max_end = atoi(strtok_r(NULL, "_", &save_qname_ptr))-1;
       insert = max_end - min_beg + 1;
       //std::cout << "mina nd max " << min_beg << "   " << max_end << std::endl;
       uint8_t mapq = 60;
       size_t n_cigar = strlen(token_seq_r1);
-      //uint32_t arr[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-      uint32_t arr[] = {1100100};
+      //uint32_t arr[] = {0000,0001,0010,0011,0100,0101,0110,0111,1000};
+      //uint32_t arr[] = {0,1,2,3,4,5,6,7,8};
       // 0->0M 1->0I 2-> 0D 3-> 0N 4 -> 0S 5->0H  6-> 0P 7-> 0= 8 -> 0X
+      uint32_t arr[] = {0b10001110}; 
+      //142 -> 10001110 men jeg skal tilføje 4x0 til enden 0b100011100000
+      //0b1000000 -> 4M
+      //0b10000000 -> 8M
+      //0b100000000 -> 16M
+      //0b1000000000 -> 32M
+      // 0b100011100000 -> 142M på trods af at &cigar -> 
       // 0000,0010,0100,1000 -> 0M0X4M62X
       // 0101 -> 4I
       // 0000001001001000 ->8405024M    1100100
       const uint32_t *cigar = arr;
+      //std::cout << *cigar << std::endl;
+      /*std::cout << cigar << std::endl;
+      std::cout << *cigar << std::endl;
+      std::cout << &cigar << std::endl;*/ //100011100000
       size_t l_aux = 0; // auxiliary field for supp data etc?? 
       //bam, lqname, qname, flag, tid, pos, mapq, n_cigar, cigar, mtid, mpos, isize, l_seq, seq, qual, l_aux
       bam_set1(bam_file_chr,strlen(token_name),token_name,4,tid,min_beg,mapq,n_cigar,cigar,tid,max_end,insert,strlen(token_seq_r1),token_seq_r1,token_qual_r1,l_aux);
       sam_write1(outfile,header,bam_file_chr);
       bam_set1(bam_file_chr,strlen(token_name),token_name,4,tid,max_end,mapq,n_cigar,cigar,tid,min_beg,0-insert,strlen(token_seq_r2),token_seq_r2,token_qual_r2,l_aux);
       sam_write1(outfile,header,bam_file_chr);
-      /*bam_set1(bam_file_chr,strlen(token_name),token_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(token_seq_r1),token_seq_r1,token_qual_r1,0);
-      sam_write1(outfile,header,bam_file_chr);
-      bam_set1(bam_file_chr,strlen(token_name),token_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(token_seq_r1),token_seq_r1,token_qual_r1,0);
-      sam_write1(outfile,header,bam_file_chr);*/
       
       // MEN DISSE TOKENS OVERSKRIVER DE GAMLE!
       //extract next tokes

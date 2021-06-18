@@ -107,6 +107,37 @@ void coverage(float cov){
   }
 }
 
+void random_seq(faidx_t *seq_ref,int nreads){
+  // choose a random sequence -> still ned to change it so it saves the output to a single file.
+  int readlength=35;
+  // add size dist etc
+  for(int i=0;i<nreads;i++){
+    char buf[96];//assume maxlength for readid is 96bytes
+    int whichref = lrand48() % faidx_nseq(seq_ref);
+    fprintf(stderr,"\t-> Whichref: %d\n",whichref);
+    const char *name = faidx_iseq(seq_ref,whichref);
+    int name_len =  faidx_seq_len(seq_ref,name);
+    fprintf(stderr,"\t-> name: \'%s\' name_len: %d\n",name,name_len);
+
+    int start = lrand48() % name_len;
+    int stop = start+readlength;
+    if(stop>name_len)
+      stop = name_len;
+    snprintf(buf,96,"%s:%d-%d",name,start,stop);
+    fprintf(stderr,"buf: %s\n",buf);
+    fprintf(stdout,"%s\n+\n",buf);
+    char *data = fai_fetch(seq_ref,name,&name_len);
+
+    for(int i=start;i<stop;i++)
+      fprintf(stdout,"%c",data[i]);
+    fprintf(stdout,"\n");
+
+    for(int i=start;i<stop;i++)
+      fprintf(stdout,"F");
+    fprintf(stdout,"\n");
+  }
+}
+
 // --------------------- //
 int main(int argc,char **argv){
   coverage(4);
@@ -114,49 +145,3 @@ int main(int argc,char **argv){
 
 // g++ SimulAncient_func.cpp FaFa_thread_cov.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 // ./a.out fa 5
-
-/*
-void coverage(float cov){
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr1.fa";
-  faidx_t *seq_ref = NULL;
-  seq_ref  = fai_load(fastafile);
-  assert(seq_ref!=NULL);
-  int chr_no = 0;
-  const char *chr_name = faidx_iseq(seq_ref,chr_no);
-  int chr_len = 1000; //faidx_seq_len(seq_ref,chr_name);
-  int n= 1000; //chr_len;//chr_len ;// chr_len/3000000;
-  
-  int* chrlencov = (int *) calloc(chr_len,sizeof(int));
-  //int* chrlencov = new int[n];
-  //memset(chrlencov, 0, n*sizeof(int)); 
-
-  float cov_current = 0;
-  srand(time(NULL));
-  int start;
-  int length;
-  int nread = 0;
-  //int sum = 0;
-  while (cov_current < cov) {
-    int sum = 0;
-    int count = chr_len;
-    //length = 500000 + rand() % 1000000;
-    length = 50 + rand() % 100;
-    start = lrand48() % (chr_len-length-1);
-    fprintf(stderr,"start %i and length %i \n",start,length);
-    for (int j = start; j < start+length; j++){chrlencov[j] += 1;}
-    for (size_t i = 0; i < chr_len; i++){std::cout << chrlencov[i] << ' ';}
-    std::cout << std::endl;
-    for(int i = 0; i<chr_len ; i++){
-      if (chrlencov[i] == 0){count--;}
-      else{sum+=chrlencov[i];}
-    }
-    nread++;
-    fprintf(stderr,"count %i and sum %i \n",count,sum);
-    cov_current = (float) sum / (float) count;
-    std::cout << "number of reads "<< nread << std::endl;
-    std::cout << "current cov"<< cov_current << std::endl;
-    std::cout << "-----------" << std::endl;
-  }
-  // free(chrlencov);
-  // delete[] chrlencov; //Hvorfor får jeg core aborted hvis jeg bruger delete
-}*/
