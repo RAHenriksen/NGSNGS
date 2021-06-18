@@ -168,7 +168,7 @@ int main(int argc,char **argv){
   return 0;
 }
 
-// g++ Cov_test.cpp FaFa_thread.cpp -std=c++11 
+// g++ Cov_test.cpp -std=c++11 
 
 /*
 

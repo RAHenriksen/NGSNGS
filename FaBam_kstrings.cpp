@@ -509,30 +509,10 @@ void* Create_pe_threads(faidx_t *seq_ref,int thread_no,int chr_total){
     std::cout << "CIFGAR" << std::endl;
     while(token_name != NULL && token_seq_r1 != NULL && token_qual_r1 != NULL) {
       strcpy(qname, token_name);
-      //std::cout << token_name<< std::endl;
-      //std::cout << strtok(token_name,":") << std::endl;
-      //std::cout << strtok(NULL,"-") << std::endl;
-      /*int a = strlen(token_seq_r1);
-      const uint32_t arr[] = {a};
-      const uint32_t *cigar = arr;
-      /std::cout << "-----------" << std::endl;
-      std::cout << cigar << std::endl;
-      std::cout << &cigar << std::endl;
-      std::cout << *cigar << std::endl;
-      std::cout << a << " " << token_seq_r1 << std::endl;*/
 
-      hts_pos_t min_beg, max_end, insert;
-      
-      size_t l_qname = strlen(qname);
+      hts_pos_t min_beg, max_end, insert;      
       uint16_t flag = 4;
-      //std::cout << "qname before " << qname << std::endl;
       int32_t tid = atoi(strtok_r(qname, ":", &save_qname_ptr));
-      /*std::cout << "qname after " << qname << std::endl;
-      std::cout << strtok_r(NULL, "-", &save_qname_ptr) << std::endl
-      std::cout << strtok_r(NULL, "_", &save_qname_ptr) << std::endl;
-      std::cout << strtok_r(NULL, "_", &save_qname_ptr) << std::endl;
-      std::cout << strtok_r(NULL, ":", &save_qname_ptr) << std::endl;
-      std::cout << "SECOND QNAME " << qname << std::endl;*/
       min_beg = atoi(strtok_r(NULL, "-", &save_qname_ptr))-1; //atoi(strtok_r(NULL, "-", &save_qname_ptr)); 
       max_end = atoi(strtok_r(NULL, "_", &save_qname_ptr))-1;
       insert = max_end - min_beg + 1;

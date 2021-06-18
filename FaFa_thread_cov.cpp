@@ -51,7 +51,7 @@ void coverage(float cov){
   assert(seq_ref!=NULL);
   int chr_no = 0;
   const char *chr_name = faidx_iseq(seq_ref,chr_no);
-  int chr_len = 10000;//faidx_seq_len(seq_ref,chr_name); //
+  int chr_len = 1000000;//faidx_seq_len(seq_ref,chr_name); //
 
   int* chrlencov = (int *) calloc(chr_len,sizeof(int));
   std::cout << "chr_len " << faidx_seq_len(seq_ref,chr_name)  << std::endl;
@@ -79,9 +79,9 @@ void coverage(float cov){
 
   while (cov_current < cov) {
     int D_i = 0;
-    int count = chr_len; // N number of sites with data > 0
+    int N = chr_len; // N number of sites with data > 0
     std::cout << "---------------------" << std::endl;
-    std::cout << "COUNT " << count << std::endl;
+    std::cout << "COUNT " << N << std::endl;
     
     fraglength = (int) sizearray[SizeDist[1](gen)];
     //std::cout << "fraglenth" << fraglength << std::endl;
@@ -93,15 +93,15 @@ void coverage(float cov){
     std::cout << "---------" << std::endl;*/
 
     for (int j = rand_start; j < rand_start+fraglength; j++){chrlencov[j] += 1;}
-    //for (size_t i = 10; i < 100; i++){std::cout << chrlencov[i] << ' ';}
+    //for (size_t i = 10; i < 1000; i++){std::cout << chrlencov[i] << ' ';}
     std::cout << std::endl;
-    for(int i = 0; i<chr_len ; i++){
-      if (chrlencov[i] == 0){count = count-1;} //trækker -1 fra da 0 jo ikke er data -> så alle positioner med værdi forskellig for 0
+    for(int i = 0; i<N ; i++){
+      if (chrlencov[i] == 0){N = N-1;} //trækker -1 fra da 0 jo ikke er data -> så alle positioner med værdi forskellig for 0
       else{D_i+=chrlencov[i];} // opdaterer summen D_i = D_i+j for length
     }
     nread++;
-    cov_current = (float) D_i / count; //  G/N 
-    fprintf(stderr,"Number of reads %d , sum %d, count %d, coverage %f\n",nread,D_i,count,cov_current);
+    cov_current = (float) D_i / N; // update the mean depth
+    fprintf(stderr,"Number of reads %d , sum %d, count %d, coverage %f\n",nread,D_i,N,cov_current);
     fprintf(stderr,"start %d, fraglength %d\n",rand_start,fraglength);
     //std::cout << "number reads " << nread << " current coverage "<< cov_current << std::endl;
   }
@@ -109,7 +109,7 @@ void coverage(float cov){
 
 // --------------------- //
 int main(int argc,char **argv){
-  coverage(2);
+  coverage(4);
 }
 
 // g++ SimulAncient_func.cpp FaFa_thread_cov.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
