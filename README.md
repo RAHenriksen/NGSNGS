@@ -8,7 +8,10 @@ g++ SimulAncient_hslib.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql4
   b) But i should be able to take a bam sequence and convert to fa with VCF
 
 2) Arguments parsed
+
 3) A platform type, meaning 125bp illumina, 150bp illumina and then based on that input decide on the error files
+
+4) Lei's briggs model.
 
 # THEORY
 ## DNA damage 
