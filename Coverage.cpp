@@ -61,13 +61,13 @@ void coverage(float cov){
   std::random_device rd;
   std::default_random_engine gen(rd()); 
 
-  std::ifstream infile("Size_freq.txt");
+  std::ifstream infile("Size_dist/Size_freq.txt");
   int* sizearray = Size_select_dist(infile);
   infile.close();
 
   std::discrete_distribution<> SizeDist[2]; 
 
-  std::ifstream infile2("Size_freq.txt");
+  std::ifstream infile2("Size_dist/Size_freq.txt");
   Size_freq_dist(infile2,SizeDist); //creates the distribution of all the frequencies
   infile2.close();
   // ---------------------- //
