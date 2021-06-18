@@ -87,14 +87,17 @@ void* Fafq_thread_pe_run(void *arg){
   char seqmod[1024] = {0};
   char seqmod2[1024] = {0};
 
+  double init = 1.0;
+  double cov = 1.0;
+  
   // Creates the random lengths array and distributions //
-  std::ifstream infile("Size_freq.txt");
+  std::ifstream infile("Size_dist/Size_freq.txt");
   int* sizearray = Size_select_dist(infile);
   infile.close();
 
   std::discrete_distribution<> SizeDist[2]; 
   
-  std::ifstream infile2("Size_freq.txt");
+  std::ifstream infile2("Size_dist/Size_freq.txt");
   Size_freq_dist(infile2,SizeDist); //creates the distribution of all the frequencies
   infile2.close();
   // ---------------------- //
@@ -105,13 +108,8 @@ void* Fafq_thread_pe_run(void *arg){
     //srand48(start_pos+std::time(nullptr)); //you could make srand48(start_pos + seed_input)
    
     int fraglength = (int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
-    /*std::cout << "_-------------------" << std::endl;
-    std::cout << "before" << std::endl;
-    std::cout << " fragment length " << fraglength << std::endl;
-    std::cout << "fails" << std::endl;*/
-    
-    // int readlength = sizearray[SizeDist[1](gen)];
-    int stop = start_pos+(int) fraglength;
+    // estimates brief coverage
+    int dist = init/cov * fraglength; 
     
     // case 1
     if (fraglength > 2*150){
@@ -169,10 +167,7 @@ void* Fafq_thread_pe_run(void *arg){
             std::strncpy(read2N, read2, 150);
           }
           else{
-            //std::cout << "else " << std::endl;
-            //std::cout << "read1 v2 \n" << read1 << std::endl;
             std::strncpy(read1N, read1, strlen(read1)); //copy read+adapter into N...
-            //std::cout << read1N << std::endl;
             strcpy(read2, seqmod2);
             std::reverse(read2, read2 + strlen(read2));
             std::strcat(read2, struct_obj->Adapter_2);
@@ -212,7 +207,7 @@ void* Fafq_thread_pe_run(void *arg){
         memset(qual, 0, sizeof(qual));        
       }
     }
-    start_pos += fraglength;
+    start_pos += dist; // start_pos += fraglength;
     memset(seqmod, 0, sizeof seqmod);
     memset(seqmod2, 0, sizeof seqmod2);
   }
@@ -362,13 +357,13 @@ void* Fafq_thread_se_run(void *arg){
   double cov = 1.0;
 
   // Creates the random lengths array and distributions //
-  std::ifstream infile("Size_freq.txt");
+  std::ifstream infile("Size_dist/Size_freq.txt");
   int* sizearray = Size_select_dist(infile);
   infile.close();
 
   std::discrete_distribution<> SizeDist[2]; 
   
-  std::ifstream infile2("Size_freq.txt");
+  std::ifstream infile2("Size_dist/Size_freq.txt");
   Size_freq_dist(infile2,SizeDist); //creates the distribution of all the frequencies
   infile2.close();
   // ---------------------- //
@@ -381,14 +376,7 @@ void* Fafq_thread_se_run(void *arg){
     int fraglength = (int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
     // estimates brief coverage
     int dist = init/cov * fraglength; 
-    /*std::cout << "_-------------------" << std::endl;
-    std::cout << "before" << std::endl;
-    std::cout << " fragment length " << fraglength << std::endl;
-    std::cout << "fails" << std::endl;*/
-    
-    // int readlength = sizearray[SizeDist[1](gen)];
-    int stop = start_pos+(int) fraglength;
-    
+        
     // case 1
     if (fraglength > 2*150){
       //std::cout << "lolrt" << std::endl;

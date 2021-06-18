@@ -60,7 +60,7 @@ void* Fafa_thread_run(void *arg){
   char seqmod[1024] = {0};
 
   // Creates the random lengths array and distributions //
-  std::ifstream infile("Size_freq.txt");
+  std::ifstream infile("Size_dist/Size_freq.txt");
   int* sizearray = Size_select_dist(infile);
   infile.close();
 
@@ -68,7 +68,7 @@ void* Fafa_thread_run(void *arg){
   std::default_random_engine gen(rd());
   std::discrete_distribution<> SizeDist[2]; 
   
-  std::ifstream infile2("Size_freq.txt");
+  std::ifstream infile2("Size_dist/Size_freq.txt");
   Size_freq_dist(infile2,SizeDist); //creates the distribution of all the frequencies
   infile2.close();
   // ---------------------- //
