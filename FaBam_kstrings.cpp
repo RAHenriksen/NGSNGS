@@ -538,30 +538,22 @@ void* Create_pe_threads(faidx_t *seq_ref,int thread_no,int chr_total){
       insert = max_end - min_beg + 1;
       //std::cout << "mina nd max " << min_beg << "   " << max_end << std::endl;
       uint8_t mapq = 60;
-      size_t n_cigar = strlen(token_seq_r1);
+      size_t n_cigar = 1; // Number of cigar operations, 1 since we only have matches
       //uint32_t arr[] = {0000,0001,0010,0011,0100,0101,0110,0111,1000};
       //uint32_t arr[] = {0,1,2,3,4,5,6,7,8};
       // 0->0M 1->0I 2-> 0D 3-> 0N 4 -> 0S 5->0H  6-> 0P 7-> 0= 8 -> 0X
-      uint32_t arr[] = {0b10001110}; 
-      //142 -> 10001110 men jeg skal tilføje 4x0 til enden 0b100011100000
-      //0b1000000 -> 4M
-      //0b10000000 -> 8M
-      //0b100000000 -> 16M
-      //0b1000000000 -> 32M
-      // 0b100011100000 -> 142M på trods af at &cigar -> 
-      // 0000,0010,0100,1000 -> 0M0X4M62X
-      // 0101 -> 4I
-      // 0000001001001000 ->8405024M    1100100
-      const uint32_t *cigar = arr;
-      //std::cout << *cigar << std::endl;
-      /*std::cout << cigar << std::endl;
-      std::cout << *cigar << std::endl;
-      std::cout << &cigar << std::endl;*/ //100011100000
+      
+      uint32_t op_len = n_cigar; //operator length (strlen)
+      op_len = op_len<<BAM_CIGAR_SHIFT|BAM_CMATCH;
+
+      uint32_t cigar_bitstring = bam_cigar_gen(strlen(token_seq_r1), BAM_CMATCH); // basically does op_len<<BAM_CIGAR_SHIFT|BAM_CMATCH;
+      uint32_t cigar_arr[] = {cigar_bitstring}; //converting uint32_t {aka unsigned int} to const uint32_t* 
+      const uint32_t *cigar = cigar_arr;
       size_t l_aux = 0; // auxiliary field for supp data etc?? 
       //bam, lqname, qname, flag, tid, pos, mapq, n_cigar, cigar, mtid, mpos, isize, l_seq, seq, qual, l_aux
-      bam_set1(bam_file_chr,strlen(token_name),token_name,4,tid,min_beg,mapq,n_cigar,cigar,tid,max_end,insert,strlen(token_seq_r1),token_seq_r1,token_qual_r1,l_aux);
+      bam_set1(bam_file_chr,strlen(token_name),token_name,99,tid,min_beg,mapq,n_cigar,cigar,tid,max_end,insert,strlen(token_seq_r1),token_seq_r1,token_qual_r1,l_aux);
       sam_write1(outfile,header,bam_file_chr);
-      bam_set1(bam_file_chr,strlen(token_name),token_name,4,tid,max_end,mapq,n_cigar,cigar,tid,min_beg,0-insert,strlen(token_seq_r2),token_seq_r2,token_qual_r2,l_aux);
+      bam_set1(bam_file_chr,strlen(token_name),token_name,147,tid,max_end,mapq,n_cigar,cigar,tid,min_beg,0-insert,strlen(token_seq_r2),token_seq_r2,token_qual_r2,l_aux);
       sam_write1(outfile,header,bam_file_chr);
       
       // MEN DISSE TOKENS OVERSKRIVER DE GAMLE!
