@@ -53,7 +53,9 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
   if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile);
 }
 
+// -------------------------------------------- //
 // -------------- SINGLE END DATA ------------- //
+// -------------------------------------------- //
 
 struct Parsarg_for_Fabam_se_thread{
   int chr_idx;
@@ -113,10 +115,16 @@ void* FaBam_thread_se_run(void *arg){
   char seqmod[1024] = {0};
   char qual[1024] = "";
 
+  double init = 1.0;
+  double cov = 1.0;
+
   while(start_pos <= end_pos){
     int fraglength = (int) sizearray[SizeDist[1](gen)];
     //int readlength = drand48()*(70.0-30.0)+30.0;
     int stop = start_pos+(int) fraglength;
+    
+    // Estimates brief coverage
+    int dist = init/cov * fraglength; 
 
     // extract the sequences and limits to a maximum size of 150
     // case 1
@@ -140,36 +148,23 @@ void* FaBam_thread_se_run(void *arg){
     //removes NNN
     char * pch;
     pch = strchr(seqmod,'N');
-    if (pch != NULL){start_pos += fraglength + 1;}
+    if (pch != NULL){start_pos += dist + 1;}
     else{ 
       char Qname[96]; //read_id
       snprintf(Qname,96,"%s:%d-%d_length:%d",chr_name,start_pos+1,stop,fraglength);
       Ill_err(seqmod,Error,gen);
       Bam_baseQ(seqmod,qual,Qualdistr1,gen);
-      /*std::cout << Qname << std::endl;
-      std::cout << seqmod << std::endl;
-      std::cout << qual << std::endl;*/
-      
-      //ensures proper bam format with 11 mandatory fields mandatory fields
-      // QNAME = char Qname[96] 
- 
-      
-      //bam, lqname, qname, flag, tid, pos, mapq, n_cigar, cigar, mtid, mpos, isize, l_seq, seq, qual, l_aux
-      //struct_obj->bam_line
-      //bam_set1(struct_obj->bam_format,strlen(Qname),Qname,Flag,RNAME,start_pos-1,mapQ,no_cigar,cigar,idx,Pnext-1,Tlen,readlength,seqmod,qual,0);
-      //sam_write1(struct_obj->bam_out,struct_obj->bam_head,struct_obj->bam_format);
+  
       // -1 for the different positions is because they are made 1 - based with the bam_set
       int len = start_pos+fraglength;
       ksprintf(struct_obj->name,"%s.",Qname);
       ksprintf(struct_obj->qualstring,"%s.",qual);
       ksprintf(struct_obj->seq,"%s.",seqmod);
-      //ksprintf(struct_obj->seq,"%s,%s,%s.",Qname,seqmod,qual);
-      //ksprintf(struct_obj->seq,"%s_",Qname,"%s.",seqmod);
       
     }
     memset(seqmod, 0, sizeof(seqmod));
     memset(qual, 0, sizeof(qual));
-    start_pos += fraglength;
+    start_pos += dist; 
   }
 }
 
@@ -253,12 +248,27 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no,int chr_total){
     token_name = strtok_r(struct_for_threads[i].name->s, ".", &save_name_ptr);
     token_seq = strtok_r(struct_for_threads[i].seq->s, ".", &save_seq_ptr);
     token_qual = strtok_r(struct_for_threads[i].qualstring->s, ".", &save_qual_ptr);
-    //std::cout << struct_for_threads[i].name->l << std::endl;
-    //std::cout << struct_for_threads[i].seq->l << std::endl;
-    
+
+    char *save_qname_ptr;
+    char* qname = (char*) malloc(1024); 
+
     while(token_name != NULL && token_seq != NULL && token_qual != NULL) {
-      //std::cout << token_seq<< std::endl;
-      bam_set1(bam_file_chr,strlen(token_name),token_name,4,-1,-1,0,0,NULL,-1,-1,0,strlen(token_seq),token_seq,token_qual,0);
+
+      strcpy(qname, token_name);
+      hts_pos_t min_beg, max_end, insert;
+      size_t l_qname = strlen(qname);
+      uint16_t flag = 4;
+      int32_t tid = atoi(strtok_r(qname, ":", &save_qname_ptr));
+      min_beg = atoi(strtok_r(NULL, "-", &save_qname_ptr))-1; //atoi(strtok_r(NULL, "-", &save_qname_ptr)); 
+      uint8_t mapq = 60;
+      size_t n_cigar = 1; // Number of cigar operations, 1 since we only have matches
+
+      uint32_t cigar_bitstring = bam_cigar_gen(strlen(token_seq), BAM_CMATCH); // basically does op_len<<BAM_CIGAR_SHIFT|BAM_CMATCH;
+      uint32_t cigar_arr[] = {cigar_bitstring}; //converting uint32_t {aka unsigned int} to const uint32_t* 
+      const uint32_t *cigar = cigar_arr;
+      size_t l_aux = 0; // auxiliary field for supp data etc?? 
+
+      bam_set1(bam_file_chr,strlen(token_name),token_name,4,tid,min_beg,mapq,n_cigar,cigar,-1,-1,0,strlen(token_seq),token_seq,token_qual,l_aux);
       sam_write1(outfile,header,bam_file_chr);
       //extract next tokes
       token_name = strtok_r(NULL, ".", &save_name_ptr);
@@ -272,7 +282,9 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no,int chr_total){
   sam_close(outfile);
 }
 
+// -------------------------------------------- //
 // -------------- PAIRED END DATA ------------- //
+// -------------------------------------------- //
 
 
 struct Parsarg_for_Fabam_pe_thread{
@@ -505,65 +517,41 @@ void* Create_pe_threads(faidx_t *seq_ref,int thread_no,int chr_total){
     char *save_qname_ptr;
     char* qname = (char*) malloc(1024); 
     
-
-    std::cout << "CIFGAR" << std::endl;
     while(token_name != NULL && token_seq_r1 != NULL && token_qual_r1 != NULL) {
       strcpy(qname, token_name);
-      //std::cout << token_name<< std::endl;
-      //std::cout << strtok(token_name,":") << std::endl;
-      //std::cout << strtok(NULL,"-") << std::endl;
-      /*int a = strlen(token_seq_r1);
-      const uint32_t arr[] = {a};
-      const uint32_t *cigar = arr;
-      /std::cout << "-----------" << std::endl;
-      std::cout << cigar << std::endl;
-      std::cout << &cigar << std::endl;
-      std::cout << *cigar << std::endl;
-      std::cout << a << " " << token_seq_r1 << std::endl;*/
-
       hts_pos_t min_beg, max_end, insert;
       
       size_t l_qname = strlen(qname);
-      uint16_t flag = 4;
-      //std::cout << "qname before " << qname << std::endl;
+      //uint16_t flag = 4;
       int32_t tid = atoi(strtok_r(qname, ":", &save_qname_ptr));
-      /*std::cout << "qname after " << qname << std::endl;
-      std::cout << strtok_r(NULL, "-", &save_qname_ptr) << std::endl
-      std::cout << strtok_r(NULL, "_", &save_qname_ptr) << std::endl;
-      std::cout << strtok_r(NULL, "_", &save_qname_ptr) << std::endl;
-      std::cout << strtok_r(NULL, ":", &save_qname_ptr) << std::endl;
-      std::cout << "SECOND QNAME " << qname << std::endl;*/
       min_beg = atoi(strtok_r(NULL, "-", &save_qname_ptr))-1; //atoi(strtok_r(NULL, "-", &save_qname_ptr)); 
       max_end = atoi(strtok_r(NULL, "_", &save_qname_ptr))-1;
       insert = max_end - min_beg + 1;
-      //std::cout << "mina nd max " << min_beg << "   " << max_end << std::endl;
       uint8_t mapq = 60;
       size_t n_cigar = 1; // Number of cigar operations, 1 since we only have matches
       //uint32_t arr[] = {0000,0001,0010,0011,0100,0101,0110,0111,1000};
       //uint32_t arr[] = {0,1,2,3,4,5,6,7,8};
       // 0->0M 1->0I 2-> 0D 3-> 0N 4 -> 0S 5->0H  6-> 0P 7-> 0= 8 -> 0X
       
-      uint32_t op_len = n_cigar; //operator length (strlen)
+      uint32_t op_len = strlen(token_seq_r1);
       op_len = op_len<<BAM_CIGAR_SHIFT|BAM_CMATCH;
 
       uint32_t cigar_bitstring = bam_cigar_gen(strlen(token_seq_r1), BAM_CMATCH); // basically does op_len<<BAM_CIGAR_SHIFT|BAM_CMATCH;
       uint32_t cigar_arr[] = {cigar_bitstring}; //converting uint32_t {aka unsigned int} to const uint32_t* 
       const uint32_t *cigar = cigar_arr;
-      size_t l_aux = 0; // auxiliary field for supp data etc?? 
+      size_t l_aux = 0; // auxiliary field for supp data??
       //bam, lqname, qname, flag, tid, pos, mapq, n_cigar, cigar, mtid, mpos, isize, l_seq, seq, qual, l_aux
       bam_set1(bam_file_chr,strlen(token_name),token_name,99,tid,min_beg,mapq,n_cigar,cigar,tid,max_end,insert,strlen(token_seq_r1),token_seq_r1,token_qual_r1,l_aux);
       sam_write1(outfile,header,bam_file_chr);
       bam_set1(bam_file_chr,strlen(token_name),token_name,147,tid,max_end,mapq,n_cigar,cigar,tid,min_beg,0-insert,strlen(token_seq_r2),token_seq_r2,token_qual_r2,l_aux);
       sam_write1(outfile,header,bam_file_chr);
       
-      // MEN DISSE TOKENS OVERSKRIVER DE GAMLE!
-      //extract next tokes
+      //extract next tokes - The next reads
       token_name = strtok_r(NULL, ".", &save_name_ptr);
       token_seq_r1 = strtok_r(NULL, ".", &save_seq_r1_ptr);
       token_qual_r1 = strtok_r(NULL, ".", &save_qual_r1_ptr);
       token_seq_r2 = strtok_r(NULL, ".", &save_seq_r2_ptr);
       token_qual_r2 = strtok_r(NULL, ".", &save_qual_r2_ptr);
-      //std::cout << "while loop end "<< std::endl;
     }
   }
 
@@ -584,8 +572,8 @@ int main(int argc,char **argv){
   int chr_total = faidx_nseq(seq_ref);
   
   // Creates the threads and writes to the files
-  //Create_se_threads(seq_ref,chr_total,chr_total);
-  Create_pe_threads(seq_ref,chr_total,chr_total);
+  Create_se_threads(seq_ref,chr_total,chr_total);
+  //Create_pe_threads(seq_ref,chr_total,chr_total);
 
 } 
 
