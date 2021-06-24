@@ -131,7 +131,7 @@ void* Fafq_thread_pe_run(void *arg){
     //removes reads with NNN
     char * pch;
     pch = strchr(seqmod,'N');
-    if (pch != NULL){start_pos += fraglength+1;} // readlength + 1
+    if (pch != NULL){start_pos += dist+1;} // readlength + 1
     else{
       Ill_err(seqmod,Error,gen);
       std::reverse(seqmod2, seqmod2 + strlen(seqmod2)); // jeg bliver vel nødt til med det samme at revertere den!
