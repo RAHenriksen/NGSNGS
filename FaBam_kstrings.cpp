@@ -65,6 +65,8 @@ struct Parsarg_for_Fabam_se_thread{
   kstring_t *seq;
   const char* Ill_err;
   const char* read_err_1;
+  bool Adapter_flag;
+  const char* Adapter_1;
 };
 //  sam_hdr_t *bam_head;  samFile *out_bam_name;
 void* FaBam_thread_se_run(void *arg){
@@ -150,17 +152,56 @@ void* FaBam_thread_se_run(void *arg){
     pch = strchr(seqmod,'N');
     if (pch != NULL){start_pos += dist + 1;}
     else{ 
-      char Qname[96]; //read_id
-      snprintf(Qname,96,"%s:%d-%d_length:%d",chr_name,start_pos+1,stop,fraglength);
       Ill_err(seqmod,Error,gen);
       Bam_baseQ(seqmod,qual,Qualdistr1,gen);
-  
-      // -1 for the different positions is because they are made 1 - based with the bam_set
-      int len = start_pos+fraglength;
-      ksprintf(struct_obj->name,"%s.",Qname);
-      ksprintf(struct_obj->qualstring,"%s.",qual);
-      ksprintf(struct_obj->seq,"%s.",seqmod);
-      
+
+      if(struct_obj->Adapter_flag==true){  
+        if (fraglength < 150){
+          char read1[1024];
+          //read1[lib_size]='\0';
+          char readtmp[lib_size + 1];
+
+          strcpy(readtmp, seqmod);
+          std::strcat(seqmod,struct_obj->Adapter_1);
+          char Qname[96]; //read_id
+          
+          if (strlen(seqmod) >= 150){
+            std::strncpy(read1, seqmod, 150);
+            snprintf(Qname,96,"%s:%d-%d_length:%d",chr_name,start_pos+1,stop,fraglength);
+            ksprintf(struct_obj->name,"%s.",Qname);
+            ksprintf(struct_obj->qualstring,"%s.",qual);
+            ksprintf(struct_obj->seq,"%s.",read1);  
+          }
+          else{
+            //if the fragment is larger than 150 we are not going to add the adapter
+            char Qname[96]; //read_id
+            snprintf(Qname,96,"%s:%d-%d_length:%d",chr_name,start_pos+1,stop,fraglength);
+            // -1 for the different positions is because they are made 1 - based with the bam_set
+            ksprintf(struct_obj->name,"%s.",Qname);
+            ksprintf(struct_obj->qualstring,"%s.",qual);
+            ksprintf(struct_obj->seq,"%s.",seqmod);
+          }
+        }
+        else{
+          //if the fragment is larger than 150 we are not going to add the adapter
+          char Qname[96]; //read_id
+          snprintf(Qname,96,"%s:%d-%d_length:%d",chr_name,start_pos+1,stop,fraglength);
+          // -1 for the different positions is because they are made 1 - based with the bam_set
+          ksprintf(struct_obj->name,"%s.",Qname);
+          ksprintf(struct_obj->qualstring,"%s.",qual);
+          ksprintf(struct_obj->seq,"%s.",seqmod);
+        }
+        
+      }
+      else{
+        char Qname[96]; //read_id
+        snprintf(Qname,96,"%s:%d-%d_length:%d",chr_name,start_pos+1,stop,fraglength);
+        // -1 for the different positions is because they are made 1 - based with the bam_set
+        int len = start_pos+fraglength;
+        ksprintf(struct_obj->name,"%s.",Qname);
+        ksprintf(struct_obj->qualstring,"%s.",qual);
+        ksprintf(struct_obj->seq,"%s.",seqmod);
+      }
     }
     memset(seqmod, 0, sizeof(seqmod));
     memset(qual, 0, sizeof(qual));
@@ -168,7 +209,7 @@ void* FaBam_thread_se_run(void *arg){
   }
 }
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no,int chr_total){
+void* Create_se_threads(faidx_t *seq_ref,bool Adapt_flag,const char* Adapter_1,int thread_no,int chr_total){
   int chr_idx = 0;
 
   // Initializing the bam file header
@@ -219,6 +260,8 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no,int chr_total){
       struct_for_threads[i].seq -> s = NULL;
       struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
       struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
+      struct_for_threads[i].Adapter_flag = Adapt_flag;
+      struct_for_threads[i].Adapter_1 = Adapter_1;
       std::cout << "chr_no" << i << std::endl;
     }
     //launch worker threads
@@ -243,38 +286,83 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no,int chr_total){
   for(int i=0;i<nthreads;i++){
     bam1_t *bam_file_chr = bam_init1();
     
-    char *token_name; char *token_seq;char *token_qual;
-    char *save_name_ptr, *save_seq_ptr, *save_qual_ptr;
-    token_name = strtok_r(struct_for_threads[i].name->s, ".", &save_name_ptr);
-    token_seq = strtok_r(struct_for_threads[i].seq->s, ".", &save_seq_ptr);
-    token_qual = strtok_r(struct_for_threads[i].qualstring->s, ".", &save_qual_ptr);
+    if (struct_for_threads[i].Adapter_flag == false){
+      char *token_name; char *token_seq;char *token_qual;
+      char *save_name_ptr, *save_seq_ptr, *save_qual_ptr;
+      token_name = strtok_r(struct_for_threads[i].name->s, ".", &save_name_ptr);
+      token_seq = strtok_r(struct_for_threads[i].seq->s, ".", &save_seq_ptr);
+      token_qual = strtok_r(struct_for_threads[i].qualstring->s, ".", &save_qual_ptr);
 
-    char *save_qname_ptr;
-    char* qname = (char*) malloc(1024); 
+      char *save_qname_ptr;
+      char* qname = (char*) malloc(1024); 
 
-    while(token_name != NULL && token_seq != NULL && token_qual != NULL) {
+      while(token_name != NULL && token_seq != NULL && token_qual != NULL) {
 
-      strcpy(qname, token_name);
-      hts_pos_t min_beg, max_end, insert;
-      size_t l_qname = strlen(qname);
-      uint16_t flag = 4;
-      int32_t tid = atoi(strtok_r(qname, ":", &save_qname_ptr));
-      min_beg = atoi(strtok_r(NULL, "-", &save_qname_ptr))-1; //atoi(strtok_r(NULL, "-", &save_qname_ptr)); 
-      uint8_t mapq = 60;
-      size_t n_cigar = 1; // Number of cigar operations, 1 since we only have matches
+        strcpy(qname, token_name);
+        hts_pos_t min_beg, max_end, insert;
+        size_t l_qname = strlen(qname);
+        uint16_t flag = 4;
+        int32_t tid = atoi(strtok_r(qname, ":", &save_qname_ptr));
+        min_beg = atoi(strtok_r(NULL, "-", &save_qname_ptr))-1; //atoi(strtok_r(NULL, "-", &save_qname_ptr)); 
+        uint8_t mapq = 60;
+        size_t n_cigar = 1; // Number of cigar operations, 1 since we only have matches
 
-      uint32_t cigar_bitstring = bam_cigar_gen(strlen(token_seq), BAM_CMATCH); // basically does op_len<<BAM_CIGAR_SHIFT|BAM_CMATCH;
-      uint32_t cigar_arr[] = {cigar_bitstring}; //converting uint32_t {aka unsigned int} to const uint32_t* 
-      const uint32_t *cigar = cigar_arr;
-      size_t l_aux = 0; // auxiliary field for supp data etc?? 
+        uint32_t cigar_bitstring = bam_cigar_gen(strlen(token_seq), BAM_CMATCH); // basically does op_len<<BAM_CIGAR_SHIFT|BAM_CMATCH;
+        uint32_t cigar_arr[] = {cigar_bitstring}; //converting uint32_t {aka unsigned int} to const uint32_t* 
+        const uint32_t *cigar = cigar_arr;
+        size_t l_aux = 0; // auxiliary field for supp data etc?? 
 
-      bam_set1(bam_file_chr,strlen(token_name),token_name,4,tid,min_beg,mapq,n_cigar,cigar,-1,-1,0,strlen(token_seq),token_seq,token_qual,l_aux);
-      sam_write1(outfile,header,bam_file_chr);
-      //extract next tokes
-      token_name = strtok_r(NULL, ".", &save_name_ptr);
-      token_seq = strtok_r(NULL, ".", &save_seq_ptr);
-      token_qual = strtok_r(NULL, ".", &save_qual_ptr);
-      //std::cout << "while loop end "<< std::endl;
+        bam_set1(bam_file_chr,strlen(token_name),token_name,0,tid,min_beg,mapq,n_cigar,cigar,-1,-1,0,strlen(token_seq),token_seq,token_qual,l_aux);
+        sam_write1(outfile,header,bam_file_chr);
+        //extract next tokes
+        token_name = strtok_r(NULL, ".", &save_name_ptr);
+        token_seq = strtok_r(NULL, ".", &save_seq_ptr);
+        token_qual = strtok_r(NULL, ".", &save_qual_ptr);
+        //std::cout << "while loop end "<< std::endl;
+      }
+    }
+    else{
+      char *token_name; char *token_seq;char *token_qual;
+      char *save_name_ptr, *save_seq_ptr, *save_qual_ptr,*save_len_ptr;
+      token_name = strtok_r(struct_for_threads[i].name->s, ".", &save_name_ptr);
+      token_seq = strtok_r(struct_for_threads[i].seq->s, ".", &save_seq_ptr);
+      token_qual = strtok_r(struct_for_threads[i].qualstring->s, ".", &save_qual_ptr);
+
+      char *save_qname_ptr;
+      char* qname = (char*) malloc(1024);
+      char* len_ID = (char*) malloc(1024);
+      
+      while(token_name != NULL && token_seq != NULL && token_qual != NULL) {
+        //std::cout << token_seq << std::endl;
+        strcpy(qname, token_name);
+        hts_pos_t min_beg, max_end, insert;
+        size_t l_qname = strlen(qname);
+        uint16_t flag = 4;
+        int32_t tid = atoi(strtok_r(qname, ":", &save_qname_ptr));
+        min_beg = atoi(strtok_r(NULL, "-", &save_qname_ptr))-1; //atoi(strtok_r(NULL, "-", &save_qname_ptr)); 
+        len_ID = strtok_r(strtok_r(NULL, "-", &save_qname_ptr), "", &save_qname_ptr);
+        strtok_r(len_ID, ":", &save_len_ptr);
+        int seq_len = atoi(strtok_r(NULL, "", &save_len_ptr));
+
+        uint8_t mapq = 60;
+        size_t n_cigar = 2; // Number of cigar operations, 1 since we only have matches
+
+        uint32_t cigar_bitstring = bam_cigar_gen(seq_len, BAM_CMATCH); // basically does op_len<<BAM_CIGAR_SHIFT|BAM_CMATCH;
+        uint32_t cigar_bit_soft = bam_cigar_gen(strlen(token_seq)-seq_len, BAM_CSOFT_CLIP);
+        uint32_t cigar_arr[] = {cigar_bitstring,cigar_bit_soft}; //converting uint32_t {aka unsigned int} to const uint32_t* 
+        const uint32_t *cigar = cigar_arr;
+        size_t l_aux = 0; // auxiliary field for supp data etc?? 
+
+        //seq_len is only the length of the actual sequence and not the soft-clipped
+        bam_set1(bam_file_chr,strlen(token_name),token_name,4,tid,min_beg,mapq,n_cigar,cigar,-1,-1,0,strlen(token_seq),token_seq,token_qual,l_aux);
+        // You can set the mapped flag (0 or 16) however it results in  the error "[E::bam_set1] CIGAR and query sequence are of different length" probably due to the soft-clipping which is still part of the sequence.
+        sam_write1(outfile,header,bam_file_chr);
+        //extract next tokes
+        token_name = strtok_r(NULL, ".", &save_name_ptr);
+        token_seq = strtok_r(NULL, ".", &save_seq_ptr);
+        token_qual = strtok_r(NULL, ".", &save_qual_ptr);
+        //std::cout << "while loop end "<< std::endl;
+      }
     }
   }
 
@@ -570,9 +658,11 @@ int main(int argc,char **argv){
   seq_ref  = fai_load(fastafile);
   assert(seq_ref!=NULL);
   int chr_total = faidx_nseq(seq_ref);
-  
+  const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
+  const char* Adapter_2 = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT";
   // Creates the threads and writes to the files
-  Create_se_threads(seq_ref,chr_total,chr_total);
+  //Create_se_threads(seq_ref,false,NULL,chr_total,chr_total);
+  Create_se_threads(seq_ref,true,Adapter_1,chr_total,chr_total);
   //Create_pe_threads(seq_ref,chr_total,chr_total);
 
 } 
