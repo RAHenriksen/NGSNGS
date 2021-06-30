@@ -398,14 +398,14 @@ int main(int argc,char **argv){
     }
     else
     {
-      //Create_se_threads(fastafile,seq_ref,argv[1],thread_to_run,chr_total);
-      Create_pe_threads(fastafile,seq_ref,argv[1],thread_to_run,chr_total);
+      Create_se_threads(fastafile,seq_ref,argv[1],thread_to_run,chr_total);
+      //Create_pe_threads(fastafile,seq_ref,argv[1],thread_to_run,chr_total);
     }
   }
   else
   {
-    //Create_se_threads(fastafile,seq_ref,argv[1],chr_total,chr_total);
-    Create_pe_threads(fastafile,seq_ref,argv[1],chr_total,chr_total);
+    Create_se_threads(fastafile,seq_ref,argv[1],chr_total,chr_total);
+    //Create_pe_threads(fastafile,seq_ref,argv[1],chr_total,chr_total);
   } 
 }
 
