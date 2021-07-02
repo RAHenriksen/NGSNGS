@@ -190,6 +190,8 @@ int main(int argc,char **argv){
 
 //g++ SimulAncient_func.cpp FaFq_thread_Cov.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 
+std::atomic<float> cov_current;
+
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],int chr_size_cumm[]){
   
   int genome_size = 0;
@@ -264,11 +266,96 @@ void* Fafq_thread_se_run(void *arg){
   std::discrete_distribution<> Error[280];
   Seq_err(Error_2darray,Error,280);
   // -------------------------- // 
+  // Creates the random lengths array and distributions //
+  std::ifstream infile("Size_dist/Size_freq.txt");
+  int* sizearray = Size_select_dist(infile);
+  infile.close();
 
+  std::discrete_distribution<> SizeDist[2]; 
+  
+  std::ifstream infile2("Size_dist/Size_freq.txt");
+  Size_freq_dist(infile2,SizeDist); //creates the distribution of all the frequencies
+  infile2.close();
+  // ---------------------- //
   int genome_len = strlen(struct_obj->genome);
   std::cout << genome_len << std::endl;
-  ksprintf(struct_obj->fqresult_r1,"%d",genome_len);
 
+  int start_pos = 1;
+  int end_pos = genome_len; //30001000
+
+  //coverage method2
+  int* chrlencov = (int *) calloc(genome_len,sizeof(int));
+
+  char seqmod[1024] = {0};
+
+  // for the coverage examples
+  float cov = 0.01;
+  float cov_current = 0;
+  int rand_start;
+  int fraglength;
+  int nread = 0;
+
+  char qual[1024] = "";
+  //int D_i = 0;
+  int size_data = 0; // between 0 and chr_len
+  int D_total = 0;
+  
+  while (cov_current < cov) {
+    int fraglength = (int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
+    
+    srand48(fraglength+std::time(nullptr));
+    rand_start = lrand48() % (genome_len-fraglength-1);
+    std::cout << "start " << rand_start << std::endl;
+    std::cout << "frag " << fraglength << std::endl;
+
+    //identify the chromosome based on the coordinates from the cummulative size array
+    int chr_idx = 0;
+    while (rand_start > struct_obj->size_cumm[chr_idx]){chr_idx++;}
+    std::cout << "chr_idx " << chr_idx << std::endl;
+    std::cout << struct_obj->names[chr_idx] << std::endl;
+
+    // case 1
+    if (fraglength > 2*150){
+      //std::cout << "lolrt" << std::endl;
+      strncpy(seqmod,struct_obj->genome+rand_start-1,150);
+    }
+    // case 2
+    else if (150 < fraglength && fraglength < 2*150) //case 2
+    {
+      strncpy(seqmod,struct_obj->genome+rand_start-1,150);
+    }
+    // case 3
+    else if (fraglength <= 150)
+    {
+      strncpy(seqmod,struct_obj->genome+rand_start-1,fraglength);
+    }
+
+    //removes reads with NNN
+    char * pch;
+    pch = strchr(seqmod,'N');
+    if (pch != NULL){continue;}
+    else{
+      for (int j = rand_start; j < rand_start+fraglength; j++){
+        chrlencov[j] += 1; //adds 1 for regions, which might have reads already
+        D_total += 1; // to find the total depth
+        if (chrlencov[j] == 1){size_data++;} // if the value is different from 1 (more reads) then we still count that as one chromosome site with data
+      }
+
+      Ill_err(seqmod,Error,gen);
+      //std::cout << "non flag "<< std::endl;
+      Read_Qual2(seqmod,qual,Qualdistr1,gen);
+      //ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,rand_start,rand_start+fraglength-1,fraglength,seqmod,qual);
+      ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->names[chr_idx],rand_start,rand_start+fraglength-1,fraglength,seqmod,qual);
+      memset(qual, 0, sizeof(qual));  
+      nread++;
+      fprintf(stderr,"Number of reads %d , d_total %d, size_data %d, cov_current %f\n",nread,D_total,size_data,cov_current);
+    }
+    cov_current = (float) D_total / (genome_len-size_data);
+    memset(seqmod, 0, sizeof seqmod);
+    chr_idx = 0;
+    //fprintf(stderr,"start %d, fraglength %d\n",rand_start,fraglength);
+  }
+  std::cout << "thread done" << std::endl;
 }
 
 void* Create_se_threads(faidx_t *seq_ref,int thread_no){
@@ -305,24 +392,16 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no){
     struct_for_threads[i].chr_no = chr_total;
     struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
     struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
-    struct_for_threads[i].size = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no); //declaring the size of the int array in the struct
+    
+    //declaring the size of the different arrays
+    struct_for_threads[i].size = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no); 
     memcpy(struct_for_threads[i].size, chr_sizes, sizeof(chr_sizes));
-    struct_for_threads[i].size_cumm = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no); //declaring the size of the int array in the struct
+    struct_for_threads[i].size_cumm = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no);
     memcpy(struct_for_threads[i].size_cumm, chr_size_cumm, sizeof(chr_size_cumm));
-    struct_for_threads[i].names = (const char**)malloc(sizeof(char) * struct_for_threads[i].chr_no); //declaring the size of the int array in the struct
+    struct_for_threads[i].names = (const char**)malloc(sizeof(char) * struct_for_threads[i].chr_no);
     memcpy(struct_for_threads[i].names, chr_names, sizeof(chr_names));
   }
 
-  
-  /*struct_for_threads[0].size = (int*)malloc(sizeof(int) * struct_for_threads[0].chr_no); //declaring the size of the int array in the struct
-  std::cout << "lort" << std::endl;
-  memcpy(struct_for_threads[0].size, chr_sizes, sizeof(struct_for_threads[0].size));
-  free(struct_for_threads[0].size);*/
-
-  /*
-  struct_for_threads[0].size = (int*)malloc(sizeof(int) * struct_for_threads[0].chr_no); //declaring the size of the int array in the struct
-  memcpy(struct_for_threads[0].size, chr_sizes, sizeof(chr_sizes));
-  */
   pthread_attr_t attr;
   pthread_attr_init(&attr);
   for (int i = 0; i < nthreads; i++){
@@ -333,7 +412,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no){
   {
     pthread_join(mythreads[i],NULL);
   }
-
   
   std::cout << "end of for loop" << std::endl;
 
