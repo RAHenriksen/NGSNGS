@@ -121,17 +121,6 @@ void* full_genome_test(faidx_t *seq_ref,int chr_total){
     std::cout << " cummul " << chr_size_cumm[i] << std::endl;
     strcat(genome,data);
   }
-  
-  /*chr_size_cumm[0] = chr_sizes[0]; 
-
-  for (unsigned int i=1; i<chr_total; i++)
-  {
-    chr_size_cumm[i] = chr_size_cumm[i-1] + chr_sizes[i];
-  }
-  std::cout << "kummul" << chr_size_cumm[0] << std::endl;
-  std::cout << "kummul" << chr_size_cumm[1] << std::endl;
-  std::cout << "kummul" << chr_size_cumm[2] << std::endl;*/
-
 
   char seqmod[1024] = {0};
   
@@ -163,28 +152,17 @@ void* full_genome_test(faidx_t *seq_ref,int chr_total){
     int chr_idx = 0;
     while (rand_start > chr_size_cumm[chr_idx]){chr_idx++;}
     std::cout << "chr_idx " << chr_idx << std::endl;
+    std::cout << chr_names[chr_idx] << std::endl;
 
-    if (chr_idx == 0){
-        chr_start = rand_start;
-        /*std::cout << "start " << rand_start << " " << chr_size_cumm[chr_idx] << std::endl;
-        strncpy(seqmod,genome+rand_start-1,fraglength);
-        std::cout << seqmod << std::endl;
-        memset(seqmod, 0, sizeof seqmod);*/
-    }
-    else{
-        chr_start = rand_start-chr_size_cumm[chr_idx-1];
-        /*std::cout << "start " << rand_start << " " << chr_size_cumm[chr_idx] << " " << chr_size_cumm[chr_idx-1] << std::endl;
-        std::cout << chr_start << std::endl;
-        std::cout << chr_names[chr_idx] << std::endl;
-        strncpy(seqmod,genome+rand_start-1,fraglength);
-        std::cout << seqmod << std::endl;
-        memset(seqmod, 0, sizeof seqmod);*/
-    }
+    // extracting corresponding coordinates after chromosome concatenations
+    if (chr_idx == 0){chr_start = rand_start;}
+    else{chr_start = rand_start-chr_size_cumm[chr_idx-1];}
+
+    fprintf(stderr,">%s:%d-%d_length:%d\n",chr_names[chr_idx],chr_start,chr_start+fraglength-1,fraglength);
     std::cout << "start " << chr_start << " end  " << chr_start+fraglength-1 << " " << chr_size_cumm[chr_idx] << std::endl;
     strncpy(seqmod,genome+rand_start-1,fraglength);
     std::cout << seqmod << std::endl;
     memset(seqmod, 0, sizeof seqmod);
-    
   }
 }
 
