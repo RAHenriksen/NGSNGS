@@ -289,7 +289,7 @@ void* Fafq_thread_se_run(void *arg){
   char seqmod[1024] = {0};
 
   // for the coverage examples
-  float cov = 0.01;
+  float cov = 0.1;
   float cov_current = 0;
   int rand_start;
   int fraglength;
@@ -303,16 +303,16 @@ void* Fafq_thread_se_run(void *arg){
   while (cov_current < cov) {
     int fraglength = (int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
     
-    srand48(fraglength+std::time(nullptr));
+    srand48(D_total+fraglength+std::time(nullptr));
     rand_start = lrand48() % (genome_len-fraglength-1);
-    std::cout << "start " << rand_start << std::endl;
-    std::cout << "frag " << fraglength << std::endl;
+    /*std::cout << "start " << rand_start << std::endl;
+    std::cout << "frag " << fraglength << std::endl;*/
 
     //identify the chromosome based on the coordinates from the cummulative size array
     int chr_idx = 0;
     while (rand_start > struct_obj->size_cumm[chr_idx]){chr_idx++;}
-    std::cout << "chr_idx " << chr_idx << std::endl;
-    std::cout << struct_obj->names[chr_idx] << std::endl;
+    /*std::cout << "chr_idx " << chr_idx << std::endl;
+    std::cout << struct_obj->names[chr_idx] << std::endl;*/
 
     // case 1
     if (fraglength > 2*150){
