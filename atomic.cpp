@@ -190,26 +190,19 @@ int main(int argc,char **argv){
 
 //g++ SimulAncient_func.cpp FaFq_thread_Cov.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 
-char* full_genome_create(faidx_t *seq_ref,int chr_total){
-    
+char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],int chr_size_cumm[]){
+  
   int genome_size = 0;
-  int chr_sizes[chr_total];
-  const char *chr_names[chr_total];
-  int chr_size_cumm[chr_total];
 
   for (size_t i = 0; i < chr_total; i++){
     const char *chr_name = faidx_iseq(seq_ref,i);
     int chr_len = faidx_seq_len(seq_ref,chr_name);
     chr_sizes[i] = chr_len;
     chr_names[i] = chr_name;
-    std::cout << "genomesize " << genome_size << std::endl;
     genome_size += chr_len;
     chr_size_cumm[i] = genome_size;
-    std::cout << "genomesize 2 " << genome_size << std::endl;
   }
 
-  std::cout << genome_size << std::endl;
-  std::cout << "----------" << std::endl;
   char* genome = (char*) malloc(genome_size);
   
   for (size_t i = 0; i < chr_total; i++){
@@ -217,9 +210,9 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total){
     pthread_mutex_lock(&data_mutex);
     const char *data = fai_fetch(seq_ref,chr_names[i],&chr_sizes[i]);
     pthread_mutex_unlock(&data_mutex);
-    std::cout << " size " << chr_sizes[i] << std::endl;
-    std::cout << " name " << chr_names[i] << std::endl;
-    std::cout << " cummul " << chr_size_cumm[i] << std::endl;
+    //std::cout << " size " << chr_sizes[i] << std::endl;
+    //std::cout << " name " << chr_names[i] << std::endl;
+    //std::cout << " cummul " << chr_size_cumm[i] << std::endl;
     strcat(genome,data);
   }
   return genome;
@@ -228,6 +221,10 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total){
 struct Parsarg_for_Fafq_se_thread{
   kstring_t *fqresult_r1;
   char *genome; // The actual concatenated genome
+  int chr_no;
+  int *size;
+  int *size_cumm;
+  const char **names;
   const char* Ill_err;
   const char* read_err_1;
 };
@@ -235,6 +232,17 @@ struct Parsarg_for_Fafq_se_thread{
 void* Fafq_thread_se_run(void *arg){
   Parsarg_for_Fafq_se_thread *struct_obj = (Parsarg_for_Fafq_se_thread*) arg;
   std::cout << "se run "<< std::endl;
+
+  int chr_total = struct_obj->chr_no;
+  
+  std::cout << "total run "<< chr_total << std::endl;
+  
+  for (int i = 0; i < chr_total; i++){
+    std::cout << "for loop" << std::endl;
+    std::cout << " size " << struct_obj->size[i] << std::endl;
+    std::cout << " names " << struct_obj->names[i] << std::endl;
+    std::cout << " size cumm " << struct_obj->size_cumm[i] << std::endl;
+  }
   // -------------------------- // 
   // Load in the error profiles and size distributions
   std::ifstream file(struct_obj->read_err_1);
@@ -263,40 +271,76 @@ void* Fafq_thread_se_run(void *arg){
 
 }
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no,int chr_total){
+void* Create_se_threads(faidx_t *seq_ref,int thread_no){
   
   //creating an array with the arguments to create multiple threads;
   int nthreads=thread_no;
   pthread_t mythreads[nthreads];
+  
+  int chr_total = faidx_nseq(seq_ref);
+  std::cout << "chromosome " << chr_total << std::endl;
+  const char *chr_names[chr_total];
+  int chr_sizes[chr_total];
+  int chr_size_cumm[chr_total];
+
+  char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
+
   Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
-  char *genome_data = full_genome_create(seq_ref,chr_total);
-  
-  int i = 0; int j = 0; int k = 0;
+  for (size_t i = 0; i < chr_total; i++){
+    std::cout << " name " << chr_names[i] << std::endl;
+    std::cout << " size " << chr_sizes[i] << std::endl;
+    std::cout << " cummul " << chr_size_cumm[i] << std::endl;
+  }
+  std::cout << "--------------------------" << std::endl;
 
   //initialzie values that should be used for each thread
 
-  struct_for_threads[1].fqresult_r1 =new kstring_t;
-  struct_for_threads[1].fqresult_r1 -> l = 0;
-  struct_for_threads[1].fqresult_r1 -> m = 0;
-  struct_for_threads[1].fqresult_r1 -> s = NULL;
-  struct_for_threads[1].genome = genome_data;
-  struct_for_threads[1].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
-  struct_for_threads[1].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
-  std::cout << "chr_no" << i << std::endl;
-    
+  for (int i = 0; i < nthreads; i++){
+    struct_for_threads[i].fqresult_r1 =new kstring_t;
+    struct_for_threads[i].fqresult_r1 -> l = 0;
+    struct_for_threads[i].fqresult_r1 -> m = 0;
+    struct_for_threads[i].fqresult_r1 -> s = NULL;
+    struct_for_threads[i].genome = genome_data;
+    struct_for_threads[i].chr_no = chr_total;
+    struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
+    struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
+    struct_for_threads[i].size = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no); //declaring the size of the int array in the struct
+    memcpy(struct_for_threads[i].size, chr_sizes, sizeof(chr_sizes));
+    struct_for_threads[i].size_cumm = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no); //declaring the size of the int array in the struct
+    memcpy(struct_for_threads[i].size_cumm, chr_size_cumm, sizeof(chr_size_cumm));
+    struct_for_threads[i].names = (const char**)malloc(sizeof(char) * struct_for_threads[i].chr_no); //declaring the size of the int array in the struct
+    memcpy(struct_for_threads[i].names, chr_names, sizeof(chr_names));
+  }
 
+  
+  /*struct_for_threads[0].size = (int*)malloc(sizeof(int) * struct_for_threads[0].chr_no); //declaring the size of the int array in the struct
+  std::cout << "lort" << std::endl;
+  memcpy(struct_for_threads[0].size, chr_sizes, sizeof(struct_for_threads[0].size));
+  free(struct_for_threads[0].size);*/
+
+  /*
+  struct_for_threads[0].size = (int*)malloc(sizeof(int) * struct_for_threads[0].chr_no); //declaring the size of the int array in the struct
+  memcpy(struct_for_threads[0].size, chr_sizes, sizeof(chr_sizes));
+  */
   pthread_attr_t attr;
   pthread_attr_init(&attr);
-  pthread_create(&mythreads[nthreads],&attr,Fafq_thread_se_run,&struct_for_threads[nthreads]);
+  for (int i = 0; i < nthreads; i++){
+    pthread_create(&mythreads[i],&attr,Fafq_thread_se_run,&struct_for_threads[i]);
+  }
+  
+  for (int i = 0; i < nthreads; i++)
+  {
+    pthread_join(mythreads[i],NULL);
+  }
 
-  pthread_join(mythreads[nthreads],NULL);
+  
   std::cout << "end of for loop" << std::endl;
 
   FILE *fp1;
   fp1 = fopen("lol.fq","wb");
   std::cout << "fprintF fejl "<< std::endl;
-  fprintf(fp1,"%s",struct_for_threads[nthreads].fqresult_r1->s);
+  fprintf(fp1,"%s",struct_for_threads[0].fqresult_r1->s);
   std::cout << "virkede fejl "<< std::endl;
   fclose(fp1);
 return NULL;
@@ -312,12 +356,11 @@ int main(int argc,char **argv){
   seq_ref  = fai_load(fastafile);
   assert(seq_ref!=NULL);
   int chr_total = faidx_nseq(seq_ref);
-
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   
   //full_genome_create(seq_ref,chr_total);
 
-  Create_se_threads(seq_ref,1,chr_total);
+  Create_se_threads(seq_ref,1);
 }
 
 /*char seqmod[1024] = {0};
