@@ -37,7 +37,6 @@
 
 pthread_mutex_t data_mutex;
 
-/*
 struct sum_runner_struct {
   int answer;
   int limit;
@@ -60,7 +59,7 @@ void* sum_runner(void* arg){
 
 }
 
-
+/*
 int main(int argc,char **argv){
     //creating an array with the arguments to create multiple threads;
     int num_args = 2;
@@ -88,109 +87,6 @@ int main(int argc,char **argv){
     std::cout << "final " << counter << std::endl;
 }*/
 
-/*
-void* full_genome_test(faidx_t *seq_ref,int chr_total){
-    
-  int genome_size = 0;
-  int chr_sizes[chr_total];
-  const char *chr_names[chr_total];
-  int chr_size_cumm[chr_total];
-
-  for (size_t i = 0; i < chr_total; i++){
-    const char *chr_name = faidx_iseq(seq_ref,i);
-    int chr_len = faidx_seq_len(seq_ref,chr_name);
-    chr_sizes[i] = chr_len;
-    chr_names[i] = chr_name;
-    std::cout << "genomesize " << genome_size << std::endl;
-    genome_size += chr_len;
-    chr_size_cumm[i] = genome_size;
-    std::cout << "genomesize 2 " << genome_size << std::endl;
-  }
-
-  std::cout << genome_size << std::endl;
-  std::cout << "----------" << std::endl;
-  char* genome = (char*) malloc(genome_size);
-  
-  for (size_t i = 0; i < chr_total; i++){
-
-    pthread_mutex_lock(&data_mutex);
-    const char *data = fai_fetch(seq_ref,chr_names[i],&chr_sizes[i]);
-    pthread_mutex_unlock(&data_mutex);
-    std::cout << " size " << chr_sizes[i] << std::endl;
-    std::cout << " name " << chr_names[i] << std::endl;
-    std::cout << " cummul " << chr_size_cumm[i] << std::endl;
-    strcat(genome,data);
-  }
-
-  char seqmod[1024] = {0};
-  
-  // Creates the random lengths array and distributions //
-  std::ifstream infile("Size_dist/Size_freq.txt");
-  int* sizearray = Size_select_dist(infile);
-  infile.close();
-
-  // creating random objects for all distributions.
-  std::random_device rd;
-  std::default_random_engine gen(rd()); 
-  
-  std::discrete_distribution<> SizeDist[2]; 
-  
-  std::ifstream infile2("Size_dist/Size_freq.txt");
-  Size_freq_dist(infile2,SizeDist); //creates the distribution of all the frequencies
-  infile2.close();
-  
-  int rand_start;
-  int chr_start;
-  for (size_t i = 0; i < 10; i++){
-    std::cout << "---------------------" << std::endl;
-    int fraglength = (int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
-    srand48(fraglength+std::time(nullptr));
-    rand_start = lrand48() % (genome_size-fraglength-1);
-    std::cout << "start " << rand_start << std::endl;
-    std::cout << "frag " << fraglength << std::endl;
-    
-    int chr_idx = 0;
-    while (rand_start > chr_size_cumm[chr_idx]){chr_idx++;}
-    std::cout << "chr_idx " << chr_idx << std::endl;
-    std::cout << chr_names[chr_idx] << std::endl;
-
-    // extracting corresponding coordinates after chromosome concatenations
-    if (chr_idx == 0){chr_start = rand_start;}
-    else{chr_start = rand_start-chr_size_cumm[chr_idx-1];}
-
-    fprintf(stderr,">%s:%d-%d_length:%d\n",chr_names[chr_idx],chr_start,chr_start+fraglength-1,fraglength);
-    std::cout << "start " << chr_start << " end  " << chr_start+fraglength-1 << " " << chr_size_cumm[chr_idx] << std::endl;
-    strncpy(seqmod,genome+rand_start-1,fraglength);
-    std::cout << seqmod << std::endl;
-    memset(seqmod, 0, sizeof seqmod);
-  }
-}
-
-
-
-// ------------------------------ //
-int main(int argc,char **argv){
-  //Loading in an creating my objects for the sequence files.
-  // chr1_2.fa  hg19canon.fa
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
-  //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa";
-  faidx_t *seq_ref = NULL;
-  seq_ref  = fai_load(fastafile);
-  assert(seq_ref!=NULL);
-  int chr_total = faidx_nseq(seq_ref);
-
-  fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
-  
-  full_genome_test(seq_ref,chr_total);
- 
-
-  //Create_se_threads(fastafile,seq_ref,chr_total,chr_total,2);
-}
-*/
-
-//g++ SimulAncient_func.cpp FaFq_thread_Cov.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
-
-std::atomic<float> cov_current;
 
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],int chr_size_cumm[]){
   
@@ -220,6 +116,10 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
   return genome;
 }
 
+std::atomic<float> current_cov_atom(0.0);
+std::atomic<int> size_data(0);
+std::atomic<int> D_total(0);
+
 struct Parsarg_for_Fafq_se_thread{
   kstring_t *fqresult_r1;
   char *genome; // The actual concatenated genome
@@ -229,6 +129,9 @@ struct Parsarg_for_Fafq_se_thread{
   const char **names;
   const char* Ill_err;
   const char* read_err_1;
+  float current_cov;
+  int cov_size;
+  int depth;
 };
 
 void* Fafq_thread_se_run(void *arg){
@@ -236,16 +139,7 @@ void* Fafq_thread_se_run(void *arg){
   std::cout << "se run "<< std::endl;
 
   int chr_total = struct_obj->chr_no;
-  
-  std::cout << "total run "<< chr_total << std::endl;
-  
-  for (int i = 0; i < chr_total; i++){
-    std::cout << "for loop" << std::endl;
-    std::cout << " size " << struct_obj->size[i] << std::endl;
-    std::cout << " names " << struct_obj->names[i] << std::endl;
-    std::cout << " size cumm " << struct_obj->size_cumm[i] << std::endl;
-  }
-  // -------------------------- // 
+
   // Load in the error profiles and size distributions
   std::ifstream file(struct_obj->read_err_1);
   int Line_no = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
@@ -290,17 +184,16 @@ void* Fafq_thread_se_run(void *arg){
 
   // for the coverage examples
   float cov = 0.1;
-  float cov_current = 0;
+  //float cov_current = 0;
   int rand_start;
   int fraglength;
   int nread = 0;
 
   char qual[1024] = "";
   //int D_i = 0;
-  int size_data = 0; // between 0 and chr_len
-  int D_total = 0;
   
-  while (cov_current < cov) {
+  
+  while (current_cov_atom < cov) {
     int fraglength = (int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
     
     srand48(D_total+fraglength+std::time(nullptr));
@@ -348,9 +241,14 @@ void* Fafq_thread_se_run(void *arg){
       ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->names[chr_idx],rand_start,rand_start+fraglength-1,fraglength,seqmod,qual);
       memset(qual, 0, sizeof(qual));  
       nread++;
-      fprintf(stderr,"Number of reads %d , d_total %d, size_data %d, cov_current %f\n",nread,D_total,size_data,cov_current);
+      //fprintf(stderr,"Number of reads %d , d_total %d, size_data %d\n",nread,D_total,size_data);
     }
-    cov_current = (float) D_total / (genome_len-size_data);
+    current_cov_atom = (float) D_total / (genome_len-size_data);
+    std::cout << "current " << current_cov_atom << std::endl;
+    struct_obj->current_cov = current_cov_atom; //why do we need this
+    struct_obj->cov_size = size_data;
+    struct_obj->depth = D_total;
+
     memset(seqmod, 0, sizeof seqmod);
     chr_idx = 0;
     //fprintf(stderr,"start %d, fraglength %d\n",rand_start,fraglength);
@@ -365,7 +263,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no){
   pthread_t mythreads[nthreads];
   
   int chr_total = faidx_nseq(seq_ref);
-  std::cout << "chromosome " << chr_total << std::endl;
+
   const char *chr_names[chr_total];
   int chr_sizes[chr_total];
   int chr_size_cumm[chr_total];
@@ -374,12 +272,12 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no){
 
   Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
-  for (size_t i = 0; i < chr_total; i++){
+  /*for (size_t i = 0; i < chr_total; i++){
     std::cout << " name " << chr_names[i] << std::endl;
     std::cout << " size " << chr_sizes[i] << std::endl;
     std::cout << " cummul " << chr_size_cumm[i] << std::endl;
   }
-  std::cout << "--------------------------" << std::endl;
+  std::cout << "--------------------------" << std::endl;*/
 
   //initialzie values that should be used for each thread
 
@@ -417,9 +315,9 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no){
 
   FILE *fp1;
   fp1 = fopen("lol.fq","wb");
-  std::cout << "fprintF fejl "<< std::endl;
-  fprintf(fp1,"%s",struct_for_threads[0].fqresult_r1->s);
-  std::cout << "virkede fejl "<< std::endl;
+  for(int i=0;i<nthreads;i++){
+    fprintf(fp1,"%s",struct_for_threads[i].fqresult_r1->s);
+  }
   fclose(fp1);
 return NULL;
 }
@@ -438,72 +336,5 @@ int main(int argc,char **argv){
   
   //full_genome_create(seq_ref,chr_total);
 
-  Create_se_threads(seq_ref,1);
+  Create_se_threads(seq_ref,10);
 }
-
-/*char seqmod[1024] = {0};
-  
-  // Creates the random lengths array and distributions //
-  std::ifstream infile("Size_dist/Size_freq.txt");
-  int* sizearray = Size_select_dist(infile);
-  infile.close();
-
-  // creating random objects for all distributions.
-  std::random_device rd;
-  std::default_random_engine gen(rd()); 
-  
-  std::discrete_distribution<> SizeDist[2]; 
-  
-  std::ifstream infile2("Size_dist/Size_freq.txt");
-  Size_freq_dist(infile2,SizeDist); //creates the distribution of all the frequencies
-  infile2.close();
-  
-  int rand_start;
-  int chr_start;
-  for (size_t i = 0; i < 10; i++){
-    std::cout << "---------------------" << std::endl;
-    int fraglength = (int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
-    srand48(fraglength+std::time(nullptr));
-    rand_start = lrand48() % (genome_size-fraglength-1);
-    std::cout << "start " << rand_start << std::endl;
-    std::cout << "frag " << fraglength << std::endl;
-    
-    int chr_idx = 0;
-    while (rand_start > chr_size_cumm[chr_idx]){chr_idx++;}
-    std::cout << "chr_idx " << chr_idx << std::endl;
-    std::cout << chr_names[chr_idx] << std::endl;
-
-    // extracting corresponding coordinates after chromosome concatenations
-    if (chr_idx == 0){chr_start = rand_start;}
-    else{chr_start = rand_start-chr_size_cumm[chr_idx-1];}
-
-    fprintf(stderr,">%s:%d-%d_length:%d\n",chr_names[chr_idx],chr_start,chr_start+fraglength-1,fraglength);
-    std::cout << "start " << chr_start << " end  " << chr_start+fraglength-1 << " " << chr_size_cumm[chr_idx] << std::endl;
-    strncpy(seqmod,genome+rand_start-1,fraglength);
-    std::cout << seqmod << std::endl;
-    memset(seqmod, 0, sizeof seqmod);
-  }*/
-
-
-
-/*
-int main(int argc,char **argv){
-  //Loading in an creating my objects for the sequence files.
-  // chr1_2.fa  hg19canon.fa
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
-  //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa";
-  faidx_t *seq_ref = NULL;
-  seq_ref  = fai_load(fastafile);
-  assert(seq_ref!=NULL);
-  int chr_total = faidx_nseq(seq_ref);
-
-  fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
-  
-  char *genome_data = full_genome_create(seq_ref,chr_total);
-  char seqmod[1024] = {0};
-  strncpy(seqmod,genome_data+10000000-1,150);
-  std::cout << "_-----------" << std::endl;
-  std::cout << seqmod << std::endl;
-
-  //Create_se_threads(fastafile,seq_ref,chr_total,chr_total,2);
-}*/
