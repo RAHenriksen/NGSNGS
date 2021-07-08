@@ -276,3 +276,106 @@ int *Size_select_dist(std::ifstream &infile){
   }
   return sizearray;
 }
+
+double uniform()
+{
+    /*
+     U(0,1): AS 183: Appl. Stat. 31:188-190
+     Wichmann BA & Hill ID.  1982.  An efficient and portable
+     pseudo-random number generator.  Appl. Stat. 31:188-190
+     x, y, z are any numbers in the range 1-30000.  Integer operation up
+     to 30323 required.
+     
+     Suggested to me by Ziheng Yang who also provided me with
+     the source code used here.  I use it because it is both fast and portable.
+     */
+    static int x_rndu=11, y_rndu=23;int static z_rndu=137;
+
+    double r;
+    
+    x_rndu = 171*(x_rndu%177) -  2*(x_rndu/177);
+    y_rndu = 172*(y_rndu%176) - 35*(y_rndu/176);
+    z_rndu = 170*(z_rndu%178) - 63*(z_rndu/178);
+    if (x_rndu<0) x_rndu+=30269;
+    if (y_rndu<0) y_rndu+=30307;
+    if (z_rndu<0) z_rndu+=30323;
+    r = x_rndu/30269.0 + y_rndu/30307.0 + z_rndu/30323.0;
+    return (r-(int)r);
+}
+
+
+void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta){
+    int l = 0;
+    int r = L-1;
+    while (l+r > L-2){
+        l = 0;
+        r = 0;
+        double u_l = uniform();
+        double u_r = uniform();
+        //cout << u_l << " " << u_r <<"\n";
+        std::default_random_engine generator1(rand()%30000+1);
+        std::geometric_distribution<int> distribution1(lambda);
+        std::default_random_engine generator2(rand()%30000+1);
+        std::geometric_distribution<int> distribution2(lambda);
+        if (u_l > 0.5){
+            l = distribution1(generator1);
+            //cout << l << "\n";
+        }
+        if (u_r > 0.5){
+            r = distribution2(generator2);
+            //cout << r << "\n";
+        }
+    }
+    //cout << l << " " << r <<"\n";
+    for (int i = 0; i<l; i++){
+        if (reffrag[i] == 'C'){
+            double u = uniform();
+            if (u < delta_s){
+                frag[i] = 'X';
+            }else{
+                frag[i] = 'C';
+            }
+        }else{
+            frag[i] = reffrag[i];
+        }
+    }
+    for (int i = 0; i < r; i++){
+        if (reffrag[L-i-1] == 'G'){
+            double u = uniform();
+            if (u < delta_s){
+                frag[L-i-1] = 'X';
+            }else{
+                frag[L-i-1] = 'G';
+            }
+        }else{
+            frag[L-i-1] = reffrag[L-i-1];
+        }
+    }
+    double u_nick = uniform();
+    double d = nv/((L-l-r-1)*nv+1-nv);
+    int p_nick = l;
+    double cumd = 0;
+    while (u_nick > cumd & p_nick < L-r-1){
+        cumd += d;
+        p_nick +=1;
+    }
+    for (int i = l; i < L-r; i++){
+        if (reffrag[i] == 'C' && i<=p_nick){
+            double u = uniform();
+            if (u < delta){
+                frag[i] = 'X';
+            }else{
+                frag[i] = 'C';
+            }
+        }else if (reffrag[i] == 'G' && i>p_nick){
+            double u = uniform();
+            if (u < delta){
+                frag[i] = 'X';
+            }else{
+                frag[i] = 'G';
+            }
+        }else{
+            frag[i] = reffrag[i];
+        }
+    }
+}

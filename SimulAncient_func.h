@@ -20,4 +20,9 @@ void Ill_err(char *seq,std::discrete_distribution<>*Dist,std::default_random_eng
 void Size_freq_dist(std::ifstream &infile, std::discrete_distribution<> dist[]);
 
 int *Size_select_dist(std::ifstream &infile);
+
+double uniform();
+
+void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta);
+
 #endif

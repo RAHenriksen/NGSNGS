@@ -91,14 +91,14 @@ int main(int argc,char **argv){
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],int chr_size_cumm[]){
   
   int genome_size = 0;
-
+  chr_size_cumm[0] = 0;
   for (size_t i = 0; i < chr_total; i++){
     const char *chr_name = faidx_iseq(seq_ref,i);
     int chr_len = faidx_seq_len(seq_ref,chr_name);
     chr_sizes[i] = chr_len;
     chr_names[i] = chr_name;
     genome_size += chr_len;
-    chr_size_cumm[i] = genome_size;
+    chr_size_cumm[i+1] = genome_size;
   }
 
   char* genome = (char*) malloc(genome_size);
@@ -181,7 +181,7 @@ void* Fafq_thread_se_run(void *arg){
   int* chrlencov = (int *) calloc(genome_len,sizeof(int));
 
   char seqmod[1024] = {0};
-
+  char seqmod2[1024] = {0};
   // for the coverage examples
   float cov = 0.1;
   //float cov_current = 0;
@@ -203,9 +203,9 @@ void* Fafq_thread_se_run(void *arg){
 
     //identify the chromosome based on the coordinates from the cummulative size array
     int chr_idx = 0;
-    while (rand_start > struct_obj->size_cumm[chr_idx]){chr_idx++;}
-    /*std::cout << "chr_idx " << chr_idx << std::endl;
-    std::cout << struct_obj->names[chr_idx] << std::endl;*/
+    while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}
+    std::cout << "chr_idx " << chr_idx << std::endl;
+    std::cout << struct_obj->names[chr_idx] << std::endl;
 
     // case 1
     if (fraglength > 2*150){
@@ -233,23 +233,23 @@ void* Fafq_thread_se_run(void *arg){
         D_total += 1; // to find the total depth
         if (chrlencov[j] == 1){size_data++;} // if the value is different from 1 (more reads) then we still count that as one chromosome site with data
       }
-
-      Ill_err(seqmod,Error,gen);
-      //std::cout << "non flag "<< std::endl;
-      Read_Qual2(seqmod,qual,Qualdistr1,gen);
-      //ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",chr_name,rand_start,rand_start+fraglength-1,fraglength,seqmod,qual);
-      ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->names[chr_idx],rand_start,rand_start+fraglength-1,fraglength,seqmod,qual);
+      SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097);
+      Ill_err(seqmod2,Error,gen);
+      Read_Qual2(seqmod2,qual,Qualdistr1,gen);
+      ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],fraglength,seqmod2,qual);
       memset(qual, 0, sizeof(qual));  
       nread++;
       //fprintf(stderr,"Number of reads %d , d_total %d, size_data %d\n",nread,D_total,size_data);
     }
     current_cov_atom = (float) D_total / (genome_len-size_data);
+    std::cout << "----------------------------" << std::endl;
     std::cout << "current " << current_cov_atom << std::endl;
     struct_obj->current_cov = current_cov_atom; //why do we need this
     struct_obj->cov_size = size_data;
     struct_obj->depth = D_total;
 
     memset(seqmod, 0, sizeof seqmod);
+    memset(seqmod2, 0, sizeof seqmod2);
     chr_idx = 0;
     //fprintf(stderr,"start %d, fraglength %d\n",rand_start,fraglength);
   }
@@ -266,8 +266,8 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no){
 
   const char *chr_names[chr_total];
   int chr_sizes[chr_total];
-  int chr_size_cumm[chr_total];
-
+  int chr_size_cumm[chr_total+1];
+  
   char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
 
   Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
@@ -336,5 +336,8 @@ int main(int argc,char **argv){
   
   //full_genome_create(seq_ref,chr_total);
 
-  Create_se_threads(seq_ref,10);
+  Create_se_threads(seq_ref,1);
 }
+
+//SimBriggsModel(seqmod, frag, L, 0.024, 0.36, 0.68, 0.0097);
+// g++ SimulAncient_func.cpp atomic.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
