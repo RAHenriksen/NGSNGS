@@ -32,60 +32,9 @@
 #include <atomic>
 #include <vector>
 
-
 #include "SimulAncient_func.h"
 
 pthread_mutex_t data_mutex;
-
-struct sum_runner_struct {
-  int answer;
-  int limit;
-};
-
-std::atomic<int> counter;
-
-void* sum_runner(void* arg){
-    struct sum_runner_struct *arg_struct = (struct sum_runner_struct*) arg;
-
-    for(int i = 0; i <= arg_struct ->limit; i++){
-        std::cout << "i " << i << std::endl;
-        counter += i;
-        std::cout << " count " << counter << std::endl;
-    }
-
-    //setting the answer to the sum from the calculated sum from the loop
-    std::cout << "answer " << counter << std::endl;
-    arg_struct -> answer = counter;
-
-}
-
-/*
-int main(int argc,char **argv){
-    //creating an array with the arguments to create multiple threads;
-    int num_args = 2;
-    struct sum_runner_struct args[num_args];
-    pthread_t tids[num_args];
-
-    pthread_t mythreads[num_args];
-    sum_runner_struct struct_for_threads[num_args];
-
-    //Creating the threads 
-    for (int i =0; i<=num_args; i++){
-        args[i].limit = atoll(argv[i]);
-
-        pthread_attr_t attr;
-
-        pthread_attr_init(&attr);
-        pthread_create(&tids[i],&attr,sum_runner, &args[i]);
-    }
-
-    // Wait until the threads are done before joining
-    for (int i = 0;i<num_args;i++){
-        pthread_join(tids[i],NULL);
-    }
-
-    std::cout << "final " << counter << std::endl;
-}*/
 
 
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],int chr_size_cumm[]){
@@ -108,9 +57,6 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
     pthread_mutex_lock(&data_mutex);
     const char *data = fai_fetch(seq_ref,chr_names[i],&chr_sizes[i]);
     pthread_mutex_unlock(&data_mutex);
-    //std::cout << " size " << chr_sizes[i] << std::endl;
-    //std::cout << " name " << chr_names[i] << std::endl;
-    //std::cout << " cummul " << chr_size_cumm[i] << std::endl;
     strcat(genome,data);
   }
   return genome;
@@ -136,7 +82,7 @@ struct Parsarg_for_Fafq_se_thread{
 
 void* Fafq_thread_se_run(void *arg){
   Parsarg_for_Fafq_se_thread *struct_obj = (Parsarg_for_Fafq_se_thread*) arg;
-  std::cout << "se run "<< std::endl;
+  //std::cout << "se run "<< std::endl;
 
   int chr_total = struct_obj->chr_no;
 
@@ -172,7 +118,7 @@ void* Fafq_thread_se_run(void *arg){
   infile2.close();
   // ---------------------- //
   int genome_len = strlen(struct_obj->genome);
-  std::cout << genome_len << std::endl;
+  //std::cout << genome_len << std::endl;
 
   int start_pos = 1;
   int end_pos = genome_len; //30001000
@@ -204,8 +150,8 @@ void* Fafq_thread_se_run(void *arg){
     //identify the chromosome based on the coordinates from the cummulative size array
     int chr_idx = 0;
     while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}
-    std::cout << "chr_idx " << chr_idx << std::endl;
-    std::cout << struct_obj->names[chr_idx] << std::endl;
+    //std::cout << "chr_idx " << chr_idx << std::endl;
+    //std::cout << struct_obj->names[chr_idx] << std::endl;
 
     // case 1
     if (fraglength > 2*150){
@@ -242,8 +188,8 @@ void* Fafq_thread_se_run(void *arg){
       //fprintf(stderr,"Number of reads %d , d_total %d, size_data %d\n",nread,D_total,size_data);
     }
     current_cov_atom = (float) D_total / (genome_len-size_data);
-    std::cout << "----------------------------" << std::endl;
-    std::cout << "current " << current_cov_atom << std::endl;
+    //std::cout << "----------------------------" << std::endl;
+    //std::cout << "current " << current_cov_atom << std::endl;
     struct_obj->current_cov = current_cov_atom; //why do we need this
     struct_obj->cov_size = size_data;
     struct_obj->depth = D_total;
@@ -253,7 +199,7 @@ void* Fafq_thread_se_run(void *arg){
     chr_idx = 0;
     //fprintf(stderr,"start %d, fraglength %d\n",rand_start,fraglength);
   }
-  std::cout << "thread done" << std::endl;
+  //std::cout << "thread done" << std::endl;
 }
 
 void* Create_se_threads(faidx_t *seq_ref,int thread_no){
@@ -272,15 +218,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no){
 
   Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
-  /*for (size_t i = 0; i < chr_total; i++){
-    std::cout << " name " << chr_names[i] << std::endl;
-    std::cout << " size " << chr_sizes[i] << std::endl;
-    std::cout << " cummul " << chr_size_cumm[i] << std::endl;
-  }
-  std::cout << "--------------------------" << std::endl;*/
-
   //initialzie values that should be used for each thread
-
   for (int i = 0; i < nthreads; i++){
     struct_for_threads[i].fqresult_r1 =new kstring_t;
     struct_for_threads[i].fqresult_r1 -> l = 0;
@@ -311,15 +249,13 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no){
     pthread_join(mythreads[i],NULL);
   }
   
-  std::cout << "end of for loop" << std::endl;
-
   FILE *fp1;
   fp1 = fopen("lol.fq","wb");
   for(int i=0;i<nthreads;i++){
     fprintf(fp1,"%s",struct_for_threads[i].fqresult_r1->s);
   }
   fclose(fp1);
-return NULL;
+  return NULL;
 }
 
 // ------------------------------ //
@@ -335,9 +271,9 @@ int main(int argc,char **argv){
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   
   //full_genome_create(seq_ref,chr_total);
-
   Create_se_threads(seq_ref,1);
 }
 
 //SimBriggsModel(seqmod, frag, L, 0.024, 0.36, 0.68, 0.0097);
 // g++ SimulAncient_func.cpp atomic.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
+
