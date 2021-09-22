@@ -77,6 +77,7 @@ struct Parsarg_for_Fafq_se_thread{
   int cov_size;
   int depth;
   int seed;
+  int threadno;
 };
 
 void* Fafq_thread_se_run(void *arg){
@@ -88,7 +89,7 @@ void* Fafq_thread_se_run(void *arg){
 
   // creating random objects for all distributions.
   std::random_device rd;
-  std::default_random_engine gen(struct_obj->seed); 
+  std::default_random_engine gen(struct_obj->seed);
 
   // -------------------------- // 
   // Creates the random lengths array and distributions //
@@ -126,8 +127,8 @@ void* Fafq_thread_se_run(void *arg){
   
   while (current_cov_atom < cov) {
     int fraglength = (int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
-    //+std::time(nullptr)
-    srand48(struct_obj->seed+D_total+fraglength); //we need to add D_total+fraglength otherwise the srand48() will always be the same and generate the same fragment pieces
+    
+    srand48(D_total+fraglength); //when i mess with srand48 it contradicts my seed, so i dont need to add +D_total+fraglength or std::time(nullptr) since i am defining my generator using seed 
     rand_start = lrand48() % (genome_len-fraglength-1);
 
     //identify the chromosome based on the coordinates from the cummulative size array
@@ -158,7 +159,8 @@ void* Fafq_thread_se_run(void *arg){
         if (chrlencov[j] == 1){size_data++;} // if the value is different from 1 (more reads) then we still count that as one chromosome site with data
       }
       SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097);
-      ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n",struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],fraglength,seqmod2);
+      //Ill_err(seqmod2,Error,gen);
+      ksprintf(struct_obj->fqresult_r1,"@READID_%d_%s:%d-%d_length:%d\n%s\n+\n",struct_obj->threadno,struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],fraglength,seqmod2);
       memset(qual, 0, sizeof(qual));  
       nread++;
       //fprintf(stderr,"Number of reads %d , d_total %d, size_data %d\n",nread,D_total,size_data);
@@ -203,6 +205,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
     struct_for_threads[i].genome = genome_data;
     struct_for_threads[i].chr_no = chr_total;
     struct_for_threads[i].seed = dist_seed;
+    struct_for_threads[i].threadno = i;
     
     //declaring the size of the different arrays
     struct_for_threads[i].size = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no); 
@@ -248,7 +251,8 @@ int main(int argc,char **argv){
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   int seed = 10;
-  int threads = 5;
+  int threads = 2;
+  fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
   //full_genome_create(seq_ref,chr_total);
   Create_se_threads(seq_ref,threads,seed);
 }

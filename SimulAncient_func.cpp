@@ -331,7 +331,7 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
         if (reffrag[i] == 'C'){
             double u = uniform();
             if (u < delta_s){
-                frag[i] = 'X';
+                frag[i] = 'T';
             }else{
                 frag[i] = 'C';
             }
@@ -343,7 +343,7 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
         if (reffrag[L-i-1] == 'G'){
             double u = uniform();
             if (u < delta_s){
-                frag[L-i-1] = 'X';
+                frag[L-i-1] = 'A';
             }else{
                 frag[L-i-1] = 'G';
             }
@@ -363,14 +363,14 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
         if (reffrag[i] == 'C' && i<=p_nick){
             double u = uniform();
             if (u < delta){
-                frag[i] = 'X';
+                frag[i] = 'T';
             }else{
                 frag[i] = 'C';
             }
         }else if (reffrag[i] == 'G' && i>p_nick){
             double u = uniform();
             if (u < delta){
-                frag[i] = 'X';
+                frag[i] = 'A';
             }else{
                 frag[i] = 'G';
             }

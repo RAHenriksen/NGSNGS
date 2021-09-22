@@ -130,7 +130,7 @@ void* Fafq_thread_se_run(void *arg){
   char seqmod[1024] = {0};
   char seqmod2[1024] = {0};
   // for the coverage examples
-  float cov = 0.1;
+  float cov = 2;
   //float cov_current = 0;
   int rand_start;
   int fraglength;
@@ -155,22 +155,18 @@ void* Fafq_thread_se_run(void *arg){
     //std::cout << struct_obj->names[chr_idx] << std::endl;
 
     // case 1
-    if (fraglength > 2*150){
+    if (fraglength > 150){
       //std::cout << "lolrt" << std::endl;
       strncpy(seqmod,struct_obj->genome+rand_start-1,150);
     }
     // case 2
-    else if (150 < fraglength && fraglength < 2*150) //case 2
-    {
-      strncpy(seqmod,struct_obj->genome+rand_start-1,150);
-    }
-    // case 3
     else if (fraglength <= 150)
     {
       strncpy(seqmod,struct_obj->genome+rand_start-1,fraglength);
     }
 
     //removes reads with NNN
+    int rand_id = (lrand48() % (genome_len-fraglength-1))%fraglength;
     char * pch;
     pch = strchr(seqmod,'N');
     if (pch != NULL){continue;}
@@ -183,7 +179,9 @@ void* Fafq_thread_se_run(void *arg){
       SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097);
       Ill_err(seqmod2,Error,gen);
       Read_Qual2(seqmod2,qual,Qualdistr1,gen);
-      ksprintf(struct_obj->fqresult_r1,"@%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],fraglength,seqmod2,qual);
+      ksprintf(struct_obj->fqresult_r1,"@READID_%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",rand_id,
+        struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
+        fraglength,seqmod2,qual);
       memset(qual, 0, sizeof(qual));  
       nread++;
       //fprintf(stderr,"Number of reads %d , d_total %d, size_data %d\n",nread,D_total,size_data);
@@ -278,9 +276,10 @@ int main(int argc,char **argv){
   assert(seq_ref!=NULL);
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
-  
+  int threads = 5;
+  fprintf(stderr,"\t-> %d threads\n",threads);
   //full_genome_create(seq_ref,chr_total);
-  Create_se_threads(seq_ref,1);
+  Create_se_threads(seq_ref,threads);
 }
 
 //SimBriggsModel(seqmod, frag, L, 0.024, 0.36, 0.68, 0.0097);
