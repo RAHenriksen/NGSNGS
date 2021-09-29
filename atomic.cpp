@@ -39,9 +39,9 @@ pthread_mutex_t data_mutex;
 
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],int chr_size_cumm[]){
   
-  int genome_size = 0;
+  size_t genome_size = 0;
   chr_size_cumm[0] = 0;
-  for (size_t i = 0; i < chr_total; i++){
+  for (int i = 0; i < chr_total; i++){
     const char *chr_name = faidx_iseq(seq_ref,i);
     int chr_len = faidx_seq_len(seq_ref,chr_name);
     chr_sizes[i] = chr_len;
@@ -51,8 +51,8 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
   }
 
   char* genome = (char*) malloc(genome_size);
-  
-  for (size_t i = 0; i < chr_total; i++){
+  //chr_total
+  for (int i = 0; i < chr_total; i++){
 
     pthread_mutex_lock(&data_mutex);
     const char *data = fai_fetch(seq_ref,chr_names[i],&chr_sizes[i]);
@@ -65,11 +65,19 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
 std::atomic<float> current_cov_atom(0.0);
 std::atomic<int> size_data(0);
 std::atomic<int> D_total(0);
+std::atomic<int> C_total_1(0);
+std::atomic<int> C_to_T_1(0);
+std::atomic<int> C_total_2(0);
+std::atomic<int> C_to_T_2(0);
+std::atomic<int> C_total_3(0);
+std::atomic<int> C_to_T_3(0);
+
 
 struct Parsarg_for_Fafq_se_thread{
   kstring_t *fqresult_r1;
   char *genome; // The actual concatenated genome
   int chr_no;
+  int threadno;
   int *size;
   int *size_cumm;
   const char **names;
@@ -79,6 +87,7 @@ struct Parsarg_for_Fafq_se_thread{
   int cov_size;
   int depth;
 };
+
 
 void* Fafq_thread_se_run(void *arg){
   //casting my struct as arguments for the thread creation
@@ -141,7 +150,7 @@ void* Fafq_thread_se_run(void *arg){
   
   
   while (current_cov_atom < cov) {
-    int fraglength = (int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
+    int fraglength = 150; //(int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
     
     srand48(D_total+fraglength+std::time(nullptr));
     rand_start = lrand48() % (genome_len-fraglength-1);
@@ -165,8 +174,8 @@ void* Fafq_thread_se_run(void *arg){
       strncpy(seqmod,struct_obj->genome+rand_start-1,fraglength);
     }
 
-    //removes reads with NNN
     int rand_id = (lrand48() % (genome_len-fraglength-1))%fraglength;
+    //removes reads with NNN
     char * pch;
     pch = strchr(seqmod,'N');
     if (pch != NULL){continue;}
@@ -176,10 +185,21 @@ void* Fafq_thread_se_run(void *arg){
         D_total += 1; // to find the total depth
         if (chrlencov[j] == 1){size_data++;} // if the value is different from 1 (more reads) then we still count that as one chromosome site with data
       }
+
+      if (seqmod[0]=='C'){C_total_1++;}
+      if (seqmod[1]=='C'){C_total_2++;}
+      if (seqmod[2]=='C'){C_total_3++;}
+
       SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097);
-      Ill_err(seqmod2,Error,gen);
+      //Ill_err(seqmod2,Error,gen);
       Read_Qual2(seqmod2,qual,Qualdistr1,gen);
-      ksprintf(struct_obj->fqresult_r1,"@READID_%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",rand_id,
+      if (seqmod2[0] == 'T' && seqmod[0] == 'C'){C_to_T_1++;}
+      if (seqmod2[1] == 'T' && seqmod[1] == 'C'){C_to_T_2++;}
+      if (seqmod2[2] == 'T' && seqmod[2] == 'C'){C_to_T_3++;}
+
+      // COUNT C -> T CHANGE at first position  
+      
+      ksprintf(struct_obj->fqresult_r1,"@READID_%d_%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,
         struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
         fraglength,seqmod2,qual);
       memset(qual, 0, sizeof(qual));  
@@ -223,6 +243,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no){
     struct_for_threads[i].fqresult_r1 -> l = 0;
     struct_for_threads[i].fqresult_r1 -> m = 0;
     struct_for_threads[i].fqresult_r1 -> s = NULL;
+    struct_for_threads[i].threadno = i;
     struct_for_threads[i].genome = genome_data;
     struct_for_threads[i].chr_no = chr_total;
     struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
@@ -251,7 +272,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no){
   }
   
   FILE *fp1;
-  fp1 = fopen("lol.fq","wb");
+  fp1 = fopen("test.fq","wb");
   for(int i=0;i<nthreads;i++){
     if (struct_for_threads[i].fqresult_r1->l > 10000){
       fwrite(struct_for_threads[i].fqresult_r1->s,sizeof(char),struct_for_threads[i].fqresult_r1->l,fp1);struct_for_threads[i].fqresult_r1->l =0;
@@ -269,17 +290,33 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no){
 int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
   // chr1_2.fa  hg19canon.fa
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
   //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa";
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
+  fprintf(stderr,"\t-> fasta load \n");
   assert(seq_ref!=NULL);
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
-  int threads = 5;
-  fprintf(stderr,"\t-> %d threads\n",threads);
-  //full_genome_create(seq_ref,chr_total);
-  Create_se_threads(seq_ref,threads);
+  
+  //int threads = 5;
+  //fprintf(stderr,"\t-> %d threads\n",threads);
+
+  const char *chr_names[chr_total];
+  int chr_sizes[chr_total];
+  int chr_size_cumm[chr_total+1];
+  
+  char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
+  char seqmod[1024] = {0};
+  strncpy(seqmod,genome_data+100000-1,150);
+  std::cout << seqmod << std::endl;
+  
+  //Create_se_threads(seq_ref,threads);
+
+  //float freq_1 = (float) C_to_T_1.load()/(float) C_total_1.load();
+  //float freq_2 = (float) C_to_T_2.load()/(float) C_total_2.load();
+  //float freq_3 = (float) C_to_T_3.load()/(float) C_total_3.load();
+  //fprintf(stderr,"\t-> Deamination frequency of C-T, pos 1 %.5f , pos 2 %.5f , pos 3 %.5f \n",freq_1,freq_2,freq_3);
 }
 
 //SimBriggsModel(seqmod, frag, L, 0.024, 0.36, 0.68, 0.0097);
