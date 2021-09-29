@@ -199,7 +199,7 @@ void* Fafq_thread_se_run(void *arg){
 
       // COUNT C -> T CHANGE at first position  
       
-      ksprintf(struct_obj->fqresult_r1,"@READID_%d_%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,
+      ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,
         struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
         fraglength,seqmod2,qual);
       memset(qual, 0, sizeof(qual));  
@@ -290,7 +290,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no){
 int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
   // chr1_2.fa  hg19canon.fa
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
   //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa";
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
@@ -299,19 +299,16 @@ int main(int argc,char **argv){
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   
-  //int threads = 5;
-  //fprintf(stderr,"\t-> %d threads\n",threads);
+  int threads = 5;
+  fprintf(stderr,"\t-> %d threads\n",threads);
 
   const char *chr_names[chr_total];
   int chr_sizes[chr_total];
   int chr_size_cumm[chr_total+1];
   
-  char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
-  char seqmod[1024] = {0};
-  strncpy(seqmod,genome_data+100000-1,150);
-  std::cout << seqmod << std::endl;
-  
-  //Create_se_threads(seq_ref,threads);
+  //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
+
+  Create_se_threads(seq_ref,threads);
 
   //float freq_1 = (float) C_to_T_1.load()/(float) C_total_1.load();
   //float freq_2 = (float) C_to_T_2.load()/(float) C_total_2.load();
