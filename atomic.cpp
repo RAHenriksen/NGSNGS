@@ -151,7 +151,7 @@ void* Fafq_thread_se_run(void *arg){
     int fraglength = (int) sizearray[SizeDist[1](gen)]; //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
     
     srand48(seed+fraglength+iter); //D_total+fraglength //+std::time(nullptr)
-    rand_start = lrand48() % (genome_len-fraglength-1) +seed;
+    rand_start = lrand48() % (genome_len-fraglength-1) + seed;
     //std::cout << "start " << rand_start << std::endl;
     //std::cout << "frag " << fraglength << std::endl;
 
