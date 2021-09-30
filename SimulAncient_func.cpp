@@ -239,7 +239,7 @@ void Ill_err(char *seq,std::discrete_distribution<>*Dist,std::default_random_eng
   }
 }
 
-void Size_freq_dist(std::ifstream &infile, std::discrete_distribution<> dist[]){
+void Size_freq_dist(std::ifstream &infile, std::discrete_distribution<> dist[],int seed){
   // Creates a distribution with the frequencies for specific fragment lengths from the same file as used in Size_select_dist //
   int fraqment_length;
   double freq;
@@ -253,8 +253,9 @@ void Size_freq_dist(std::ifstream &infile, std::discrete_distribution<> dist[]){
   }
 
   // converts the vector of frequencies to a distribution
-  std::random_device rd;
-  std::default_random_engine gen(rd());
+  //std::random_device rd;
+  //std::default_random_engine gen(rd());
+  std::default_random_engine gen(seed);
   std::discrete_distribution<> d(Freq_vec.begin(), Freq_vec.end());
   dist[1] = d;
 }

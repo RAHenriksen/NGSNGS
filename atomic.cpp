@@ -86,6 +86,7 @@ struct Parsarg_for_Fafq_se_thread{
   float current_cov;
   int cov_size;
   int depth;
+  int threadseed;
 };
 
 
@@ -96,6 +97,10 @@ void* Fafq_thread_se_run(void *arg){
 
   int chr_total = struct_obj->chr_no;
 
+  // creating random objects for all distributions.
+  std::random_device rd;
+  std::default_random_engine gen(struct_obj->threadseed+struct_obj->threadno);//gen(struct_obj->threadseed); //struct_obj->seed+struct_obj->threadno
+
   // Load in the error profiles and size distributions
   std::ifstream file(struct_obj->read_err_1);
   int Line_no = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
@@ -105,10 +110,6 @@ void* Fafq_thread_se_run(void *arg){
   // loading in error profiles for nt substitions and read qual creating 2D arrays
   double** Error_2darray = create2DArray(struct_obj->Ill_err,4,280);
   double** R1_2Darray = create2DArray(struct_obj->read_err_1,8,Line_no);
-
-  // creating random objects for all distributions.
-  std::random_device rd;
-  std::default_random_engine gen(rd()); 
 
   std::discrete_distribution<> Qualdistr1[Line_no];
   Qual_dist(R1_2Darray,Qualdistr1,Line_no);
@@ -124,14 +125,10 @@ void* Fafq_thread_se_run(void *arg){
   std::discrete_distribution<> SizeDist[2]; 
   
   std::ifstream infile2("Size_dist/Size_freq.txt");
-  Size_freq_dist(infile2,SizeDist); //creates the distribution of all the frequencies
+  Size_freq_dist(infile2,SizeDist,struct_obj->threadseed+struct_obj->threadno);//struct_obj->threadseed //creates the distribution of all the frequencies
   infile2.close();
   // ---------------------- //
   int genome_len = strlen(struct_obj->genome);
-  //std::cout << genome_len << std::endl;
-
-  int start_pos = 1;
-  int end_pos = genome_len; //30001000
 
   //coverage method2
   int* chrlencov = (int *) calloc(genome_len,sizeof(int));
@@ -139,7 +136,7 @@ void* Fafq_thread_se_run(void *arg){
   char seqmod[1024] = {0};
   char seqmod2[1024] = {0};
   // for the coverage examples
-  float cov = 2;
+  float cov = 0.5;
   //float cov_current = 0;
   int rand_start;
   int fraglength;
@@ -148,14 +145,14 @@ void* Fafq_thread_se_run(void *arg){
   char qual[1024] = "";
   //int D_i = 0;
   
-  
+  int iter = 0;
   while (current_cov_atom < cov) {
-    int fraglength = 150; //(int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
+    int fraglength = (int) sizearray[SizeDist[1](gen)]; //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
     
-    srand48(D_total+fraglength+std::time(nullptr));
+    srand48(struct_obj->threadseed+struct_obj->threadno+fraglength+iter); //D_total+fraglength //+std::time(nullptr)
     rand_start = lrand48() % (genome_len-fraglength-1);
-    /*std::cout << "start " << rand_start << std::endl;
-    std::cout << "frag " << fraglength << std::endl;*/
+    //std::cout << "start " << rand_start << std::endl;
+    //std::cout << "frag " << fraglength << std::endl;
 
     //identify the chromosome based on the coordinates from the cummulative size array
     int chr_idx = 0;
@@ -173,7 +170,7 @@ void* Fafq_thread_se_run(void *arg){
     {
       strncpy(seqmod,struct_obj->genome+rand_start-1,fraglength);
     }
-
+    srand48(struct_obj->threadseed+struct_obj->threadno+iter); 
     int rand_id = (lrand48() % (genome_len-fraglength-1))%fraglength;
     //removes reads with NNN
     char * pch;
@@ -199,7 +196,7 @@ void* Fafq_thread_se_run(void *arg){
 
       // COUNT C -> T CHANGE at first position  
       
-      ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,
+      ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,struct_obj->threadseed+struct_obj->threadno,
         struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
         fraglength,seqmod2,qual);
       memset(qual, 0, sizeof(qual));  
@@ -217,24 +214,24 @@ void* Fafq_thread_se_run(void *arg){
     memset(seqmod2, 0, sizeof seqmod2);
     chr_idx = 0;
     //fprintf(stderr,"start %d, fraglength %d\n",rand_start,fraglength);
+    iter++;
   }
   //std::cout << "thread done" << std::endl;
 }
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no){
+void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
   
   //creating an array with the arguments to create multiple threads;
   int nthreads=thread_no;
   pthread_t mythreads[nthreads];
   
   int chr_total = faidx_nseq(seq_ref);
-
   const char *chr_names[chr_total];
   int chr_sizes[chr_total];
   int chr_size_cumm[chr_total+1];
   
   char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
-
+  fprintf(stderr,"\t-> Full genome function run!\n");
   Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
   //initialzie values that should be used for each thread
@@ -246,6 +243,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no){
     struct_for_threads[i].threadno = i;
     struct_for_threads[i].genome = genome_data;
     struct_for_threads[i].chr_no = chr_total;
+    struct_for_threads[i].threadseed = seed;
     struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
     struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
     
@@ -299,16 +297,17 @@ int main(int argc,char **argv){
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   
+  int seed = 10;
   int threads = 5;
-  fprintf(stderr,"\t-> %d threads\n",threads);
+  fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
 
-  const char *chr_names[chr_total];
-  int chr_sizes[chr_total];
-  int chr_size_cumm[chr_total+1];
+  //const char *chr_names[chr_total];
+  //int chr_sizes[chr_total];
+  //int chr_size_cumm[chr_total+1];
   
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
 
-  Create_se_threads(seq_ref,threads);
+  Create_se_threads(seq_ref,threads,seed);
 
   //float freq_1 = (float) C_to_T_1.load()/(float) C_total_1.load();
   //float freq_2 = (float) C_to_T_2.load()/(float) C_total_2.load();
@@ -318,4 +317,4 @@ int main(int argc,char **argv){
 
 //SimBriggsModel(seqmod, frag, L, 0.024, 0.36, 0.68, 0.0097);
 // g++ SimulAncient_func.cpp atomic.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
-
+//cat test.fq | grep '@' | cut -d_ -f4 | sort | uniq -d | wc -l

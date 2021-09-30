@@ -17,7 +17,7 @@ void Seq_err(double** Array2d,std::discrete_distribution<> nt_sub[],int size);
 
 void Ill_err(char *seq,std::discrete_distribution<>*Dist,std::default_random_engine &gen);
 
-void Size_freq_dist(std::ifstream &infile, std::discrete_distribution<> dist[]);
+void Size_freq_dist(std::ifstream &infile, std::discrete_distribution<> dist[], int seed);
 
 int *Size_select_dist(std::ifstream &infile);
 
