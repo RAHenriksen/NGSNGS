@@ -98,8 +98,9 @@ void* Fafq_thread_se_run(void *arg){
   int chr_total = struct_obj->chr_no;
 
   // creating random objects for all distributions.
+  int seed = struct_obj->threadseed+struct_obj->threadno;
   std::random_device rd;
-  std::default_random_engine gen(struct_obj->threadseed+struct_obj->threadno);//gen(struct_obj->threadseed); //struct_obj->seed+struct_obj->threadno
+  std::default_random_engine gen(seed);//gen(struct_obj->threadseed); //struct_obj->seed+struct_obj->threadno
 
   // Load in the error profiles and size distributions
   std::ifstream file(struct_obj->read_err_1);
@@ -125,7 +126,7 @@ void* Fafq_thread_se_run(void *arg){
   std::discrete_distribution<> SizeDist[2]; 
   
   std::ifstream infile2("Size_dist/Size_freq.txt");
-  Size_freq_dist(infile2,SizeDist,struct_obj->threadseed+struct_obj->threadno);//struct_obj->threadseed //creates the distribution of all the frequencies
+  Size_freq_dist(infile2,SizeDist,seed);//struct_obj->threadseed //creates the distribution of all the frequencies
   infile2.close();
   // ---------------------- //
   int genome_len = strlen(struct_obj->genome);
@@ -149,8 +150,8 @@ void* Fafq_thread_se_run(void *arg){
   while (current_cov_atom < cov) {
     int fraglength = (int) sizearray[SizeDist[1](gen)]; //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
     
-    srand48(struct_obj->threadseed+struct_obj->threadno+fraglength+iter); //D_total+fraglength //+std::time(nullptr)
-    rand_start = lrand48() % (genome_len-fraglength-1);
+    srand48(seed+fraglength+iter); //D_total+fraglength //+std::time(nullptr)
+    rand_start = lrand48() % (genome_len-fraglength-1) +seed;
     //std::cout << "start " << rand_start << std::endl;
     //std::cout << "frag " << fraglength << std::endl;
 
@@ -170,7 +171,7 @@ void* Fafq_thread_se_run(void *arg){
     {
       strncpy(seqmod,struct_obj->genome+rand_start-1,fraglength);
     }
-    srand48(struct_obj->threadseed+struct_obj->threadno+iter); 
+    srand48(seed+iter); 
     int rand_id = (lrand48() % (genome_len-fraglength-1))%fraglength;
     //removes reads with NNN
     char * pch;
@@ -196,7 +197,7 @@ void* Fafq_thread_se_run(void *arg){
 
       // COUNT C -> T CHANGE at first position  
       
-      ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,struct_obj->threadseed+struct_obj->threadno,
+      ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
         struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
         fraglength,seqmod2,qual);
       memset(qual, 0, sizeof(qual));  
