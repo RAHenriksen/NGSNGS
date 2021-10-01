@@ -50,14 +50,19 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
     chr_size_cumm[i+1] = genome_size;
   }
 
-  char* genome = (char*) malloc(genome_size);
+  char* genome = (char*) malloc(sizeof(char) * (genome_size+chr_total));
+  genome[0] = 0; //Init to create proper C string before strcat
   //chr_total
   for (int i = 0; i < chr_total; i++){
 
     pthread_mutex_lock(&data_mutex);
     const char *data = fai_fetch(seq_ref,chr_names[i],&chr_sizes[i]);
     pthread_mutex_unlock(&data_mutex);
-    strcat(genome,data);
+    //sprintf(&genome[strlen(genome)],data);
+    //strcat(genome,data);  //Both gives conditional jump or move error
+    if (data != NULL){
+      sprintf(genome+strlen(genome),data); 
+    }
   }
   return genome;
 }
@@ -94,8 +99,6 @@ void* Fafq_thread_se_run(void *arg){
   //casting my struct as arguments for the thread creation
   Parsarg_for_Fafq_se_thread *struct_obj = (Parsarg_for_Fafq_se_thread*) arg;
   //std::cout << "se run "<< std::endl;
-
-  int chr_total = struct_obj->chr_no;
 
   // creating random objects for all distributions.
   int seed = struct_obj->threadseed+struct_obj->threadno;
@@ -140,7 +143,6 @@ void* Fafq_thread_se_run(void *arg){
   float cov = 0.5;
   //float cov_current = 0;
   int rand_start;
-  int fraglength;
   int nread = 0;
 
   char qual[1024] = "";
@@ -218,6 +220,7 @@ void* Fafq_thread_se_run(void *arg){
     iter++;
   }
   //std::cout << "thread done" << std::endl;
+  return NULL;
 }
 
 void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
@@ -232,56 +235,64 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
   int chr_size_cumm[chr_total+1];
   
   char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
-  fprintf(stderr,"\t-> Full genome function run!\n");
-  Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
+  if (genome_data != NULL){
+    fprintf(stderr,"\t-> Full genome function run!\n");
+    Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
-  //initialzie values that should be used for each thread
-  for (int i = 0; i < nthreads; i++){
-    struct_for_threads[i].fqresult_r1 =new kstring_t;
-    struct_for_threads[i].fqresult_r1 -> l = 0;
-    struct_for_threads[i].fqresult_r1 -> m = 0;
-    struct_for_threads[i].fqresult_r1 -> s = NULL;
-    struct_for_threads[i].threadno = i;
-    struct_for_threads[i].genome = genome_data;
-    struct_for_threads[i].chr_no = chr_total;
-    struct_for_threads[i].threadseed = seed;
-    struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
-    struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
-    
-    //declaring the size of the different arrays
-    struct_for_threads[i].size = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no); 
-    memcpy(struct_for_threads[i].size, chr_sizes, sizeof(chr_sizes));
-    struct_for_threads[i].size_cumm = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no);
-    memcpy(struct_for_threads[i].size_cumm, chr_size_cumm, sizeof(chr_size_cumm));
-    struct_for_threads[i].names = (const char**)malloc(sizeof(char) * struct_for_threads[i].chr_no);
-    memcpy(struct_for_threads[i].names, chr_names, sizeof(chr_names));
-  }
-
-  pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  // pthread_create( thread ID, struct for thread config, pointer to the function which new thread starts with, 
-  // it returns a pointer to void data which is the 4th argument  
-  for (int i = 0; i < nthreads; i++){
-    pthread_create(&mythreads[i],&attr,Fafq_thread_se_run,&struct_for_threads[i]);
-  }
-  
-  for (int i = 0; i < nthreads; i++)
-  {
-    pthread_join(mythreads[i],NULL);
-  }
-  
-  FILE *fp1;
-  fp1 = fopen("test.fq","wb");
-  for(int i=0;i<nthreads;i++){
-    if (struct_for_threads[i].fqresult_r1->l > 10000){
-      fwrite(struct_for_threads[i].fqresult_r1->s,sizeof(char),struct_for_threads[i].fqresult_r1->l,fp1);struct_for_threads[i].fqresult_r1->l =0;
+    //initialzie values that should be used for each thread
+    for (int i = 0; i < nthreads; i++){
+      struct_for_threads[i].fqresult_r1 =new kstring_t;
+      struct_for_threads[i].fqresult_r1 -> l = 0;
+      struct_for_threads[i].fqresult_r1 -> m = 0;
+      struct_for_threads[i].fqresult_r1 -> s = NULL;
+      struct_for_threads[i].threadno = i;
+      struct_for_threads[i].genome = genome_data;
+      struct_for_threads[i].chr_no = chr_total;
+      struct_for_threads[i].threadseed = seed;
+      struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
+      struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
+      
+      //declaring the size of the different arrays
+      struct_for_threads[i].size = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no);
+      //free(struct_for_threads[i].size);
+      //exit(0);
+      struct_for_threads[i].size[0] = 0;
+      memcpy(struct_for_threads[i].size, chr_sizes, sizeof(chr_sizes));
+      //free(struct_for_threads[i].size); //jeg forstår ikke hvorfor den så fejler efterfølgende hvis jeg bruger free på de two nedenfor
+      
+      struct_for_threads[i].size_cumm = (int*)malloc(sizeof(int) * (struct_for_threads[i].chr_no+1));
+      memcpy(struct_for_threads[i].size_cumm, chr_size_cumm, sizeof(chr_size_cumm));
+      
+      struct_for_threads[i].names = (const char**)malloc(sizeof(const char*) * struct_for_threads[i].chr_no+1);
+      memcpy(struct_for_threads[i].names, chr_names, sizeof(chr_names));
     }
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    // pthread_create( thread ID, struct for thread config, pointer to the function which new thread starts with, 
+    // it returns a pointer to void data which is the 4th argument  
+    for (int i = 0; i < nthreads; i++){
+      pthread_create(&mythreads[i],&attr,Fafq_thread_se_run,&struct_for_threads[i]);
+    }
+    
+    for (int i = 0; i < nthreads; i++)
+    {
+      pthread_join(mythreads[i],NULL);
+    }
+    
+    FILE *fp1;
+    fp1 = fopen("test.fq","wb");
+    for(int i=0;i<nthreads;i++){
+      if (struct_for_threads[i].fqresult_r1->l > 10000){
+        fwrite(struct_for_threads[i].fqresult_r1->s,sizeof(char),struct_for_threads[i].fqresult_r1->l,fp1);struct_for_threads[i].fqresult_r1->l =0;
+      }
+    }
+    /*
+    for(int i=0;i<nthreads;i++){
+      fprintf(fp1,"%s",struct_for_threads[i].fqresult_r1->s);
+    }*/
+    fclose(fp1);
+    free(genome_data);
   }
-  /*
-  for(int i=0;i<nthreads;i++){
-    fprintf(fp1,"%s",struct_for_threads[i].fqresult_r1->s);
-  }*/
-  fclose(fp1);
   return NULL;
 }
 
@@ -319,3 +330,5 @@ int main(int argc,char **argv){
 //SimBriggsModel(seqmod, frag, L, 0.024, 0.36, 0.68, 0.0097);
 // g++ SimulAncient_func.cpp atomic.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 //cat test.fq | grep '@' | cut -d_ -f4 | sort | uniq -d | wc -l
+//cat test.fq | grep 'T0' | grep 'chr20' | wc -l
+//valgrind --tool=memcheck --leak-check=full ./a.out
