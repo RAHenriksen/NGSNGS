@@ -78,6 +78,7 @@ struct Parsarg_for_Fafq_se_thread{
   int depth;
   int seed;
   int threadno;
+  int* sizearray;
 };
 
 void* Fafq_thread_se_run(void *arg){
@@ -93,9 +94,7 @@ void* Fafq_thread_se_run(void *arg){
 
   // -------------------------- // 
   // Creates the random lengths array and distributions //
-  std::ifstream infile("Size_dist/Size_freq.txt");
-  int* sizearray = Size_select_dist(infile);
-  infile.close();
+
 
   std::discrete_distribution<> SizeDist[2]; 
   
@@ -126,7 +125,7 @@ void* Fafq_thread_se_run(void *arg){
   
   
   while (current_cov_atom < cov) {
-    int fraglength = (int) sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
+    int fraglength = (int) struct_obj->sizearray[SizeDist[1](gen)]; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
     
     srand48(D_total+fraglength); //when i mess with srand48 it contradicts my seed, so i dont need to add +D_total+fraglength or std::time(nullptr) since i am defining my generator using seed 
     rand_start = lrand48() % (genome_len-fraglength-1);
@@ -196,6 +195,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
 
   Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
+  std::ifstream infile("Size_dist/Size_freq.txt");
+  int* sizearray = Size_select_dist(infile);
+  infile.close();
+  
   //initialzie values that should be used for each thread
   for (int i = 0; i < nthreads; i++){
     struct_for_threads[i].fqresult_r1 =new kstring_t;
@@ -206,6 +209,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
     struct_for_threads[i].chr_no = chr_total;
     struct_for_threads[i].seed = dist_seed;
     struct_for_threads[i].threadno = i;
+    struct_for_threads[i].sizearray = sizearray;
     
     //declaring the size of the different arrays
     struct_for_threads[i].size = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no); 
