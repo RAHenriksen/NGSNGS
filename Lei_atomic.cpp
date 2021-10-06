@@ -271,8 +271,8 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
       struct_for_threads[i].genome = genome_data;
       struct_for_threads[i].chr_no = chr_total;
       struct_for_threads[i].threadseed = seed;
-      struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
-      struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
+      struct_for_threads[i].Ill_err = "Qual_profiles/Ill_err.txt";
+      struct_for_threads[i].read_err_1 = "Qual_profiles/Freq_R1.txt";
       
       //declaring the size of the different arrays
       //struct_for_threads[i].size = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no);
@@ -302,7 +302,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
     }
     
     FILE *fp1;
-    fp1 = fopen("chr22_out.fq","wb");
+    fp1 = fopen("chr22_lei.fq","wb");
     for(int i=0;i<nthreads;i++){
       if (struct_for_threads[i].fqresult_r1->l > 10000){
         fwrite(struct_for_threads[i].fqresult_r1->s,sizeof(char),struct_for_threads[i].fqresult_r1->l,fp1);struct_for_threads[i].fqresult_r1->l =0;
