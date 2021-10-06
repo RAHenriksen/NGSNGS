@@ -62,7 +62,11 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
     //strcat(genome,data);  //Both gives conditional jump or move error
     if (data != NULL){
       sprintf(genome+strlen(genome),data); 
+      //Free works on const pointers, so we have to cast into a const char pointer
+      // several of the build in functions allocates memory without freeing it again.
+      //free((char*)data); 
     }
+    free((char*)data); 
   }
   return genome;
 }
@@ -83,7 +87,6 @@ struct Parsarg_for_Fafq_se_thread{
   char *genome; // The actual concatenated genome
   int chr_no;
   int threadno;
-  int *size;
   int *size_cumm;
   const char **names;
   const char* Ill_err;
@@ -112,14 +115,24 @@ void* Fafq_thread_se_run(void *arg){
   size_t lib_size = Line_no/4; 
 
   // loading in error profiles for nt substitions and read qual creating 2D arrays
-  double** Error_2darray = create2DArray(struct_obj->Ill_err,4,280);
   double** R1_2Darray = create2DArray(struct_obj->read_err_1,8,Line_no);
-
   std::discrete_distribution<> Qualdistr1[Line_no];
   Qual_dist(R1_2Darray,Qualdistr1,Line_no);
 
+  //Free each sub-array
+  for(int i = 0; i < Line_no; ++i) {delete[] R1_2Darray[i];}
+  //Free the array of pointers
+  delete[] R1_2Darray;
+  
+  double** Error_2darray = create2DArray(struct_obj->Ill_err,4,280);
   std::discrete_distribution<> Error[280];
   Seq_err(Error_2darray,Error,280);
+  
+  //Free each sub-array
+  for(int i = 0; i < 280; ++i) {delete[] Error_2darray[i];}
+  //Free the array of pointers
+  delete[] Error_2darray;
+  
   // -------------------------- // 
   // Creates the random lengths array and distributions //
   std::ifstream infile("Size_dist/Size_freq.txt");
@@ -140,7 +153,7 @@ void* Fafq_thread_se_run(void *arg){
   char seqmod[1024] = {0};
   char seqmod2[1024] = {0};
   // for the coverage examples
-  float cov = 0.5;
+  float cov = 2;
   //float cov_current = 0;
   int rand_start;
   int nread = 0;
@@ -186,17 +199,18 @@ void* Fafq_thread_se_run(void *arg){
         if (chrlencov[j] == 1){size_data++;} // if the value is different from 1 (more reads) then we still count that as one chromosome site with data
       }
 
-      if (seqmod[0]=='C'){C_total_1++;}
-      if (seqmod[1]=='C'){C_total_2++;}
-      if (seqmod[2]=='C'){C_total_3++;}
+      if (seqmod[0]=='C' || seqmod[0]=='c'){C_total_1++;}
+      if (seqmod[1]=='C' || seqmod[1]=='c'){C_total_2++;}
+      if (seqmod[2]=='C' || seqmod[2]=='c'){C_total_3++;}
 
       SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097);
       //Ill_err(seqmod2,Error,gen);
+      
+      if ((seqmod2[0] == 'T' || seqmod2[0] == 't') && (seqmod[0] == 'C' || seqmod[0] == 'c')){C_to_T_1++;}
+      if ((seqmod2[1] == 'T' || seqmod2[1] == 't')  && (seqmod[1] == 'C' || seqmod[1] == 'c')){C_to_T_2++;}
+      if ((seqmod2[2] == 'T' || seqmod2[2] == 't')  && (seqmod[2] == 'C' || seqmod[2] == 'c')){C_to_T_3++;}
+      
       Read_Qual2(seqmod2,qual,Qualdistr1,gen);
-      if (seqmod2[0] == 'T' && seqmod[0] == 'C'){C_to_T_1++;}
-      if (seqmod2[1] == 'T' && seqmod[1] == 'C'){C_to_T_2++;}
-      if (seqmod2[2] == 'T' && seqmod[2] == 'C'){C_to_T_3++;}
-
       // COUNT C -> T CHANGE at first position  
       
       ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
@@ -219,6 +233,14 @@ void* Fafq_thread_se_run(void *arg){
     //fprintf(stderr,"start %d, fraglength %d\n",rand_start,fraglength);
     iter++;
   }
+
+  //consider freeing these after the join operator
+  //Freeing allocated memory
+  free(struct_obj->size_cumm);
+  free(struct_obj->names);
+  free(chrlencov);
+  delete[] sizearray;
+
   //std::cout << "thread done" << std::endl;
   return NULL;
 }
@@ -253,17 +275,17 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
       struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
       
       //declaring the size of the different arrays
-      struct_for_threads[i].size = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no);
-      //free(struct_for_threads[i].size);
-      //exit(0);
-      struct_for_threads[i].size[0] = 0;
-      memcpy(struct_for_threads[i].size, chr_sizes, sizeof(chr_sizes));
+      //struct_for_threads[i].size = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no);
+      //struct_for_threads[i].size[0] = 0;
+      //memcpy(struct_for_threads[i].size, chr_sizes, sizeof(chr_sizes));
       //free(struct_for_threads[i].size); //jeg forstår ikke hvorfor den så fejler efterfølgende hvis jeg bruger free på de two nedenfor
       
       struct_for_threads[i].size_cumm = (int*)malloc(sizeof(int) * (struct_for_threads[i].chr_no+1));
+      struct_for_threads[i].size_cumm[0] = 0;
       memcpy(struct_for_threads[i].size_cumm, chr_size_cumm, sizeof(chr_size_cumm));
       
       struct_for_threads[i].names = (const char**)malloc(sizeof(const char*) * struct_for_threads[i].chr_no+1);
+      struct_for_threads[i].names[0] = 0;
       memcpy(struct_for_threads[i].names, chr_names, sizeof(chr_names));
     }
     pthread_attr_t attr;
@@ -280,7 +302,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
     }
     
     FILE *fp1;
-    fp1 = fopen("test.fq","wb");
+    fp1 = fopen("chr22_out.fq","wb");
     for(int i=0;i<nthreads;i++){
       if (struct_for_threads[i].fqresult_r1->l > 10000){
         fwrite(struct_for_threads[i].fqresult_r1->s,sizeof(char),struct_for_threads[i].fqresult_r1->l,fp1);struct_for_threads[i].fqresult_r1->l =0;
@@ -291,6 +313,15 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
       fprintf(fp1,"%s",struct_for_threads[i].fqresult_r1->s);
     }*/
     fclose(fp1);
+    
+    //for(int i=0;i<nthreads;i++){delete struct_for_threads[i].fqresult_r1 -> s;} //ERROR SUMMARY: 9 errors from 5 contexts (suppressed: 0 from 0)
+    for(int i=0;i<nthreads;i++){
+      free(struct_for_threads[i].fqresult_r1 -> s);//4 errors from 4 contexts (suppressed: 0 eventhough that delete goes with new and not free
+      //ks_release(struct_for_threads[i].fqresult_r1);
+      delete struct_for_threads[i].fqresult_r1;
+      //free(struct_for_threads[i].fqresult_r1); // ERROR SUMMARY: 8 errors from 4 contexts (suppressed: 0 from 0)
+    }
+ 
     free(genome_data);
   }
   return NULL;
@@ -300,8 +331,8 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
 int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
   // chr1_2.fa  hg19canon.fa
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
-  //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa";
+  //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa";
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
   fprintf(stderr,"\t-> fasta load \n");
@@ -320,11 +351,13 @@ int main(int argc,char **argv){
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
 
   Create_se_threads(seq_ref,threads,seed);
-
-  //float freq_1 = (float) C_to_T_1.load()/(float) C_total_1.load();
-  //float freq_2 = (float) C_to_T_2.load()/(float) C_total_2.load();
-  //float freq_3 = (float) C_to_T_3.load()/(float) C_total_3.load();
-  //fprintf(stderr,"\t-> Deamination frequency of C-T, pos 1 %.5f , pos 2 %.5f , pos 3 %.5f \n",freq_1,freq_2,freq_3);
+  // free the calloc memory from fai_read
+  //free(seq_ref);
+  fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
+  float freq_1 = (float) C_to_T_1.load()/(float) C_total_1.load();
+  float freq_2 = (float) C_to_T_2.load()/(float) C_total_2.load();
+  float freq_3 = (float) C_to_T_3.load()/(float) C_total_3.load();
+  fprintf(stderr,"\t-> Deamination frequency of C-T, pos 1 %.5f , pos 2 %.5f , pos 3 %.5f \n",freq_1,freq_2,freq_3);
 }
 
 //SimBriggsModel(seqmod, frag, L, 0.024, 0.36, 0.68, 0.0097);

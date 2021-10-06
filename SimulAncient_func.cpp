@@ -72,7 +72,8 @@ double** create2DArray(const char* filename,int width,int height){
   for (int h = 0; h < height; h++){
     array2D[h] = new double[width];
     for (int w = 0; w < width; w++){
-      infile >> array2D[h][w];}
+      infile >> array2D[h][w];
+    }
   }
   infile.close();
   return array2D;
@@ -111,6 +112,7 @@ void Read_Qual2(char *seq,char *qual,std::discrete_distribution<>*Dist,std::defa
         strncat(qual, nt_qual[Dist[row_idx + Cstart](gen)], 1);
         break;
       case 'N':
+      case 'n':
         strncat(qual, nt_qual[0], 1);;
         break;
     }
@@ -153,6 +155,7 @@ void Bam_baseQ(char *seq,char *qual,std::discrete_distribution<>*Dist,std::defau
         strncat(qual, &nt_qual[Dist[row_idx + Cstart](gen)], 1);
         break;
       case 'N':
+      case 'n':
         strncat(qual, &nt_qual[Dist[row_idx + Cstart](gen)], 1);;
         break;
     }
@@ -177,6 +180,10 @@ void DNA_complement(char seq[]){
       case 'T':
       case 't':
         *seq = 'A';
+        break;
+      case 'N':
+      case 'n':
+        *seq = 'N';
         break;  
     }
     ++seq;
@@ -276,6 +283,7 @@ int *Size_select_dist(std::ifstream &infile){
     i++;
   }
   return sizearray;
+  
 }
 
 double uniform()
@@ -329,7 +337,7 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
     }
     //cout << l << " " << r <<"\n";
     for (int i = 0; i<l; i++){
-        if (reffrag[i] == 'C'){
+        if (reffrag[i] == 'C' || reffrag[i] == 'c' ){
             double u = uniform();
             if (u < delta_s){
                 frag[i] = 'T';
@@ -341,7 +349,7 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
         }
     }
     for (int i = 0; i < r; i++){
-        if (reffrag[L-i-1] == 'G'){
+        if (reffrag[L-i-1] == 'G' || reffrag[i] == 'g'){
             double u = uniform();
             if (u < delta_s){
                 frag[L-i-1] = 'A';
@@ -361,14 +369,14 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
         p_nick +=1;
     }
     for (int i = l; i < L-r; i++){
-        if (reffrag[i] == 'C' && i<=p_nick){
+        if ((reffrag[i] == 'C' || reffrag[i] == 'c') && i<=p_nick){
             double u = uniform();
             if (u < delta){
                 frag[i] = 'T';
             }else{
                 frag[i] = 'C';
             }
-        }else if (reffrag[i] == 'G' && i>p_nick){
+        }else if ((reffrag[i] == 'G' || reffrag[i] == 'g') && i>p_nick){
             double u = uniform();
             if (u < delta){
                 frag[i] = 'A';
