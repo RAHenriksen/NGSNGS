@@ -95,6 +95,7 @@ struct Parsarg_for_Fafq_se_thread{
   int cov_size;
   int depth;
   int threadseed;
+  float cov;
 };
 
 
@@ -153,7 +154,7 @@ void* Fafq_thread_se_run(void *arg){
   char seqmod[1024] = {0};
   char seqmod2[1024] = {0};
   // for the coverage examples
-  float cov = 2;
+  float cov = struct_obj -> cov;
   //float cov_current = 0;
   int rand_start;
   int nread = 0;
@@ -245,7 +246,7 @@ void* Fafq_thread_se_run(void *arg){
   return NULL;
 }
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
+void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage){
   
   //creating an array with the arguments to create multiple threads;
   int nthreads=thread_no;
@@ -273,6 +274,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
       struct_for_threads[i].threadseed = seed;
       struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
       struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
+      struct_for_threads[i].cov = coverage;
       
       //declaring the size of the different arrays
       //struct_for_threads[i].size = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no);
@@ -331,8 +333,8 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed){
 int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
   // chr1_2.fa  hg19canon.fa
-  //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa";
+  //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr17.fa";
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
   fprintf(stderr,"\t-> fasta load \n");
@@ -342,6 +344,7 @@ int main(int argc,char **argv){
   
   int seed = 10;
   int threads = 5;
+  float cov = 100;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
 
   //const char *chr_names[chr_total];
@@ -350,7 +353,7 @@ int main(int argc,char **argv){
   
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
 
-  Create_se_threads(seq_ref,threads,seed);
+  Create_se_threads(seq_ref,threads,seed,cov);
   // free the calloc memory from fai_read
   //free(seq_ref);
   fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
