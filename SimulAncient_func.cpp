@@ -349,7 +349,7 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
         }
     }
     for (int i = 0; i < r; i++){
-        if (reffrag[L-i-1] == 'G' || reffrag[i] == 'g'){
+        if (reffrag[L-i-1] == 'G' || reffrag[L-i-1] == 'g'){
             double u = uniform();
             if (u < delta_s){
                 frag[L-i-1] = 'A';
