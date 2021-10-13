@@ -307,7 +307,8 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
     fp1 = fopen("chr22_out.fq","wb");
     for(int i=0;i<nthreads;i++){
       if (struct_for_threads[i].fqresult_r1->l > 10000){
-        fwrite(struct_for_threads[i].fqresult_r1->s,sizeof(char),struct_for_threads[i].fqresult_r1->l,fp1);struct_for_threads[i].fqresult_r1->l =0;
+        fwrite(struct_for_threads[i].fqresult_r1->s,sizeof(char),struct_for_threads[i].fqresult_r1->l,fp1);
+        struct_for_threads[i].fqresult_r1->l =0;
       }
     }
     /*
