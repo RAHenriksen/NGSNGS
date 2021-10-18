@@ -113,7 +113,7 @@ void Read_Qual2(char *seq,char *qual,std::discrete_distribution<>*Dist,std::defa
         break;
       case 'N':
       case 'n':
-        strncat(qual, nt_qual[0], 1);;
+        strncat(qual, nt_qual[0], 1);
         break;
     }
   }
@@ -156,11 +156,31 @@ void Bam_baseQ(char *seq,char *qual,std::discrete_distribution<>*Dist,std::defau
         break;
       case 'N':
       case 'n':
-        strncat(qual, &nt_qual[Dist[row_idx + Cstart](gen)], 1);;
+        strncat(qual, &nt_qual[Dist[row_idx + Cstart](gen)], 1);
         break;
     }
   }
 }
+
+/*
+a=0, c=1, g=2, t=3, n=4
+
+int revcom[5] = {3,2,1,0,4}
+
+revcom[c]
+
+char c= 'G'
+
+revcom[c];
+
+char revcom2[255];
+memset(revcom2,'n',255);
+revcom2['A'] = 't';
+revcom2['C'] = 'g';*/
+
+
+
+
 
 void DNA_complement(char seq[]){
   while (*seq) {

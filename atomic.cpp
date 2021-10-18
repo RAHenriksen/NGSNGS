@@ -35,6 +35,7 @@
 #include "SimulAncient_func.h"
 
 pthread_mutex_t data_mutex;
+pthread_mutex_t Fq_write_mutex;
 
 
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],int chr_size_cumm[]){
@@ -74,6 +75,7 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
 std::atomic<float> current_cov_atom(0.0);
 std::atomic<int> size_data(0);
 std::atomic<int> D_total(0);
+
 std::atomic<int> C_total_1(0);
 std::atomic<int> C_to_T_1(0);
 std::atomic<int> C_total_2(0);
@@ -81,6 +83,12 @@ std::atomic<int> C_to_T_2(0);
 std::atomic<int> C_total_3(0);
 std::atomic<int> C_to_T_3(0);
 
+std::atomic<int> G_total_1(0);
+std::atomic<int> G_to_A_1(0);
+std::atomic<int> G_total_2(0);
+std::atomic<int> G_to_A_2(0);
+std::atomic<int> G_total_3(0);
+std::atomic<int> G_to_A_3(0);
 
 struct Parsarg_for_Fafq_se_thread{
   kstring_t *fqresult_r1;
@@ -96,6 +104,7 @@ struct Parsarg_for_Fafq_se_thread{
   int depth;
   int threadseed;
   float cov;
+  FILE *fp1;
 };
 
 
@@ -146,17 +155,17 @@ void* Fafq_thread_se_run(void *arg){
   Size_freq_dist(infile2,SizeDist,seed);//struct_obj->threadseed //creates the distribution of all the frequencies
   infile2.close();
   // ---------------------- //
-  int genome_len = strlen(struct_obj->genome);
-
+  size_t genome_len = strlen(struct_obj->genome);
+  //std::cout << " genome length " << genome_len << std::endl;
   //coverage method2
   int* chrlencov = (int *) calloc(genome_len,sizeof(int));
-
+  //std::cout << " cov " << chrlencov << std::endl;
   char seqmod[1024] = {0};
   char seqmod2[1024] = {0};
   // for the coverage examples
   float cov = struct_obj -> cov;
   //float cov_current = 0;
-  int rand_start;
+  size_t rand_start;
   int nread = 0;
 
   char qual[1024] = "";
@@ -166,7 +175,9 @@ void* Fafq_thread_se_run(void *arg){
   while (current_cov_atom < cov) {
     int fraglength = (int) sizearray[SizeDist[1](gen)]; //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
     
-    srand48(seed+fraglength+iter); //D_total+fraglength //+std::time(nullptr)
+    //srand48(seed+fraglength+iter);
+    srand48(seed+fraglength+iter+D_total+std::time(nullptr)); //D_total+fraglength //+std::time(nullptr)
+    //std::cout << " genome length 2" << genome_len << std::endl;
     rand_start = lrand48() % (genome_len-fraglength-1) + seed;
     //std::cout << "start " << rand_start << std::endl;
     //std::cout << "frag " << fraglength << std::endl;
@@ -189,36 +200,59 @@ void* Fafq_thread_se_run(void *arg){
     }
     srand48(seed+iter); 
     int rand_id = (lrand48() % (genome_len-fraglength-1))%fraglength;
+    
     //removes reads with NNN
     char * pch;
     pch = strchr(seqmod,'N');
     if (pch != NULL){continue;}
     else{
-      for (int j = rand_start; j < rand_start+fraglength; j++){
+      for (size_t j = rand_start; j < rand_start+fraglength; j++){
+        //std::cout<< "j" << j << std::endl;
         chrlencov[j] += 1; //adds 1 for regions, which might have reads already
+        
         D_total += 1; // to find the total depth
+        //std::cout << D_total << std::endl;
         if (chrlencov[j] == 1){size_data++;} // if the value is different from 1 (more reads) then we still count that as one chromosome site with data
       }
 
-      if (seqmod[0]=='C' || seqmod[0]=='c'){C_total_1++;}
+      int seqlen = strlen(seqmod);
+      /*if (seqmod[0]=='C' || seqmod[0]=='c'){C_total_1++;}
       if (seqmod[1]=='C' || seqmod[1]=='c'){C_total_2++;}
       if (seqmod[2]=='C' || seqmod[2]=='c'){C_total_3++;}
 
-      SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097);
+      if (seqmod[seqlen-1]=='G' || seqmod[seqlen-1]=='g'){G_total_1++;}
+      if (seqmod[seqlen-2]=='G' || seqmod[seqlen-2]=='g'){G_total_2++;}
+      if (seqmod[seqlen-3]=='G' || seqmod[seqlen-3]=='g'){G_total_3++;}
+
       //Ill_err(seqmod2,Error,gen);
       
       if ((seqmod2[0] == 'T' || seqmod2[0] == 't') && (seqmod[0] == 'C' || seqmod[0] == 'c')){C_to_T_1++;}
       if ((seqmod2[1] == 'T' || seqmod2[1] == 't')  && (seqmod[1] == 'C' || seqmod[1] == 'c')){C_to_T_2++;}
       if ((seqmod2[2] == 'T' || seqmod2[2] == 't')  && (seqmod[2] == 'C' || seqmod[2] == 'c')){C_to_T_3++;}
       
+      if ((seqmod2[seqlen-1] == 'A' || seqmod2[seqlen-1] == 'a') && (seqmod[seqlen-1] == 'G' || seqmod[seqlen-1] == 'g')){G_to_A_1++;}
+      if ((seqmod2[seqlen-2] == 'A' || seqmod2[seqlen-2] == 'a')  && (seqmod[seqlen-2] == 'G' || seqmod[seqlen-2] == 'g')){G_to_A_2++;}
+      if ((seqmod2[seqlen-3] == 'A' || seqmod2[seqlen-3] == 'a')  && (seqmod[seqlen-3] == 'G' || seqmod[seqlen-3] == 'g')){G_to_A_3++;}*/
+
+      SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097);
+
       Read_Qual2(seqmod2,qual,Qualdistr1,gen);
       // COUNT C -> T CHANGE at first position  
       
       ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
         struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
         fraglength,seqmod2,qual);
+      //struct_obj->fqresult_r1->l =0;
+      if (struct_obj->fqresult_r1->l > 1000000){
+        pthread_mutex_lock(&Fq_write_mutex);
+        fwrite(struct_obj->fqresult_r1->s,sizeof(char),struct_obj->fqresult_r1->l,struct_obj->fp1);
+        pthread_mutex_unlock(&Fq_write_mutex);
+        struct_obj->fqresult_r1->l =0;
+      }
+
       memset(qual, 0, sizeof(qual));  
       nread++;
+      //std::cout << "string length" << struct_obj->fqresult_r1->l << " thread " << struct_obj->threadno << std::endl;
       //fprintf(stderr,"Number of reads %d , d_total %d, size_data %d\n",nread,D_total,size_data);
     }
     current_cov_atom = (float) D_total / (genome_len-size_data);
@@ -260,8 +294,13 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
   char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
   if (genome_data != NULL){
     fprintf(stderr,"\t-> Full genome function run!\n");
+    fprintf(stderr,"\t-> Full genome size %lu \n",strlen(genome_data));
+ 
+  //std::cout << " genome length " << genome_len << std::endl;
     Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
+    FILE *fp1;
+    fp1 = fopen("chr22_out.fq","wb");
     //initialzie values that should be used for each thread
     for (int i = 0; i < nthreads; i++){
       struct_for_threads[i].fqresult_r1 =new kstring_t;
@@ -275,6 +314,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
       struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
       struct_for_threads[i].cov = coverage;
+      struct_for_threads[i].fp1 = fp1;
       
       //declaring the size of the different arrays
       //struct_for_threads[i].size = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no);
@@ -296,28 +336,28 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
     // it returns a pointer to void data which is the 4th argument  
     for (int i = 0; i < nthreads; i++){
       pthread_create(&mythreads[i],&attr,Fafq_thread_se_run,&struct_for_threads[i]);
+      
     }
     
     for (int i = 0; i < nthreads; i++)
     {
       pthread_join(mythreads[i],NULL);
+      //std::cout << struct_for_threads[i].fqresult_r1->l << std::endl;
+      //std::cout << struct_for_threads[i].fqresult_r1->s << std::endl;
     }
-    
-    FILE *fp1;
+    fclose(fp1);
+    /*FILE *fp1;
     fp1 = fopen("chr22_out.fq","wb");
     for(int i=0;i<nthreads;i++){
-      if (struct_for_threads[i].fqresult_r1->l > 10000){
-        fwrite(struct_for_threads[i].fqresult_r1->s,sizeof(char),struct_for_threads[i].fqresult_r1->l,fp1);
-        struct_for_threads[i].fqresult_r1->l =0;
-      }
+      std::cout << "FINALLY WRITING" << struct_for_threads[i].fqresult_r1->l << " thread " << std::endl;
+      pthread_mutex_lock(&Fq_write_mutex);
+      fwrite(struct_for_threads[i].fqresult_r1->s,sizeof(char),struct_for_threads[i].fqresult_r1->l,fp1);
+      pthread_mutex_unlock(&Fq_write_mutex);
+      struct_for_threads[i].fqresult_r1->l =0;
     }
-    /*
-    for(int i=0;i<nthreads;i++){
-      fprintf(fp1,"%s",struct_for_threads[i].fqresult_r1->s);
-    }*/
-    fclose(fp1);
+    fclose(fp1);*/
     
-    //for(int i=0;i<nthreads;i++){delete struct_for_threads[i].fqresult_r1 -> s;} //ERROR SUMMARY: 9 errors from 5 contexts (suppressed: 0 from 0)
+    //for(int i=0;i<nthreads;i++){delete struct_for_threads[i].fqresult_r1 -> s;} //ERROR SUMMARY: 9 errors from 5 contexts (suppressed: 0 from 0 )
     for(int i=0;i<nthreads;i++){
       free(struct_for_threads[i].fqresult_r1 -> s);//4 errors from 4 contexts (suppressed: 0 eventhough that delete goes with new and not free
       //ks_release(struct_for_threads[i].fqresult_r1);
@@ -333,9 +373,9 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
 // ------------------------------ //
 int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
-  // chr1_2.fa  hg19canon.fa
+  // chr1_2.fa  hg19canon.fa  chr1_12   chr22 chr1_15 chr10_15
   //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr17.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr1_2.fa";
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
   fprintf(stderr,"\t-> fasta load \n");
@@ -343,9 +383,9 @@ int main(int argc,char **argv){
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   
-  int seed = 10;
-  int threads = 5;
-  float cov = 100;
+  int seed = 1;
+  int threads = 4;
+  float cov = 5;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
 
   //const char *chr_names[chr_total];
@@ -355,17 +395,22 @@ int main(int argc,char **argv){
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
 
   Create_se_threads(seq_ref,threads,seed,cov);
+
   // free the calloc memory from fai_read
   //free(seq_ref);
   fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
-  float freq_1 = (float) C_to_T_1.load()/(float) C_total_1.load();
+  /*float freq_1 = (float) C_to_T_1.load()/(float) C_total_1.load();
   float freq_2 = (float) C_to_T_2.load()/(float) C_total_2.load();
   float freq_3 = (float) C_to_T_3.load()/(float) C_total_3.load();
-  fprintf(stderr,"\t-> Deamination frequency of C-T, pos 1 %.5f , pos 2 %.5f , pos 3 %.5f \n",freq_1,freq_2,freq_3);
+  float freq_4 = (float) G_to_A_1.load()/(float) G_total_1.load();
+  float freq_5 = (float) G_to_A_2.load()/(float) G_total_2.load();
+  float freq_6 = (float) G_to_A_3.load()/(float) G_total_3.load();*/
+  //fprintf(stderr,"\t-> Deamination frequency of C-T, pos 1 %.5f , pos 2 %.5f , pos 3 %.5f \n",freq_1,freq_2,freq_3);
+  //fprintf(stderr,"\t-> Deamination frequency of G-A, pos -1 %.5f , pos -2 %.5f , pos -3 %.5f \n",freq_4,freq_5,freq_6);
 }
 
 //SimBriggsModel(seqmod, frag, L, 0.024, 0.36, 0.68, 0.0097);
 // g++ SimulAncient_func.cpp atomic.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
-//cat test.fq | grep '@' | cut -d_ -f4 | sort | uniq -d | wc -l
+//cat chr22_out.fq | grep '@' | cut -d_ -f4 | sort | uniq -d | wc -l
 //cat test.fq | grep 'T0' | grep 'chr20' | wc -l
 //valgrind --tool=memcheck --leak-check=full ./a.out
