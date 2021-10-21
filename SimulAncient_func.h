@@ -11,6 +11,8 @@ void Bam_baseQ(char *seq,char *qual,std::discrete_distribution<>*Dist,std::defau
 
 void DNA_complement(char seq[]);
 
+void reverseChar(char* str);
+
 void Qual_dist(double** Array2d,std::discrete_distribution<> dist[],int size);
 
 void Seq_err(double** Array2d,std::discrete_distribution<> nt_sub[],int size);
@@ -23,6 +25,6 @@ int *Size_select_dist(std::ifstream &infile);
 
 double uniform();
 
-void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta);
+void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, int seed);
 
 #endif

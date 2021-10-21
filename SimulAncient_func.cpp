@@ -179,9 +179,6 @@ revcom2['A'] = 't';
 revcom2['C'] = 'g';*/
 
 
-
-
-
 void DNA_complement(char seq[]){
   while (*seq) {
     switch(*seq) {
@@ -208,6 +205,10 @@ void DNA_complement(char seq[]){
     }
     ++seq;
   }
+}
+
+void reverseChar(char* str) {
+    std::reverse(str, str + strlen(str));
 }
 
 void Qual_dist(double** Array2d,std::discrete_distribution<> dist[],int size){
@@ -333,7 +334,7 @@ double uniform()
 }
 
 
-void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta){
+void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, int seed){
     int l = 0;
     int r = L-1;
     while (l+r > L-2){
