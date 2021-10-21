@@ -47,7 +47,6 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
     int chr_len = faidx_seq_len(seq_ref,chr_name);
     chr_sizes[i] = chr_len;
     chr_names[i] = chr_name;
-    std::cout << chr_name << std::endl;
     genome_size += chr_len;
     chr_size_cumm[i+1] = genome_size;
   }
@@ -64,11 +63,10 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
     //strcat(genome,data);  //Both gives conditional jump or move error
     if (data != NULL){
       sprintf(genome+strlen(genome),data); 
-      //Free works on const pointers, so we have to cast into a const char pointer
-      // several of the build in functions allocates memory without freeing it again.
-      //free((char*)data); 
+      
     }
-    free((char*)data); 
+    // several of the build in functions allocates memory without freeing it again.
+    free((char*)data); //Free works on const pointers, so we have to cast into a const char pointer
   }
   return genome;
 }
@@ -91,8 +89,11 @@ std::atomic<int> G_to_A_2(0);
 std::atomic<int> G_total_3(0);
 std::atomic<int> G_to_A_3(0);
 
+// ---------------------- SINGLE-END ---------------------- //
+
 struct Parsarg_for_Fafq_se_thread{
   kstring_t *fqresult_r1;
+  const char* output;
   char *genome; // The actual concatenated genome
   int chr_no;
   int threadno;
@@ -106,6 +107,9 @@ struct Parsarg_for_Fafq_se_thread{
   int threadseed;
   float cov;
   FILE *fp1;
+  gzFile gz1;
+  const char* Adapter_flag;
+  const char* Adapter_1;
 };
 
 
@@ -113,7 +117,7 @@ void* Fafq_thread_se_run(void *arg){
   //casting my struct as arguments for the thread creation
   Parsarg_for_Fafq_se_thread *struct_obj = (Parsarg_for_Fafq_se_thread*) arg;
   //std::cout << "se run "<< std::endl;
-
+  
   // creating random objects for all distributions.
   int seed = struct_obj->threadseed+struct_obj->threadno;
   std::random_device rd;
@@ -157,13 +161,13 @@ void* Fafq_thread_se_run(void *arg){
   infile2.close();
   // ---------------------- //
   size_t genome_len = strlen(struct_obj->genome);
-  //std::cout << " genome length " << genome_len << std::endl;
+
   //coverage method2
   int* chrlencov = (int *) calloc(genome_len,sizeof(int));
-  //std::cout << " cov " << chrlencov << std::endl;
   char seqmod[1024] = {0};
   char seqmod2[1024] = {0};
-  char seqmodrev[1024] = {0};
+  char read[1024] = {0};
+  char readadapt[1024] = {0};
   // for the coverage examples
   float cov = struct_obj -> cov;
   //float cov_current = 0;
@@ -180,16 +184,12 @@ void* Fafq_thread_se_run(void *arg){
     srand48(seed+fraglength+iter);
     //srand48(seed+fraglength+iter+D_total+std::time(nullptr)); //D_total+fraglength //+std::time(nullptr)
     //fprintf(stderr,"\t-> Seed used: %d \n",seed+fraglength+iter+D_total+std::time(nullptr));
-    //std::cout << " genome length 2" << genome_len << std::endl;
+
     rand_start = lrand48() % (genome_len-fraglength-1) + seed;
-    //std::cout << "start " << rand_start << std::endl;
-    //std::cout << "frag " << fraglength << std::endl;
 
     //identify the chromosome based on the coordinates from the cummulative size array
     int chr_idx = 0;
     while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}
-    //std::cout << "chr_idx " << chr_idx << std::endl;
-    //std::cout << struct_obj->names[chr_idx] << std::endl;
 
     // case 1
     if (fraglength > 150){
@@ -221,7 +221,6 @@ void* Fafq_thread_se_run(void *arg){
         if (chrlencov[j] == 1){size_data++;} // if the value is different from 1 (more reads) then we still count that as one chromosome site with data
       }
       
-
       int seqlen = strlen(seqmod);
       if (seqmod[0]=='C' || seqmod[0]=='c'){C_total_1++;}
       if (seqmod[1]=='C' || seqmod[1]=='c'){C_total_2++;}
@@ -241,36 +240,122 @@ void* Fafq_thread_se_run(void *arg){
       if ((seqmod2[seqlen-2] == 'A' || seqmod2[seqlen-2] == 'a')  && (seqmod[seqlen-2] == 'G' || seqmod[seqlen-2] == 'g')){G_to_A_2++;}
       if ((seqmod2[seqlen-3] == 'A' || seqmod2[seqlen-3] == 'a')  && (seqmod[seqlen-3] == 'G' || seqmod[seqlen-3] == 'g')){G_to_A_3++;}
 
-      if ((rand() % 2) == 0){
-        DNA_complement(seqmod2);
-        reverseChar(seqmod2);
-        //SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097);
-        Read_Qual2(seqmod2,qual,Qualdistr1,gen);
-      }
-      else{
-        Read_Qual2(seqmod2,qual,Qualdistr1,gen);
+      int strand = rand() % 2;
+
+      // FASTQ FILE
+      if (struct_obj->output == "fq" || struct_obj->output == "fastq" || struct_obj->output == "fq.gz" || struct_obj->output == "fastq.gz"){
+        if (strand == 0){
+          DNA_complement(seqmod2);
+          reverseChar(seqmod2);
+          //SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097);
+          if (struct_obj->Adapter_flag == "true"){
+            strcpy(read, seqmod2);
+            strcat(read,struct_obj->Adapter_1);
+            //std::cout << "read " << read << std::endl;
+            Ill_err(read,Error,gen);
+            strncpy(readadapt, read, 150);
+            Read_Qual2(readadapt,qual,Qualdistr1,gen);
+            
+            ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
+            struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
+            fraglength,readadapt,qual);
+          }
+          else if (struct_obj->Adapter_flag == "false"){
+            Ill_err(seqmod2,Error,gen);
+            Read_Qual2(seqmod2,qual,Qualdistr1,gen);
+            ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
+            struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
+            fraglength,seqmod2,qual);
+          }
+        }
+        else if (strand == 1){
+          if (struct_obj->Adapter_flag == "true"){
+            strcpy(read, seqmod2);
+            strcat(read,struct_obj->Adapter_1);
+            //std::cout << "read " << read << std::endl;
+            Ill_err(read,Error,gen);
+            strncpy(readadapt, read, 150);
+            Read_Qual2(readadapt,qual,Qualdistr1,gen);
+            ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
+            struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
+            fraglength,readadapt,qual);
+          }
+          else if (struct_obj->Adapter_flag == "false"){
+            Ill_err(seqmod2,Error,gen);
+            Read_Qual2(seqmod2,qual,Qualdistr1,gen);
+            ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
+            struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
+            fraglength,seqmod2,qual);
+          }
+        }        
       }
 
-      //Read_Qual2(seqmod2,qual,Qualdistr1,gen);
-      //fprintf(stderr,"%d \n",(rand()%2));
-      //Ill_err(seqmod2,Error,gen);
-      
-      
+      // FASTA FILE
+      else if (struct_obj->output == "fa" || struct_obj->output == "fasta" || struct_obj->output == "fa.gz" || struct_obj->output == "fasta.gz"){
+        //fprintf(stderr,"\t->strand\'%d\n'",strand);
+        if (strand == 0){ // Reverse strand
+          DNA_complement(seqmod2);
+          reverseChar(seqmod2);
+          //Ill_err(seqmod2,Error,gen);
+          //fprintf(stderr,"\t->sequence\'%s\n'",seqmod2);
+          if (struct_obj->Adapter_flag == "true"){
+            strcpy(read, seqmod2);
+            strcat(read,struct_obj->Adapter_1);
+            //std::cout << "read " << read << std::endl;
+            Ill_err(read,Error,gen);
+            strncpy(readadapt, read, 150);
+            
+            ksprintf(struct_obj->fqresult_r1,">T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n",struct_obj->threadno, rand_id,seed,
+            struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
+            fraglength,readadapt);
+          }
+          else if (struct_obj->Adapter_flag == "false"){
+            Ill_err(seqmod2,Error,gen);
+            ksprintf(struct_obj->fqresult_r1,">T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n",struct_obj->threadno, rand_id,seed,
+            struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
+            fraglength,seqmod2);
+          }
+          
+        }
+        else if (strand == 1){
+          if (struct_obj->Adapter_flag == "true"){
+            strcpy(read, seqmod2);
+            strcat(read,struct_obj->Adapter_1);
+            //std::cout << "read " << read << std::endl;
+            Ill_err(read,Error,gen);
+            strncpy(readadapt, read, 150);
+            
+            ksprintf(struct_obj->fqresult_r1,">T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n",struct_obj->threadno, rand_id,seed,
+            struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
+            fraglength,readadapt);
+          }
+          else if (struct_obj->Adapter_flag == "false"){
+            Ill_err(seqmod2,Error,gen);
+            ksprintf(struct_obj->fqresult_r1,">T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n",struct_obj->threadno, rand_id,seed,
+            struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
+            fraglength,seqmod2);
+          }
+        }
+      }
 
-      ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
-        struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-        fraglength,seqmod2,qual);
       //struct_obj->fqresult_r1->l =0;
       if (struct_obj->fqresult_r1->l > 1000000){
-        pthread_mutex_lock(&Fq_write_mutex);
-        fwrite(struct_obj->fqresult_r1->s,sizeof(char),struct_obj->fqresult_r1->l,struct_obj->fp1);
-        pthread_mutex_unlock(&Fq_write_mutex);
-        struct_obj->fqresult_r1->l =0;
+        if (struct_obj->output == "fq" || struct_obj->output == "fastq" || struct_obj->output == "fa" || struct_obj->output == "fasta"){
+          pthread_mutex_lock(&Fq_write_mutex);
+          fwrite(struct_obj->fqresult_r1->s,sizeof(char),struct_obj->fqresult_r1->l,struct_obj->fp1);
+          pthread_mutex_unlock(&Fq_write_mutex);
+          struct_obj->fqresult_r1->l =0;
+        }
+        else if (struct_obj->output == "fq.gz" || struct_obj->output == "fastq.gz"){
+          pthread_mutex_lock(&Fq_write_mutex);
+          gzwrite(struct_obj->gz1,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
+          pthread_mutex_unlock(&Fq_write_mutex);
+          struct_obj->fqresult_r1->l =0;
+        }
       }
 
       memset(qual, 0, sizeof(qual));  
       nread++;
-      //std::cout << "string length" << struct_obj->fqresult_r1->l << " thread " << struct_obj->threadno << std::endl;
       //fprintf(stderr,"Number of reads %d , d_total %d, size_data %d\n",nread,D_total,size_data);
     }
     current_cov_atom = (float) D_total / genome_len;
@@ -299,7 +384,7 @@ void* Fafq_thread_se_run(void *arg){
   return NULL;
 }
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage){
+void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage, const char* output,const char* Adapt_flag,const char* Adapter_1){
   
   //creating an array with the arguments to create multiple threads;
   int nthreads=thread_no;
@@ -318,14 +403,38 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
   //std::cout << " genome length " << genome_len << std::endl;
     Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
+    /*const char *one = "chr22_out.";
+    char* catString = (char*)malloc(sizeof(char) * strlen(one) + 1); //malloc(strlen(one)+strlen(two)+1);
+    strcpy(catString, one);
+    strcat(catString, output);*/
+    //DOING THIS FUCKED UP WITH MORE VALGRIND ERRORS
+    
     FILE *fp1;
-    fp1 = fopen("chr22_out.fq","wb");
+    gzFile gz1;
+    if (output == "fq" || output == "fastq"){
+      //FILE *fp1;  error: 'fp1' was not declared in this scope struct_for_threads[i].fp1 = fp1;
+      fp1 = fopen("chr22_out.fq","wb");
+    }
+    else if (output == "fa" || output == "fasta"){
+      //FILE *fp1;  error: 'fp1' was not declared in this scope struct_for_threads[i].fp1 = fp1;
+      fp1 = fopen("chr22_out.fa","wb");
+    }
+    else if (output == "fq.gz" || output == "fastq.gz"){
+      //FILE *fp1;  error: 'fp1' was not declared in this scope struct_for_threads[i].fp1 = fp1;
+      gz1 = (gzFile) gzopen("chr22_out.fq.gz","wb");
+    }    
+    else if (output == "fa.gz" || output == "fasta.gz"){
+      //FILE *fp1;  error: 'fp1' was not declared in this scope struct_for_threads[i].fp1 = fp1;
+      gz1 = (gzFile) gzopen("chr22_out.fa.gz","wb");
+    }
+
     //initialzie values that should be used for each thread
     for (int i = 0; i < nthreads; i++){
       struct_for_threads[i].fqresult_r1 =new kstring_t;
       struct_for_threads[i].fqresult_r1 -> l = 0;
       struct_for_threads[i].fqresult_r1 -> m = 0;
       struct_for_threads[i].fqresult_r1 -> s = NULL;
+      struct_for_threads[i].output = output;
       struct_for_threads[i].threadno = i;
       struct_for_threads[i].genome = genome_data;
       struct_for_threads[i].chr_no = chr_total;
@@ -333,14 +442,16 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
       struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
       struct_for_threads[i].cov = coverage;
-      struct_for_threads[i].fp1 = fp1;
+      if (output == "fq" || output == "fastq" || output == "fa" || output == "fasta"){
+        struct_for_threads[i].fp1 = fp1;
+        struct_for_threads[i].gz1 = NULL;}
+      else if (output == "fq.gz" || output == "fastq.gz" || output == "fa.gz" || output == "fasta.gz"){
+        struct_for_threads[i].fp1 = NULL;
+        struct_for_threads[i].gz1 = (gzFile) gz1;}
+      struct_for_threads[i].Adapter_flag = Adapt_flag;
+      struct_for_threads[i].Adapter_1 = Adapter_1;
       
       //declaring the size of the different arrays
-      //struct_for_threads[i].size = (int*)malloc(sizeof(int) * struct_for_threads[i].chr_no);
-      //struct_for_threads[i].size[0] = 0;
-      //memcpy(struct_for_threads[i].size, chr_sizes, sizeof(chr_sizes));
-      //free(struct_for_threads[i].size); //jeg forstår ikke hvorfor den så fejler efterfølgende hvis jeg bruger free på de two nedenfor
-      
       struct_for_threads[i].size_cumm = (int*)malloc(sizeof(int) * (struct_for_threads[i].chr_no+1));
       struct_for_threads[i].size_cumm[0] = 0;
       memcpy(struct_for_threads[i].size_cumm, chr_size_cumm, sizeof(chr_size_cumm));
@@ -349,32 +460,23 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       struct_for_threads[i].names[0] = 0;
       memcpy(struct_for_threads[i].names, chr_names, sizeof(chr_names));
     }
+    //free(catString);
+    
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     // pthread_create( thread ID, struct for thread config, pointer to the function which new thread starts with, 
     // it returns a pointer to void data which is the 4th argument  
     for (int i = 0; i < nthreads; i++){
       pthread_create(&mythreads[i],&attr,Fafq_thread_se_run,&struct_for_threads[i]);
-      
     }
     
     for (int i = 0; i < nthreads; i++)
     {
       pthread_join(mythreads[i],NULL);
-      //std::cout << struct_for_threads[i].fqresult_r1->l << std::endl;
-      //std::cout << struct_for_threads[i].fqresult_r1->s << std::endl;
     }
-    fclose(fp1);
-    /*FILE *fp1;
-    fp1 = fopen("chr22_out.fq","wb");
-    for(int i=0;i<nthreads;i++){
-      std::cout << "FINALLY WRITING" << struct_for_threads[i].fqresult_r1->l << " thread " << std::endl;
-      pthread_mutex_lock(&Fq_write_mutex);
-      fwrite(struct_for_threads[i].fqresult_r1->s,sizeof(char),struct_for_threads[i].fqresult_r1->l,fp1);
-      pthread_mutex_unlock(&Fq_write_mutex);
-      struct_for_threads[i].fqresult_r1->l =0;
-    }
-    fclose(fp1);*/
+    if (output == "fq" || output == "fastq" || output == "fa" || output == "fasta"){fclose(fp1);}
+    else if (output == "fq.gz" || output == "fastq.gz" || output == "fa.gz" || output == "fasta.gz"){gzclose(gz1);}
+    
     
     //for(int i=0;i<nthreads;i++){delete struct_for_threads[i].fqresult_r1 -> s;} //ERROR SUMMARY: 9 errors from 5 contexts (suppressed: 0 from 0 )
     for(int i=0;i<nthreads;i++){
@@ -403,17 +505,16 @@ int main(int argc,char **argv){
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   
   int seed = 1;
-  int threads = 10;
+  int threads = 5;
   float cov = 1;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
 
-  //const char *chr_names[chr_total];
-  //int chr_sizes[chr_total];
-  //int chr_size_cumm[chr_total+1];
-  
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
+  const char* Adapt_flag = "false";
+  const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
+  const char* output = "fa";
 
-  Create_se_threads(seq_ref,threads,seed,cov);
+  Create_se_threads(seq_ref,threads,seed,cov,output,Adapt_flag,Adapter_1);
 
   // free the calloc memory from fai_read
   //free(seq_ref);
