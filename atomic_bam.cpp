@@ -107,11 +107,13 @@ struct Parsarg_for_Fabam_se_thread{
 
   // File ouput
   samFile *outfile;
+  sam_hdr_t *header;
 
   // Resulting simulated reads ouput
   kstring_t *readid;
   kstring_t *qualstring;
   kstring_t *seq;
+  kstring_t *strand;
 
   const char* Adapter_flag;
   const char* Adapter_1;
@@ -218,8 +220,8 @@ void* Fafq_thread_se_run(void *arg){
       int strand = rand() % 2;
 
       if (strand == 0){
-        DNA_complement(seqmod2);
-        reverseChar(seqmod2);
+        //DNA_complement(seqmod2);
+        //reverseChar(seqmod2);
         if (struct_obj->Adapter_flag == "true"){
           strcpy(read, seqmod2);
           strcat(read,struct_obj->Adapter_1);
@@ -228,22 +230,24 @@ void* Fafq_thread_se_run(void *arg){
           strncpy(readadapt, read, 150);
           Bam_baseQ(readadapt,qual,Qualdistr1,gen);
           
-          ksprintf(struct_obj->readid,"@T%d_RID%d_S%d_%s:%d-%d_length:%d.",struct_obj->threadno, rand_id,seed,
+          ksprintf(struct_obj->readid,"@T%d_RID%d-_S%d_%s:%d-%d_length:%d.",struct_obj->threadno, rand_id,seed,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
           fraglength);
           ksprintf(struct_obj->qualstring,"%s.",qual);
           ksprintf(struct_obj->seq,"%s.",readadapt);
+          ksprintf(struct_obj->strand,"%s.","16");
 
         }
         else if (struct_obj->Adapter_flag == "false"){
           Ill_err(seqmod2,struct_obj->Ill_err,gen);
           Bam_baseQ(seqmod2,qual,Qualdistr1,gen);
 
-          ksprintf(struct_obj->readid,"@T%d_RID%d_S%d_%s:%d-%d_length:%d.",struct_obj->threadno, rand_id,seed,
+          ksprintf(struct_obj->readid,"@T%d_RID%d-_S%d_%s:%d-%d_length:%d.",struct_obj->threadno, rand_id,seed,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
           fraglength);
           ksprintf(struct_obj->qualstring,"%s.",qual);
           ksprintf(struct_obj->seq,"%s.",seqmod2);
+          ksprintf(struct_obj->strand,"%s.","16");
         }
       }
       else if (strand == 1){
@@ -255,53 +259,126 @@ void* Fafq_thread_se_run(void *arg){
           strncpy(readadapt, read, 150);
           Bam_baseQ(readadapt,qual,Qualdistr1,gen);
 
-          ksprintf(struct_obj->readid,"@T%d_RID%d_S%d_%s:%d-%d_length:%d.",struct_obj->threadno, rand_id,seed,
+          ksprintf(struct_obj->readid,"@T%d_RID%d+_S%d_%s:%d-%d_length:%d.",struct_obj->threadno, rand_id,seed,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
           fraglength);
           ksprintf(struct_obj->qualstring,"%s.",qual);
           ksprintf(struct_obj->seq,"%s.",readadapt);
+          ksprintf(struct_obj->strand,"%s.","0");
         }
         else if (struct_obj->Adapter_flag == "false"){
           Ill_err(seqmod2,struct_obj->Ill_err,gen);
           Bam_baseQ(seqmod2,qual,Qualdistr1,gen);
 
-          ksprintf(struct_obj->readid,"@T%d_RID%d_S%d_%s:%d-%d_length:%d.",struct_obj->threadno, rand_id,seed,
+          ksprintf(struct_obj->readid,"@T%d_RID%d+_S%d_%s:%d-%d_length:%d.",struct_obj->threadno, rand_id,seed,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
           fraglength);
           ksprintf(struct_obj->qualstring,"%s.",qual);
           ksprintf(struct_obj->seq,"%s.",seqmod2);
+          ksprintf(struct_obj->strand,"%s.","0");
         }
       }        
 
-      //BARE INDSÆT DINE TRE KSTRINGS OG DEREFTER ARBEJDER VIDERE MED DETTE!
-      if (struct_obj->readid->l > 1000000){
-        char *token_name, *token_seq, *token_qual;
-        char *save_name_ptr, *save_seq_ptr, *save_qual_ptr;
-        char *save_qname_ptr;
-        char *qname = (char*) malloc(1024); 
+      
+      bam1_t *bam_file_chr = bam_init1();
+
+      char *token_name, *token_seq, *token_qual, *token_strand;
+      char *chr_name;
+      char *save_name_ptr, *save_seq_ptr, *save_qual_ptr, *save_strand_ptr;
+      char *save_qname_ptr;
+      char *qname = (char*) malloc(1024); 
+      char *tid_1,*tid_2,*tid_3; 
+
+      token_name = strtok_r(struct_obj->readid->s, ".", &save_name_ptr);
+      token_seq = strtok_r(struct_obj->seq->s, ".", &save_seq_ptr);
+      token_qual = strtok_r(struct_obj->qualstring->s, ".", &save_qual_ptr);
+      token_strand = strtok_r(struct_obj->strand->s, ".", &save_strand_ptr);
+
+      //fprintf(stderr,"read id %s \n",token_name);
+      //fprintf(stderr,"seq %s \n",token_seq);
+      //fprintf(stderr,"qual %s \n",token_qual);
+      
+      strcpy(qname, token_name);
+      hts_pos_t min_beg, max_end, insert;
+      size_t l_qname = strlen(qname);
+      uint16_t flag = atoi(token_strand);
+      //fprintf(stderr,"%d",flag);
+      //fprintf(stderr,"1 %s\n",qname);
+      int32_t tid = atoi(strtok_r(qname, ":", &save_qname_ptr));
+      //fprintf(stderr,"2 %s\n",qname);
+      min_beg = atoi(strtok_r(NULL, "-", &save_qname_ptr))-1; //atoi(strtok_r(NULL, "-", &save_qname_ptr)); 
+      //fprintf(stderr,"3 %s\n",qname);
+      //fprintf(stderr,"4 %d\n",min_beg);
+      tid_1 = qname;
+      //fprintf(stderr,"5 %s\n",tid_1);
+      while ((tid_2 = strtok_r(NULL, "_", &tid_1))){tid_3 = tid_2;}
+      //fprintf(stderr,"5 %s\n",tid_3);
+      uint8_t mapq = 60;
+      size_t l_aux = 0; // auxiliary field for supp data etc?? 
+      //break;
+      if (struct_obj->Adapter_flag == "true"){
+        char* len_ID = (char*) malloc(1024);
+        char* save_len_ptr;
+
+        len_ID = strtok_r(NULL, "", &save_qname_ptr);
+        fprintf(stderr," sequence length %s \n",len_ID);
+        strtok_r(len_ID, ":", &save_len_ptr);
+        int seq_len = atoi(strtok_r(NULL, "", &save_len_ptr));
+        uint32_t cigar_bitstring, cigar_bit_soft;
+        if (seq_len < 150){
+          cigar_bitstring = bam_cigar_gen(seq_len, BAM_CMATCH); // basically does op_len<<BAM_CIGAR_SHIFT|BAM_CMATCH;
+          cigar_bit_soft = bam_cigar_gen(strlen(token_seq)-seq_len, BAM_CSOFT_CLIP);
+          
+        }
+        else{
+          cigar_bitstring = bam_cigar_gen(150, BAM_CMATCH); // basically does op_len<<BAM_CIGAR_SHIFT|BAM_CMATCH;
+          cigar_bit_soft = bam_cigar_gen(0, BAM_CSOFT_CLIP);
+        }
+        uint32_t cigar_arr[] = {cigar_bitstring,cigar_bit_soft};
         
-        token_name = strtok_r(struct_for_threads[i].readid->s, ".", &save_name_ptr);
-        token_seq = strtok_r(struct_for_threads[i].seq->s, ".", &save_seq_ptr);
-        token_qual = strtok_r(struct_for_threads[i].qualstring->s, ".", &save_qual_ptr);
-        
-        token_name = strtok_r(struct_obj->readid->s, ".", &save_name_ptr);
-        fprintf(stderr,"%s\n",token_name);
-        token_name = strtok_r(NULL, "\n", &save_name_ptr);
-        fprintf(stderr,"%s\n",token_name);
-        std::cout << "-----------------------" << std::endl;
+        size_t n_cigar = 2; // Number of cigar operations, 1 since we only have matches
+         //converting uint32_t {aka unsigned int} to const uint32_t* 
+        const uint32_t *cigar = cigar_arr;
+
+        pthread_mutex_lock(&Fq_write_mutex);
+        bam_set1(bam_file_chr,strlen(token_name),token_name,flag,chr_idx,min_beg,mapq,n_cigar,cigar,-1,-1,0,strlen(token_seq),token_seq,token_qual,l_aux);
+        sam_write1(struct_obj->outfile,struct_obj->header,bam_file_chr);
+        pthread_mutex_unlock(&Fq_write_mutex);
+      }
+      else if (struct_obj->Adapter_flag == "false"){
+        size_t n_cigar = 1; // Number of cigar operations, 1 since we only have matches
+
+        uint32_t cigar_bitstring = bam_cigar_gen(strlen(token_seq), BAM_CMATCH); // basically does op_len<<BAM_CIGAR_SHIFT|BAM_CMATCH;
+        uint32_t cigar_arr[] = {cigar_bitstring}; //converting uint32_t {aka unsigned int} to const uint32_t* 
+        const uint32_t *cigar = cigar_arr;
+
+        pthread_mutex_lock(&Fq_write_mutex);
+        bam_set1(bam_file_chr,strlen(token_name),token_name,flag,chr_idx,min_beg,mapq,n_cigar,cigar,-1,-1,0,strlen(token_seq),token_seq,token_qual,l_aux);
+        sam_write1(struct_obj->outfile,struct_obj->header,bam_file_chr);
+        pthread_mutex_unlock(&Fq_write_mutex);
+      }
+      
+      //extract next tokes
+      token_name = strtok_r(NULL, ".", &save_name_ptr);
+      token_seq = strtok_r(NULL, ".", &save_seq_ptr);
+      token_qual = strtok_r(NULL, ".", &save_qual_ptr);
+      token_strand = strtok_r(NULL, ".", &save_strand_ptr);
         //token_qual = strtok_r(NULL, "\n", &save_qual_ptr);
         //fprintf(stderr,"%s",token_qual);
-        struct_obj->readid->l =0;
-      }
-
-      memset(qual, 0, sizeof(qual));
-      memset(readadapt, 0, sizeof seqmod);
-      memset(seqmod, 0, sizeof seqmod);
-      memset(seqmod2, 0, sizeof seqmod2);
+      struct_obj->readid->l =0;
+      struct_obj->seq->l =0;
+      struct_obj->qualstring->l =0;
+      struct_obj->strand->l =0;
 
       nread++;
       //fprintf(stderr,"Number of reads %d \n",nread);
     }
+
+    memset(qual, 0, sizeof(qual));
+    memset(readadapt, 0, sizeof seqmod);
+    memset(seqmod, 0, sizeof seqmod);
+    memset(seqmod2, 0, sizeof seqmod2);
+
     current_cov_atom = (float) D_total / genome_len;
 
     struct_obj->current_cov = current_cov_atom; //why do we need this
@@ -323,7 +400,7 @@ void* Fafq_thread_se_run(void *arg){
   return NULL;
 }
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage, const char* output,const char* Adapt_flag,const char* Adapter_1){
+void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage,const char* Adapt_flag,const char* Adapter_1){
   
   //creating an array with the arguments to create multiple threads;
   int nthreads=thread_no;
@@ -397,7 +474,13 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       struct_for_threads[i].seq -> m = 0;
       struct_for_threads[i].seq -> s = NULL;
 
+      struct_for_threads[i].strand =new kstring_t;
+      struct_for_threads[i].strand -> l = 0;
+      struct_for_threads[i].strand -> m = 0;
+      struct_for_threads[i].strand -> s = NULL;
+
       struct_for_threads[i].outfile = outfile;
+      struct_for_threads[i].header = header;
 
       struct_for_threads[i].threadno = i;
       struct_for_threads[i].genome = genome_data;
@@ -460,7 +543,7 @@ int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
   // chr1_2.fa  hg19canon.fa  chr1_12   chr22 chr1_15 chr10_15
   //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
   fprintf(stderr,"\t-> fasta load \n");
@@ -469,24 +552,23 @@ int main(int argc,char **argv){
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   
   int seed = 1;
-  int threads = 1;
-  float cov = 1;
+  int threads = 5;
+  float cov = 0.5;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
 
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
-  const char* Adapt_flag = "true";
+  const char* Adapt_flag = "false";
   const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
-  const char* output = "fq";
 
-  Create_se_threads(seq_ref,threads,seed,cov,output,Adapt_flag,Adapter_1);
+  Create_se_threads(seq_ref,threads,seed,cov,Adapt_flag,Adapter_1);
 
   // free the calloc memory from fai_read
   //free(seq_ref);
   fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
 }
 
-//SimBriggsModel(seqmod, frag, L, 0.024, 0.36, 0.68, 0.0097);
-// g++ SimulAncient_func.cpp atomic.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
+//SimBriggsModel(seqmod, frag, L, 0.024, 0.36, 0.68, 0.0097);save_len_ptr
+// g++ SimulAncient_func.cpp atomic_bam.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 //cat chr22_out.fq | grep '@' | cut -d_ -f4 | sort | uniq -d | wc -l
 //cat test.fq | grep 'T0' | grep 'chr20' | wc -l
 //valgrind --tool=memcheck --leak-check=full ./a.out
