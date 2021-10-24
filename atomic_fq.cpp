@@ -63,7 +63,6 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
     //strcat(genome,data);  //Both gives conditional jump or move error
     if (data != NULL){
       sprintf(genome+strlen(genome),data); 
-      
     }
     // several of the build in functions allocates memory without freeing it again.
     free((char*)data); //Free works on const pointers, so we have to cast into a const char pointer
@@ -76,20 +75,6 @@ std::atomic<int> size_data(0);
 std::atomic<int> D_total(0);
 std::atomic<int> nread_total(0);
 
-std::atomic<int> C_total_1(0);
-std::atomic<int> C_to_T_1(0);
-std::atomic<int> C_total_2(0);
-std::atomic<int> C_to_T_2(0);
-std::atomic<int> C_total_3(0);
-std::atomic<int> C_to_T_3(0);
-
-std::atomic<int> G_total_1(0);
-std::atomic<int> G_to_A_1(0);
-std::atomic<int> G_total_2(0);
-std::atomic<int> G_to_A_2(0);
-std::atomic<int> G_total_3(0);
-std::atomic<int> G_to_A_3(0);
-
 // ---------------------- SINGLE-END ---------------------- //
 
 struct Parsarg_for_Fafq_se_thread{
@@ -100,16 +85,13 @@ struct Parsarg_for_Fafq_se_thread{
   int threadno;
   int *size_cumm;
   const char **names;
-  std::discrete_distribution<> *Ill_err;
-  int* sizearray;
-  std::discrete_distribution<> *SizeDist;
+  const char* Ill_err;
   const char* read_err_1;
   float current_cov;
   int cov_size;
   int threadseed;
   float cov;
   FILE *fp1;
-  gzFile gz1;
   const char* Adapter_flag;
   const char* Adapter_1;
 };
@@ -124,23 +106,44 @@ void* Fafq_thread_se_run(void *arg){
   int seed = struct_obj->threadseed+struct_obj->threadno;
   std::random_device rd;
   std::default_random_engine gen(seed);//gen(struct_obj->threadseed); //struct_obj->seed+struct_obj->threadno
+  
+  // -------------------------- // 
+// Load in the error profiles and size distributions
+  std::ifstream file(struct_obj->read_err_1);
+  int Line_no = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
+  file.close();
+  size_t lib_size = Line_no/4; 
 
-  // Load in the error profiles and size distributions
-  //std::ifstream file(struct_obj->read_err_1);
-  //int Line_no = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
-  //file.close();
   // loading in error profiles for nt substitions and read qual creating 2D arrays
-  double** R1_2Darray = create2DArray(struct_obj->read_err_1,8,600);
-  std::discrete_distribution<> Qualdistr1[600];
-  Qual_dist(R1_2Darray,Qualdistr1,600);
+  double** R1_2Darray = create2DArray(struct_obj->read_err_1,8,Line_no);
+  std::discrete_distribution<> Qualdistr1[Line_no];
+  Qual_dist(R1_2Darray,Qualdistr1,Line_no);
 
   //Free each sub-array
-  for(int i = 0; i < 600; ++i) {delete[] R1_2Darray[i];}
+  for(int i = 0; i < Line_no; ++i) {delete[] R1_2Darray[i];}
   //Free the array of pointers
   delete[] R1_2Darray;
   
+  double** Error_2darray = create2DArray(struct_obj->Ill_err,4,280);
+  std::discrete_distribution<> Error[280];
+  Seq_err(Error_2darray,Error,280);
+  
+  //Free each sub-array
+  for(int i = 0; i < 280; ++i) {delete[] Error_2darray[i];}
+  //Free the array of pointers
+  delete[] Error_2darray;
+  
   // -------------------------- // 
+  // Creates the random lengths array and distributions //
+  std::ifstream infile("Size_dist/Size_freq.txt");
+  int* sizearray = Size_select_dist(infile);
+  infile.close();
 
+  std::discrete_distribution<> SizeDist[2]; 
+  
+  std::ifstream infile2("Size_dist/Size_freq.txt");
+  Size_freq_dist(infile2,SizeDist,seed);//struct_obj->threadseed //creates the distribution of all the frequencies
+  infile2.close();
   // ---------------------- //
   size_t genome_len = strlen(struct_obj->genome);
 
@@ -161,7 +164,7 @@ void* Fafq_thread_se_run(void *arg){
   
   int iter = 0;
   while (current_cov_atom < cov) {
-    int fraglength = (int) struct_obj->sizearray[struct_obj->SizeDist[1](gen)]; //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
+    int fraglength = (int) sizearray[SizeDist[1](gen)]; //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
     
     srand48(seed+fraglength+iter);
     //srand48(seed+fraglength+iter+D_total+std::time(nullptr)); //D_total+fraglength //+std::time(nullptr)
@@ -202,24 +205,7 @@ void* Fafq_thread_se_run(void *arg){
         if (chrlencov[j] == 1){size_data++;} // if the value is different from 1 (more reads) then we still count that as one chromosome site with data
       }
       
-      int seqlen = strlen(seqmod);
-      if (seqmod[0]=='C' || seqmod[0]=='c'){C_total_1++;}
-      if (seqmod[1]=='C' || seqmod[1]=='c'){C_total_2++;}
-      if (seqmod[2]=='C' || seqmod[2]=='c'){C_total_3++;}
-
-      if (seqmod[seqlen-1]=='G' || seqmod[seqlen-1]=='g'){G_total_1++;}
-      if (seqmod[seqlen-2]=='G' || seqmod[seqlen-2]=='g'){G_total_2++;}
-      if (seqmod[seqlen-3]=='G' || seqmod[seqlen-3]=='g'){G_total_3++;}
-
       SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097,std::time(nullptr));
-      
-      if ((seqmod2[0] == 'T' || seqmod2[0] == 't') && (seqmod[0] == 'C' || seqmod[0] == 'c')){C_to_T_1++;}
-      if ((seqmod2[1] == 'T' || seqmod2[1] == 't')  && (seqmod[1] == 'C' || seqmod[1] == 'c')){C_to_T_2++;}
-      if ((seqmod2[2] == 'T' || seqmod2[2] == 't')  && (seqmod[2] == 'C' || seqmod[2] == 'c')){C_to_T_3++;}
-        
-      if ((seqmod2[seqlen-1] == 'A' || seqmod2[seqlen-1] == 'a') && (seqmod[seqlen-1] == 'G' || seqmod[seqlen-1] == 'g')){G_to_A_1++;}
-      if ((seqmod2[seqlen-2] == 'A' || seqmod2[seqlen-2] == 'a')  && (seqmod[seqlen-2] == 'G' || seqmod[seqlen-2] == 'g')){G_to_A_2++;}
-      if ((seqmod2[seqlen-3] == 'A' || seqmod2[seqlen-3] == 'a')  && (seqmod[seqlen-3] == 'G' || seqmod[seqlen-3] == 'g')){G_to_A_3++;}
 
       int strand = rand() % 2;
 
@@ -233,7 +219,7 @@ void* Fafq_thread_se_run(void *arg){
             strcpy(read, seqmod2);
             strcat(read,struct_obj->Adapter_1);
             //std::cout << "read " << read << std::endl;
-            Ill_err(read,struct_obj->Ill_err,gen);
+            Ill_err(read,Error,gen);
             strncpy(readadapt, read, 150);
             Read_Qual2(readadapt,qual,Qualdistr1,gen);
             
@@ -242,7 +228,7 @@ void* Fafq_thread_se_run(void *arg){
             fraglength,readadapt,qual);
           }
           else if (struct_obj->Adapter_flag == "false"){
-            Ill_err(seqmod2,struct_obj->Ill_err,gen);
+            Ill_err(seqmod2,Error,gen);
             Read_Qual2(seqmod2,qual,Qualdistr1,gen);
             ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
             struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
@@ -254,7 +240,7 @@ void* Fafq_thread_se_run(void *arg){
             strcpy(read, seqmod2);
             strcat(read,struct_obj->Adapter_1);
             //std::cout << "read " << read << std::endl;
-            Ill_err(read,struct_obj->Ill_err,gen);
+            Ill_err(read,Error,gen);
             strncpy(readadapt, read, 150);
             Read_Qual2(readadapt,qual,Qualdistr1,gen);
             ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
@@ -262,7 +248,7 @@ void* Fafq_thread_se_run(void *arg){
             fraglength,readadapt,qual);
           }
           else if (struct_obj->Adapter_flag == "false"){
-            Ill_err(seqmod2,struct_obj->Ill_err,gen);
+            Ill_err(seqmod2,Error,gen);
             Read_Qual2(seqmod2,qual,Qualdistr1,gen);
             ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
             struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
@@ -270,66 +256,11 @@ void* Fafq_thread_se_run(void *arg){
           }
         }        
       }
-
-      // FASTA FILE
-      else if (struct_obj->output == "fa" || struct_obj->output == "fasta" || struct_obj->output == "fa.gz" || struct_obj->output == "fasta.gz"){
-        //fprintf(stderr,"\t->strand\'%d\n'",strand);
-        if (strand == 0){ // Reverse strand
-          DNA_complement(seqmod2);
-          reverseChar(seqmod2);
-          //Ill_err(seqmod2,Error,gen);
-          //fprintf(stderr,"\t->sequence\'%s\n'",seqmod2);
-          if (struct_obj->Adapter_flag == "true"){
-            strcpy(read, seqmod2);
-            strcat(read,struct_obj->Adapter_1);
-            //std::cout << "read " << read << std::endl;
-            Ill_err(read,struct_obj->Ill_err,gen);
-            strncpy(readadapt, read, 150);
-            
-            ksprintf(struct_obj->fqresult_r1,">T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n",struct_obj->threadno, rand_id,seed,
-            struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-            fraglength,readadapt);
-          }
-          else if (struct_obj->Adapter_flag == "false"){
-            Ill_err(seqmod2,struct_obj->Ill_err,gen);
-            ksprintf(struct_obj->fqresult_r1,">T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n",struct_obj->threadno, rand_id,seed,
-            struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-            fraglength,seqmod2);
-          }
-          
-        }
-        else if (strand == 1){
-          if (struct_obj->Adapter_flag == "true"){
-            strcpy(read, seqmod2);
-            strcat(read,struct_obj->Adapter_1);
-            //std::cout << "read " << read << std::endl;
-            Ill_err(read,struct_obj->Ill_err,gen);
-            strncpy(readadapt, read, 150);
-            
-            ksprintf(struct_obj->fqresult_r1,">T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n",struct_obj->threadno, rand_id,seed,
-            struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-            fraglength,readadapt);
-          }
-          else if (struct_obj->Adapter_flag == "false"){
-            Ill_err(seqmod2,struct_obj->Ill_err,gen);
-            ksprintf(struct_obj->fqresult_r1,">T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n",struct_obj->threadno, rand_id,seed,
-            struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-            fraglength,seqmod2);
-          }
-        }
-      }
-
       //struct_obj->fqresult_r1->l =0;
       if (struct_obj->fqresult_r1->l > 1000000){
-        if (struct_obj->output == "fq" || struct_obj->output == "fastq" || struct_obj->output == "fa" || struct_obj->output == "fasta"){
+        if (struct_obj->output == "fq" || struct_obj->output == "fastq"){
           pthread_mutex_lock(&Fq_write_mutex);
           fwrite(struct_obj->fqresult_r1->s,sizeof(char),struct_obj->fqresult_r1->l,struct_obj->fp1);
-          pthread_mutex_unlock(&Fq_write_mutex);
-          struct_obj->fqresult_r1->l =0;
-        }
-        else if (struct_obj->output == "fq.gz" || struct_obj->output == "fastq.gz"){
-          pthread_mutex_lock(&Fq_write_mutex);
-          gzwrite(struct_obj->gz1,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
           pthread_mutex_unlock(&Fq_write_mutex);
           struct_obj->fqresult_r1->l =0;
         }
@@ -381,24 +312,14 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
   //std::cout << " genome length " << genome_len << std::endl;
     Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
+    /*const char *one = "chr22_out.";
+    char* catString = (char*)malloc(sizeof(char) * strlen(one) + 1); //malloc(strlen(one)+strlen(two)+1);
+    strcpy(catString, one);
+    strcat(catString, output);*/
+    //DOING THIS FUCKED UP WITH MORE VALGRIND ERRORS
+    
     FILE *fp1;
-    gzFile gz1;
-    if (output == "fq" || output == "fastq"){
-      //FILE *fp1;  error: 'fp1' was not declared in this scope struct_for_threads[i].fp1 = fp1;
-      fp1 = fopen("chr22_out.fq","wb");
-    }
-    else if (output == "fa" || output == "fasta"){
-      //FILE *fp1;  error: 'fp1' was not declared in this scope struct_for_threads[i].fp1 = fp1;
-      fp1 = fopen("chr22_out.fa","wb");
-    }
-    else if (output == "fq.gz" || output == "fastq.gz"){
-      //FILE *fp1;  error: 'fp1' was not declared in this scope struct_for_threads[i].fp1 = fp1;
-      gz1 = (gzFile) gzopen("chr22_out.fq.gz","wb");
-    }    
-    else if (output == "fa.gz" || output == "fasta.gz"){
-      //FILE *fp1;  error: 'fp1' was not declared in this scope struct_for_threads[i].fp1 = fp1;
-      gz1 = (gzFile) gzopen("chr22_out.fa.gz","wb");
-    }
+    fp1 = fopen("chr22_out.fq","wb");
 
     // Error profiles
     double** Error_2darray = create2DArray("/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt",4,280);
@@ -431,17 +352,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       struct_for_threads[i].genome = genome_data;
       struct_for_threads[i].chr_no = chr_total;
       struct_for_threads[i].threadseed = seed;
-      struct_for_threads[i].Ill_err = Error;
-      struct_for_threads[i].sizearray = sizearray;
-      struct_for_threads[i].SizeDist = SizeDist;
+      struct_for_threads[i].Ill_err = "/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt";
       struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
       struct_for_threads[i].cov = coverage;
-      if (output == "fq" || output == "fastq" || output == "fa" || output == "fasta"){
-        struct_for_threads[i].fp1 = fp1;
-        struct_for_threads[i].gz1 = NULL;}
-      else if (output == "fq.gz" || output == "fastq.gz" || output == "fa.gz" || output == "fasta.gz"){
-        struct_for_threads[i].fp1 = NULL;
-        struct_for_threads[i].gz1 = (gzFile) gz1;}
+      struct_for_threads[i].fp1 = fp1;
       struct_for_threads[i].Adapter_flag = Adapt_flag;
       struct_for_threads[i].Adapter_1 = Adapter_1;
       
@@ -468,8 +382,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
     {
       pthread_join(mythreads[i],NULL);
     }
-    if (output == "fq" || output == "fastq" || output == "fa" || output == "fasta"){fclose(fp1);}
-    else if (output == "fq.gz" || output == "fastq.gz" || output == "fa.gz" || output == "fasta.gz"){gzclose(gz1);}
+    if (output == "fq" || output == "fastq"){fclose(fp1);}
     
     
     //for(int i=0;i<nthreads;i++){delete struct_for_threads[i].fqresult_r1 -> s;} //ERROR SUMMARY: 9 errors from 5 contexts (suppressed: 0 from 0 )
@@ -504,7 +417,7 @@ int main(int argc,char **argv){
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
 
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
-  const char* Adapt_flag = "true";
+  const char* Adapt_flag = "false";
   const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
   const char* output = "fq";
 
@@ -513,14 +426,7 @@ int main(int argc,char **argv){
   // free the calloc memory from fai_read
   //free(seq_ref);
   fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
-  float freq_1 = (float) C_to_T_1.load()/(float) C_total_1.load();
-  float freq_2 = (float) C_to_T_2.load()/(float) C_total_2.load();
-  float freq_3 = (float) C_to_T_3.load()/(float) C_total_3.load();
-  float freq_4 = (float) G_to_A_1.load()/(float) G_total_1.load();
-  float freq_5 = (float) G_to_A_2.load()/(float) G_total_2.load();
-  float freq_6 = (float) G_to_A_3.load()/(float) G_total_3.load();
-  fprintf(stderr,"\t-> Deamination frequency of C-T, pos 1 %.5f , pos 2 %.5f , pos 3 %.5f \n",freq_1,freq_2,freq_3);
-  fprintf(stderr,"\t-> Deamination frequency of G-A, pos -1 %.5f , pos -2 %.5f , pos -3 %.5f \n",freq_4,freq_5,freq_6);
+
 }
 
 //SimBriggsModel(seqmod, frag, L, 0.024, 0.36, 0.68, 0.0097);
@@ -531,41 +437,3 @@ int main(int argc,char **argv){
 
 //awk 'NR%4==2{sum+=length($0)}END{print sum/(NR/4)}' chr22_out.fq
 // grep 
-
-// ---------------------- PAIRED-END ---------------------- //
-
-struct Parsarg_for_Fafq_pe_thread{
-  // The actual concatenated genome
-  char *genome; 
-  int chr_no;
-  int threadno;
-  int *size_cumm;
-  const char **names;
-
-  // File ouput
-  const char* output;
-  FILE *fp1;
-  FILE *fp2;
-  gzFile gz1;
-  gzFile gz2;
-
-  // Resulting simulated reads ouput
-  kstring_t *fqresult_r1;
-  kstring_t *fqresult_r2;
-
-  const char* Adapter_flag;
-  const char* Adapter_1;
-  const char* Adapter_2;  
-
-  // error profiles
-  const char* Ill_err;
-  const char* read_err_1;
-  const char* read_err_2;
-
-  // simulation parameters
-  float current_cov;
-  int cov_size;
-  int depth;
-  int threadseed;
-  float cov;
-};

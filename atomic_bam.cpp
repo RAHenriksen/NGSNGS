@@ -80,8 +80,6 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
   for(int i=0;i<chr_total;i++){
     const char *name = faidx_iseq(seq_ref,i);
     int name_len =  faidx_seq_len(seq_ref,name);
-    snprintf(name_len_char,1024,"%d",name_len);
-    fprintf(stderr,"ref:%d %d %s\n",i,name,name_len_char);
     // reference part of the header, int r variable ensures the header is added
     int r = sam_hdr_add_line(header, "SQ", "SN", name, "LN", name_len_char, NULL);
     if (r < 0) { fprintf(stderr,"sam_hdr_add_line");}
@@ -287,7 +285,6 @@ void* Fafq_thread_se_run(void *arg){
       char *save_name_ptr, *save_seq_ptr, *save_qual_ptr, *save_strand_ptr;
       char *save_qname_ptr;
       char *qname = (char*) malloc(1024); 
-      char *tid_1,*tid_2,*tid_3; 
 
       token_name = strtok_r(struct_obj->readid->s, ".", &save_name_ptr);
       token_seq = strtok_r(struct_obj->seq->s, ".", &save_seq_ptr);
@@ -302,26 +299,19 @@ void* Fafq_thread_se_run(void *arg){
       hts_pos_t min_beg, max_end, insert;
       size_t l_qname = strlen(qname);
       uint16_t flag = atoi(token_strand);
-      //fprintf(stderr,"%d",flag);
-      //fprintf(stderr,"1 %s\n",qname);
-      int32_t tid = atoi(strtok_r(qname, ":", &save_qname_ptr));
+
+      strtok_r(qname, ":", &save_qname_ptr);
       //fprintf(stderr,"2 %s\n",qname);
       min_beg = atoi(strtok_r(NULL, "-", &save_qname_ptr))-1; //atoi(strtok_r(NULL, "-", &save_qname_ptr)); 
-      //fprintf(stderr,"3 %s\n",qname);
-      //fprintf(stderr,"4 %d\n",min_beg);
-      tid_1 = qname;
-      //fprintf(stderr,"5 %s\n",tid_1);
-      while ((tid_2 = strtok_r(NULL, "_", &tid_1))){tid_3 = tid_2;}
-      //fprintf(stderr,"5 %s\n",tid_3);
+
       uint8_t mapq = 60;
       size_t l_aux = 0; // auxiliary field for supp data etc?? 
-      //break;
       if (struct_obj->Adapter_flag == "true"){
         char* len_ID = (char*) malloc(1024);
         char* save_len_ptr;
 
         len_ID = strtok_r(NULL, "", &save_qname_ptr);
-        fprintf(stderr," sequence length %s \n",len_ID);
+        //fprintf(stderr," sequence length %s \n",len_ID);
         strtok_r(len_ID, ":", &save_len_ptr);
         int seq_len = atoi(strtok_r(NULL, "", &save_len_ptr));
         uint32_t cigar_bitstring, cigar_bit_soft;
@@ -557,7 +547,7 @@ int main(int argc,char **argv){
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
 
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
-  const char* Adapt_flag = "false";
+  const char* Adapt_flag = "true";
   const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
 
   Create_se_threads(seq_ref,threads,seed,cov,Adapt_flag,Adapter_1);

@@ -240,7 +240,6 @@ void Ill_err(char *seq,std::discrete_distribution<>*Dist,std::default_random_eng
   const char LookUp_nt[4] = {'A','T','G','C'};
   
   int top_idx;
-
   
   if (read_length <= 70){top_idx = read_length;} //fragments shorter than 70 can have potential sub in all pos
   else{top_idx = 70;} //for fragments longer than 70 then i'll just change substituions for first 70 nt
