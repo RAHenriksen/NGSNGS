@@ -73,7 +73,6 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
 std::atomic<float> current_cov_atom(0.0);
 std::atomic<int> size_data(0);
 std::atomic<int> D_total(0);
-std::atomic<int> nread_total(0);
 
 // ---------------------- SINGLE-END ---------------------- //
 
@@ -89,8 +88,67 @@ struct Parsarg_for_Fafq_se_thread{
   int threadseed;
   float cov;
   FILE *fp1;
+  // VCF
+  bcf1_t *vcf_record;
+  htsFile *in_vcf;
+  bcf_hdr_t *vcf_hdr;
+  hts_idx_t *vcf_idx;
 };
 
+void VCF_Iterator(){
+  //htsFile *test_bcf = NULL;
+  // "/home/wql443/WP1/data/Chr14_subset.vcf  "/home/wql443/WP1/data/test2.vcf"   "/home/wql443/WP1/data/chr14_full.vcf"
+  htsFile *test_bcf = bcf_open("/home/wql443/WP1/Alba/HLA_test.vcf", "r");
+  hts_idx_t *test_idx = bcf_index_load("/home/wql443/WP1/Alba/HLA_test.vcf");
+  bcf_hdr_t *test_header = bcf_hdr_read(test_bcf);
+  bcf1_t *test_record = bcf_init();
+
+  //test_iter = bcf_itr_querys(test_idx, test_header, "6:70000-7898");
+  //bcf_itr_next(test_bcf, test_iter, test_record);
+  while(bcf_read(test_bcf, test_header, test_record) == 0) {
+    std::cout << bcf_hdr_id2name(test_header, test_record->rid) << "\t" <<
+    test_record->pos << "\t" <<
+    test_record->n_allele << "\t" <<
+    std::endl;
+  } 
+}
+
+void VCF_iterator(){
+   int ret;
+    bcf1_t *rec = bcf_init();
+
+    htsFile *in = bcf_open("/home/wql443/WP1/Alba/HLA_test.bcf", "r");
+    if (!in){printf("Null file pointer\n");}
+
+    bcf_hdr_t *hdr = bcf_hdr_read(in);
+    const char *chrID = bcf_hdr_id2name(hdr, rec->rid);
+    //std::cout << chrID << std::endl;
+
+    hts_idx_t *idx = bcf_index_load("/home/wql443/WP1/Alba/HLA_test.bcf.csi");
+    if(!idx)
+        printf("Null index\n");
+    
+    char region[128];
+    snprintf(region, sizeof(region), "%s:%d-%d", chrID,75700,75982);
+    std::cout << region << std::endl;
+    hts_itr_t *itr = bcf_itr_querys(idx, hdr, region);
+    if(!itr)
+        printf("Null iterator\n");
+    
+    while ((ret = bcf_itr_next(in, itr, rec)) == 0) {
+      bcf_unpack((bcf1_t*)rec, BCF_UN_ALL);
+      if (rec->n_allele > 1)
+      {
+        printf("ret: %d - id: %d, pos: %d, len: %d, allele: %d, allele: %s\n", ret, rec->rid, rec->pos, rec->rlen,rec->n_allele,rec->d.allele[1]);
+      }
+    }
+
+    bcf_itr_destroy(itr);
+    hts_idx_destroy(idx);
+    bcf_hdr_destroy(hdr);
+    bcf_destroy1(rec);
+    bcf_close(in);
+}
 
 void* Fafq_thread_se_run(void *arg){
   //casting my struct as arguments for the thread creation
@@ -114,15 +172,10 @@ void* Fafq_thread_se_run(void *arg){
   float cov = struct_obj -> cov;
   //float cov_current = 0;
   size_t rand_start;
-  int nread = 0;
 
-  char qual[1024] = "";
-  //int D_i = 0;
-  
   int iter = 0;
   while (current_cov_atom < cov) {
     int fraglength = 100; //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
-    
     srand48(seed+fraglength+iter);
     //srand48(seed+fraglength+iter+D_total+std::time(nullptr)); //D_total+fraglength //+std::time(nullptr)
     //fprintf(stderr,"\t-> Seed used: %d \n",seed+fraglength+iter+D_total+std::time(nullptr));
@@ -132,17 +185,14 @@ void* Fafq_thread_se_run(void *arg){
     //identify the chromosome based on the coordinates from the cummulative size array
     int chr_idx = 0;
     while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}
-
+    
+    // ID struct_obj->names[chr_idx];
     // case 1
-    if (fraglength > 150){
-      //std::cout << "lolrt" << std::endl;
-      strncpy(seqmod,struct_obj->genome+rand_start-1,150);
-    }
+    if (fraglength > 150){strncpy(seqmod,struct_obj->genome+rand_start-1,150);}
+
     // case 2
-    else if (fraglength <= 150)
-    {
-      strncpy(seqmod,struct_obj->genome+rand_start-1,fraglength);
-    }
+    else if (fraglength <= 150){strncpy(seqmod,struct_obj->genome+rand_start-1,fraglength);}
+
     srand48(seed+iter); 
     int rand_id = (lrand48() % (genome_len-fraglength-1))%fraglength;
     
@@ -155,30 +205,16 @@ void* Fafq_thread_se_run(void *arg){
     if ((int )(pch-seqmod+1) == 1 && (int)(pch2-seqmod+1)  == strlen(seqmod)){continue;}
     else{
       for (size_t j = rand_start; j < rand_start+fraglength; j++){
-        //std::cout<< "j" << j << std::endl;
         chrlencov[j] += 1; //adds 1 for regions, which might have reads already
-        
         D_total += 1; // to find the total depth
         if (chrlencov[j] == 1){size_data++;} // if the value is different from 1 (more reads) then we still count that as one chromosome site with data
       }
       
       SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097,std::time(nullptr));
-
-      int strand = rand() % 2;
-
-      if (strand == 0){
-        DNA_complement(seqmod2);
-        reverseChar(seqmod2);
-        //SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097);
-        ksprintf(struct_obj->fqresult_r1,">T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n",struct_obj->threadno, rand_id,seed,
-        struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-        fraglength,seqmod2);
-      }
-      else if (strand == 1){
-        ksprintf(struct_obj->fqresult_r1,">T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n",struct_obj->threadno, rand_id,seed,
-        struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-        fraglength,seqmod2);
-      }        
+      ksprintf(struct_obj->fqresult_r1,">T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n",struct_obj->threadno, rand_id,seed,
+      struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
+      fraglength,seqmod2);
+              
       //struct_obj->fqresult_r1->l =0;
       if (struct_obj->fqresult_r1->l > 100){
         pthread_mutex_lock(&Fq_write_mutex);
@@ -187,8 +223,6 @@ void* Fafq_thread_se_run(void *arg){
         struct_obj->fqresult_r1->l =0;
       }
 
-      memset(qual, 0, sizeof(qual));  
-      nread++;
       //fprintf(stderr,"Number of reads %d \n",nread);
     }
     current_cov_atom = (float) D_total / genome_len;
@@ -204,12 +238,10 @@ void* Fafq_thread_se_run(void *arg){
     //std::cout << current_cov_atom << "\t" << cov << std::endl;
   }
 
-  //consider freeing these after the join operator
-  //Freeing allocated memory
   free(struct_obj->size_cumm);
   free(struct_obj->names);
   free(chrlencov);
-  
+
   //std::cout << "thread done" << std::endl;
   return NULL;
 }
@@ -226,11 +258,24 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
   int chr_size_cumm[chr_total+1];
   
   char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
+
+  // -------- VCF INFO -------- //
+  bcf1_t *vcf_record = bcf_init();
+  htsFile *in = bcf_open("/home/wql443/WP1/Alba/HLA_test.bcf", "r");
+  if (!in){printf("Null file pointer\n");}
+  bcf_hdr_t *hdr = bcf_hdr_read(in);
+  hts_idx_t *idx = bcf_index_load("/home/wql443/WP1/Alba/HLA_test.bcf.csi");
+  if(!idx){printf("Null index\n");}
+
+  /*const char *chrID = bcf_hdr_id2name(hdr, vcf_record->rid);
+  char region[128];
+  snprintf(region, sizeof(region), "%s:%d-%d", chrID,73000,74500);
+  hts_itr_t *itr = bcf_itr_querys(idx, hdr, region);
+  if(!itr){printf("Null iterator\n");}*/
+  
   if (genome_data != NULL){
     fprintf(stderr,"\t-> Full genome function run!\n");
-    fprintf(stderr,"\t-> Full genome size %lu \n",strlen(genome_data));
  
-  //std::cout << " genome length " << genome_len << std::endl;
     Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
     
     FILE *fp1;
@@ -249,6 +294,11 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       struct_for_threads[i].cov = coverage;
       struct_for_threads[i].fp1 = fp1;
       
+      struct_for_threads[i].vcf_record = vcf_record;
+      struct_for_threads[i].in_vcf = in;
+      struct_for_threads[i].vcf_hdr = hdr;
+      struct_for_threads[i].vcf_idx = idx;
+
       //declaring the size of the different arrays
       struct_for_threads[i].size_cumm = (int*)malloc(sizeof(int) * (struct_for_threads[i].chr_no+1));
       struct_for_threads[i].size_cumm[0] = 0;
@@ -281,6 +331,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
     }
  
     free(genome_data);
+    hts_idx_destroy(idx);
+    bcf_hdr_destroy(hdr);
+    bcf_destroy1(vcf_record);
+    bcf_close(in);
   }
   return NULL;
 }
@@ -298,14 +352,6 @@ int main(int argc,char **argv){
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   
-  // VCF STRUCTURE
-  htsFile *test_bcf = NULL;
-  bcf_hdr_t *test_header = NULL;
-  // "/home/wql443/WP1/data/Chr14_subset.vcf  "/home/wql443/WP1/data/test2.vcf"   "/home/wql443/WP1/data/chr14_full.vcf"
-  test_bcf = bcf_open("/home/wql443/WP1/Alba/HLA_test.vcf", "r");
-  test_header = bcf_hdr_read(test_bcf);
-  bcf1_t *test_record = bcf_init();
-
   int seed = 1;
   int threads = 10;
   float cov = 1;
@@ -313,11 +359,41 @@ int main(int argc,char **argv){
 
   Create_se_threads(seq_ref,threads,seed,cov);
 
+  /*
+  bcf1_t *vcf_record = bcf_init();
+  htsFile *in = bcf_open("/home/wql443/WP1/Alba/HLA_test.bcf", "r");
+  if (!in){printf("Null file pointer\n");}
+
+  bcf_hdr_t *hdr = bcf_hdr_read(in);
+  const char *chrID = bcf_hdr_id2name(hdr, vcf_record->rid);
+
+  hts_idx_t *idx = bcf_index_load("/home/wql443/WP1/Alba/HLA_test.bcf.csi");
+  if(!idx){printf("Null index\n");}
+    
+  char region[128];
+  snprintf(region, sizeof(region), "%s:%d-%d", chrID,73000,74500);
+  
+  //std::cout << region << std::endl;
+  
+  hts_itr_t *itr = bcf_itr_querys(idx, hdr, region);
+  if(!itr){printf("Null iterator\n");}
+    
+  while ((bcf_itr_next(in, itr, vcf_record)) == 0) {
+    bcf_unpack((bcf1_t*)vcf_record, BCF_UN_ALL);
+    if (vcf_record->n_allele > 1)
+    {
+      printf("id: %d, pos: %d, len: %d, allele: %d, allele: %s\n", vcf_record->rid, vcf_record->pos, vcf_record->rlen,vcf_record->n_allele,vcf_record->d.allele[0]);
+    }
+  }
+
+  bcf_itr_destroy(itr);
+  hts_idx_destroy(idx);
+  bcf_hdr_destroy(hdr);
+  bcf_destroy1(vcf_record);
+  bcf_close(in);*/
   // free the calloc memory from fai_read
   //free(seq_ref);
   fai_destroy(seq_ref); 
-  bcf_hdr_destroy(test_header);
-  bcf_destroy1(test_record);
 }
 
 //SimBriggsModel(seqmod, frag, L, 0.024, 0.36, 0.68, 0.0097);
