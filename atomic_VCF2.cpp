@@ -158,7 +158,21 @@ void* Fafq_thread_se_run(void *arg){
   if(!idx){printf("Null index\n");}
 
   //int D_i = 0;
-  
+  /*char region[128];
+    snprintf(region, sizeof(region), "%s:%d-%d", chrID,1000000,2000000);
+    //fprintf(stderr,"Chromosomal region from vcf -> %s \t chromosome: %s\n",region,struct_obj->names[0]);
+    hts_itr_t *itr = bcf_itr_querys(idx, struct_obj->vcf_hdr, region);
+    if(!itr){printf("Null iterator\n");}
+    //fprintf(stderr,"-------------- \n");
+    while ((bcf_itr_next(struct_obj->in_vcf, itr, struct_obj->vcf_record)) == 0) {
+      bcf_unpack((bcf1_t*)struct_obj->vcf_record, BCF_UN_ALL);
+      if (struct_obj->vcf_record->n_allele > 1){
+        printf("id: %d, pos: %d\n", struct_obj->vcf_record->rid, struct_obj->vcf_record->pos);
+        //printf("id: %d, pos: %d, len: %d, allele: %d, allele: %s\n", struct_obj->vcf_record->rid, struct_obj->vcf_record->pos, struct_obj->vcf_record->rlen,struct_obj->vcf_record->n_allele,struct_obj->vcf_record->d.allele[0]);
+      }
+    }
+    bcf_itr_destroy(itr);
+    */
   int iter = 0;
   while (current_cov_atom < cov) {
     int fraglength = (int) sizearray[SizeDist[1](gen)]; //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
@@ -171,12 +185,13 @@ void* Fafq_thread_se_run(void *arg){
     //fprintf(stderr,"-------------- \n");
     while ((bcf_itr_next(struct_obj->in_vcf, itr, struct_obj->vcf_record)) == 0) {
       bcf_unpack((bcf1_t*)struct_obj->vcf_record, BCF_UN_ALL);
-      /*if (struct_obj->vcf_record->n_allele > 1){
-        printf("id: %d, pos: %d\n", struct_obj->vcf_record->rid, struct_obj->vcf_record->pos);
+      //if (struct_obj->vcf_record->n_allele > 1){
+        //printf("id: %d, pos: %d\n", struct_obj->vcf_record->rid, struct_obj->vcf_record->pos);
         //printf("id: %d, pos: %d, len: %d, allele: %d, allele: %s\n", struct_obj->vcf_record->rid, struct_obj->vcf_record->pos, struct_obj->vcf_record->rlen,struct_obj->vcf_record->n_allele,struct_obj->vcf_record->d.allele[0]);
-      }*/
+      //}
     }
     bcf_itr_destroy(itr);
+    
     srand48(seed+fraglength+iter);
     //srand48(seed+fraglength+iter+D_total+std::time(nullptr)); //D_total+fraglength //+std::time(nullptr)
     //fprintf(stderr,"\t-> Seed used: %d \n",seed+fraglength+iter+D_total+std::time(nullptr));
@@ -261,7 +276,7 @@ void* Fafq_thread_se_run(void *arg){
         }
       }        
       //struct_obj->fqresult_r1->l =0;
-      if (struct_obj->fqresult_r1->l > 1000){
+      if (struct_obj->fqresult_r1->l > 100000){
         pthread_mutex_lock(&Fq_write_mutex);
         fwrite(struct_obj->fqresult_r1->s,sizeof(char),struct_obj->fqresult_r1->l,struct_obj->fp1);
         pthread_mutex_unlock(&Fq_write_mutex);
@@ -427,7 +442,7 @@ int main(int argc,char **argv){
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   
   int seed = 1;
-  int threads = 2;
+  int threads = 1;
   float cov = 1;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
 
