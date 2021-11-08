@@ -1,0 +1,20 @@
+Time measured for full_genome_create: 1.101 seconds.
+Full genome size 162459981 
+Time measured for full_genome_create: 1.129 seconds.
+Full genome size 162459981 
+Time measured for full_genome_create: 1.125 seconds.
+Full genome size 162459981 
+Time measured for full_genome_create: 1.123 seconds.
+Full genome size 162459981 
+Time measured for full_genome_create: 1.112 seconds.
+Full genome size 162459981 
+Time measured for full_genome_create: 1.103 seconds.
+Full genome size 162459981 
+Time measured for full_genome_create: 1.105 seconds.
+Full genome size 162459981 
+Time measured for full_genome_create: 1.119 seconds.
+Full genome size 162459981 
+Time measured for full_genome_create: 1.109 seconds.
+Full genome size 162459981 
+Time measured for full_genome_create: 1.155 seconds.
+Full genome size 162459981 

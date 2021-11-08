@@ -27,4 +27,10 @@ double uniform();
 
 void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, int seed);
 
+const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos);
+
+double* Qual_array(double* freqval,const char* filename);
+
+void Read_Qual_new(char *seq,char *qual,int seed,double* freqval);
+
 #endif

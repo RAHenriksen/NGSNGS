@@ -162,6 +162,45 @@ void Bam_baseQ(char *seq,char *qual,std::discrete_distribution<>*Dist,std::defau
   }
 }
 
+
+void Read_Qual_final(char *seq,char *qual,std::discrete_distribution<>*Dist,std::default_random_engine &gen,int qual_offset){
+  /* creating the nucleotide quality string for fastq format and bam format using char array*/
+
+  const char* nt_qual[8] = {"#", "\'", "0", "7" ,"<", "B", "F","I"};
+
+  int read_length = strlen(seq);
+
+  //the line offset for the distribution *Dist created from the 600*8 2Darray
+  int Tstart = 150;
+  int Gstart = 300;
+  int Cstart = 450;
+  //int Nstart = 600;
+  
+  for (int row_idx = 0; row_idx < read_length; row_idx++){
+    switch(seq[row_idx]){
+      case 'A':
+      case 'a':
+        strncat(qual, nt_qual[Dist[row_idx](gen)], 1);
+        break;
+      case 'T':
+      case 't':
+        strncat(qual, nt_qual[Dist[row_idx + Tstart](gen)], 1);
+        break;  
+      case 'G':
+      case 'g':
+        strncat(qual, nt_qual[Dist[row_idx + Gstart](gen)], 1);
+        break;
+      case 'C':
+      case 'c':
+        strncat(qual, nt_qual[Dist[row_idx + Cstart](gen)], 1);
+        break;
+      case 'N':
+      case 'n':
+        strncat(qual, nt_qual[0], 1);
+        break;
+    }
+  }
+}
 /*
 a=0, c=1, g=2, t=3, n=4
 
@@ -407,4 +446,95 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
             frag[i] = reffrag[i];
         }
     }
+}
+
+const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos){
+  //const char* nt_qual[8] = {"#", "\'", "0", "7" ,"<", "!", "%","("};
+  const char* nt_qual[8] = {"#", "\'", "0", "7" ,"<", "B", "F","I"};
+  int offset = ((nt_offset+read_pos)*8);
+  //printf("offset %d \n", offset);
+  const char* nt_out;
+  if (a <= err[offset]){
+    nt_out = nt_qual[0];
+  }
+  else if (err[offset] < a && a <= err[offset+1]){
+    nt_out = nt_qual[1];
+    }
+  else if (err[offset+1] < a && a <= err[offset+2]){
+    nt_out = nt_qual[2];
+  }
+  else if (err[offset+2] < a && a <= err[offset+3]){
+    nt_out = nt_qual[3];
+  }
+  else if (err[offset+3] < a && a<= err[offset+4]){
+    nt_out = nt_qual[4];
+  }
+  else if (err[offset+4] < a && a<= err[offset+5]){
+    nt_out = nt_qual[5];
+  }
+  else if (err[offset+5] < a && a<= err[offset+6]){
+    nt_out = nt_qual[6];
+  }
+  else if (err[offset+6] < a && a <= err[offset+7]){
+    nt_out = nt_qual[7];
+  }
+  return nt_out;
+}
+double* Qual_array(double* freqval,const char* filename){
+  int LENS = 6000;
+  char buf[LENS];
+  gzFile gz = Z_NULL;
+  gz = gzopen(filename,"r");
+  assert(gz!=Z_NULL);
+  int i = 0;
+  while(gzgets(gz,buf,LENS)){
+    double val1;double val2;double val3;double val4;double val5;double val6;double val7;double val8;
+    sscanf(buf,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",&val1,&val2,&val3,&val4,&val5,&val6,&val7,&val8);
+    //std::cout << "iter " << i << std::endl;// " " << buf << std::endl;
+    freqval[i*8] = val1; freqval[i*8+1] = val2; freqval[i*8+2] = val3; freqval[i*8+3] = val4;
+    freqval[i*8+4] = val5; freqval[i*8+5] = val6; freqval[i*8+6] = val7; freqval[i*8+7] = val8;
+    i++;
+  }
+  gzclose(gz);
+  return freqval;
+}
+
+void Read_Qual_new(char *seq,char *qual,int seed,double* freqval){
+
+  int Tstart = 150;
+  int Gstart = 300;
+  int Cstart = 450;
+  int Nstart = 600;
+
+  //srand(time( NULL ));
+  srand(seed);
+  int seqlen = strlen(seq);
+
+  for (int row_idx = 0; row_idx < seqlen; row_idx++){
+    //fprintf(stderr,"index %d \n",row_idx);
+    double r = (double) rand()/RAND_MAX;
+    //fprintf(stderr,"random value %lf \n",r);
+    switch(seq[row_idx]){
+      case 'A':
+      case 'a':
+        strncat(qual, Error_lookup(r,freqval,0,row_idx), 1);
+        break;
+      case 'T':
+      case 't':
+        strncat(qual, Error_lookup(r,freqval,Tstart,row_idx), 1);
+        break;  
+      case 'G':
+      case 'g':
+        strncat(qual, Error_lookup(r,freqval,Gstart,row_idx), 1);
+        break;
+      case 'C':
+      case 'c':
+        strncat(qual, Error_lookup(r,freqval,Cstart,row_idx), 1);
+        break;
+      case 'N':
+      case 'n':
+        strncat(qual, Error_lookup(r,freqval,Nstart,row_idx), 1);
+        break;
+    }
+  }
 }

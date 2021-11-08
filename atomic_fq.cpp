@@ -86,10 +86,9 @@ struct Parsarg_for_Fafq_se_thread{
   int threadno;
   int *size_cumm;
   const char **names;
-  std::discrete_distribution<> *Ill_err;
   int* sizearray;
   std::discrete_distribution<> *SizeDist;
-  const char* read_err_1;
+  double* Qualfreq;
   float current_cov;
   int cov_size;
   int threadseed;
@@ -110,24 +109,7 @@ void* Fafq_thread_se_run(void *arg){
   int seed = struct_obj->threadseed+struct_obj->threadno;
   std::random_device rd;
   std::default_random_engine gen(seed);//gen(struct_obj->threadseed); //struct_obj->seed+struct_obj->threadno
-
-  // Load in the error profiles and size distributions
-  //std::ifstream file(struct_obj->read_err_1);
-  //int Line_no = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
-  //file.close();
-  // loading in error profiles for nt substitions and read qual creating 2D arrays
-  double** R1_2Darray = create2DArray(struct_obj->read_err_1,8,600);
-  std::discrete_distribution<> Qualdistr1[600];
-  Qual_dist(R1_2Darray,Qualdistr1,600);
-
-  //Free each sub-array
-  for(int i = 0; i < 600; ++i) {delete[] R1_2Darray[i];}
-  //Free the array of pointers
-  delete[] R1_2Darray;
   
-  // -------------------------- // 
-
-  // ---------------------- //
   size_t genome_len = strlen(struct_obj->genome);
 
   //coverage method2
@@ -203,17 +185,18 @@ void* Fafq_thread_se_run(void *arg){
           strcpy(read, seqmod2);
           strcat(read,struct_obj->Adapter_1);
           //std::cout << "read " << read << std::endl;
-          Ill_err(read,struct_obj->Ill_err,gen);
           strncpy(readadapt, read, 150);
-          Read_Qual2(readadapt,qual,Qualdistr1,gen);
+          
+          Read_Qual_new(readadapt,qual,seed,struct_obj->Qualfreq);
             
           ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
           fraglength,readadapt,qual);
         }
         else if (struct_obj->Adapter_flag == "false"){
-          Ill_err(seqmod2,struct_obj->Ill_err,gen);
-          Read_Qual2(seqmod2,qual,Qualdistr1,gen);
+          
+          Read_Qual_new(seqmod2,qual,seed,struct_obj->Qualfreq);
+          
           ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
           fraglength,seqmod2,qual);
@@ -224,16 +207,18 @@ void* Fafq_thread_se_run(void *arg){
           strcpy(read, seqmod2);
           strcat(read,struct_obj->Adapter_1);
           //std::cout << "read " << read << std::endl;
-          Ill_err(read,struct_obj->Ill_err,gen);
           strncpy(readadapt, read, 150);
-          Read_Qual2(readadapt,qual,Qualdistr1,gen);
+          
+          Read_Qual_new(readadapt,qual,seed,struct_obj->Qualfreq);      
+          
           ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
           fraglength,readadapt,qual);
         }
         else if (struct_obj->Adapter_flag == "false"){
-          Ill_err(seqmod2,struct_obj->Ill_err,gen);
-          Read_Qual2(seqmod2,qual,Qualdistr1,gen);
+          
+          Read_Qual_new(seqmod2,qual,seed,struct_obj->Qualfreq);
+          
           ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,seed,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
           fraglength,seqmod2,qual);
@@ -260,6 +245,7 @@ void* Fafq_thread_se_run(void *arg){
       nread++;
       //fprintf(stderr,"Number of reads %d \n",nread);
     }
+    
     current_cov_atom = (float) D_total / genome_len;
 
     struct_obj->current_cov = current_cov_atom; //why do we need this
@@ -272,6 +258,10 @@ void* Fafq_thread_se_run(void *arg){
     iter++;
     //std::cout << current_cov_atom << "\t" << cov << std::endl;
   }
+
+  // I have to delete it here in order to avoid memory leak across my threads
+  delete[] struct_obj->Qualfreq;
+  delete[] struct_obj->sizearray;
 
   //consider freeing these after the join operator
   //Freeing allocated memory
@@ -294,14 +284,27 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
   int chr_sizes[chr_total];
   int chr_size_cumm[chr_total+1];
   
-  char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
-  if (genome_data != NULL){
-    fprintf(stderr,"\t-> Full genome function run!\n");
-    fprintf(stderr,"\t-> Full genome size %lu \n",strlen(genome_data));
+  // Start measuring time
+  auto begin = std::chrono::high_resolution_clock::now();
   
-  FILE *fp1;
-  gzFile gz1;
-  //std::cout << " genome length " << genome_len << std::endl;
+  char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
+
+  // Stop measuring time and calculate the elapsed time
+  auto end = std::chrono::high_resolution_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+
+  /*printf("Time measured for full_genome_create: %.3f seconds.\n", elapsed.count() * 1e-9);
+  printf("Full genome size %lu \n",strlen(genome_data));
+
+  exit(2);*/
+  if (genome_data != NULL){
+    //fprintf(stderr,"\t-> Full genome function run!\n");
+    //fprintf(stderr,"\t-> Full genome size %lu \n",strlen(genome_data));
+  
+  
+    FILE *fp1;
+    gzFile gz1;
+    //std::cout << " genome length " << genome_len << std::endl;
     Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
     if (output == "fq" || output == "fastq"){
       //FILE *fp1;  error: 'fp1' was not declared in this scope struct_for_threads[i].fp1 = fp1;
@@ -311,16 +314,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       //FILE *fp1;  error: 'fp1' was not declared in this scope struct_for_threads[i].fp1 = fp1;
       gz1 = (gzFile) gzopen("chr22_out.fq.gz","wb");
     } 
-
-    // Error profiles
-    double** Error_2darray = create2DArray("/home/wql443/WP1/SimulAncient/Qual_profiles/Ill_err.txt",4,280);
-    std::discrete_distribution<> Error[280];
-    Seq_err(Error_2darray,Error,280);
-    
-    //Free each sub-array
-    for(int i = 0; i < 280; ++i) {delete[] Error_2darray[i];}
-    //Free the array of pointers
-    delete[] Error_2darray;
 
     std::discrete_distribution<> SizeDist[2]; 
     std::ifstream infile2("Size_dist/Size_freq.txt");
@@ -332,6 +325,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
     int* sizearray = Size_select_dist(infile);
     infile.close();
 
+    // READ QUAL ARRAY
+    double* Qual_freq_array = new double[6000];
+    Qual_freq_array = Qual_array(Qual_freq_array,"/home/wql443/WP1/SimulAncient/Qual_profiles/Acc_freq1.txt");
+  
     //initialzie values that should be used for each thread
     for (int i = 0; i < nthreads; i++){
       struct_for_threads[i].fqresult_r1 =new kstring_t;
@@ -343,10 +340,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       struct_for_threads[i].genome = genome_data;
       struct_for_threads[i].chr_no = chr_total;
       struct_for_threads[i].threadseed = seed;
-      struct_for_threads[i].Ill_err = Error;
       struct_for_threads[i].sizearray = sizearray;
       struct_for_threads[i].SizeDist = SizeDist;
-      struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
+      struct_for_threads[i].Qualfreq = Qual_freq_array;
+      //struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
       struct_for_threads[i].cov = coverage;
       if (output == "fq" || output == "fastq"){
         struct_for_threads[i].fp1 = fp1;
@@ -366,8 +363,9 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       struct_for_threads[i].names[0] = 0;
       memcpy(struct_for_threads[i].names, chr_names, sizeof(chr_names));
     }
-    //free(catString);
-    delete[] sizearray;
+    // free(catString);
+    // delete[] sizearray;
+    
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     // pthread_create( thread ID, struct for thread config, pointer to the function which new thread starts with, 
@@ -402,18 +400,17 @@ int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
   // chr1_2.fa chr1_3 chr1 hg19canon.fa  chr1_12   chr22 chr1_15 chr10_15  chr18_19  
   //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
-  fprintf(stderr,"\t-> fasta load \n");
+  //fprintf(stderr,"\t-> fasta load \n");
   assert(seq_ref!=NULL);
   int chr_total = faidx_nseq(seq_ref);
-  fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
-  
+  //fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   int seed = 1;
   int threads = 1;
   float cov = 1;
-  fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
+  //fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
 
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
   const char* Adapt_flag = "false";
@@ -434,4 +431,4 @@ int main(int argc,char **argv){
 //valgrind --tool=memcheck --leak-check=full ./a.out
 
 //awk 'NR%4==2{sum+=length($0)}END{print sum/(NR/4)}' chr22_out.fq
-// grep 
+// { time ls a*; } &>>rpt
