@@ -129,12 +129,16 @@ void* Fafq_thread_se_run(void *arg){
   int iter = 0;
   while (current_cov_atom < cov) {
     int fraglength = (int) struct_obj->sizearray[struct_obj->SizeDist[1](gen)]; //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
+
+    //int fraglength = 100;
+    //std::cout << "fraglength " << fraglength << std::endl;
+    //srand48(seed+fraglength+iter);
     
-    srand48(seed+fraglength+iter);
     //srand48(seed+fraglength+iter+D_total+std::time(nullptr)); //D_total+fraglength //+std::time(nullptr)
     //fprintf(stderr,"\t-> Seed used: %d \n",seed+fraglength+iter+D_total+std::time(nullptr));
-
-    rand_start = lrand48() % (genome_len-fraglength-1) + seed;
+    
+    srand48(seed+fraglength+iter); //srand48(seed); //omkring 1 min
+    rand_start =  lrand48() % (genome_len-fraglength-1)+ seed;
 
     //identify the chromosome based on the coordinates from the cummulative size array
     int chr_idx = 0;
@@ -152,7 +156,7 @@ void* Fafq_thread_se_run(void *arg){
     }
     srand48(seed+iter); 
     int rand_id = (lrand48() % (genome_len-fraglength-1))%fraglength;
-    
+    //std::cout << rand_id << std::endl;
     //removes reads with NNN
     char * pch;
     char * pch2;
@@ -227,9 +231,9 @@ void* Fafq_thread_se_run(void *arg){
           struct_obj->fqresult_r1->l =0;
         }
         else if (struct_obj->output == "fq.gz" || struct_obj->output == "fastq.gz"){
-          pthread_mutex_lock(&Fq_write_mutex);
+          /*pthread_mutex_lock(&Fq_write_mutex);
           //gzwrite(struct_obj->gz1,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);//DRAGON THORFINN FIX BUG PRUT
-          pthread_mutex_unlock(&Fq_write_mutex);
+          pthread_mutex_unlock(&Fq_write_mutex);*/
           struct_obj->fqresult_r1->l =0;
         }
       }
@@ -273,24 +277,13 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
   const char *chr_names[chr_total];
   int chr_sizes[chr_total];
   int chr_size_cumm[chr_total+1];
-  
-  // Start measuring time
-  auto begin = std::chrono::high_resolution_clock::now();
+
   
   char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
 
-  // Stop measuring time and calculate the elapsed time
-  auto end = std::chrono::high_resolution_clock::now();
-  auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
-
-  /*printf("Time measured for full_genome_create: %.3f seconds.\n", elapsed.count() * 1e-9);
-  printf("Full genome size %lu \n",strlen(genome_data));
-
-  exit(2);*/
   if (genome_data != NULL){
     fprintf(stderr,"\t-> Full genome function run!\n");
     fprintf(stderr,"\t-> Full genome size %lu \n",strlen(genome_data));
-  
   
   FILE *fp1;
   gzFile gz1;
@@ -380,9 +373,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       free(struct_for_threads[i].fqresult_r1 -> s);//4 errors from 4 contexts (suppressed: 0 eventhough that delete goes with new and not free
       //ks_release(struct_for_threads[i].fqresult_r1);
       delete struct_for_threads[i].fqresult_r1;
-      //delete[] struct_for_threads[i].Qualfreq;
-      //delete[] struct_for_threads[i].sizearray;
-      //free(struct_for_threads[i].fqresult_r1); // ERROR SUMMARY: 8 errors from 4 contexts (suppressed: 0 from 0)
+
     }
     delete[] sizearray;
     delete[] Qual_freq_array;
@@ -396,7 +387,7 @@ int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
   // chr1_2.fa chr1_3 chr1 hg19canon.fa  chr1_12   chr22 chr1_15 chr10_15  chr18_19  
   //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr10_15.fa";
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
   fprintf(stderr,"\t-> fasta load \n");
@@ -404,7 +395,7 @@ int main(int argc,char **argv){
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   int seed = 1;
-  int threads = 1;
+  int threads = 3;
   float cov = 1;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
 
@@ -415,8 +406,7 @@ int main(int argc,char **argv){
 
   Create_se_threads(seq_ref,threads,seed,cov,output,Adapt_flag,Adapter_1);
 
-  // free the calloc memory from fai_read
-  //free(seq_ref);
+
   fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
 }
 
