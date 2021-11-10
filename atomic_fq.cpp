@@ -113,7 +113,6 @@ void* Fafq_thread_se_run(void *arg){
   size_t genome_len = strlen(struct_obj->genome);
 
   //coverage method2
-  int* chrlencov = (int *) calloc(genome_len,sizeof(int));
   char seqmod[1024] = {0};
   char seqmod2[1024] = {0};
   char read[1024] = {0};
@@ -162,14 +161,8 @@ void* Fafq_thread_se_run(void *arg){
     //if (pch != NULL){continue;}
     if ((int )(pch-seqmod+1) == 1 && (int)(pch2-seqmod+1)  == strlen(seqmod)){continue;}
     else{
-      for (size_t j = rand_start; j < rand_start+fraglength; j++){
-        //std::cout<< "j" << j << std::endl;
-        chrlencov[j] += 1; //adds 1 for regions, which might have reads already
-        
-        D_total += 1; // to find the total depth
-        if (chrlencov[j] == 1){size_data++;} // if the value is different from 1 (more reads) then we still count that as one chromosome site with data
-      }
-      
+      for (int j = 0; j < fraglength; j++){D_total += 1;} //update the values for when calculating the coverage
+       
       int seqlen = strlen(seqmod);
 
       SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097,std::time(nullptr));
@@ -226,7 +219,7 @@ void* Fafq_thread_se_run(void *arg){
       }        
 
       //struct_obj->fqresult_r1->l =0;
-      if (struct_obj->fqresult_r1->l > 1000000){
+      if (struct_obj->fqresult_r1->l > 20000000){
         if (struct_obj->output == "fq" || struct_obj->output == "fastq"){
           pthread_mutex_lock(&Fq_write_mutex);
           fwrite(struct_obj->fqresult_r1->s,sizeof(char),struct_obj->fqresult_r1->l,struct_obj->fp1);
@@ -235,7 +228,7 @@ void* Fafq_thread_se_run(void *arg){
         }
         else if (struct_obj->output == "fq.gz" || struct_obj->output == "fastq.gz"){
           pthread_mutex_lock(&Fq_write_mutex);
-          gzwrite(struct_obj->gz1,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
+          //gzwrite(struct_obj->gz1,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);//DRAGON THORFINN FIX BUG PRUT
           pthread_mutex_unlock(&Fq_write_mutex);
           struct_obj->fqresult_r1->l =0;
         }
@@ -259,15 +252,12 @@ void* Fafq_thread_se_run(void *arg){
     //std::cout << current_cov_atom << "\t" << cov << std::endl;
   }
 
-  // I have to delete it here in order to avoid memory leak across my threads
-  delete[] struct_obj->Qualfreq;
-  delete[] struct_obj->sizearray;
-
+  //delete[] struct_obj->Qualfreq;
+  //delete[] struct_obj->sizearray;
   //consider freeing these after the join operator
   //Freeing allocated memory
   free(struct_obj->size_cumm);
   free(struct_obj->names);
-  free(chrlencov);
   
   //std::cout << "thread done" << std::endl;
   return NULL;
@@ -298,13 +288,13 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
 
   exit(2);*/
   if (genome_data != NULL){
-    //fprintf(stderr,"\t-> Full genome function run!\n");
-    //fprintf(stderr,"\t-> Full genome size %lu \n",strlen(genome_data));
+    fprintf(stderr,"\t-> Full genome function run!\n");
+    fprintf(stderr,"\t-> Full genome size %lu \n",strlen(genome_data));
   
   
-    FILE *fp1;
-    gzFile gz1;
-    //std::cout << " genome length " << genome_len << std::endl;
+  FILE *fp1;
+  gzFile gz1;
+  //std::cout << " genome length " << genome_len << std::endl;
     Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
     if (output == "fq" || output == "fastq"){
       //FILE *fp1;  error: 'fp1' was not declared in this scope struct_for_threads[i].fp1 = fp1;
@@ -358,6 +348,9 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       struct_for_threads[i].size_cumm = (int*)malloc(sizeof(int) * (struct_for_threads[i].chr_no+1));
       struct_for_threads[i].size_cumm[0] = 0;
       memcpy(struct_for_threads[i].size_cumm, chr_size_cumm, sizeof(chr_size_cumm));
+      /*for(int jj=0;jj<chr_total+1;jj++)
+      struct_for_threads[i].size_cumm[jj]= chr_size_cumm[jj];*/
+      
       
       struct_for_threads[i].names = (const char**)malloc(sizeof(const char*) * struct_for_threads[i].chr_no+1);
       struct_for_threads[i].names[0] = 0;
@@ -387,9 +380,12 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       free(struct_for_threads[i].fqresult_r1 -> s);//4 errors from 4 contexts (suppressed: 0 eventhough that delete goes with new and not free
       //ks_release(struct_for_threads[i].fqresult_r1);
       delete struct_for_threads[i].fqresult_r1;
+      //delete[] struct_for_threads[i].Qualfreq;
+      //delete[] struct_for_threads[i].sizearray;
       //free(struct_for_threads[i].fqresult_r1); // ERROR SUMMARY: 8 errors from 4 contexts (suppressed: 0 from 0)
     }
- 
+    delete[] sizearray;
+    delete[] Qual_freq_array;
     free(genome_data);
   }
   return NULL;
@@ -400,17 +396,17 @@ int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
   // chr1_2.fa chr1_3 chr1 hg19canon.fa  chr1_12   chr22 chr1_15 chr10_15  chr18_19  
   //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa";
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
-  //fprintf(stderr,"\t-> fasta load \n");
+  fprintf(stderr,"\t-> fasta load \n");
   assert(seq_ref!=NULL);
   int chr_total = faidx_nseq(seq_ref);
-  //fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
+  fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   int seed = 1;
   int threads = 1;
   float cov = 1;
-  //fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
+  fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
 
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
   const char* Adapt_flag = "false";
@@ -431,4 +427,5 @@ int main(int argc,char **argv){
 //valgrind --tool=memcheck --leak-check=full ./a.out
 
 //awk 'NR%4==2{sum+=length($0)}END{print sum/(NR/4)}' chr22_out.fq
-// { time ls a*; } &>>rpt
+// { time ./a.out; } 2> test.txt
+// for i in {1..10}; do (time ./a.out) &>> time/cpu_2022.txt ; done
