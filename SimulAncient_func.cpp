@@ -500,19 +500,22 @@ double* Qual_array(double* freqval,const char* filename){
 }
 
 void Read_Qual_new(char *seq,char *qual,int seed,double* freqval){
-
+  //fprintf(stderr,"INSIDE FUNCITON NOW \n");
   int Tstart = 150;
   int Gstart = 300;
   int Cstart = 450;
   int Nstart = 600;
 
   //srand(time( NULL ));
-  srand(seed);
+  //srand(seed);
+
+  //srand48(seed);
   int seqlen = strlen(seq);
 
   for (int row_idx = 0; row_idx < seqlen; row_idx++){
     //fprintf(stderr,"index %d \n",row_idx);
-    double r = (double) rand()/RAND_MAX;
+    //double r = ((double) rand_r(&seed)/ RAND_MAX);
+    double r = drand48();//0.43;//(double) rand()/RAND_MAX;
     //fprintf(stderr,"random value %lf \n",r);
     switch(seq[row_idx]){
       case 'A':
@@ -537,4 +540,5 @@ void Read_Qual_new(char *seq,char *qual,int seed,double* freqval){
         break;
     }
   }
+  //fprintf(stderr,"EXITING FUNCITON NOW \n");
 }

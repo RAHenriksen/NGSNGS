@@ -1,0 +1,60 @@
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa': 3
+	-> Seed used: 1 with 8 threads
+	-> Full genome function run!
+	-> Full genome size 162459981 
+mem=0 RSS=319920 elapsed=1:46.17 cpu.sys=15.84 user=821.20
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa': 3
+	-> Seed used: 1 with 8 threads
+	-> Full genome function run!
+	-> Full genome size 162459981 
+mem=0 RSS=319916 elapsed=1:46.76 cpu.sys=16.94 user=818.95
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa': 3
+	-> Seed used: 1 with 8 threads
+	-> Full genome function run!
+	-> Full genome size 162459981 
+mem=0 RSS=319916 elapsed=1:45.37 cpu.sys=16.57 user=803.06
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa': 3
+	-> Seed used: 1 with 8 threads
+	-> Full genome function run!
+	-> Full genome size 162459981 
+mem=0 RSS=319916 elapsed=1:47.09 cpu.sys=18.40 user=811.08
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa': 3
+	-> Seed used: 1 with 8 threads
+	-> Full genome function run!
+	-> Full genome size 162459981 
+mem=0 RSS=319916 elapsed=1:45.69 cpu.sys=17.42 user=808.02
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa': 3
+	-> Seed used: 1 with 8 threads
+	-> Full genome function run!
+	-> Full genome size 162459981 
+mem=0 RSS=319912 elapsed=1:46.26 cpu.sys=19.41 user=806.96
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa': 3
+	-> Seed used: 1 with 8 threads
+	-> Full genome function run!
+	-> Full genome size 162459981 
+mem=0 RSS=319916 elapsed=1:46.39 cpu.sys=17.76 user=805.64
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa': 3
+	-> Seed used: 1 with 8 threads
+	-> Full genome function run!
+	-> Full genome size 162459981 
+mem=0 RSS=319912 elapsed=1:46.33 cpu.sys=17.57 user=813.33
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa': 3
+	-> Seed used: 1 with 8 threads
+	-> Full genome function run!
+	-> Full genome size 162459981 
+mem=0 RSS=319920 elapsed=1:53.95 cpu.sys=14.57 user=874.52
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr20_22.fa': 3
+	-> Seed used: 1 with 8 threads
+	-> Full genome function run!
+	-> Full genome size 162459981 
+mem=0 RSS=319912 elapsed=1:56.06 cpu.sys=15.73 user=892.09

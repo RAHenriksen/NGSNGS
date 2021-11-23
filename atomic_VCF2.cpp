@@ -104,9 +104,37 @@ void* Fafq_thread_se_run(void *arg){
   //casting my struct as arguments for the thread creation
   Parsarg_for_Fafq_se_thread *struct_obj = (Parsarg_for_Fafq_se_thread*) arg;
   //std::cout << "se run "<< std::endl;
-  
+  size_t genome_len = strlen(struct_obj->genome);
   // creating random objects for all distributions.
   int seed = struct_obj->threadseed+struct_obj->threadno;
+  std::cout << " seed " << seed << std::endl;
+  
+  srand48(seed);
+  size_t region_start;
+  region_start = lrand48() % (genome_len-1+std::time(nullptr)) + seed;
+  fprintf(stderr,"start %d", region_start);
+
+  const char *chrID = bcf_hdr_id2name(struct_obj->vcf_hdr, struct_obj->vcf_record->rid);
+
+  hts_idx_t *idx = bcf_index_load("/home/wql443/WP1/Alba/HLA_test.bcf.csi");
+  if(!idx){printf("Null index\n");}
+
+  //int D_i = 0;
+  char region[128];//77168479
+  snprintf(region, sizeof(region), "%s:%d-%d", chrID,region_start-200,region_start+200);
+  //fprintf(stderr,"Chromosomal region from vcf -> %s \t chromosome: %s\n",region,struct_obj->names[0]);
+  hts_itr_t *itr = bcf_itr_querys(idx, struct_obj->vcf_hdr, region);
+  if(!itr){printf("Null iterator\n");}
+  //fprintf(stderr,"-------------- \n");
+  while ((bcf_itr_next(struct_obj->in_vcf, itr, struct_obj->vcf_record)) == 0) {
+    bcf_unpack((bcf1_t*)struct_obj->vcf_record, BCF_UN_ALL);
+    if (struct_obj->vcf_record->n_allele > 1){
+      printf("id: %d, pos: %d\n", struct_obj->vcf_record->rid, struct_obj->vcf_record->pos);
+      //printf("id: %d, pos: %d, len: %d, allele: %d, allele: %s\n", struct_obj->vcf_record->rid, struct_obj->vcf_record->pos, struct_obj->vcf_record->rlen,struct_obj->vcf_record->n_allele,struct_obj->vcf_record->d.allele[0]);
+    }
+  }
+  bcf_itr_destroy(itr);
+  hts_idx_destroy(idx);
   std::random_device rd;
   std::default_random_engine gen(seed);//gen(struct_obj->threadseed); //struct_obj->seed+struct_obj->threadno
   
@@ -134,7 +162,8 @@ void* Fafq_thread_se_run(void *arg){
   Size_freq_dist(infile2,SizeDist,seed);//struct_obj->threadseed //creates the distribution of all the frequencies
   infile2.close();
   // ---------------------- //
-  size_t genome_len = strlen(struct_obj->genome);
+  
+
   //coverage method2
   int* chrlencov = (int *) calloc(genome_len,sizeof(int));
   char seqmod[1024] = {0};
@@ -152,14 +181,14 @@ void* Fafq_thread_se_run(void *arg){
   rand_start_tmp = lrand48() % (genome_len-1) + seed;
   fprintf(stderr,"temp start %d\n",rand_start_tmp);*/
 
-  const char *chrID = bcf_hdr_id2name(struct_obj->vcf_hdr, struct_obj->vcf_record->rid);
 
-  hts_idx_t *idx = bcf_index_load("/home/wql443/WP1/Alba/HLA_test.bcf.csi");
-  if(!idx){printf("Null index\n");}
-
-  //int D_i = 0;
-  /*char region[128];
-    snprintf(region, sizeof(region), "%s:%d-%d", chrID,1000000,2000000);
+  
+  int iter = 0;
+  while (current_cov_atom < cov) {
+    int fraglength = (int) sizearray[SizeDist[1](gen)]; //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
+    
+    /*char region[128];
+    snprintf(region, sizeof(region), "%s:%d-%d", chrID,rand_start-1,rand_start-1+fraglength);
     //fprintf(stderr,"Chromosomal region from vcf -> %s \t chromosome: %s\n",region,struct_obj->names[0]);
     hts_itr_t *itr = bcf_itr_querys(idx, struct_obj->vcf_hdr, region);
     if(!itr){printf("Null iterator\n");}
@@ -173,25 +202,6 @@ void* Fafq_thread_se_run(void *arg){
     }
     bcf_itr_destroy(itr);
     */
-  int iter = 0;
-  while (current_cov_atom < cov) {
-    int fraglength = (int) sizearray[SizeDist[1](gen)]; //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
-    
-    char region[128];
-    snprintf(region, sizeof(region), "%s:%d-%d", chrID,rand_start-1,rand_start-1+fraglength);
-    //fprintf(stderr,"Chromosomal region from vcf -> %s \t chromosome: %s\n",region,struct_obj->names[0]);
-    hts_itr_t *itr = bcf_itr_querys(idx, struct_obj->vcf_hdr, region);
-    if(!itr){printf("Null iterator\n");}
-    //fprintf(stderr,"-------------- \n");
-    while ((bcf_itr_next(struct_obj->in_vcf, itr, struct_obj->vcf_record)) == 0) {
-      bcf_unpack((bcf1_t*)struct_obj->vcf_record, BCF_UN_ALL);
-      //if (struct_obj->vcf_record->n_allele > 1){
-        //printf("id: %d, pos: %d\n", struct_obj->vcf_record->rid, struct_obj->vcf_record->pos);
-        //printf("id: %d, pos: %d, len: %d, allele: %d, allele: %s\n", struct_obj->vcf_record->rid, struct_obj->vcf_record->pos, struct_obj->vcf_record->rlen,struct_obj->vcf_record->n_allele,struct_obj->vcf_record->d.allele[0]);
-      //}
-    }
-    bcf_itr_destroy(itr);
-    
     srand48(seed+fraglength+iter);
     //srand48(seed+fraglength+iter+D_total+std::time(nullptr)); //D_total+fraglength //+std::time(nullptr)
     //fprintf(stderr,"\t-> Seed used: %d \n",seed+fraglength+iter+D_total+std::time(nullptr));
@@ -298,7 +308,7 @@ void* Fafq_thread_se_run(void *arg){
     iter++;
     //std::cout << current_cov_atom << "\t" << cov << std::endl;
   }
-  hts_idx_destroy(idx);
+  
   //consider freeing these after the join operator
   //Freeing allocated memory
   free(struct_obj->size_cumm);
@@ -442,7 +452,7 @@ int main(int argc,char **argv){
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   
   int seed = 1;
-  int threads = 1;
+  int threads = 3;
   float cov = 1;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
 

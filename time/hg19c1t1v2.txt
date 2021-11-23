@@ -1,0 +1,60 @@
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa': 25
+	-> Seed used: 1 with 1 threads
+	-> Full genome function run!
+	-> Full genome size 3095693983 
+mem=0 RSS=3120296 elapsed=5:51.22 cpu.sys=18.31 user=330.23
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa': 25
+	-> Seed used: 1 with 1 threads
+	-> Full genome function run!
+	-> Full genome size 3095693983 
+mem=0 RSS=3120228 elapsed=5:51.04 cpu.sys=18.36 user=331.54
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa': 25
+	-> Seed used: 1 with 1 threads
+	-> Full genome function run!
+	-> Full genome size 3095693983 
+mem=0 RSS=3120220 elapsed=5:48.78 cpu.sys=18.41 user=329.11
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa': 25
+	-> Seed used: 1 with 1 threads
+	-> Full genome function run!
+	-> Full genome size 3095693983 
+mem=0 RSS=3120228 elapsed=5:50.74 cpu.sys=18.81 user=329.98
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa': 25
+	-> Seed used: 1 with 1 threads
+	-> Full genome function run!
+	-> Full genome size 3095693983 
+mem=0 RSS=3120340 elapsed=5:57.92 cpu.sys=19.13 user=337.01
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa': 25
+	-> Seed used: 1 with 1 threads
+	-> Full genome function run!
+	-> Full genome size 3095693983 
+mem=0 RSS=3120220 elapsed=5:56.86 cpu.sys=19.21 user=336.09
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa': 25
+	-> Seed used: 1 with 1 threads
+	-> Full genome function run!
+	-> Full genome size 3095693983 
+mem=0 RSS=3120228 elapsed=5:58.13 cpu.sys=19.10 user=337.36
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa': 25
+	-> Seed used: 1 with 1 threads
+	-> Full genome function run!
+	-> Full genome size 3095693983 
+mem=0 RSS=3120228 elapsed=5:48.55 cpu.sys=18.31 user=329.14
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa': 25
+	-> Seed used: 1 with 1 threads
+	-> Full genome function run!
+	-> Full genome size 3095693983 
+mem=0 RSS=3120228 elapsed=5:51.15 cpu.sys=18.75 user=331.04
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa': 25
+	-> Seed used: 1 with 1 threads
+	-> Full genome function run!
+	-> Full genome size 3095693983 
+mem=0 RSS=3120228 elapsed=5:47.84 cpu.sys=14.09 user=332.35

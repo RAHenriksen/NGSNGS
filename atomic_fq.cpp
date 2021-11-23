@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <iostream>//for printing time
 
 #include <iostream>
 #include <fstream>
@@ -13,6 +14,7 @@
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
 #include <htslib/vcf.h>
+#include <htslib/bgzf.h>
 #include <htslib/kstring.h>
 #include <zlib.h>
 
@@ -33,6 +35,15 @@
 #include <vector>
 
 #include "SimulAncient_func.h"
+
+void printTime(FILE *fp){
+  time_t rawtime;
+  struct tm * timeinfo; 
+  time ( &rawtime );
+  timeinfo = localtime ( &rawtime );
+  fprintf (fp, "\t-> %s", asctime (timeinfo) );
+}
+
 
 pthread_mutex_t data_mutex;
 pthread_mutex_t Fq_write_mutex;
@@ -80,7 +91,6 @@ std::atomic<size_t> nread_total(0);
 
 struct Parsarg_for_Fafq_se_thread{
   kstring_t *fqresult_r1;
-  const char* output;
   char *genome; // The actual concatenated genome
   int chr_no;
   int threadno;
@@ -93,8 +103,7 @@ struct Parsarg_for_Fafq_se_thread{
   int cov_size;
   int threadseed;
   float cov;
-  FILE *fp1;
-  gzFile gz1;
+  BGZF *bgzf;
   const char* Adapter_flag;
   const char* Adapter_1;
 };
@@ -164,9 +173,10 @@ void* Fafq_thread_se_run(void *arg){
     //if (pch != NULL){continue;}
     if ((int )(pch-seqmod+1) == 1 && (int)(pch2-seqmod+1)  == strlen(seqmod)){continue;}
     else{
-      for (int j = 0; j < fraglength; j++){D_total += 1;} //update the values for when calculating the coverage
-       
       int seqlen = strlen(seqmod);
+
+      D_total += fraglength-1; //update the values for when calculating the coverage
+      //for (int j = 0; j < fraglength; j++){D_total += 1;}
 
       SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097,std::time(nullptr));
 
@@ -222,21 +232,16 @@ void* Fafq_thread_se_run(void *arg){
       }        
 
       //struct_obj->fqresult_r1->l =0;
-      if (struct_obj->fqresult_r1->l > 20000000){
-        if (struct_obj->output == "fq" || struct_obj->output == "fastq"){
-          pthread_mutex_lock(&Fq_write_mutex);
-          fwrite(struct_obj->fqresult_r1->s,sizeof(char),struct_obj->fqresult_r1->l,struct_obj->fp1);
-          pthread_mutex_unlock(&Fq_write_mutex);
-          struct_obj->fqresult_r1->l =0;
-        }
-        else if (struct_obj->output == "fq.gz" || struct_obj->output == "fastq.gz"){
-          pthread_mutex_lock(&Fq_write_mutex);
-          //gzwrite(struct_obj->gz1,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);//DRAGON THORFINN FIX BUG PRUT
-          pthread_mutex_unlock(&Fq_write_mutex);
-          struct_obj->fqresult_r1->l =0;
-        }
+      if (struct_obj->fqresult_r1->l > 10000000){
+        pthread_mutex_lock(&Fq_write_mutex);
+        bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
+        pthread_mutex_unlock(&Fq_write_mutex);
+        struct_obj->fqresult_r1->l =0;
       }
-
+    
+      //int64_t offs[2];
+      //assert(0==bgzf_flush(struct_obj->bgzf));
+      //offs[0] = bgzf_tell(struct_obj->bgzf);
       memset(qual, 0, sizeof(qual));  
       nread++;
       //fprintf(stderr,"Number of reads %d \n",nread);
@@ -266,7 +271,7 @@ void* Fafq_thread_se_run(void *arg){
   return NULL;
 }
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage, const char* output,const char* Adapt_flag,const char* Adapter_1){
+void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage, const char* Adapt_flag,const char* Adapter_1){
   
   //creating an array with the arguments to create multiple threads;
   int nthreads=thread_no;
@@ -283,18 +288,19 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
     fprintf(stderr,"\t-> Full genome function run!\n");
     fprintf(stderr,"\t-> Full genome size %lu \n",strlen(genome_data));
   
-  FILE *fp1;
-  gzFile gz1;
-  //std::cout << " genome length " << genome_len << std::endl;
+    
+    //std::cout << " genome length " << genome_len << std::endl;
     Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
-    if (output == "fq" || output == "fastq"){
-      //FILE *fp1;  error: 'fp1' was not declared in this scope struct_for_threads[i].fp1 = fp1;
-      fp1 = fopen("chr22_out.fq","wb");//fopen("hg19t32c5.fq","wb");
+
+    BGZF *bgzf;
+    const char* filename = "/tmp/chr22_out.fq.gz";
+    const char *mode = "r";
+	  //bgzf = bgzf_open(filename, mode);
+    bgzf = bgzf_open(filename,"wb"); 
+    
+    if(nthreads>1){
+      bgzf_mt(bgzf,nthreads,256);
     }
-    else if (output == "fq.gz" || output == "fastq.gz"){
-      //FILE *fp1;  error: 'fp1' was not declared in this scope struct_for_threads[i].fp1 = fp1;
-      gz1 = (gzFile) gzopen("chr22_out.fq.gz","wb");
-    } 
 
     std::discrete_distribution<> SizeDist[2]; 
     std::ifstream infile2("Size_dist/Size_freq.txt");
@@ -316,7 +322,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       struct_for_threads[i].fqresult_r1 -> l = 0;
       struct_for_threads[i].fqresult_r1 -> m = 0;
       struct_for_threads[i].fqresult_r1 -> s = NULL;
-      struct_for_threads[i].output = output;
       struct_for_threads[i].threadno = i;
       struct_for_threads[i].genome = genome_data;
       struct_for_threads[i].chr_no = chr_total;
@@ -326,12 +331,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       struct_for_threads[i].Qualfreq = Qual_freq_array;
       //struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
       struct_for_threads[i].cov = coverage;
-      if (output == "fq" || output == "fastq"){
-        struct_for_threads[i].fp1 = fp1;
-        struct_for_threads[i].gz1 = NULL;}
-      else if (output == "fq.gz" || output == "fastq.gz"){
-        struct_for_threads[i].fp1 = NULL;
-        struct_for_threads[i].gz1 = (gzFile) gz1;}
+      struct_for_threads[i].bgzf = bgzf;
       struct_for_threads[i].Adapter_flag = Adapt_flag;
       struct_for_threads[i].Adapter_1 = Adapter_1;
       
@@ -362,8 +362,8 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
     {
       pthread_join(mythreads[i],NULL);
     }
-    if (output == "fq" || output == "fastq" ){fclose(fp1);}
-    else if (output == "fq.gz" || output == "fastq.gz"){gzclose(gz1);}
+    bgzf_close(bgzf);
+    //bgzf_close(*bgzf);
     
     
     //for(int i=0;i<nthreads;i++){delete struct_for_threads[i].fqresult_r1 -> s;} //ERROR SUMMARY: 9 errors from 5 contexts (suppressed: 0 from 0 )
@@ -384,10 +384,13 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
 
 // ------------------------------ //
 int main(int argc,char **argv){
+  clock_t t=clock();
+  time_t t2=time(NULL);
+  // printTime(stderr);
   //Loading in an creating my objects for the sequence files.
   // chr1_2.fa chr1_3 chr1 hg19canon.fa  chr1_12   chr22 chr1_15 chr10_15  chr18_19  
   //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr1_15.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
   fprintf(stderr,"\t-> fasta load \n");
@@ -395,27 +398,21 @@ int main(int argc,char **argv){
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   int Glob_seed = 1;
-  int threads = 1;
-  float cov = 1;
+  int threads = 32;
+  float cov = 10;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",Glob_seed,threads);
-
+  fprintf(stderr,"\t-> Coverage used for simulation: %f\n",cov);
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
   const char* Adapt_flag = "false";
   const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
-  const char* output = "fq";
 
-  Create_se_threads(seq_ref,threads,Glob_seed,cov,output,Adapt_flag,Adapter_1);
-  /*unsigned int seed1 = 2;
-  unsigned int seed2 = 3;
-  int a = rand_r(&seed1);
-  double b = ((double)rand_r(&seed1)/ RAND_MAX);
-  int c = rand_r(&seed2);
-  int d = rand_r(&seed2);
-  std::cout << a << "\t" << b << "\t" << c << "\t" << d << "\t" << std::endl;*/
+  Create_se_threads(seq_ref,threads,Glob_seed,cov,Adapt_flag,Adapter_1);
 
   // free the calloc memory from fai_read
   //free(seq_ref);
   fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
+    fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
+  fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));  
 }
 
 //SimBriggsModel(seqmod, frag, L, 0.024, 0.36, 0.68, 0.0097);
@@ -428,5 +425,5 @@ int main(int argc,char **argv){
 // { time ./a.out; } 2> test.txt
 // for i in {1..10}; do (time ./a.out) &>> time/cpu_2022.txt ; done
 // for i in {1..10}; do (time ./a.out) &>> time/hg19c1t1.txt ; done
-//for i in {1..2}; do (/usr/bin/ti;me -f "mem=%K RSS=%M elapsed=%E cpu.sys=%S user=%U" ./hg19c1t1) &>> time/hg19c1t1.txt ; done
-//for i in {1..10}; do (/usr/bin/time -f "mem=%K RSS=%M elapsed=%E cpu.sys=%S user=%U" ./hg19c1t16) &>> time/hg19c1t16.txt ; done
+//for i in {1..2}; do (/usr/bin/time -f "mem=%K RSS=%M elapsed=%E cpu.sys=%S user=%U" ./hg19c1t1) &>> time/hg19c1t1.txt ; done
+//for i in {1..10}; do (/usr/bin/time -f "mem=%K RSS=%M elapsed=%E cpu.sys=%S user=%U" ./hg19c1t16) &>> time/hg19gzt2.txt ; done

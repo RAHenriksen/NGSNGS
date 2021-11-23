@@ -72,23 +72,23 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
 }
 
 std::atomic<float> current_cov_atom(0.0);
-std::atomic<int> size_data(0);
-std::atomic<int> D_total(0);
-std::atomic<int> nread_total(0);
+std::atomic<size_t> size_data(0);
+std::atomic<size_t> D_total(0);
+std::atomic<size_t> nread_total(0);
 
-std::atomic<int> C_total_1(0);
-std::atomic<int> C_to_T_1(0);
-std::atomic<int> C_total_2(0);
-std::atomic<int> C_to_T_2(0);
-std::atomic<int> C_total_3(0);
-std::atomic<int> C_to_T_3(0);
+std::atomic<size_t> C_total_1(0);
+std::atomic<size_t> C_to_T_1(0);
+std::atomic<size_t> C_total_2(0);
+std::atomic<size_t> C_to_T_2(0);
+std::atomic<size_t> C_total_3(0);
+std::atomic<size_t> C_to_T_3(0);
 
-std::atomic<int> G_total_1(0);
-std::atomic<int> G_to_A_1(0);
-std::atomic<int> G_total_2(0);
-std::atomic<int> G_to_A_2(0);
-std::atomic<int> G_total_3(0);
-std::atomic<int> G_to_A_3(0);
+std::atomic<size_t> G_total_1(0);
+std::atomic<size_t> G_to_A_1(0);
+std::atomic<size_t> G_total_2(0);
+std::atomic<size_t> G_to_A_2(0);
+std::atomic<size_t> G_total_3(0);
+std::atomic<size_t> G_to_A_3(0);
 
 // ---------------------- SINGLE-END ---------------------- //
 
@@ -488,9 +488,9 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
 // ------------------------------ //
 int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
-  // chr1_2.fa  hg19canon.fa  chr1_12   chr22 chr1_15 chr10_15
+  // chr1_2.fa chr1_3 chr1 hg19canon.fa  chr1_12   chr22 chr1_15 chr10_15  chr18_19  
   //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr1.fa";
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
   fprintf(stderr,"\t-> fasta load \n");
@@ -499,12 +499,12 @@ int main(int argc,char **argv){
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   
   int seed = 1;
-  int threads = 1;
+  int threads = 10;
   float cov = 1;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",seed,threads);
 
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
-  const char* Adapt_flag = "true";
+  const char* Adapt_flag = "false";
   const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
   const char* output = "fq";
 
