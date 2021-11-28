@@ -44,8 +44,6 @@ void printTime(FILE *fp){
   fprintf (fp, "\t-> %s", asctime (timeinfo) );
 }
 
-
-pthread_mutex_t data_mutex;
 pthread_mutex_t Fq_write_mutex;
 
 
@@ -67,14 +65,11 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
   //chr_total
   for (int i = 0; i < chr_total; i++){
 
-    pthread_mutex_lock(&data_mutex);
     const char *data = fai_fetch(seq_ref,chr_names[i],&chr_sizes[i]);
-    pthread_mutex_unlock(&data_mutex);
     //sprintf(&genome[strlen(genome)],data);
     //strcat(genome,data);  //Both gives conditional jump or move error
     if (data != NULL){
       sprintf(genome+strlen(genome),data); 
-      
     }
     // several of the build in functions allocates memory without freeing it again.
     free((char*)data); //Free works on const pointers, so we have to cast into a const char pointer
@@ -83,7 +78,7 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
 }
 
 std::atomic<float> current_cov_atom(0.0);
-std::atomic<size_t> size_data(0);
+std::atomic<int> current_reads_atom(0);
 std::atomic<size_t> D_total(0);
 std::atomic<size_t> nread_total(0);
 
@@ -100,9 +95,10 @@ struct Parsarg_for_Fafq_se_thread{
   std::discrete_distribution<> *SizeDist;
   double* Qualfreq;
   float current_cov;
-  int cov_size;
+  size_t current_read_no;
   int threadseed;
   float cov;
+  size_t reads;
   BGZF *bgzf;
   const char* Adapter_flag;
   const char* Adapter_1;
@@ -113,11 +109,11 @@ void* Fafq_thread_se_run(void *arg){
   //casting my struct as arguments for the thread creation
   Parsarg_for_Fafq_se_thread *struct_obj = (Parsarg_for_Fafq_se_thread*) arg;
   //std::cout << "se run "<< std::endl;
-  
+  time_t t4=time(NULL);
   // creating random objects for all distributions.
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno;
-  std::random_device rd;
-  std::default_random_engine gen(loc_seed);//gen(struct_obj->threadseed); //struct_obj->seed+struct_obj->threadno
+  //std::random_device rd;
+  //std::default_random_engine gen(loc_seed);//gen(struct_obj->threadseed); //struct_obj->seed+struct_obj->threadno
   
   size_t genome_len = strlen(struct_obj->genome);
 
@@ -128,25 +124,30 @@ void* Fafq_thread_se_run(void *arg){
   char readadapt[1024] = {0};
   // for the coverage examples
   float cov = struct_obj -> cov;
+  int reads = struct_obj -> reads;
+
   //float cov_current = 0;
   size_t rand_start;
-  int nread = 0;
+  //int nread = 0;
 
   char qual[1024] = "";
   //int D_i = 0;
-  
+  int localread = 0;
   int iter = 0;
-  while (current_cov_atom < cov) {
-    int fraglength = (int) struct_obj->sizearray[struct_obj->SizeDist[1](gen)]; //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
+  int current_reads_atom = 0;
+  //while (current_cov_atom < cov) {
+  //while (current_reads_atom < reads){
+  while (current_reads_atom < reads){
+    int fraglength = 100; //(int) struct_obj->sizearray[struct_obj->SizeDist[1](gen)]; //100; //  //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
     
     //double a = ((double)rand_r(&loc_seed)/ RAND_MAX);
-    double rand_val = ((double) rand_r(&loc_seed)/ RAND_MAX);
+    //double rand_val = ((double) rand_r(&loc_seed)/ RAND_MAX);
     //fprintf(stderr,"THREAD NO %d \t seed %lf\n",struct_obj->threadno,a);
     //srand48(1+fraglength+iter);
     //fprintf(stderr,"FRAGMENT LENGTH %d \n",fraglength);
     //fprintf(stderr,"\t-> Seed used: %d \n",seed+fraglength+iter+D_total+std::time(nullptr));
 
-    rand_start = rand_val * (genome_len-fraglength)-1; //lrand48() % (genome_len-fraglength-1);
+    rand_start = genome_len-100000; //rand_val * (genome_len-fraglength)-1; //lrand48() % (genome_len-fraglength-1);
     //fprintf(stderr,"RANDOM START LENGTH %d \n",rand_start);
     //identify the chromosome based on the coordinates from the cummulative size array
     int chr_idx = 0;
@@ -163,7 +164,7 @@ void* Fafq_thread_se_run(void *arg){
       strncpy(seqmod,struct_obj->genome+rand_start-1,fraglength);
     }
     //srand48(seed+iter); 
-    int rand_id = rand_val * fraglength-1;
+    int rand_id = 100;//rand_val * fraglength-1;
     
     //removes reads with NNN
     char * pch;
@@ -176,11 +177,13 @@ void* Fafq_thread_se_run(void *arg){
       int seqlen = strlen(seqmod);
 
       D_total += fraglength-1; //update the values for when calculating the coverage
+      nread_total ++;
+      
       //for (int j = 0; j < fraglength; j++){D_total += 1;}
 
-      SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097,std::time(nullptr));
+      // SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097,std::time(nullptr));
 
-      int strand = rand() % 2;
+      int strand = 1;//rand() % 2;
 
       // FASTQ FILE
       if (strand == 0){
@@ -193,24 +196,24 @@ void* Fafq_thread_se_run(void *arg){
           //std::cout << "read " << read << std::endl;
           strncpy(readadapt, read, 150);
           
-          Read_Qual_new(readadapt,qual,loc_seed,struct_obj->Qualfreq);
+          // Read_Qual_new(readadapt,qual,loc_seed,struct_obj->Qualfreq);
             
-          ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,0,
+          ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n",struct_obj->threadno, rand_id,0,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-          fraglength,readadapt,qual);
+          fraglength,readadapt);
         }
         else if (struct_obj->Adapter_flag == "false"){
           
-          Read_Qual_new(seqmod2,qual,loc_seed,struct_obj->Qualfreq);
+          // Read_Qual_new(seqmod2,qual,loc_seed,struct_obj->Qualfreq);
           
-          ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,0,
+          ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n",struct_obj->threadno, rand_id,0,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-          fraglength,seqmod2,qual);
+          fraglength,seqmod2);
         }
       }
       else if (strand == 1){
         if (struct_obj->Adapter_flag == "true"){
-          strcpy(read, seqmod2);
+          strcpy(read, seqmod);
           strcat(read,struct_obj->Adapter_1);
           //std::cout << "read " << read << std::endl;
           strncpy(readadapt, read, 150);
@@ -223,42 +226,51 @@ void* Fafq_thread_se_run(void *arg){
         }
         else if (struct_obj->Adapter_flag == "false"){
           
-          Read_Qual_new(seqmod2,qual,loc_seed,struct_obj->Qualfreq);
+          Read_Qual_new(seqmod,qual,loc_seed,struct_obj->Qualfreq);
           
           ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,1,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-          fraglength,seqmod2,qual);
+          fraglength,seqmod,qual);
         }
       }        
 
-      //struct_obj->fqresult_r1->l =0;
-      if (struct_obj->fqresult_r1->l > 10000000){
+      /*if (struct_obj->fqresult_r1->l > 30000000){
+        fprintf(stderr,"\t Buffer mutex with thread no %d\n", struct_obj->threadno);fflush(stderr);
         pthread_mutex_lock(&Fq_write_mutex);
         bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
         pthread_mutex_unlock(&Fq_write_mutex);
         struct_obj->fqresult_r1->l =0;
-      }
+      }*/
     
       //int64_t offs[2];
       //assert(0==bgzf_flush(struct_obj->bgzf));
       //offs[0] = bgzf_tell(struct_obj->bgzf);
       memset(qual, 0, sizeof(qual));  
-      nread++;
+      //nread++;
       //fprintf(stderr,"Number of reads %d \n",nread);
     }
     
     current_cov_atom = (float) D_total / genome_len;
-
+    current_reads_atom = (size_t) nread_total;
     struct_obj->current_cov = current_cov_atom; //why do we need this
-    struct_obj->cov_size = size_data;
+    struct_obj->current_read_no = current_reads_atom;
 
     memset(seqmod, 0, sizeof seqmod);
     memset(seqmod2, 0, sizeof seqmod2);
     chr_idx = 0;
     //fprintf(stderr,"start %d, fraglength %d\n",rand_start,fraglength);
     iter++;
-    //std::cout << current_cov_atom << "\t" << cov << std::endl;
+    localread++;
+    //std::cout << "currect coverage " << current_cov_atom << std::endl;
+    //std::cout << "currect number of reads " << current_reads_atom << std::endl;
   }
+  /*if (struct_obj->fqresult_r1->l > 0){
+    fprintf(stderr,"\t last Buffer mutex with thread no %d\n", struct_obj->threadno);fflush(stderr);
+    pthread_mutex_lock(&Fq_write_mutex);
+    bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
+    pthread_mutex_unlock(&Fq_write_mutex);
+    struct_obj->fqresult_r1->l =0;
+  }*/
 
   //delete[] struct_obj->Qualfreq;
   //delete[] struct_obj->sizearray;
@@ -266,13 +278,14 @@ void* Fafq_thread_se_run(void *arg){
   //Freeing allocated memory
   free(struct_obj->size_cumm);
   free(struct_obj->names);
-  
+  fprintf(stderr,"\t number of reads generated by this thread %d \n",localread);
+  //fprintf(stderr, "\t[ALL done] walltime spend in thread %d =  %.2f sec\n", struct_obj->threadno, (float)(time(NULL) - t4));  
   //std::cout << "thread done" << std::endl;
   return NULL;
 }
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage, const char* Adapt_flag,const char* Adapter_1){
-  
+void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage, int reads,const char* Adapt_flag,const char* Adapter_1){
+  time_t t3=time(NULL);
   //creating an array with the arguments to create multiple threads;
   int nthreads=thread_no;
   pthread_t mythreads[nthreads];
@@ -293,14 +306,13 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
     Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
     BGZF *bgzf;
-    const char* filename = "/tmp/chr22_out.fq.gz";
+    const char* filename = "chr22_out.fq.gz";
     const char *mode = "r";
 	  //bgzf = bgzf_open(filename, mode);
     bgzf = bgzf_open(filename,"wb"); 
     
-    if(nthreads>1){
-      bgzf_mt(bgzf,nthreads,256);
-    }
+    //if(nthreads>1){bgzf_mt(bgzf,nthreads,256);}
+    bgzf_mt(bgzf,nthreads,256);
 
     std::discrete_distribution<> SizeDist[2]; 
     std::ifstream infile2("Size_dist/Size_freq.txt");
@@ -331,6 +343,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       struct_for_threads[i].Qualfreq = Qual_freq_array;
       //struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
       struct_for_threads[i].cov = coverage;
+      struct_for_threads[i].reads = reads;
       struct_for_threads[i].bgzf = bgzf;
       struct_for_threads[i].Adapter_flag = Adapt_flag;
       struct_for_threads[i].Adapter_1 = Adapter_1;
@@ -353,14 +366,20 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     // pthread_create( thread ID, struct for thread config, pointer to the function which new thread starts with, 
-    // it returns a pointer to void data which is the 4th argument  
+    // it returns a pointer to void data which is the 4th argument 
+    fprintf(stderr,"Creating a bunch of threads\n"); 
     for (int i = 0; i < nthreads; i++){
       pthread_create(&mythreads[i],&attr,Fafq_thread_se_run,&struct_for_threads[i]);
     }
-    
+    fprintf(stderr,"Done Creating a bunch of threads\n");
+    fflush(stderr);
+
     for (int i = 0; i < nthreads; i++)
-    {
+    {  
+      fprintf(stderr,"joing threads\n");fflush(stderr);
+      // PRINT 
       pthread_join(mythreads[i],NULL);
+      //fprintf(stderr, "\t[ANDET STED] walltime used for join =  %.2f sec\n", (float)(time(NULL) - t3));  
     }
     bgzf_close(bgzf);
     //bgzf_close(*bgzf);
@@ -390,7 +409,7 @@ int main(int argc,char **argv){
   //Loading in an creating my objects for the sequence files.
   // chr1_2.fa chr1_3 chr1 hg19canon.fa  chr1_12   chr22 chr1_15 chr10_15  chr18_19  
   //const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
-  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/hg19canon.fa";
+  const char *fastafile = "/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa";
   faidx_t *seq_ref = NULL;
   seq_ref  = fai_load(fastafile);
   fprintf(stderr,"\t-> fasta load \n");
@@ -398,20 +417,23 @@ int main(int argc,char **argv){
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   int Glob_seed = 1;
-  int threads = 32;
-  float cov = 10;
+  int threads = 10;
+  float cov = 1;
+  size_t No_reads = 1e9;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",Glob_seed,threads);
   fprintf(stderr,"\t-> Coverage used for simulation: %f\n",cov);
+  fprintf(stderr,"\t-> Number of simulated reads: %zd\n",No_reads);
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
   const char* Adapt_flag = "false";
   const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
-
-  Create_se_threads(seq_ref,threads,Glob_seed,cov,Adapt_flag,Adapter_1);
-
+  //fprintf(stderr,"Creating a bunch of threads\n");
+  Create_se_threads(seq_ref,threads,Glob_seed,cov,No_reads,Adapt_flag,Adapter_1);
+  //fprintf(stderr,"Done creating a bunch of threads\n");
+  //fflush(stderr);
   // free the calloc memory from fai_read
   //free(seq_ref);
   fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
-    fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
+  fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
   fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));  
 }
 
