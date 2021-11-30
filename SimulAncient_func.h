@@ -25,12 +25,12 @@ int *Size_select_dist(std::ifstream &infile);
 
 double uniform();
 
-void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, int seed);
+void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, unsigned int seed);
 
 const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos);
 
 double* Qual_array(double* freqval,const char* filename);
 
-void Read_Qual_new(char *seq,char *qual,int seed,double* freqval);
+void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval);
 
 #endif

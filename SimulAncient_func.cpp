@@ -372,7 +372,7 @@ double uniform()
 }
 
 
-void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, int seed){
+void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, unsigned int seed){
     int l = 0;
     int r = L-1;
     while (l+r > L-2){
@@ -381,9 +381,9 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
         double u_l = uniform();
         double u_r = uniform();
         //cout << u_l << " " << u_r <<"\n";
-        std::default_random_engine generator1(rand()%30000+1);
+        std::default_random_engine generator1(rand_r(&seed)%30000+1);
         std::geometric_distribution<int> distribution1(lambda);
-        std::default_random_engine generator2(rand()%30000+1);
+        std::default_random_engine generator2(rand_r(&seed)%30000+1);
         std::geometric_distribution<int> distribution2(lambda);
         if (u_l > 0.5){
             l = distribution1(generator1);
@@ -499,7 +499,7 @@ double* Qual_array(double* freqval,const char* filename){
   return freqval;
 }
 
-void Read_Qual_new(char *seq,char *qual,int seed,double* freqval){
+void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval){
   //fprintf(stderr,"INSIDE FUNCITON NOW \n");
   int Tstart = 150;
   int Gstart = 300;
@@ -514,8 +514,8 @@ void Read_Qual_new(char *seq,char *qual,int seed,double* freqval){
 
   for (int row_idx = 0; row_idx < seqlen; row_idx++){
     //fprintf(stderr,"index %d \n",row_idx);
-    //double r = ((double) rand_r(&seed)/ RAND_MAX);
-    double r = drand48();//0.43;//(double) rand()/RAND_MAX;
+    double r = ((double) rand_r(&seed)/ RAND_MAX);
+    //double r = 0.43; // drand48();//0.43;//(double) rand()/RAND_MAX;
     //fprintf(stderr,"random value %lf \n",r);
     switch(seq[row_idx]){
       case 'A':

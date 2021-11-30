@@ -77,11 +77,6 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
   return genome;
 }
 
-std::atomic<float> current_cov_atom(0.0);
-std::atomic<int> current_reads_atom(0);
-std::atomic<size_t> D_total(0);
-std::atomic<size_t> nread_total(0);
-
 // ---------------------- SINGLE-END ---------------------- //
 
 struct Parsarg_for_Fafq_se_thread{
@@ -94,10 +89,7 @@ struct Parsarg_for_Fafq_se_thread{
   int* sizearray;
   std::discrete_distribution<> *SizeDist;
   double* Qualfreq;
-  float current_cov;
-  size_t current_read_no;
   int threadseed;
-  float cov;
   size_t reads;
   BGZF *bgzf;
   const char* Adapter_flag;
@@ -112,8 +104,8 @@ void* Fafq_thread_se_run(void *arg){
   time_t t4=time(NULL);
   // creating random objects for all distributions.
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno;
-  //std::random_device rd;
-  //std::default_random_engine gen(loc_seed);//gen(struct_obj->threadseed); //struct_obj->seed+struct_obj->threadno
+  std::random_device rd;
+  std::default_random_engine gen(loc_seed);//gen(struct_obj->threadseed); //struct_obj->seed+struct_obj->threadno
   
   size_t genome_len = strlen(struct_obj->genome);
 
@@ -123,7 +115,6 @@ void* Fafq_thread_se_run(void *arg){
   char read[1024] = {0};
   char readadapt[1024] = {0};
   // for the coverage examples
-  float cov = struct_obj -> cov;
   int reads = struct_obj -> reads;
 
   //float cov_current = 0;
@@ -138,16 +129,15 @@ void* Fafq_thread_se_run(void *arg){
   //while (current_cov_atom < cov) {
   //while (current_reads_atom < reads){
   while (current_reads_atom < reads){
-    int fraglength = 100; //(int) struct_obj->sizearray[struct_obj->SizeDist[1](gen)]; //100; //  //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
+    int fraglength = (int) struct_obj->sizearray[struct_obj->SizeDist[1](gen)]; //100; //  //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
     
-    //double a = ((double)rand_r(&loc_seed)/ RAND_MAX);
-    //double rand_val = ((double) rand_r(&loc_seed)/ RAND_MAX);
+    double rand_val = ((double) rand_r(&loc_seed)/ RAND_MAX);
     //fprintf(stderr,"THREAD NO %d \t seed %lf\n",struct_obj->threadno,a);
     //srand48(1+fraglength+iter);
     //fprintf(stderr,"FRAGMENT LENGTH %d \n",fraglength);
     //fprintf(stderr,"\t-> Seed used: %d \n",seed+fraglength+iter+D_total+std::time(nullptr));
 
-    rand_start = genome_len-100000; //rand_val * (genome_len-fraglength)-1; //lrand48() % (genome_len-fraglength-1);
+    rand_start = rand_val * (genome_len-fraglength)-1; //genome_len-100000;
     //fprintf(stderr,"RANDOM START LENGTH %d \n",rand_start);
     //identify the chromosome based on the coordinates from the cummulative size array
     int chr_idx = 0;
@@ -164,7 +154,7 @@ void* Fafq_thread_se_run(void *arg){
       strncpy(seqmod,struct_obj->genome+rand_start-1,fraglength);
     }
     //srand48(seed+iter); 
-    int rand_id = 100;//rand_val * fraglength-1;
+    int rand_id = rand_val * fraglength-1; //100
     
     //removes reads with NNN
     char * pch;
@@ -176,39 +166,35 @@ void* Fafq_thread_se_run(void *arg){
     else{
       int seqlen = strlen(seqmod);
 
-      D_total += fraglength-1; //update the values for when calculating the coverage
-      nread_total ++;
-      
       //for (int j = 0; j < fraglength; j++){D_total += 1;}
+      //std::time(nullptr)
+      // SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097,loc_seed);
 
-      // SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097,std::time(nullptr));
-
-      int strand = 1;//rand() % 2;
-
+      int strand = (int) rand_r(&loc_seed)%2;//1;//rand() % 2;
       // FASTQ FILE
       if (strand == 0){
-        DNA_complement(seqmod2);
-        reverseChar(seqmod2);
+        DNA_complement(seqmod);
+        reverseChar(seqmod);
         //SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097);
         if (struct_obj->Adapter_flag == "true"){
-          strcpy(read, seqmod2);
+          strcpy(read, seqmod);
           strcat(read,struct_obj->Adapter_1);
           //std::cout << "read " << read << std::endl;
           strncpy(readadapt, read, 150);
           
-          // Read_Qual_new(readadapt,qual,loc_seed,struct_obj->Qualfreq);
+          Read_Qual_new(readadapt,qual,loc_seed,struct_obj->Qualfreq);
             
-          ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n",struct_obj->threadno, rand_id,0,
+          ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,0,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-          fraglength,readadapt);
+          fraglength,readadapt,qual);
         }
         else if (struct_obj->Adapter_flag == "false"){
           
-          // Read_Qual_new(seqmod2,qual,loc_seed,struct_obj->Qualfreq);
+          Read_Qual_new(seqmod,qual,loc_seed,struct_obj->Qualfreq);
           
-          ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n",struct_obj->threadno, rand_id,0,
+          ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,0,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-          fraglength,seqmod2);
+          fraglength,seqmod,qual);
         }
       }
       else if (strand == 1){
@@ -234,13 +220,13 @@ void* Fafq_thread_se_run(void *arg){
         }
       }        
 
-      /*if (struct_obj->fqresult_r1->l > 30000000){
-        fprintf(stderr,"\t Buffer mutex with thread no %d\n", struct_obj->threadno);fflush(stderr);
+      if (struct_obj->fqresult_r1->l > 30000000){
+        //fprintf(stderr,"\t Buffer mutex with thread no %d\n", struct_obj->threadno);fflush(stderr);
         pthread_mutex_lock(&Fq_write_mutex);
         bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
         pthread_mutex_unlock(&Fq_write_mutex);
         struct_obj->fqresult_r1->l =0;
-      }*/
+      }
     
       //int64_t offs[2];
       //assert(0==bgzf_flush(struct_obj->bgzf));
@@ -249,11 +235,6 @@ void* Fafq_thread_se_run(void *arg){
       //nread++;
       //fprintf(stderr,"Number of reads %d \n",nread);
     }
-    
-    current_cov_atom = (float) D_total / genome_len;
-    current_reads_atom = (size_t) nread_total;
-    struct_obj->current_cov = current_cov_atom; //why do we need this
-    struct_obj->current_read_no = current_reads_atom;
 
     memset(seqmod, 0, sizeof seqmod);
     memset(seqmod2, 0, sizeof seqmod2);
@@ -261,16 +242,18 @@ void* Fafq_thread_se_run(void *arg){
     //fprintf(stderr,"start %d, fraglength %d\n",rand_start,fraglength);
     iter++;
     localread++;
+    current_reads_atom++;
+    //fprintf(stderr,"\t currect number of reads %d with thread number %d\n", current_reads_atom, struct_obj->threadno);
     //std::cout << "currect coverage " << current_cov_atom << std::endl;
     //std::cout << "currect number of reads " << current_reads_atom << std::endl;
   }
-  /*if (struct_obj->fqresult_r1->l > 0){
-    fprintf(stderr,"\t last Buffer mutex with thread no %d\n", struct_obj->threadno);fflush(stderr);
+  if (struct_obj->fqresult_r1->l > 0){
+    //fprintf(stderr,"\t last Buffer mutex with thread no %d\n", struct_obj->threadno);fflush(stderr);
     pthread_mutex_lock(&Fq_write_mutex);
     bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
     pthread_mutex_unlock(&Fq_write_mutex);
     struct_obj->fqresult_r1->l =0;
-  }*/
+  } 
 
   //delete[] struct_obj->Qualfreq;
   //delete[] struct_obj->sizearray;
@@ -284,7 +267,7 @@ void* Fafq_thread_se_run(void *arg){
   return NULL;
 }
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage, int reads,const char* Adapt_flag,const char* Adapter_1){
+void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,const char* Adapt_flag,const char* Adapter_1){
   time_t t3=time(NULL);
   //creating an array with the arguments to create multiple threads;
   int nthreads=thread_no;
@@ -341,8 +324,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, float coverage
       struct_for_threads[i].sizearray = sizearray;
       struct_for_threads[i].SizeDist = SizeDist;
       struct_for_threads[i].Qualfreq = Qual_freq_array;
-      //struct_for_threads[i].read_err_1 = "/home/wql443/WP1/SimulAncient/Qual_profiles/Freq_R1.txt";
-      struct_for_threads[i].cov = coverage;
       struct_for_threads[i].reads = reads;
       struct_for_threads[i].bgzf = bgzf;
       struct_for_threads[i].Adapter_flag = Adapt_flag;
@@ -417,17 +398,16 @@ int main(int argc,char **argv){
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   int Glob_seed = 1;
-  int threads = 10;
-  float cov = 1;
-  size_t No_reads = 1e9;
+  int threads = 32;
+  size_t No_reads = 1e8;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",Glob_seed,threads);
-  fprintf(stderr,"\t-> Coverage used for simulation: %f\n",cov);
   fprintf(stderr,"\t-> Number of simulated reads: %zd\n",No_reads);
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
   const char* Adapt_flag = "false";
   const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
   //fprintf(stderr,"Creating a bunch of threads\n");
-  Create_se_threads(seq_ref,threads,Glob_seed,cov,No_reads,Adapt_flag,Adapter_1);
+  int Thread_specific_Read = static_cast<int>(No_reads/threads);
+  Create_se_threads(seq_ref,threads,Glob_seed,Thread_specific_Read,Adapt_flag,Adapter_1);
   //fprintf(stderr,"Done creating a bunch of threads\n");
   //fflush(stderr);
   // free the calloc memory from fai_read
