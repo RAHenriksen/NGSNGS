@@ -371,6 +371,21 @@ double uniform()
     return (r-(int)r);
 }
 
+int Random_geometric_k(unsigned int  seed, const double p)
+{
+  double u = ((double) rand_r(&seed)/ RAND_MAX);
+  int k;
+
+  if (p == 1){k = 1;}
+  else if(p == 0){k=0;}
+  else{k = log (u) / log (1 - p);}
+
+  return k;
+}
+
+double myrand(unsigned int persistent){
+  return ((double) rand_r(&persistent)/ RAND_MAX);
+}
 
 void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, unsigned int seed){
     int l = 0;
@@ -378,26 +393,31 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
     while (l+r > L-2){
         l = 0;
         r = 0;
-        double u_l = uniform();
-        double u_r = uniform();
-        //cout << u_l << " " << u_r <<"\n";
-        std::default_random_engine generator1(rand_r(&seed)%30000+1);
+        double u_l = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
+        double u_r = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
+        //std::cout << u_l << " " << u_r <<"\n";
+        /*std::default_random_engine generator1(rand()%30000+1);
         std::geometric_distribution<int> distribution1(lambda);
-        std::default_random_engine generator2(rand_r(&seed)%30000+1);
-        std::geometric_distribution<int> distribution2(lambda);
+        std::default_random_engine generator2(rand()%30000+1);
+        std::geometric_distribution<int> distribution2(lambda);*/
+        
         if (u_l > 0.5){
-            l = distribution1(generator1);
+            l = Random_geometric_k(seed+0,0.36);//distribution1(generator1);
+            //fprintf(stderr,"U_L LEI %d\n",l);
             //cout << l << "\n";
         }
         if (u_r > 0.5){
-            r = distribution2(generator2);
-            //cout << r << "\n";
+          //fprintf(stderr,"U_R");
+          r = Random_geometric_k(seed+1,0.36); //distribution1(generator2);
+          //fprintf(stderr,"U_R LEI %d\n",r);
+          //fprintf(stderr,"U_R %lf", r);
+          //cout << r << "\n";
         }
     }
     //cout << l << " " << r <<"\n";
     for (int i = 0; i<l; i++){
         if (reffrag[i] == 'C' || reffrag[i] == 'c' ){
-            double u = uniform();
+            double u = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
             if (u < delta_s){
                 frag[i] = 'T';
             }else{
@@ -409,7 +429,7 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
     }
     for (int i = 0; i < r; i++){
         if (reffrag[L-i-1] == 'G' || reffrag[L-i-1] == 'g'){
-            double u = uniform();
+            double u = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
             if (u < delta_s){
                 frag[L-i-1] = 'A';
             }else{
@@ -419,7 +439,7 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
             frag[L-i-1] = reffrag[L-i-1];
         }
     }
-    double u_nick = uniform();
+    double u_nick = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
     double d = nv/((L-l-r-1)*nv+1-nv);
     int p_nick = l;
     double cumd = 0;
@@ -429,14 +449,14 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
     }
     for (int i = l; i < L-r; i++){
         if ((reffrag[i] == 'C' || reffrag[i] == 'c') && i<=p_nick){
-            double u = uniform();
+            double u = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
             if (u < delta){
                 frag[i] = 'T';
             }else{
                 frag[i] = 'C';
             }
         }else if ((reffrag[i] == 'G' || reffrag[i] == 'g') && i>p_nick){
-            double u = uniform();
+            double u = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
             if (u < delta){
                 frag[i] = 'A';
             }else{
@@ -541,4 +561,52 @@ void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval){
     }
   }
   //fprintf(stderr,"EXITING FUNCITON NOW \n");
+}
+
+int BinarySearch_fraglength(double* SearchArray,int low, int high, double key)
+{
+    int ans = 0; 
+    while (low <= high) {
+        int mid = low + (high - low + 1) / 2;
+        //fprintf(stderr,"test %lf\n",SearchArray[mid]);
+        double midVal = SearchArray[mid];
+ 
+        if (midVal < key) {
+            ans = mid;
+            low = mid + 1;
+        }
+        else if (midVal > key) {
+
+            high = mid - 1;
+        }
+        else if (midVal == key) {
+ 
+            high = mid - 1;
+        }
+    }
+ 
+    return ans+1;
+}
+
+void FragArray(int& number,int*& Length, double*& Frequency,const char* filename){
+  int LENS = 4096;
+  int* Frag_len = new int[LENS];
+  double* Frag_freq = new double[LENS];
+  int n =0;
+
+  gzFile gz = Z_NULL;
+  char buf[LENS];
+  
+  gz = gzopen(filename,"r");
+  assert(gz!=Z_NULL);
+  while(gzgets(gz,buf,LENS)){
+    Frag_len[n] = atoi(strtok(buf,"\n\t "));
+    Frag_freq[n] = atof(strtok(NULL,"\n\t "));
+    n++;
+  }
+  gzclose(gz); 
+
+  number = n;
+  Length = Frag_len;
+  Frequency = Frag_freq;
 }

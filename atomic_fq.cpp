@@ -36,6 +36,7 @@
 
 #include "SimulAncient_func.h"
 
+
 void printTime(FILE *fp){
   time_t rawtime;
   struct tm * timeinfo; 
@@ -86,8 +87,12 @@ struct Parsarg_for_Fafq_se_thread{
   int threadno;
   int *size_cumm;
   const char **names;
-  int* sizearray;
-  std::discrete_distribution<> *SizeDist;
+  //int* sizearray;
+  //std::discrete_distribution<> *SizeDist;
+  int* FragLen;
+  double* FragFreq;
+  int No_Len_Val;
+
   double* Qualfreq;
   int threadseed;
   size_t reads;
@@ -95,8 +100,7 @@ struct Parsarg_for_Fafq_se_thread{
   const char* Adapter_flag;
   const char* Adapter_1;
 };
-
-
+      
 void* Fafq_thread_se_run(void *arg){
   //casting my struct as arguments for the thread creation
   Parsarg_for_Fafq_se_thread *struct_obj = (Parsarg_for_Fafq_se_thread*) arg;
@@ -128,18 +132,22 @@ void* Fafq_thread_se_run(void *arg){
   int current_reads_atom = 0;
   //while (current_cov_atom < cov) {
   //while (current_reads_atom < reads){
-  while (current_reads_atom < reads){
-    int fraglength = (int) struct_obj->sizearray[struct_obj->SizeDist[1](gen)]; //100; //  //150; //no larger than 70 due to the error profile which is 280 lines 70 lines for each nt
-    
-    double rand_val = ((double) rand_r(&loc_seed)/ RAND_MAX);
-    //fprintf(stderr,"THREAD NO %d \t seed %lf\n",struct_obj->threadno,a);
-    //srand48(1+fraglength+iter);
-    //fprintf(stderr,"FRAGMENT LENGTH %d \n",fraglength);
-    //fprintf(stderr,"\t-> Seed used: %d \n",seed+fraglength+iter+D_total+std::time(nullptr));
 
-    rand_start = rand_val * (genome_len-fraglength)-1; //genome_len-100000;
+  
+  while (current_reads_atom < reads){
+    double rand_val = ((double) rand_r(&loc_seed)/ RAND_MAX);
+    
+    rand_start = rand_val * (genome_len)-1; //genome_len-100000;
+    int lengthbin = BinarySearch_fraglength(struct_obj->FragFreq,0, struct_obj->No_Len_Val - 1, rand_val);
+    //fprintf(stderr,"%d\n",lengthbin);//BinarySearch_fraglength(struct_obj->FragFreq,0, struct_obj->No_Len_Val - 1, 0.083621));
+    int fraglength = struct_obj->FragLen[lengthbin];
+    
+    //fprintf(stderr,"random val %lf, start %d, fraglength %d\n",rand_val,rand_start,fraglength);
+    
+    //fprintf(stderr,"%d\n",rand_start);//struct_obj->FragLen[6]);
     //fprintf(stderr,"RANDOM START LENGTH %d \n",rand_start);
     //identify the chromosome based on the coordinates from the cummulative size array
+    
     int chr_idx = 0;
     while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}
 
@@ -152,6 +160,7 @@ void* Fafq_thread_se_run(void *arg){
     else if (fraglength <= 150)
     {
       strncpy(seqmod,struct_obj->genome+rand_start-1,fraglength);
+      //fprintf(stderr,"%s \n",seqmod);
     }
     //srand48(seed+iter); 
     int rand_id = rand_val * fraglength-1; //100
@@ -168,8 +177,8 @@ void* Fafq_thread_se_run(void *arg){
 
       //for (int j = 0; j < fraglength; j++){D_total += 1;}
       //std::time(nullptr)
-      // SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097,loc_seed);
-
+      SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097,loc_seed);
+      
       int strand = (int) rand_r(&loc_seed)%2;//1;//rand() % 2;
       // FASTQ FILE
       if (strand == 0){
@@ -294,10 +303,9 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
 	  //bgzf = bgzf_open(filename, mode);
     bgzf = bgzf_open(filename,"wb"); 
     
-    //if(nthreads>1){bgzf_mt(bgzf,nthreads,256);}
-    bgzf_mt(bgzf,nthreads,256);
+    bgzf_mt(bgzf,5,256);
 
-    std::discrete_distribution<> SizeDist[2]; 
+    /*std::discrete_distribution<> SizeDist[2]; 
     std::ifstream infile2("Size_dist/Size_freq.txt");
     Size_freq_dist(infile2,SizeDist,seed);//struct_obj->threadseed //creates the distribution of all the frequencies
     infile2.close();
@@ -305,12 +313,19 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     // Creates the random lengths array and distributions //
     std::ifstream infile("Size_dist/Size_freq.txt");
     int* sizearray = Size_select_dist(infile);
-    infile.close();
+    infile.close();*/
 
     // READ QUAL ARRAY
     double* Qual_freq_array = new double[6000];
     Qual_freq_array = Qual_array(Qual_freq_array,"/home/wql443/WP1/SimulAncient/Qual_profiles/Acc_freq1.txt");
   
+    // FRAGMENT LENGTH CREATING ARRAY
+    int* Frag_len = new int[4096];
+    double* Frag_freq = new double[4096];
+    int number;
+
+    FragArray(number,Frag_len,Frag_freq,"Size_dist/Size_dist_sampling.txt");
+
     //initialzie values that should be used for each thread
     for (int i = 0; i < nthreads; i++){
       struct_for_threads[i].fqresult_r1 =new kstring_t;
@@ -321,8 +336,13 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       struct_for_threads[i].genome = genome_data;
       struct_for_threads[i].chr_no = chr_total;
       struct_for_threads[i].threadseed = seed;
-      struct_for_threads[i].sizearray = sizearray;
-      struct_for_threads[i].SizeDist = SizeDist;
+
+      struct_for_threads[i].FragLen =Frag_len;
+      struct_for_threads[i].FragFreq = Frag_freq;
+      struct_for_threads[i].No_Len_Val = number; 
+      //struct_for_threads[i].sizearray = sizearray;
+      //struct_for_threads[i].SizeDist = SizeDist;
+
       struct_for_threads[i].Qualfreq = Qual_freq_array;
       struct_for_threads[i].reads = reads;
       struct_for_threads[i].bgzf = bgzf;
@@ -375,7 +395,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       //delete[] struct_for_threads[i].sizearray;
       //free(struct_for_threads[i].fqresult_r1); // ERROR SUMMARY: 8 errors from 4 contexts (suppressed: 0 from 0)
     }
-    delete[] sizearray;
+    //delete[] sizearray;
     delete[] Qual_freq_array;
     free(genome_data);
   }
@@ -398,7 +418,7 @@ int main(int argc,char **argv){
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   int Glob_seed = 1;
-  int threads = 32;
+  int threads = 8;
   size_t No_reads = 1e8;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",Glob_seed,threads);
   fprintf(stderr,"\t-> Number of simulated reads: %zd\n",No_reads);
@@ -407,6 +427,7 @@ int main(int argc,char **argv){
   const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
   //fprintf(stderr,"Creating a bunch of threads\n");
   int Thread_specific_Read = static_cast<int>(No_reads/threads);
+
   Create_se_threads(seq_ref,threads,Glob_seed,Thread_specific_Read,Adapt_flag,Adapter_1);
   //fprintf(stderr,"Done creating a bunch of threads\n");
   //fflush(stderr);
@@ -417,7 +438,6 @@ int main(int argc,char **argv){
   fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));  
 }
 
-//SimBriggsModel(seqmod, frag, L, 0.024, 0.36, 0.68, 0.0097);
 // g++ SimulAncient_func.cpp atomic_fq.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 //cat chr22_out.fq | grep '@' | cut -d_ -f4 | sort | uniq -d | wc -l
 //cat test.fq | grep 'T0' | grep 'chr20' | wc -l

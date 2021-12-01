@@ -33,4 +33,10 @@ double* Qual_array(double* freqval,const char* filename);
 
 void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval);
 
+int BinarySearch_fraglength(double* SearchArray,int low, int high, double key);
+
+void FragArray(int& number,int*& Length, double*& Frequency,const char* filename);
+
+double myrand(unsigned int persistent);
+
 #endif
