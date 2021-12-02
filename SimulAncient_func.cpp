@@ -374,13 +374,13 @@ double uniform()
 int Random_geometric_k(unsigned int  seed, const double p)
 {
   double u = ((double) rand_r(&seed)/ RAND_MAX);
-  int k;
+  double k;
 
   if (p == 1){k = 1;}
   else if(p == 0){k=0;}
   else{k = log (u) / log (1 - p);}
 
-  return k;
+  return floor(k);
 }
 
 double myrand(unsigned int persistent){

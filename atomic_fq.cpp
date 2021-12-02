@@ -232,7 +232,7 @@ void* Fafq_thread_se_run(void *arg){
       if (struct_obj->fqresult_r1->l > 30000000){
         //fprintf(stderr,"\t Buffer mutex with thread no %d\n", struct_obj->threadno);fflush(stderr);
         pthread_mutex_lock(&Fq_write_mutex);
-        bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
+        //bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
         pthread_mutex_unlock(&Fq_write_mutex);
         struct_obj->fqresult_r1->l =0;
       }
@@ -259,7 +259,7 @@ void* Fafq_thread_se_run(void *arg){
   if (struct_obj->fqresult_r1->l > 0){
     //fprintf(stderr,"\t last Buffer mutex with thread no %d\n", struct_obj->threadno);fflush(stderr);
     pthread_mutex_lock(&Fq_write_mutex);
-    bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
+    //bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
     pthread_mutex_unlock(&Fq_write_mutex);
     struct_obj->fqresult_r1->l =0;
   } 
@@ -303,7 +303,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
 	  //bgzf = bgzf_open(filename, mode);
     bgzf = bgzf_open(filename,"wb"); 
     
-    bgzf_mt(bgzf,5,256);
+    //bgzf_mt(bgzf,nthreads,256);
 
     /*std::discrete_distribution<> SizeDist[2]; 
     std::ifstream infile2("Size_dist/Size_freq.txt");
@@ -418,8 +418,8 @@ int main(int argc,char **argv){
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   int Glob_seed = 1;
-  int threads = 8;
-  size_t No_reads = 1e8;
+  int threads = 4;
+  size_t No_reads = 5e8;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",Glob_seed,threads);
   fprintf(stderr,"\t-> Number of simulated reads: %zd\n",No_reads);
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
