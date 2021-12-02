@@ -34,7 +34,7 @@
 #include <atomic>
 #include <vector>
 
-#include "SimulAncient_func.h"
+#include "NGSNGS_func.h"
 
 
 void printTime(FILE *fp){
@@ -140,9 +140,13 @@ void* Fafq_thread_se_run(void *arg){
     rand_start = rand_val * (genome_len)-1; //genome_len-100000;
     int lengthbin = BinarySearch_fraglength(struct_obj->FragFreq,0, struct_obj->No_Len_Val - 1, rand_val);
     //fprintf(stderr,"%d\n",lengthbin);//BinarySearch_fraglength(struct_obj->FragFreq,0, struct_obj->No_Len_Val - 1, 0.083621));
-    int fraglength = struct_obj->FragLen[lengthbin];
+    int fraglength = 75; //struct_obj->FragLen[lengthbin];
     
     //fprintf(stderr,"random val %lf, start %d, fraglength %d\n",rand_val,rand_start,fraglength);
+    if (rand_start < 30000)
+    {
+      rand_start += 30000;
+    }
     
     //fprintf(stderr,"%d\n",rand_start);//struct_obj->FragLen[6]);
     //fprintf(stderr,"RANDOM START LENGTH %d \n",rand_start);
@@ -232,7 +236,7 @@ void* Fafq_thread_se_run(void *arg){
       if (struct_obj->fqresult_r1->l > 30000000){
         //fprintf(stderr,"\t Buffer mutex with thread no %d\n", struct_obj->threadno);fflush(stderr);
         pthread_mutex_lock(&Fq_write_mutex);
-        //bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
+        bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
         pthread_mutex_unlock(&Fq_write_mutex);
         struct_obj->fqresult_r1->l =0;
       }
@@ -259,7 +263,7 @@ void* Fafq_thread_se_run(void *arg){
   if (struct_obj->fqresult_r1->l > 0){
     //fprintf(stderr,"\t last Buffer mutex with thread no %d\n", struct_obj->threadno);fflush(stderr);
     pthread_mutex_lock(&Fq_write_mutex);
-    //bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
+    bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
     pthread_mutex_unlock(&Fq_write_mutex);
     struct_obj->fqresult_r1->l =0;
   } 
@@ -300,20 +304,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     BGZF *bgzf;
     const char* filename = "chr22_out.fq.gz";
     const char *mode = "r";
-	  //bgzf = bgzf_open(filename, mode);
     bgzf = bgzf_open(filename,"wb"); 
     
-    //bgzf_mt(bgzf,nthreads,256);
+    bgzf_mt(bgzf,5,256);
 
-    /*std::discrete_distribution<> SizeDist[2]; 
-    std::ifstream infile2("Size_dist/Size_freq.txt");
-    Size_freq_dist(infile2,SizeDist,seed);//struct_obj->threadseed //creates the distribution of all the frequencies
-    infile2.close();
-
-    // Creates the random lengths array and distributions //
-    std::ifstream infile("Size_dist/Size_freq.txt");
-    int* sizearray = Size_select_dist(infile);
-    infile.close();*/
 
     // READ QUAL ARRAY
     double* Qual_freq_array = new double[6000];
@@ -418,8 +412,8 @@ int main(int argc,char **argv){
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
   int Glob_seed = 1;
-  int threads = 4;
-  size_t No_reads = 5e8;
+  int threads = 1;
+  size_t No_reads = 1e8;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",Glob_seed,threads);
   fprintf(stderr,"\t-> Number of simulated reads: %zd\n",No_reads);
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
@@ -438,7 +432,7 @@ int main(int argc,char **argv){
   fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));  
 }
 
-// g++ SimulAncient_func.cpp atomic_fq.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
+// g++ NGSNGS_func.cpp atomic_fq.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 //cat chr22_out.fq | grep '@' | cut -d_ -f4 | sort | uniq -d | wc -l
 //cat test.fq | grep 'T0' | grep 'chr20' | wc -l
 //valgrind --tool=memcheck --leak-check=full ./a.out
