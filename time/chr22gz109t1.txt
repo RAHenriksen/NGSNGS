@@ -1,0 +1,45 @@
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa': 1
+	-> Seed used: 1 with 1 threads
+	-> Coverage used for simulation: 1.000000
+	-> Number of simulated reads: 100000000
+	-> Full genome function run!
+	-> Full genome size 51304566 
+	[ALL done] cpu-time used =  2836.45 sec
+	[ALL done] walltime used =  2846.00 sec
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa': 1
+	-> Seed used: 1 with 1 threads
+	-> Coverage used for simulation: 1.000000
+	-> Number of simulated reads: 100000000
+	-> Full genome function run!
+	-> Full genome size 51304566 
+	[ALL done] cpu-time used =  2810.50 sec
+	[ALL done] walltime used =  2818.00 sec
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa': 1
+	-> Seed used: 1 with 1 threads
+	-> Coverage used for simulation: 1.000000
+	-> Number of simulated reads: 100000000
+	-> Full genome function run!
+	-> Full genome size 51304566 
+	[ALL done] cpu-time used =  2757.96 sec
+	[ALL done] walltime used =  2765.00 sec
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa': 1
+	-> Seed used: 1 with 1 threads
+	-> Coverage used for simulation: 1.000000
+	-> Number of simulated reads: 100000000
+	-> Full genome function run!
+	-> Full genome size 51304566 
+	[ALL done] cpu-time used =  2759.60 sec
+	[ALL done] walltime used =  2766.00 sec
+	-> fasta load 
+	-> Number of contigs/scaffolds/chromosomes in file: '/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa': 1
+	-> Seed used: 1 with 1 threads
+	-> Coverage used for simulation: 1.000000
+	-> Number of simulated reads: 100000000
+	-> Full genome function run!
+	-> Full genome size 51304566 
+	[ALL done] cpu-time used =  2762.47 sec
+	[ALL done] walltime used =  2770.00 sec
