@@ -1,1 +1,0 @@
-inverse.o: inverse.cpp
