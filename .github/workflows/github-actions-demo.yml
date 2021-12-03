@@ -14,4 +14,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: gcc
-      run: g++ SimulAncient_func.cpp atomic_fq.cpp -lz
+      run: make
