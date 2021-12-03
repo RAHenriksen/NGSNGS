@@ -302,12 +302,13 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
     BGZF *bgzf;
-    const char* filename = "chr22_out.fq.gz";
+    const char* filename = "chr22_out2.fq.gz";
     const char *mode = "r";
     bgzf = bgzf_open(filename,"wb"); 
     
-    bgzf_mt(bgzf,5,256);
-
+    int mt_cores = 1;
+    bgzf_mt(bgzf,mt_cores,256);
+    fprintf(stderr,"\t-> Number of cores for bgzf_mt: %d\n",mt_cores);
 
     // READ QUAL ARRAY
     double* Qual_freq_array = new double[6000];
