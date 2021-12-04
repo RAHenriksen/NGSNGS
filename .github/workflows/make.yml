@@ -1,4 +1,4 @@
-name: compile-test
+name: make-test
 
 on:
   push:
