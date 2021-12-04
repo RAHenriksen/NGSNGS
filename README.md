@@ -1,4 +1,4 @@
- ## [![tests](https://github.com/RAHenriksen/SimulAncient/actions/workflows/make.yml/badge.svg)](https://github.com/RAHenriksen/SimulAncient/actions/workflows/make.yml) ngsngs
+ ## [![make-tests](https://github.com/RAHenriksen/SimulAncient/actions/workflows/make.yml/badge.svg)](https://github.com/RAHenriksen/SimulAncient/actions/workflows/make.yml) ngsngs
 # ANCIENT DNA SIMULATIONS
 
 g++ SimulAncient_hslib.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
