@@ -1,6 +1,8 @@
-# ANCIENT DNA SIMULATIONS
-
-g++ SimulAncient_hslib.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
+ # [![make](https://github.com/RAHenriksen/SimulAncient/actions/workflows/make.yml/badge.svg)](https://github.com/RAHenriksen/SimulAncient/actions/workflows/make.yml) SimulAncient
+ 
+## Installation
+* make
+* make HTSSRC=../hstlib
 
 ## Ideas i need to incorporate
 1) giving as input real life data
