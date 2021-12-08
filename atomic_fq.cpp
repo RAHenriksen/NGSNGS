@@ -181,7 +181,7 @@ void* Fafq_thread_se_run(void *arg){
 
       //for (int j = 0; j < fraglength; j++){D_total += 1;}
       //std::time(nullptr)
-      // SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097,loc_seed);
+      SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097,loc_seed);
       
       int strand = (int) rand_r(&loc_seed)%2;//1;//rand() % 2;
       // FASTQ FILE
