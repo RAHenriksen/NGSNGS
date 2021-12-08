@@ -21,6 +21,6 @@ int BinarySearch_fraglength(double* SearchArray,int low, int high, double key);
 
 void FragArray(int& number,int*& Length, double*& Frequency,const char* filename);
 
-
+void printTime(FILE *fp);
 
 #endif

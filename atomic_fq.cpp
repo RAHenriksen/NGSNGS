@@ -1,15 +1,9 @@
-#include <algorithm>
 #include <cstdio>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <iostream>//for printing time
-
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
 #include <cstring>
+#include <cstdlib>
+#include <ctime>
+#include <cassert>
+#include <cstdint>
 
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
@@ -18,35 +12,9 @@
 #include <htslib/kstring.h>
 #include <zlib.h>
 
-#include <cstdlib>
-#include <ctime>
-
-#include <cstdio>
-#include <cassert>
-#include <cstdint>
-
-#include <random>
-#include <iterator>
-#include <cmath>
-
-#include <thread>         // std::thread
-#include <mutex>        
-#include <atomic>
-#include <vector>
+#include <pthread.h>
 
 #include "NGSNGS_func.h"
-
-
-void printTime(FILE *fp){
-  time_t rawtime;
-  struct tm * timeinfo; 
-  time ( &rawtime );
-  timeinfo = localtime ( &rawtime );
-  fprintf (fp, "\t-> %s", asctime (timeinfo) );
-}
-
-pthread_mutex_t Fq_write_mutex;
-
 
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],int chr_size_cumm[]){
   
@@ -78,8 +46,10 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
   return genome;
 }
 
-// ---------------------- SINGLE-END ---------------------- //
 
+pthread_mutex_t Fq_write_mutex;
+
+// ---------------------- SINGLE-END ---------------------- //
 struct Parsarg_for_Fafq_se_thread{
   kstring_t *fqresult_r1;
   char *genome; // The actual concatenated genome
@@ -87,8 +57,7 @@ struct Parsarg_for_Fafq_se_thread{
   int threadno;
   int *size_cumm;
   const char **names;
-  //int* sizearray;
-  //std::discrete_distribution<> *SizeDist;
+
   int* FragLen;
   double* FragFreq;
   int No_Len_Val;
@@ -99,6 +68,7 @@ struct Parsarg_for_Fafq_se_thread{
   BGZF *bgzf;
   const char* Adapter_flag;
   const char* Adapter_1;
+  const char* OutputFormat;
 };
       
 void* Fafq_thread_se_run(void *arg){
@@ -108,8 +78,6 @@ void* Fafq_thread_se_run(void *arg){
   time_t t4=time(NULL);
   // creating random objects for all distributions.
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno;
-  std::random_device rd;
-  std::default_random_engine gen(loc_seed);//gen(struct_obj->threadseed); //struct_obj->seed+struct_obj->threadno
   
   size_t genome_len = strlen(struct_obj->genome);
 
@@ -132,21 +100,22 @@ void* Fafq_thread_se_run(void *arg){
   int current_reads_atom = 0;
   //while (current_cov_atom < cov) {
   //while (current_reads_atom < reads){
-
-  
+  unsigned int test = 0;
   while (current_reads_atom < reads){
     double rand_val = ((double) rand_r(&loc_seed)/ RAND_MAX);
-    
-    rand_start = rand_val * (genome_len)-1; //genome_len-100000;
+    double rand_val2 = rand_val*RAND_MAX;
+    unsigned int test = (unsigned int) rand_val2;
+    double rand_val3 = myrand((unsigned int) rand_val2); //((double) rand_r(&test)/ RAND_MAX);// 
+    //fprintf(stderr,"%lf \t %lf \t %u \t %lf \n",rand_val,rand_val2,test,rand_val3);
+    //fprintf(stderr,"%lf \t %lf \n",rand_val,rand_val3);
+    rand_start = rand_val3 * (genome_len-300); //genome_len-100000;
+    //fprintf(stderr,"Start 1 %ld \t start 2 %ld \n",rand_start,(size_t) (rand_val * (genome_len-300)));
     int lengthbin = BinarySearch_fraglength(struct_obj->FragFreq,0, struct_obj->No_Len_Val - 1, rand_val);
     //fprintf(stderr,"%d\n",lengthbin);//BinarySearch_fraglength(struct_obj->FragFreq,0, struct_obj->No_Len_Val - 1, 0.083621));
-    int fraglength = 75; //struct_obj->FragLen[lengthbin];
+    int fraglength = struct_obj->FragLen[lengthbin];//75; //struct_obj->FragLen[lengthbin];
     
     //fprintf(stderr,"random val %lf, start %d, fraglength %d\n",rand_val,rand_start,fraglength);
-    if (rand_start < 30000)
-    {
-      rand_start += 30000;
-    }
+    //if (rand_start < 30000){rand_start += 30000;}
     
     //fprintf(stderr,"%d\n",rand_start);//struct_obj->FragLen[6]);
     //fprintf(stderr,"RANDOM START LENGTH %d \n",rand_start);
@@ -157,16 +126,16 @@ void* Fafq_thread_se_run(void *arg){
 
     // case 1
     if (fraglength > 150){
-      //std::cout << "lolrt" << std::endl;
       strncpy(seqmod,struct_obj->genome+rand_start-1,150);
     }
     // case 2
     else if (fraglength <= 150)
     {
+      //fprintf(stderr,"------------------------------------------------\n%s \n",seqmod);
       strncpy(seqmod,struct_obj->genome+rand_start-1,fraglength);
-      //fprintf(stderr,"%s \n",seqmod);
+      //fprintf(stderr,"%s\t %d \t %d \n",seqmod,rand_start,fraglength);
     }
-    //srand48(seed+iter); 
+
     int rand_id = rand_val * fraglength-1; //100
     
     //removes reads with NNN
@@ -175,7 +144,7 @@ void* Fafq_thread_se_run(void *arg){
     pch = strchr(seqmod,'N');
     pch2 = strrchr(seqmod,'N');
     //if (pch != NULL){continue;}
-    if ((int )(pch-seqmod+1) == 1 && (int)(pch2-seqmod+1)  == strlen(seqmod)){continue;}
+    if ((int )(pch-seqmod+1) == 1 && (int)(pch2-seqmod+1)  == strlen(seqmod)){memset(seqmod, 0, sizeof seqmod);}
     else{
       int seqlen = strlen(seqmod);
 
@@ -247,7 +216,7 @@ void* Fafq_thread_se_run(void *arg){
       memset(qual, 0, sizeof(qual));  
       //nread++;
       //fprintf(stderr,"Number of reads %d \n",nread);
-    }
+    
 
     memset(seqmod, 0, sizeof seqmod);
     memset(seqmod2, 0, sizeof seqmod2);
@@ -256,6 +225,7 @@ void* Fafq_thread_se_run(void *arg){
     iter++;
     localread++;
     current_reads_atom++;
+    }
     //fprintf(stderr,"\t currect number of reads %d with thread number %d\n", current_reads_atom, struct_obj->threadno);
     //std::cout << "currect coverage " << current_cov_atom << std::endl;
     //std::cout << "currect number of reads " << current_reads_atom << std::endl;
@@ -280,7 +250,7 @@ void* Fafq_thread_se_run(void *arg){
   return NULL;
 }
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,const char* Adapt_flag,const char* Adapter_1){
+void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,const char* Adapt_flag,const char* Adapter_1,const char* OutputFormat){
   time_t t3=time(NULL);
   //creating an array with the arguments to create multiple threads;
   int nthreads=thread_no;
@@ -302,6 +272,23 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
     BGZF *bgzf;
+    if (OutputFormat == "fa"){
+      strcat(read,struct_obj->Adapter_1);
+    }
+    if (OutputFormat == "fa.gz"){
+      /* code */
+    }
+    if (OutputFormat == "fq"){
+      /* code */
+    }
+    if (OutputFormat == "fq.gz"){
+      /* code */
+    }
+    if (OutputFormat == "fasta"){
+      /* code */
+    }
+    
+
     const char* filename = "chr22_out2.fq";
     const char *mode = "r";
     bgzf = bgzf_open(filename,"wu"); 
@@ -343,6 +330,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       struct_for_threads[i].bgzf = bgzf;
       struct_for_threads[i].Adapter_flag = Adapt_flag;
       struct_for_threads[i].Adapter_1 = Adapter_1;
+      struct_for_threads[i].OutputFormat = OutputFormat;
       
       //declaring the size of the different arrays
       struct_for_threads[i].size_cumm = (int*)malloc(sizeof(int) * (struct_for_threads[i].chr_no+1));
@@ -412,18 +400,20 @@ int main(int argc,char **argv){
   assert(seq_ref!=NULL);
   int chr_total = faidx_nseq(seq_ref);
   fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
-  int Glob_seed = 1;
-  int threads = 1;
-  size_t No_reads = 1e8;
+  int Glob_seed = 1; //(int) time(NULL);
+  int threads = 2;
+  size_t No_reads = 1e6;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",Glob_seed,threads);
   fprintf(stderr,"\t-> Number of simulated reads: %zd\n",No_reads);
   //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
   const char* Adapt_flag = "false";
   const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
+  
+  const char* OutputFormat = "fasta";
   //fprintf(stderr,"Creating a bunch of threads\n");
   int Thread_specific_Read = static_cast<int>(No_reads/threads);
 
-  Create_se_threads(seq_ref,threads,Glob_seed,Thread_specific_Read,Adapt_flag,Adapter_1);
+  Create_se_threads(seq_ref,threads,Glob_seed,Thread_specific_Read,Adapt_flag,Adapter_1,OutputFormat);
   //fprintf(stderr,"Done creating a bunch of threads\n");
   //fflush(stderr);
   // free the calloc memory from fai_read
@@ -435,12 +425,3 @@ int main(int argc,char **argv){
 
 // g++ NGSNGS_func.cpp atomic_fq.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 //cat chr22_out.fq | grep '@' | cut -d_ -f4 | sort | uniq -d | wc -l
-//cat test.fq | grep 'T0' | grep 'chr20' | wc -l
-//valgrind --tool=memcheck --leak-check=full ./a.out
-
-//awk 'NR%4==2{sum+=length($0)}END{print sum/(NR/4)}' chr22_out.fq
-// { time ./a.out; } 2> test.txt
-// for i in {1..10}; do (time ./a.out) &>> time/cpu_2022.txt ; done
-// for i in {1..10}; do (time ./a.out) &>> time/hg19c1t1.txt ; done
-//for i in {1..2}; do (/usr/bin/time -f "mem=%K RSS=%M elapsed=%E cpu.sys=%S user=%U" ./hg19c1t1) &>> time/hg19c1t1.txt ; done
-//for i in {1..10}; do (/usr/bin/time -f "mem=%K RSS=%M elapsed=%E cpu.sys=%S user=%U" ./hg19c1t16) &>> time/hg19gzt2.txt ; done

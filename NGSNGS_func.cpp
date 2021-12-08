@@ -1,34 +1,21 @@
-#include <algorithm>
 #include <cstdio>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
 #include <cstring>
+#include <cstdlib>
+#include <ctime>
+#include <cassert>
+#include <cstdint>
+#include <cmath>
+
+#include <algorithm> //std::reverse
 
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
 #include <htslib/vcf.h>
+#include <htslib/bgzf.h>
 #include <htslib/kstring.h>
 #include <zlib.h>
 
-#include <cstdlib>
-#include <ctime>
-
-#include <cstdio>
-#include <cassert>
-#include <cstdint>
-
-#include <random>
-#include <iterator>
-#include <cmath>
-
-#include <thread>         // std::thread
-#include <mutex>          // std::mutex mtx;
+#include <pthread.h>
 
 #include "NGSNGS_func.h"
 
@@ -302,4 +289,12 @@ void FragArray(int& number,int*& Length, double*& Frequency,const char* filename
   number = n;
   Length = Frag_len;
   Frequency = Frag_freq;
+}
+
+void printTime(FILE *fp){
+  time_t rawtime;
+  struct tm * timeinfo; 
+  time ( &rawtime );
+  timeinfo = localtime ( &rawtime );
+  fprintf (fp, "\t-> %s", asctime (timeinfo) );
 }
