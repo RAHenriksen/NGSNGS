@@ -65,7 +65,9 @@ struct Parsarg_for_Fafq_se_thread{
   double* Qualfreq;
   int threadseed;
   size_t reads;
+  
   BGZF *bgzf;
+
   const char* Adapter_flag;
   const char* Adapter_1;
   const char* OutputFormat;
@@ -82,8 +84,8 @@ void* Fafq_thread_se_run(void *arg){
   size_t genome_len = strlen(struct_obj->genome);
 
   //coverage method2
-  char seqmod[1024] = {0};
-  char seqmod2[1024] = {0};
+  char seq_r1[1024] = {0};
+  char seq_r1_mod[1024] = {0};
   char read[1024] = {0};
   char readadapt[1024] = {0};
   // for the coverage examples
@@ -126,14 +128,14 @@ void* Fafq_thread_se_run(void *arg){
 
     // case 1
     if (fraglength > 150){
-      strncpy(seqmod,struct_obj->genome+rand_start-1,150);
+      strncpy(seq_r1,struct_obj->genome+rand_start-1,150);
     }
     // case 2
     else if (fraglength <= 150)
     {
-      //fprintf(stderr,"------------------------------------------------\n%s \n",seqmod);
-      strncpy(seqmod,struct_obj->genome+rand_start-1,fraglength);
-      //fprintf(stderr,"%s\t %d \t %d \n",seqmod,rand_start,fraglength);
+      //fprintf(stderr,"------------------------------------------------\n%s \n",seq_r1);
+      strncpy(seq_r1,struct_obj->genome+rand_start-1,fraglength);
+      //fprintf(stderr,"%s\t %d \t %d \n",seq_r1,rand_start,fraglength);
     }
 
     int rand_id = rand_val * fraglength-1; //100
@@ -141,25 +143,25 @@ void* Fafq_thread_se_run(void *arg){
     //removes reads with NNN
     char * pch;
     char * pch2;
-    pch = strchr(seqmod,'N');
-    pch2 = strrchr(seqmod,'N');
+    pch = strchr(seq_r1,'N');
+    pch2 = strrchr(seq_r1,'N');
     //if (pch != NULL){continue;}
-    if ((int )(pch-seqmod+1) == 1 && (int)(pch2-seqmod+1)  == strlen(seqmod)){memset(seqmod, 0, sizeof seqmod);}
+    if ((int )(pch-seq_r1+1) == 1 && (int)(pch2-seq_r1+1)  == strlen(seq_r1)){memset(seq_r1, 0, sizeof seq_r1);}
     else{
-      int seqlen = strlen(seqmod);
+      int seqlen = strlen(seq_r1);
 
       //for (int j = 0; j < fraglength; j++){D_total += 1;}
       //std::time(nullptr)
-      SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097,loc_seed);
+      SimBriggsModel(seq_r1, seq_r1_mod, fraglength, 0.024, 0.36, 0.68, 0.0097,loc_seed);
       
       int strand = (int) rand_r(&loc_seed)%2;//1;//rand() % 2;
       // FASTQ FILE
       if (strand == 0){
-        DNA_complement(seqmod);
-        reverseChar(seqmod);
-        //SimBriggsModel(seqmod, seqmod2, fraglength, 0.024, 0.36, 0.68, 0.0097);
+        DNA_complement(seq_r1);
+        reverseChar(seq_r1);
+        //SimBriggsModel(seq_r1, seq_r1, fraglength, 0.024, 0.36, 0.68, 0.0097);
         if (struct_obj->Adapter_flag == "true"){
-          strcpy(read, seqmod);
+          strcpy(read, seq_r1);
           strcat(read,struct_obj->Adapter_1);
           //std::cout << "read " << read << std::endl;
           strncpy(readadapt, read, 150);
@@ -172,16 +174,16 @@ void* Fafq_thread_se_run(void *arg){
         }
         else if (struct_obj->Adapter_flag == "false"){
           
-          Read_Qual_new(seqmod,qual,loc_seed,struct_obj->Qualfreq);
+          Read_Qual_new(seq_r1,qual,loc_seed,struct_obj->Qualfreq);
           
           ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,0,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-          fraglength,seqmod,qual);
+          fraglength,seq_r1,qual);
         }
       }
       else if (strand == 1){
         if (struct_obj->Adapter_flag == "true"){
-          strcpy(read, seqmod);
+          strcpy(read, seq_r1);
           strcat(read,struct_obj->Adapter_1);
           //std::cout << "read " << read << std::endl;
           strncpy(readadapt, read, 150);
@@ -194,11 +196,11 @@ void* Fafq_thread_se_run(void *arg){
         }
         else if (struct_obj->Adapter_flag == "false"){
           
-          Read_Qual_new(seqmod,qual,loc_seed,struct_obj->Qualfreq);
+          Read_Qual_new(seq_r1,qual,loc_seed,struct_obj->Qualfreq);
           
           ksprintf(struct_obj->fqresult_r1,"@T%d_RID%d_S%d_%s:%d-%d_length:%d\n%s\n+\n%s\n",struct_obj->threadno, rand_id,1,
           struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-          fraglength,seqmod,qual);
+          fraglength,seq_r1,qual);
         }
       }        
 
@@ -218,8 +220,8 @@ void* Fafq_thread_se_run(void *arg){
       //fprintf(stderr,"Number of reads %d \n",nread);
     
 
-    memset(seqmod, 0, sizeof seqmod);
-    memset(seqmod2, 0, sizeof seqmod2);
+    memset(seq_r1, 0, sizeof seq_r1);
+    memset(seq_r1_mod, 0, sizeof seq_r1_mod);
     chr_idx = 0;
     //fprintf(stderr,"start %d, fraglength %d\n",rand_start,fraglength);
     iter++;
@@ -272,25 +274,30 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
     BGZF *bgzf;
+    char file[80];
+    const char* fileprefix = "chr22_out";
+    strcpy(file,fileprefix);
+    const char* suffix;
+    const char *mode;
     if (OutputFormat == "fa"){
-      strcat(read,struct_obj->Adapter_1);
+      suffix = ".fa";
+      mode = "wu";
     }
     if (OutputFormat == "fa.gz"){
-      /* code */
+      suffix = ".fa.gz";
+      mode = "wb";
     }
     if (OutputFormat == "fq"){
-      /* code */
+      suffix = ".fq";
+      mode = "wu";
     }
     if (OutputFormat == "fq.gz"){
-      /* code */
+      suffix = ".fa.gz";
+      mode = "wb";
     }
-    if (OutputFormat == "fasta"){
-      /* code */
-    }
-    
-
-    const char* filename = "chr22_out2.fq";
-    const char *mode = "r";
+    strcat(file,suffix);
+    fprintf(stderr,"%s",file);
+    const char* filename = "chr22_out.fq";
     bgzf = bgzf_open(filename,"wu"); 
     
     int mt_cores = 1;
@@ -409,7 +416,7 @@ int main(int argc,char **argv){
   const char* Adapt_flag = "false";
   const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
   
-  const char* OutputFormat = "fasta";
+  const char* OutputFormat = "fa";
   //fprintf(stderr,"Creating a bunch of threads\n");
   int Thread_specific_Read = static_cast<int>(No_reads/threads);
 
