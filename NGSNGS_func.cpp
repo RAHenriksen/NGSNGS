@@ -148,35 +148,42 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
     }
 }
 
-const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos){
-  //const char* nt_qual[8] = {"#", "\'", "0", "7" ,"<", "!", "%","("};
-  const char* nt_qual[8] = {"#", "\'", "0", "7" ,"<", "B", "F","I"};
+const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos,const char* OutputFormat){
+
+  //const char* nt_qual[8] = {"#", "\'", "0", "7" ,"<", "B", "F","I"}; // 35,39,48,55,66,70,73 //then withouth & in nt_qual[0]
+  //const char* nt_qual[8] = {"#", "\'", "0", "7" ,"<", "B", "F","I"};//{"#", "\'", "0", "7" ,"<", "B", "F","I"};
+
+  if (OutputFormat == "bam"){char nt_qual[8] = {2,6,15,22,27,33,37,40};}
+  if (OutputFormat == "fq"){char nt_qual[8] = {35,39,48,55,66,70,73};}
+  
+  char nt_qual[8] = {2,6,15,22,27,33,37,40};
+  //const char* nt_qual[8] = (const char*) nt_qual_int[9];
   int offset = ((nt_offset+read_pos)*8);
   //printf("offset %d \n", offset);
   const char* nt_out;
   if (a <= err[offset]){
-    nt_out = nt_qual[0];
+    nt_out = &nt_qual[0];
   }
   else if (err[offset] < a && a <= err[offset+1]){
-    nt_out = nt_qual[1];
+    nt_out = &nt_qual[1];
     }
   else if (err[offset+1] < a && a <= err[offset+2]){
-    nt_out = nt_qual[2];
+    nt_out = &nt_qual[2];
   }
   else if (err[offset+2] < a && a <= err[offset+3]){
-    nt_out = nt_qual[3];
+    nt_out = &nt_qual[3];
   }
   else if (err[offset+3] < a && a<= err[offset+4]){
-    nt_out = nt_qual[4];
+    nt_out = &nt_qual[4];
   }
   else if (err[offset+4] < a && a<= err[offset+5]){
-    nt_out = nt_qual[5];
+    nt_out = &nt_qual[5];
   }
   else if (err[offset+5] < a && a<= err[offset+6]){
-    nt_out = nt_qual[6];
+    nt_out = &nt_qual[6];
   }
   else if (err[offset+6] < a && a <= err[offset+7]){
-    nt_out = nt_qual[7];
+    nt_out = &nt_qual[7];
   }
   return nt_out;
 }
@@ -199,7 +206,7 @@ double* Qual_array(double* freqval,const char* filename){
   return freqval;
 }
 
-void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval){
+void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval,const char* OutputFormat){
   //fprintf(stderr,"INSIDE FUNCITON NOW \n");
   int Tstart = 150;
   int Gstart = 300;
@@ -220,23 +227,23 @@ void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval){
     switch(seq[row_idx]){
       case 'A':
       case 'a':
-        strncat(qual, Error_lookup(r,freqval,0,row_idx), 1);
+        strncat(qual, Error_lookup(r,freqval,0,row_idx,OutputFormat), 1);
         break;
       case 'T':
       case 't':
-        strncat(qual, Error_lookup(r,freqval,Tstart,row_idx), 1);
+        strncat(qual, Error_lookup(r,freqval,Tstart,row_idx,OutputFormat), 1);
         break;  
       case 'G':
       case 'g':
-        strncat(qual, Error_lookup(r,freqval,Gstart,row_idx), 1);
+        strncat(qual, Error_lookup(r,freqval,Gstart,row_idx,OutputFormat), 1);
         break;
       case 'C':
       case 'c':
-        strncat(qual, Error_lookup(r,freqval,Cstart,row_idx), 1);
+        strncat(qual, Error_lookup(r,freqval,Cstart,row_idx,OutputFormat), 1);
         break;
       case 'N':
       case 'n':
-        strncat(qual, Error_lookup(r,freqval,Nstart,row_idx), 1);
+        strncat(qual, Error_lookup(r,freqval,Nstart,row_idx,OutputFormat), 1);
         break;
     }
   }
@@ -298,3 +305,4 @@ void printTime(FILE *fp){
   timeinfo = localtime ( &rawtime );
   fprintf (fp, "\t-> %s", asctime (timeinfo) );
 }
+
