@@ -131,14 +131,23 @@ int main(int argc,char **argv){
   time_t t2=time(NULL);
   
   unsigned int loc_seed = 4;
+  
+  char nt_qual[8] = {2+33,6+33,15+33,22+33,27+33,33+33,37+33,40+33};
 
+  const char* nt_out;
+  nt_out = &nt_qual[2];
+  fprintf(stderr,"test %s lol\n",nt_out);
+  return 0;
+}
+
+  /*
   FILE *fp1;
   fp1 = fopen("geom_dist106v2.txt","wb");
   for(int i = 0; i<1e6; i++){
     int test = Random_geometric_k(loc_seed+i,0.36);
     fprintf(fp1,"%d\n",test);
   }
-  fclose(fp1);
+  fclose(fp1);*/
   /*unsigned int loc_seed = 4;
   double r;
   
@@ -185,8 +194,7 @@ int main(int argc,char **argv){
   
   std::cout << "-----------" << std::endl;
   */
-  return 0;
-}
+
 
 /*
 gzFile gz = Z_NULL;

@@ -148,15 +148,19 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
     }
 }
 
-const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos,const char* OutputFormat){
+const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos,int outputoffset){
 
   //const char* nt_qual[8] = {"#", "\'", "0", "7" ,"<", "B", "F","I"}; // 35,39,48,55,66,70,73 //then withouth & in nt_qual[0]
   //const char* nt_qual[8] = {"#", "\'", "0", "7" ,"<", "B", "F","I"};//{"#", "\'", "0", "7" ,"<", "B", "F","I"};
 
-  if (OutputFormat == "bam"){char nt_qual[8] = {2,6,15,22,27,33,37,40};}
-  if (OutputFormat == "fq"){char nt_qual[8] = {35,39,48,55,66,70,73};}
-  
-  char nt_qual[8] = {2,6,15,22,27,33,37,40};
+  char nt_qual[8] = {(char) (2+outputoffset),
+                     (char) (6+outputoffset),
+                     (char) (15+outputoffset),
+                     (char) (22+outputoffset),
+                     (char) (27+outputoffset),
+                     (char) (33+outputoffset),
+                     (char) (37+outputoffset),
+                     (char) (40+outputoffset)};
   //const char* nt_qual[8] = (const char*) nt_qual_int[9];
   int offset = ((nt_offset+read_pos)*8);
   //printf("offset %d \n", offset);
@@ -187,6 +191,7 @@ const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos,c
   }
   return nt_out;
 }
+
 double* Qual_array(double* freqval,const char* filename){
   int LENS = 6000;
   char buf[LENS];
@@ -206,7 +211,8 @@ double* Qual_array(double* freqval,const char* filename){
   return freqval;
 }
 
-void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval,const char* OutputFormat){
+void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval,int outputoffset){
+  //memset(qual, '\0', sizeof(arguments));
   //fprintf(stderr,"INSIDE FUNCITON NOW \n");
   int Tstart = 150;
   int Gstart = 300;
@@ -224,26 +230,35 @@ void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval,const 
     double r = ((double) rand_r(&seed)/ RAND_MAX);
     //double r = 0.43; // drand48();//0.43;//(double) rand()/RAND_MAX;
     //fprintf(stderr,"random value %lf \n",r);
+    //fprintf(stderr,"Seq idx %c \n",seq[row_idx]);
     switch(seq[row_idx]){
+      //fprintf(stderr,"qual %s \n",qual);
       case 'A':
       case 'a':
-        strncat(qual, Error_lookup(r,freqval,0,row_idx,OutputFormat), 1);
+        //fprintf(stderr,"err %s \n",Error_lookup(r,freqval,0,row_idx,outputoffset));
+        qual[row_idx] = Error_lookup(r,freqval,0,row_idx,outputoffset)[0];
+        //strncat(qual, Error_lookup(r,freqval,0,row_idx,outputoffset), 1);
+        //puts(qual);
         break;
       case 'T':
       case 't':
-        strncat(qual, Error_lookup(r,freqval,Tstart,row_idx,OutputFormat), 1);
+        qual[row_idx] = Error_lookup(r,freqval,Tstart,row_idx,outputoffset)[0];
+        //strncat(qual, Error_lookup(r,freqval,Tstart,row_idx,outputoffset), 1);
         break;  
       case 'G':
       case 'g':
-        strncat(qual, Error_lookup(r,freqval,Gstart,row_idx,OutputFormat), 1);
+        qual[row_idx] = Error_lookup(r,freqval,Gstart,row_idx,outputoffset)[0];
+        //strncat(qual, Error_lookup(r,freqval,Gstart,row_idx,outputoffset), 1);
         break;
       case 'C':
       case 'c':
-        strncat(qual, Error_lookup(r,freqval,Cstart,row_idx,OutputFormat), 1);
+        qual[row_idx] = Error_lookup(r,freqval,Cstart,row_idx,outputoffset)[0];
+        //strncat(qual, Error_lookup(r,freqval,Cstart,row_idx,outputoffset), 1);
         break;
       case 'N':
       case 'n':
-        strncat(qual, Error_lookup(r,freqval,Nstart,row_idx,OutputFormat), 1);
+        qual[row_idx] = Error_lookup(r,freqval,Nstart,row_idx,outputoffset)[0];
+        //strncat(qual, Error_lookup(r,freqval,Nstart,row_idx,outputoffset), 1);
         break;
     }
   }
@@ -277,8 +292,8 @@ int BinarySearch_fraglength(double* SearchArray,int low, int high, double key)
 
 void FragArray(int& number,int*& Length, double*& Frequency,const char* filename){
   int LENS = 4096;
-  int* Frag_len = new int[LENS];
-  double* Frag_freq = new double[LENS];
+  //int* Frag_len = new int[LENS];
+  //double* Frag_freq = new double[LENS];
   int n =0;
 
   gzFile gz = Z_NULL;
@@ -287,15 +302,17 @@ void FragArray(int& number,int*& Length, double*& Frequency,const char* filename
   gz = gzopen(filename,"r");
   assert(gz!=Z_NULL);
   while(gzgets(gz,buf,LENS)){
-    Frag_len[n] = atoi(strtok(buf,"\n\t "));
-    Frag_freq[n] = atof(strtok(NULL,"\n\t "));
+    Length[n] = atoi(strtok(buf,"\n\t ")); //before it was Frag_len[n]
+    Frequency[n] = atof(strtok(NULL,"\n\t "));
     n++;
   }
   gzclose(gz); 
 
   number = n;
-  Length = Frag_len;
-  Frequency = Frag_freq;
+  //Length = Frag_len;
+  //Frequency = Frag_freq;
+  //delete[] Frag_len;
+  //delete[] Frag_freq;
 }
 
 void printTime(FILE *fp){
@@ -305,4 +322,3 @@ void printTime(FILE *fp){
   timeinfo = localtime ( &rawtime );
   fprintf (fp, "\t-> %s", asctime (timeinfo) );
 }
-
