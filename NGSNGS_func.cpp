@@ -212,7 +212,7 @@ double* Qual_array(double* freqval,const char* filename){
 }
 
 void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval,int outputoffset){
-  //memset(qual, '\0', sizeof(arguments));
+  //memset(qual, '\0', sizeof(qual));
   //fprintf(stderr,"INSIDE FUNCITON NOW \n");
   int Tstart = 150;
   int Gstart = 300;
@@ -262,6 +262,7 @@ void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval,int ou
         break;
     }
   }
+  //memset(qual, 0, sizeof(qual)); //remove this to create the full nucleotide string but also the 4 mistakes?
   //fprintf(stderr,"EXITING FUNCITON NOW \n");
 }
 
@@ -321,4 +322,27 @@ void printTime(FILE *fp){
   time ( &rawtime );
   timeinfo = localtime ( &rawtime );
   fprintf (fp, "\t-> %s", asctime (timeinfo) );
+}
+
+void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total, size_t genome_len){
+  // Creates a header for the bamfile. The header is initialized before the function is called //
+
+  if (header == NULL) { fprintf(stderr, "sam_hdr_init");}
+    
+  // Creating header information
+  
+  char genome_len_buf[1024];
+  for(int i=0;i<chr_total;i++){
+    const char *name = faidx_iseq(seq_ref,i);
+
+    int name_len =  faidx_seq_len(seq_ref,name);
+    snprintf(genome_len_buf,1024,"%d", name_len);
+    
+    // reference part of the header, int r variable ensures the header is added
+    int r = sam_hdr_add_line(header, "SQ", "SN", name, "LN", genome_len_buf, NULL);
+    if (r < 0) { fprintf(stderr,"sam_hdr_add_line");}
+    memset(genome_len_buf,0, sizeof(genome_len_buf));
+  }
+  // saving the header to the file
+  if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile);
 }
