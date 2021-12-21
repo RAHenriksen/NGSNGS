@@ -195,29 +195,12 @@ void* Fafq_thread_se_run(void *arg){
         strcpy(read, seq_r1);
         strcat(read,struct_obj->Adapter_1);
         strncpy(readadapt, read, 150);
-        if (struct_obj -> OutputFormat == "fa" || struct_obj -> OutputFormat == "fa.gz"){
-          ksprintf(struct_obj->fqresult_r1,">%s\n%s\n",READ_ID,readadapt);
-        }
-        if (struct_obj -> OutputFormat == "fq" || struct_obj -> OutputFormat == "fq.gz"){
-          Read_Qual_new(readadapt,qual,loc_seed,struct_obj->Qualfreq,33);
-            
-          ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,readadapt,qual);
-        }
         if (struct_obj -> OutputFormat == "sam" || struct_obj -> OutputFormat == "bam"){
           Read_Qual_new(readadapt,qual,loc_seed,struct_obj->Qualfreq,0);
           // INSERT BAM PART HERE
         }
       }
       else{
-        if (struct_obj -> OutputFormat == "fa" || struct_obj -> OutputFormat == "fa.gz"){
-          ksprintf(struct_obj->fqresult_r1,">%s\n%s\n",READ_ID,seq_r1);
-
-        }
-        if (struct_obj -> OutputFormat == "fq" || struct_obj -> OutputFormat == "fq.gz"){
-          Read_Qual_new(seq_r1,qual,loc_seed,struct_obj->Qualfreq,33);
-          ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,seq_r1,qual);
-
-        }
         if (struct_obj -> OutputFormat == "sam" || struct_obj -> OutputFormat == "bam"){
           Read_Qual_new(seq_r1,qual,loc_seed,struct_obj->Qualfreq,0);
           //fprintf(stderr," TRYING THE BAM OUTPUT %s \n",seq_r1);
@@ -328,7 +311,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
   int chr_size_cumm[chr_total+1];
   
   char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
-
+  size_t genome_len = strlen(genome_data);
   if (genome_data != NULL){
     fprintf(stderr,"\t-> Full genome function run!\n");
     fprintf(stderr,"\t-> Full genome size %lu \n",strlen(genome_data));
@@ -377,7 +360,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
         exit(0);
       }
       SAMHeader = sam_hdr_init();
-      Header_func(fmt_hts,filename2,SAMout,SAMHeader,seq_ref,chr_total);
+      Header_func(fmt_hts,filename2,SAMout,SAMHeader,seq_ref,chr_total,genome_len);
       fprintf(stderr,"\ncreating file works\n");
     }
 

@@ -1,5 +1,5 @@
 #modied from htslib makefile
-#g++ SimulAncient_func.cpp atomic_fq.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
+#g++ NGSNGS_func.cpp atomic_fq.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 #FLAGS=-O3 -std=c++11
 FLAGS=-ggdb -std=c++11
 
