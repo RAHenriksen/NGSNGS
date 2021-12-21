@@ -354,7 +354,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
   
     // READ QUAL ARRAY
     double* Qual_freq_array = new double[6000];
-    Qual_freq_array = Qual_array(Qual_freq_array,"/home/wql443/WP1/NGSNGS/Qual_profiles/Acc_freq1.txt");
+    Qual_freq_array = Qual_array(Qual_freq_array,"Qual_profiles/Acc_freq1.txt");
   
     // FRAGMENT LENGTH CREATING ARRAY
     int* Frag_len = new int[4096];
