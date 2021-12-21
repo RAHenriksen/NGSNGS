@@ -263,7 +263,7 @@ void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval,int ou
       case 'N':
       case 'n':
         qual[row_idx] = Error_lookup(r,freqval,Nstart,row_idx,outputoffset)[0];
-        qual[row_idx+1] = '\0';
+        //qual[row_idx+1] = '\0';
         //strncat(qual, Error_lookup(r,freqval,Nstart,row_idx,outputoffset), 1);
         break;
     }
