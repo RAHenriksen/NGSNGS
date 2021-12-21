@@ -237,31 +237,38 @@ void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval,int ou
       case 'a':
         //fprintf(stderr,"err %s \n",Error_lookup(r,freqval,0,row_idx,outputoffset));
         qual[row_idx] = Error_lookup(r,freqval,0,row_idx,outputoffset)[0];
+        //qual[row_idx+1] = '\0';
         //strncat(qual, Error_lookup(r,freqval,0,row_idx,outputoffset), 1);
         //puts(qual);
         break;
       case 'T':
       case 't':
         qual[row_idx] = Error_lookup(r,freqval,Tstart,row_idx,outputoffset)[0];
+        //qual[row_idx+1] = '\0';
         //strncat(qual, Error_lookup(r,freqval,Tstart,row_idx,outputoffset), 1);
         break;  
       case 'G':
       case 'g':
         qual[row_idx] = Error_lookup(r,freqval,Gstart,row_idx,outputoffset)[0];
+        //qual[row_idx+1] = '\0';
+        // fprintf(stderr,"string error %c \n",Error_lookup(r,freqval,Gstart,row_idx,outputoffset)[0]);
         //strncat(qual, Error_lookup(r,freqval,Gstart,row_idx,outputoffset), 1);
         break;
       case 'C':
       case 'c':
         qual[row_idx] = Error_lookup(r,freqval,Cstart,row_idx,outputoffset)[0];
+        //qual[row_idx+1] = '\0';
         //strncat(qual, Error_lookup(r,freqval,Cstart,row_idx,outputoffset), 1);
         break;
       case 'N':
       case 'n':
         qual[row_idx] = Error_lookup(r,freqval,Nstart,row_idx,outputoffset)[0];
+        qual[row_idx+1] = '\0';
         //strncat(qual, Error_lookup(r,freqval,Nstart,row_idx,outputoffset), 1);
         break;
     }
   }
+  qual[seqlen] = '\0';
   //memset(qual, 0, sizeof(qual)); //remove this to create the full nucleotide string but also the 4 mistakes?
   //fprintf(stderr,"EXITING FUNCITON NOW \n");
 }
