@@ -457,6 +457,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
 }
 
 // ------------------------------ //
+
 int main(int argc,char **argv){
   clock_t t=clock();
   time_t t2=time(NULL);
@@ -476,23 +477,21 @@ int main(int argc,char **argv){
   size_t No_reads = 1e1;
   fprintf(stderr,"\t-> Seed used: %d with %d threads\n",Glob_seed,threads);
   fprintf(stderr,"\t-> Number of simulated reads: %zd\n",No_reads);
-  //char *genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
+
   const char* Adapt_flag = "false";
   const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
   
-  const char* OutputFormat = "fq";
+  const char* OutputFormat = "bam";
   //fprintf(stderr,"Creating a bunch of threads\n");
   int Thread_specific_Read = static_cast<int>(No_reads/threads);
 
   Create_se_threads(seq_ref,threads,Glob_seed,Thread_specific_Read,Adapt_flag,Adapter_1,OutputFormat);
-  //fprintf(stderr,"Done creating a bunch of threads\n");
-  //fflush(stderr);
-  // free the calloc memory from fai_read
-  //free(seq_ref);
+
   fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
   fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
   fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));  
 }
+
 
 // g++ NGSNGS_func.cpp atomic_fq.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 // valgrind --tool=memcheck --leak-check=full  --track-origins=yes ./a.out

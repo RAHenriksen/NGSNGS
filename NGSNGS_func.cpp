@@ -236,33 +236,33 @@ void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval,int ou
       case 'A':
       case 'a':
         //fprintf(stderr,"err %s \n",Error_lookup(r,freqval,0,row_idx,outputoffset));
-        qual[row_idx] = Error_lookup(r,freqval,0,row_idx,outputoffset)[0];
+        qual[row_idx] = 'F'; //Error_lookup(r,freqval,0,row_idx,outputoffset)[0];
         //qual[row_idx+1] = '\0';
         //strncat(qual, Error_lookup(r,freqval,0,row_idx,outputoffset), 1);
         //puts(qual);
         break;
       case 'T':
       case 't':
-        qual[row_idx] = Error_lookup(r,freqval,Tstart,row_idx,outputoffset)[0];
+        qual[row_idx] =  'I'; // Error_lookup(r,freqval,Tstart,row_idx,outputoffset)[0];
         //qual[row_idx+1] = '\0';
         //strncat(qual, Error_lookup(r,freqval,Tstart,row_idx,outputoffset), 1);
         break;  
       case 'G':
       case 'g':
-        qual[row_idx] = Error_lookup(r,freqval,Gstart,row_idx,outputoffset)[0];
+        qual[row_idx] = '!'; // Error_lookup(r,freqval,Gstart,row_idx,outputoffset)[0];
         //qual[row_idx+1] = '\0';
         // fprintf(stderr,"string error %c \n",Error_lookup(r,freqval,Gstart,row_idx,outputoffset)[0]);
         //strncat(qual, Error_lookup(r,freqval,Gstart,row_idx,outputoffset), 1);
         break;
       case 'C':
       case 'c':
-        qual[row_idx] = Error_lookup(r,freqval,Cstart,row_idx,outputoffset)[0];
+        qual[row_idx] = 'B'; // Error_lookup(r,freqval,Cstart,row_idx,outputoffset)[0];
         //qual[row_idx+1] = '\0';
         //strncat(qual, Error_lookup(r,freqval,Cstart,row_idx,outputoffset), 1);
         break;
       case 'N':
       case 'n':
-        qual[row_idx] = Error_lookup(r,freqval,Nstart,row_idx,outputoffset)[0];
+        qual[row_idx] = '<'; // Error_lookup(r,freqval,Nstart,row_idx,outputoffset)[0];
         //qual[row_idx+1] = '\0';
         //strncat(qual, Error_lookup(r,freqval,Nstart,row_idx,outputoffset), 1);
         break;
@@ -353,3 +353,34 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
   // saving the header to the file
   if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile);
 }
+
+/*
+int main(int argc,char **argv){
+  double* Qual_freq_array = new double[6000];
+  Qual_freq_array = Qual_array(Qual_freq_array,"Qual_profiles/Acc_freq1.txt");
+  
+  char * ret;
+  for (size_t i = 0; i < 10000; i++)
+  {
+    ret[0] = Error_lookup(0.34,Qual_freq_array,150, 50,0)[0];
+    fprintf(stderr,"%c\n",ret);
+  }
+  
+  delete[] Qual_freq_array;
+  return 0;
+}
+
+int main(int argc,char **argv){
+  double* Qual_freq_array = new double[6000];
+  Qual_freq_array = Qual_array(Qual_freq_array,"Qual_profiles/Acc_freq1.txt");
+  
+  char qual[1024] = "\0";
+  for (size_t i = 0; i < 50; i++)
+  {
+    qual[i] = Error_lookup(0.34,Qual_freq_array,150, 50,0)[0];
+  }
+  fprintf(stderr,"%c\n",qual);
+ 
+  delete[] Qual_freq_array;
+  return 0;
+  */
