@@ -9,20 +9,20 @@ Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen
 ## USAGE
 Next Generation Simulator for Next Generator Sequencing Data version 0.0.0 
 
-Usage: ./ngsngs <input reference> <numer of reads> <output file>
+Usage: ./ngsngs [input reference] [numer of reads] [output file]
 
-Options: 
--h | --help: 		 Print help page
--i | --input: 		 Reference file in .fasta format to sample reads from
--r | --reads: 		 Number of reads to simulate from
--o | --output: 		 Prefix of output file name, with default extension in fasta format (.fa)
--f | --format: 		 Adapter sequence to add for simulated reads
-	 <.fa||.fasta>	 nucletide sequence 
- 	 <.fq||.fastq>	 nucletide sequence with corresponding quality score 
- 	 <.sam||bam>	 Sequence Alignment Map format
--t | --threads: 	 Number of threads to use for simulation
--s | --seed: 		 Random seed, default value being computer time
--a | --adapter: 	 Adapter sequence to add for simulated reads
+Options: \
+-h | --help: 		 Print help page\
+-i | --input: 		 Reference file in .fasta format to sample reads from\
+-r | --reads: 		 Number of reads to simulate from\
+-o | --output: 		 Prefix of output file name, with default extension in fasta format (.fa)\
+-f | --format: 		 Adapter sequence to add for simulated reads\
+	 <.fa||.fasta>	 nucletide sequence \
+ 	 <.fq||.fastq>	 nucletide sequence with corresponding quality score\ 
+ 	 <.sam||bam>	 Sequence Alignment Map format\
+-t | --threads: 	 Number of threads to use for simulation\
+-s | --seed: 		 Random seed, default value being computer time\
+-a | --adapter: 	 Adapter sequence to add for simulated reads\
 
 ## TO DO
 1. add adapter, sam functionality 
