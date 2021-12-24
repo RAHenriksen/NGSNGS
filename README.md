@@ -1,31 +1,38 @@
- # [![make](https://github.com/RAHenriksen/SimulAncient/actions/workflows/make.yml/badge.svg)](https://github.com/RAHenriksen/SimulAncient/actions/workflows/make.yml) SimulAncient
- 
+ # [![make](https://github.com/RAHenriksen/SimulAncient/actions/workflows/make.yml/badge.svg)](https://github.com/RAHenriksen/NGSNGS/actions/workflows/make.yml) NGSNGS
+
+# NEXT GENERATION SIMULATOR FOR NEXT GENERATION SEQUENCING DATA
+Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen 
 ## Installation
 * make
 * make HTSSRC=../hstlib
 
-## Ideas i need to incorporate
-1) giving as input real life data
-  a) Fa, Fq, Bam -> I cant make Fa and Fq into Bam since i dont know the coordinates, neither giving them VCF variations
-  b) But i should be able to take a bam sequence and convert to fa with VCF
+## USAGE
+Next Generation Simulator for Next Generator Sequencing Data version 0.0.0 
 
-2) Arguments parsed
+Usage: ./ngsngs <input reference> <numer of reads> <output file>
 
-3) A platform type, meaning 125bp illumina, 150bp illumina and then based on that input decide on the error files
+Options: 
+-h | --help: 		 Print help page
+-i | --input: 		 Reference file in .fasta format to sample reads from
+-r | --reads: 		 Number of reads to simulate from
+-o | --output: 		 Prefix of output file name, with default extension in fasta format (.fa)
+-f | --format: 		 Adapter sequence to add for simulated reads
+	 <.fa||.fasta>	 nucletide sequence 
+ 	 <.fq||.fastq>	 nucletide sequence with corresponding quality score 
+ 	 <.sam||bam>	 Sequence Alignment Map format
+-t | --threads: 	 Number of threads to use for simulation
+-s | --seed: 		 Random seed, default value being computer time
+-a | --adapter: 	 Adapter sequence to add for simulated reads
 
-4) Lei's briggs model.
+## TO DO
+1. add adapter, sam functionality 
+2. add fixed read size or empirial distribution option
+3. SE vs PE option
+4. VCF and msms
 
-# THEORY
-## DNA damage 
-1) Fragmentation: Remember that some nucleotides are more prone to breakage upon post mortem fragmentation: "It has been shown that sequence alignments of ancient DNA molecules preferentially start and end next to purines in the reference genome (Briggs et al. 2007; Sawyer et al. 2012), suggesting that
-depurination and subsequent breakage of the sugar-phosphate backbone is at least partially responsible for postmortem DNA fragmentation. This pattern is also present in the Vindija 33.19 data analyzed here (Fig. 3; Supplemental Fig. S1), in which guanine and, to a lesser extent, adenine are overrepresented in the flanking bases of the reference genome, irrespective of the inferred structure of the double-stranded DNA fragment"
-
-2) Nicking and overhang -> Lei's model
-
-3) Cross-linking: im not sure this is possible to simulate
-
-# GARGAMMEL
+## GARGAMMEL
 ./gargammel.pl -c 1 --comp 0,0,1 -f src/sizefreq.size.gz -matfile src/matrices/double- -o data/simulation data/
 
 ./gargammel.pl -c 1 --comp 0,0,1 -f src/sizefreq.size.gz -damage 0.03,0.4,0.01,0.3 -o data/simulation data/
 
+## ART

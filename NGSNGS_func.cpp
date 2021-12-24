@@ -351,7 +351,7 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
     memset(genome_len_buf,0, sizeof(genome_len_buf));
   }
   // saving the header to the file
-  if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile);
+  if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile_nam); //outfile
 }
 
 /*
