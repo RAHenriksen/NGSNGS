@@ -18,11 +18,14 @@ Options: \
 -o | --output: 		 Prefix of output file name, with default extension in fasta format (.fa)\
 -f | --format: 		 Adapter sequence to add for simulated reads\
 	 <.fa||.fasta>	 nucletide sequence \
- 	 <.fq||.fastq>	 nucletide sequence with corresponding quality score\ 
+ 	 <.fq||.fastq>	 nucletide sequence with corresponding quality score \ 
  	 <.sam||bam>	 Sequence Alignment Map format\
 -t | --threads: 	 Number of threads to use for simulation\
 -s | --seed: 		 Random seed, default value being computer time\
 -a | --adapter: 	 Adapter sequence to add for simulated reads\
+
+## USAGE EXAMPLE
+./ngsngs -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 100 -s 1 -f bam -o chr22
 
 ## TO DO
 1. add adapter, sam functionality 

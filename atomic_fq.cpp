@@ -16,41 +16,12 @@
 
 #include "NGSNGS_func.h"
 
-char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],int chr_size_cumm[]){
-  
-  size_t genome_size = 0;
-  chr_size_cumm[0] = 0;
-  for (int i = 0; i < chr_total; i++){
-    const char *chr_name = faidx_iseq(seq_ref,i);
-    int chr_len = faidx_seq_len(seq_ref,chr_name);
-    chr_sizes[i] = chr_len;
-    chr_names[i] = chr_name;
-    genome_size += chr_len;
-    chr_size_cumm[i+1] = genome_size;
-  }
-
-  char* genome = (char*) malloc(sizeof(char) * (genome_size+chr_total));
-  genome[0] = 0; //Init to create proper C string before strcat
-  //chr_total
-  for (int i = 0; i < chr_total; i++){
-
-    const char *data = fai_fetch(seq_ref,chr_names[i],&chr_sizes[i]);
-    //sprintf(&genome[strlen(genome)],data);
-    //strcat(genome,data);  //Both gives conditional jump or move error
-    if (data != NULL){
-      sprintf(genome+strlen(genome),data); 
-    }
-    // several of the build in functions allocates memory without freeing it again.
-    free((char*)data); //Free works on const pointers, so we have to cast into a const char pointer
-  }
-  return genome;
-}
-
 pthread_mutex_t Fq_write_mutex;
 
 // ---------------------- SINGLE-END ---------------------- //
 struct Parsarg_for_Fafq_se_thread{
   kstring_t *fqresult_r1;
+  kstring_t *fqresult_r2;
   char *genome; // The actual concatenated genome
   int chr_no;
   int threadno;
@@ -65,7 +36,9 @@ struct Parsarg_for_Fafq_se_thread{
   int threadseed;
   size_t reads;
   
-  BGZF *bgzf;
+  BGZF *bgzf_fp1;
+  BGZF *bgzf_fp2;
+
   samFile *SAMout;
   sam_hdr_t *SAMHeader;
   bam1_t **list_of_reads;
@@ -75,12 +48,14 @@ struct Parsarg_for_Fafq_se_thread{
   const char* Adapter_flag;
   const char* Adapter_1;
   const char* OutputFormat;
+  const char* SeqType;
 };
       
 void* Fafq_thread_se_run(void *arg){
   //casting my struct as arguments for the thread creation
   Parsarg_for_Fafq_se_thread *struct_obj = (Parsarg_for_Fafq_se_thread*) arg;
 
+  fprintf(stderr,"%s",struct_obj->SeqType);
   // creating random objects for all distributions.
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno;
   
@@ -91,6 +66,12 @@ void* Fafq_thread_se_run(void *arg){
   char seq_r1_mod[1024] = {0};
   char read[1024] = {0};
   char readadapt[1024] = {0};
+
+  char seq_r2[1024] = {0};
+  char seq_r2_mod[1024] = {0};
+  char read2[1024] = {0};
+  char readadapt2[1024] = {0};
+  
   // for the coverage examples
   int reads = struct_obj -> reads;
 
@@ -104,8 +85,6 @@ void* Fafq_thread_se_run(void *arg){
   int localread = 0;
   int iter = 0;
   int current_reads_atom = 0;
-  //while (current_cov_atom < cov) {
-  //while (current_reads_atom < reads){
 
   while (current_reads_atom < reads){
     double rand_val = ((double) rand_r(&loc_seed)/ RAND_MAX);
@@ -121,15 +100,12 @@ void* Fafq_thread_se_run(void *arg){
     int chr_idx = 0;
     while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}
 
-    // case 1
-    if (fraglength > 150){
-      strncpy(seq_r1,struct_obj->genome+rand_start-1,150);
-    }
-    // case 2
-    else if (fraglength <= 150){
-      //fprintf(stderr,"------------------------------------------------\n%s \n",seq_r1);
-      strncpy(seq_r1,struct_obj->genome+rand_start-1,fraglength);
-      //fprintf(stderr,"%s\t %d \t %d \n",seq_r1,rand_start,fraglength);
+    if (fraglength > 150){strncpy(seq_r1,struct_obj->genome+rand_start-1,150);}   // case 1
+    else {strncpy(seq_r1,struct_obj->genome+rand_start-1,fraglength);}  // case 2
+    
+    if(strcasecmp("PE",struct_obj->SeqType)==0){
+      if (fraglength > 150){strncpy(seq_r2,struct_obj->genome+rand_start+fraglength-1-150,150);}
+      else {strncpy(seq_r2,struct_obj->genome+rand_start-1,fraglength);}  // case 2
     }
 
     int rand_id = rand_val * fraglength-1; //100
@@ -151,10 +127,19 @@ void* Fafq_thread_se_run(void *arg){
       
       int strand = (int) rand_r(&loc_seed)%2;//1;//rand() % 2;
       
-      if (strand == 0){
+      if (strcasecmp("SE",struct_obj->SeqType)==0 && strand == 0){
         DNA_complement(seq_r1);
         reverseChar(seq_r1);
       }
+
+      if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 0){
+        DNA_complement(seq_r1);
+      }
+      else if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 1){
+        DNA_complement(seq_r2);
+        reverseChar(seq_r2);
+      }
+
       char READ_ID[1024]; int read_id_length;
       read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%s:%d-%d_length:%d", struct_obj->threadno, rand_id,strand,
         struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
@@ -164,39 +149,54 @@ void* Fafq_thread_se_run(void *arg){
         strcpy(read, seq_r1);
         strcat(read,struct_obj->Adapter_1);
         strncpy(readadapt, read, 150);
+
+        if (strcasecmp("PE",struct_obj->SeqType)==0){
+          strcpy(read2, seq_r2);
+          strcat(read2,struct_obj->Adapter_1);
+          strncpy(readadapt2, read2, 150);
+        }
+
         if (strcasecmp(struct_obj -> OutputFormat,"fa")==0|| strcasecmp(struct_obj -> OutputFormat,"fa.gz")==0){
           ksprintf(struct_obj->fqresult_r1,">%s\n%s\n",READ_ID,readadapt);
+          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s\n%s\n",READ_ID,readadapt2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
-          Read_Qual_new(seq_r1,qual,loc_seed,struct_obj->Qualfreq,33);
+          Read_Qual_new(readadapt,qual,loc_seed,struct_obj->Qualfreq,33);
           ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,readadapt,qual);
+          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,"@%s\n%s\n+\n%s\n",READ_ID,readadapt2,qual);}
         }
         if (struct_obj->SAMout){
           Read_Qual_new(readadapt,qual,loc_seed,struct_obj->Qualfreq,0);        
           ksprintf(struct_obj->fqresult_r1,"%s",readadapt);
+          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,"%s",readadapt2);}
         }
       }
       else{
         if (strcasecmp(struct_obj -> OutputFormat,"fa")==0|| strcasecmp(struct_obj -> OutputFormat,"fa.gz")==0){
           ksprintf(struct_obj->fqresult_r1,">%s\n%s\n",READ_ID,seq_r1);
+          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s\n%s\n",READ_ID,seq_r2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
           Read_Qual_new(seq_r1,qual,loc_seed,struct_obj->Qualfreq,33);
           ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,seq_r1,qual);
+          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,"@%s\n%s\n+\n%s\n",READ_ID,seq_r2,qual);}
         }
         if (struct_obj->SAMout){
           Read_Qual_new(seq_r1,qual,loc_seed,struct_obj->Qualfreq,0);
           ksprintf(struct_obj->fqresult_r1,"%s",seq_r1);
+          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,"%s",seq_r2);}
         }
       }
-      if (struct_obj->bgzf){
+      if (struct_obj->bgzf_fp1){
         if (struct_obj->fqresult_r1->l > 30000000){
           //fprintf(stderr,"\t Buffer mutex with thread no %d\n", struct_obj->threadno);fflush(stderr);
           pthread_mutex_lock(&Fq_write_mutex);
           // bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
-          if (bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l) == 1) {printf("write down");}
+          assert(bgzf_write(struct_obj->bgzf_fp1,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l)!=0);
+          if (strcasecmp("PE",struct_obj->SeqType)==0){assert(bgzf_write(struct_obj->bgzf_fp2,struct_obj->fqresult_r2->s,struct_obj->fqresult_r2->l)!=0);}
           pthread_mutex_unlock(&Fq_write_mutex);
           struct_obj->fqresult_r1->l =0;
+          struct_obj->fqresult_r2->l =0;
         }
       }
       if (struct_obj->SAMout){
@@ -218,7 +218,7 @@ void* Fafq_thread_se_run(void *arg){
         if (struct_obj->l < struct_obj->m){   
           pthread_mutex_lock(&Fq_write_mutex);
           for (int k = 0; k < struct_obj->l; k++){
-            if (sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) == 1) {printf("write down");}
+            assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) != 1);
             //sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]);
           }
           //fprintf(stderr,"\n sam_write works\n");
@@ -229,11 +229,16 @@ void* Fafq_thread_se_run(void *arg){
           //sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[struct_obj->l]);
         }
         struct_obj->fqresult_r1->l =0;
+        struct_obj->fqresult_r2->l =0;
       }
 
       memset(qual, 0, sizeof qual);  
       memset(seq_r1, 0, sizeof seq_r1);
       memset(seq_r1_mod, 0, sizeof seq_r1_mod);
+
+      memset(seq_r2, 0, sizeof seq_r2);
+      memset(seq_r2_mod, 0, sizeof seq_r2_mod);
+      
       chr_idx = 0;
       //fprintf(stderr,"start %d, fraglength %d\n",rand_start,fraglength);
       iter++;
@@ -241,12 +246,14 @@ void* Fafq_thread_se_run(void *arg){
       current_reads_atom++;
     }
   }
-  if (struct_obj->bgzf){
+  if (struct_obj->bgzf_fp1){
     if (struct_obj->fqresult_r1->l > 0){
       pthread_mutex_lock(&Fq_write_mutex);
-      if (bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l) == 1) {printf("write down");}
+      assert(bgzf_write(struct_obj->bgzf_fp1,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l)!=0);
+      if (strcasecmp("PE",struct_obj->SeqType)==0){assert(bgzf_write(struct_obj->bgzf_fp2,struct_obj->fqresult_r2->s,struct_obj->fqresult_r2->l)!=0);}
       pthread_mutex_unlock(&Fq_write_mutex);
       struct_obj->fqresult_r1->l =0;
+      struct_obj->fqresult_r2->l =0;
     } 
   }
   //Freeing allocated memory
@@ -260,7 +267,7 @@ void* Fafq_thread_se_run(void *arg){
   return NULL;
 }
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,const char* filename,const char* Adapt_flag,const char* Adapter_1,const char* OutputFormat){
+void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,const char* OutputFormat,const char* SeqType){
   //creating an array with the arguments to create multiple threads;
   int nthreads=thread_no;
   pthread_t mythreads[nthreads];
@@ -276,58 +283,80 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     fprintf(stderr,"\t-> Full genome function run!\n");
     fprintf(stderr,"\t-> Full genome size %lu \n",genome_size);
   
-    
     //std::cout << " genome length " << genome_len << std::endl;
     Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
     // declare files and headers
-    BGZF *bgzf = NULL;
+    BGZF *bgzf_fp1 = NULL;
+    BGZF *bgzf_fp2 = NULL;
+
     samFile *SAMout = NULL;
     sam_hdr_t *SAMHeader;
     htsFormat *fmt_hts =(htsFormat*) calloc(1,sizeof(htsFormat));
 
-    char file[80];
-    const char* fileprefix = filename; //"chr22_out";
-    strcpy(file,fileprefix);
-    const char* suffix;
+    char file1[80];
+    char file2[80];
+    const char* fileprefix = OutputName; //"chr22_out";
+    strcpy(file1,fileprefix);
+    strcpy(file2,fileprefix);
+
+    const char* suffix1;
+    const char* suffix2;
+
     const char *mode;
     if(strcasecmp("fa",OutputFormat)==0){
-      suffix = ".fa";
       mode = "wu";
+      if(strcasecmp("SE",SeqType)==0){suffix1 = ".fa";}
+      else{suffix1 = "_r1.fa";suffix2 = "_r2.fa";}
     }
     else if(strcasecmp("fa.gz",OutputFormat)==0){
-      suffix = ".fa.gz";
       mode = "wb";
+      if(strcasecmp("SE",SeqType)==0){suffix1 = ".fa.gz";}
+      else{suffix1 = "_r1.fa.gz";suffix2 = "_r2.fa.gz";}
     }
     else if(strcasecmp("fq",OutputFormat)==0){
-      fprintf(stderr,"lollll\n");
-      suffix = ".fq";
       mode = "wu";
+      if(strcasecmp("SE",SeqType)==0){suffix1 = ".fq";}
+      else{suffix1 = "_r1.fq";suffix2 = "_r2.fq";}
     }
     else if(strcasecmp("fq.gz",OutputFormat)==0){
-      suffix = ".fq.gz";
       mode = "wb";
+      if(strcasecmp("SE",SeqType)==0){suffix1 = ".fq.gz";}
+      else{suffix1 = "_r1.fq.gz";suffix2 = "_r2.fq.gz";}
     }
     else if(strcasecmp("bam",OutputFormat)==0){
-      suffix = ".bam";
       mode = "wb";
+      suffix1 = ".bam";
     }
     else{fprintf(stderr,"\t-> Fileformat is currently not supported \n");}
-    strcat(file,suffix);
-    fprintf(stderr,"\t-> File output name is %s\n",file);
-    const char* filename = file;
+    strcat(file1,suffix1);
+
+    
+
+    fprintf(stderr,"\t-> File output name is %s\n",file1);
+    const char* filename1 = file1;
+    const char* filename2 = NULL;
 
     if(strcasecmp("bam",OutputFormat)!=0){
-      bgzf = bgzf_open(filename,mode);
       int mt_cores = 1;
       int bgzf_buf = 256;
-      bgzf_mt(bgzf,mt_cores,bgzf_buf);
+      
+      bgzf_fp1 = bgzf_open(filename1,mode);
+      bgzf_mt(bgzf_fp1,mt_cores,bgzf_buf);
+
+      if(strcasecmp("PE",SeqType)==0){
+        strcat(file2,suffix2);
+        filename2 = file2;
+        bgzf_fp2 = bgzf_open(filename2,mode);
+        bgzf_mt(bgzf_fp2,mt_cores,bgzf_buf);
+      }
+
       //fprintf(stderr,"\t-> Number of cores for bgzf_mt: %d\n",mt_cores); 
     }
     else{
-      SAMout = sam_open_format(filename, mode, fmt_hts);
+      SAMout = sam_open_format(filename1, mode, fmt_hts);
       SAMHeader = sam_hdr_init();
-      Header_func(fmt_hts,filename,SAMout,SAMHeader,seq_ref,chr_total,genome_size);
+      Header_func(fmt_hts,filename1,SAMout,SAMHeader,seq_ref,chr_total,genome_size);
     }
   
     // READ QUAL ARRAY
@@ -349,6 +378,12 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       struct_for_threads[i].fqresult_r1 -> l = 0;
       struct_for_threads[i].fqresult_r1 -> m = 0;
       struct_for_threads[i].fqresult_r1 -> s = NULL;
+
+      struct_for_threads[i].fqresult_r2 =new kstring_t;
+      struct_for_threads[i].fqresult_r2 -> l = 0;
+      struct_for_threads[i].fqresult_r2 -> m = 0;
+      struct_for_threads[i].fqresult_r2 -> s = NULL;
+
       struct_for_threads[i].threadno = i;
       struct_for_threads[i].genome = genome_data;
       struct_for_threads[i].chr_no = chr_total;
@@ -361,7 +396,8 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       struct_for_threads[i].Qualfreq = Qual_freq_array;
       struct_for_threads[i].reads = reads;
       
-      struct_for_threads[i].bgzf = bgzf;
+      struct_for_threads[i].bgzf_fp1 = bgzf_fp1;
+      struct_for_threads[i].bgzf_fp2 = bgzf_fp2;
       struct_for_threads[i].SAMout = SAMout;
       struct_for_threads[i].SAMHeader = SAMHeader;
       struct_for_threads[i].l = 0;
@@ -373,7 +409,8 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       struct_for_threads[i].Adapter_flag = Adapt_flag;
       struct_for_threads[i].Adapter_1 = Adapter_1;
       struct_for_threads[i].OutputFormat = OutputFormat;
-      
+      struct_for_threads[i].SeqType = SeqType;
+
       //declaring the size of the different arrays
       struct_for_threads[i].size_cumm = (int*)malloc(sizeof(int) * (struct_for_threads[i].chr_no+1));
       //fprintf(stderr,"struct_for_threads[i]: %p\n",struct_for_threads[i]);
@@ -403,7 +440,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       //fprintf(stderr, "\t[ANDET STED] walltime used for join =  %.2f sec\n", (float)(time(NULL) - t3));  
     }
 
-    if(strcasecmp("bam",OutputFormat)!=0){bgzf_close(bgzf);}
+    if(strcasecmp("bam",OutputFormat)!=0){
+      bgzf_close(bgzf_fp1);
+      if(strcasecmp("PE",SeqType)==0){bgzf_close(bgzf_fp2);}
+    }
     else{
       sam_hdr_destroy(SAMHeader);
       sam_close(SAMout);
@@ -412,7 +452,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     for(int i=0;i<nthreads;i++){
       free(struct_for_threads[i].fqresult_r1 -> s);//4 errors from 4 contexts (suppressed: 0 eventhough that delete goes with new and not free
       free(struct_for_threads[i].list_of_reads);
-      delete struct_for_threads[i].fqresult_r1;     
+      delete struct_for_threads[i].fqresult_r1;
+
+      free(struct_for_threads[i].fqresult_r2 -> s);//4 errors from 4 contexts (suppressed: 0 eventhough that delete goes with new and not free
+      delete struct_for_threads[i].fqresult_r2;      
     }
     
     //struct_for_threads[i].list_of_reads = (bam1_t**) malloc(sizeof(bam1_t)*maxsize); // need to free this space
@@ -438,6 +481,7 @@ typedef struct{
   const char *OutName;
   const char *Reference;
   const char *Adapter;
+  const char *Seq;
 }argStruct;
 
 int HelpPage(FILE *fp){
@@ -448,11 +492,14 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-i | --input: \t\t Reference file in .fasta format to sample reads from\n");
   fprintf(fp,"-r | --reads: \t\t Number of reads to simulate from\n");
   fprintf(fp,"-o | --output: \t\t Prefix of output file name, with default extension in fasta format (.fa)\n");
-  fprintf(fp,"-f | --format: \t\t Adapter sequence to add for simulated reads\n");
+  fprintf(fp,"-f | --format: \t\t File format of the simulated outpur reads\n");
   fprintf(fp,"\t <.fa||.fasta>\t nucletide sequence \n \t <.fq||.fastq>\t nucletide sequence with corresponding quality score \n \t <.sam||bam>\t Sequence Alignment Map format\n");
   fprintf(fp,"-t | --threads: \t Number of threads to use for simulation\n");
   fprintf(fp,"-s | --seed: \t\t Random seed, default value being computer time\n");
   fprintf(fp,"-a | --adapter: \t Adapter sequence to add for simulated reads\n");
+  fprintf(fp,"-seq | --sequencing: \t Simulate single-end or paired-end\n");
+  fprintf(fp,"\t <SE>\t single-end \n \t <PE>\t paired-end\n");
+  exit(1);
   return 0;
 }
 
@@ -463,7 +510,9 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Glob_seed = (int) time(NULL);
   mypars->OutFormat = "fa";
   mypars->OutName = "output";
+  mypars->Seq = "SE";
   mypars->Reference = NULL;
+  mypars->Adapter = NULL;
   while(*argv){
     if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->Reference = strdup(*(++argv));
@@ -480,6 +529,10 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-s",*argv)==0 || strcasecmp("--seed",*argv)==0){
       mypars->Glob_seed = atoi(*(++argv));
+    }
+    else if(strcasecmp("-seq",*argv)==0 || strcasecmp("--sequencing",*argv)==0){
+      mypars->Seq = strdup(*(++argv));
+      if(strcasecmp("SE",mypars->Seq)!=0 && strcasecmp("PE",mypars->Seq)!=0){HelpPage(stderr);} 
     }
     else if(strcasecmp("-a",*argv)==0 || strcasecmp("--adapter",*argv)==0){
       mypars->Adapter = strdup(*(++argv));
@@ -525,15 +578,22 @@ int main(int argc,char **argv){
     fprintf(stderr,"\t-> Seed used: %d with %d threads\n",Glob_seed,threads);
     fprintf(stderr,"\t-> Number of simulated reads: %zd\n",No_reads);
 
-    const char* Adapt_flag = "false";
-    const char* Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
-    
+    const char* Adapt_flag;
+    const char* Adapter_1;
+    if (mypars->Adapter != NULL){
+      Adapt_flag = "true";
+      Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
+    }
+    else{Adapt_flag = "false";}
+
     const char* OutputFormat = mypars->OutFormat;
 
     int Thread_specific_Read = static_cast<int>(No_reads/threads);
 
     const char* filename = mypars->OutName; //"chr22_out";
-    Create_se_threads(seq_ref,threads,Glob_seed,Thread_specific_Read,filename,Adapt_flag,Adapter_1,OutputFormat);
+    const char* Seq_Type = mypars->Seq;
+
+    Create_se_threads(seq_ref,threads,Glob_seed,Thread_specific_Read,filename,Adapt_flag,Adapter_1,OutputFormat,Seq_Type);
 
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
@@ -546,3 +606,8 @@ int main(int argc,char **argv){
 // valgrind --tool=memcheck --leak-check=full  --track-origins=yes ./a.out
 //cat chr22_out.fq | grep '@' | cut -d_ -f4 | sort | uniq -d | wc -l
 // ./a.out -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 100 -s 1 -f bam -o chr22
+// ./a.out -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 1000 -f fq -s 1 -o chr22_out
+// ./a.out -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 100 -s 1 -seq SE -f fq -o chr22
+// ./a.out -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 100 -s 1 -seq PE -f fq -o chr22
+//  make HTSSRC=/home/wql443/scratch/htslib/
+// ./ngsngs -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 100 -s 1 -seq PE -f fq -o chr22

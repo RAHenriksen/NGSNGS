@@ -354,6 +354,35 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
   if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile_nam); //outfile
 }
 
+char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],int chr_size_cumm[]){
+  
+  size_t genome_size = 0;
+  chr_size_cumm[0] = 0;
+  for (int i = 0; i < chr_total; i++){
+    const char *chr_name = faidx_iseq(seq_ref,i);
+    int chr_len = faidx_seq_len(seq_ref,chr_name);
+    chr_sizes[i] = chr_len;
+    chr_names[i] = chr_name;
+    genome_size += chr_len;
+    chr_size_cumm[i+1] = genome_size;
+  }
+
+  char* genome = (char*) malloc(sizeof(char) * (genome_size+chr_total));
+  genome[0] = 0; //Init to create proper C string before strcat
+  //chr_total
+  for (int i = 0; i < chr_total; i++){
+
+    const char *data = fai_fetch(seq_ref,chr_names[i],&chr_sizes[i]);
+    //sprintf(&genome[strlen(genome)],data);
+    //strcat(genome,data);  //Both gives conditional jump or move error
+    if (data != NULL){
+      sprintf(genome+strlen(genome),data); 
+    }
+    // several of the build in functions allocates memory without freeing it again.
+    free((char*)data); //Free works on const pointers, so we have to cast into a const char pointer
+  }
+  return genome;
+}
 /*
 int main(int argc,char **argv){
   double* Qual_freq_array = new double[6000];

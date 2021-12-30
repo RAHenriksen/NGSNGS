@@ -34,6 +34,7 @@
 #include <atomic>
 #include <vector>
 
+#include <getopt.h>
 #define LENS 4096
 double uniform()
 {
@@ -126,6 +127,7 @@ double myrand(unsigned int persistent){
 }
 
 // ------------------------------ //
+/*
 int main(int argc,char **argv){
   clock_t t=clock();
   time_t t2=time(NULL);
@@ -139,6 +141,7 @@ int main(int argc,char **argv){
   fprintf(stderr,"test %s lol\n",nt_out);
   return 0;
 }
+*/
 
   /*
   FILE *fp1;
@@ -229,3 +232,57 @@ gzFile gz = Z_NULL;
     int guess = BinarySearch_fraglength(Frag_freq,0, n - 1, rand_val);
     fprintf(stderr,"Random key %lf, integer val %d with lookup %d\n ",rand_val,guess,Frag_len[guess]);
   }*/
+
+typedef struct{
+  int reads;
+  int threads;
+  char *out;
+}pars;
+
+int HelpPage(FILE *fp){
+  fprintf(fp,"./ngsngs [-type1,type2] [-typeX int,-out prefix]\n");
+  return 0;
+}
+
+int print_pars(pars *p,FILE *fp){
+  fprintf(fp,"out: %s typeis: %d\n",p->out,p->reads);
+  return 0;
+}
+
+int print_type(int type){
+  fprintf(stderr,"print_type is %d\n ",type * 2);
+  return 0;
+}
+
+//returtype navn (par1,par2,par3)
+pars *getpars(int argc,char ** argv){
+  pars *mypars = new pars;
+  while(*argv){
+    //fprintf(stderr,"thisarg: %s \n",*argv);
+    if(strcasecmp("-nreads",*argv)==0)
+      mypars->reads = atoi(*(++argv));
+      print_type(mypars->reads);
+    if(strcasecmp("-nthreads",*argv)==0)
+      mypars->threads = atoi(*(++argv));
+      fprintf(stderr,"%d",mypars->threads);
+    if(strcasecmp("-out",*argv)==0)
+      mypars->out = strdup(*(++argv));
+    ++argv;
+  }
+  return mypars;
+}
+
+
+int main(int argc,char**argv){
+  pars *mypars = NULL;
+  //if haven't been supplied with arguments, load default,print, and exit
+  if(argc==1||(argc==2&&(strcasecmp(argv[1],"--version")==0||strcasecmp(argv[1],"--v")==0||
+                        strcasecmp(argv[1],"--help")==0||strcasecmp(argv[1],"--h")==0))){
+    HelpPage(stderr);
+    return 0;
+  }
+  else
+    mypars = getpars(argc,argv);
+
+  //print_pars(mypars,stdout);
+}
