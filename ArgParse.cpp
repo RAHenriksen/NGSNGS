@@ -32,15 +32,19 @@ typedef struct{
 }argStruct;
 
 int HelpPage(FILE *fp){
-  fprintf(fp,"Next Generation Simulator for Next Generator Sequencing Data version 0.0.0 \n\n");
-  fprintf(fp,"Usage: ./ngsngs <input reference> <numer of reads> <output file>\n\n");
-  fprintf(fp,"Options: \n");
-  fprintf(fp,"-h | --help: \t\t Print help page\n");
+  fprintf(fp,"Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 \n\n");
+  fprintf(fp,"Default usage: ./ngsngs <input reference> <numer of reads> \t Generates single-end fasta file named output\n\n");
+  fprintf(fp,"Usage: ./ngsngs <options> <input reference> <numer of reads> <output file> \n\n");
+  fprintf(fp,"Required options: \n");
   fprintf(fp,"-i | --input: \t\t Reference file in .fasta format to sample reads from\n");
-  fprintf(fp,"-r | --reads: \t\t Number of reads to simulate from\n");
+  fprintf(fp,"-r | --reads: \t\t Number of reads to simulate\n");
+  fprintf(fp,"\n");
+  fprintf(fp,"Optional options: \n");
+  fprintf(fp,"-h | --help: \t\t Print help page\n");
+  fprintf(fp,"-v | --version: \t\t Print help page\n");
   fprintf(fp,"-o | --output: \t\t Prefix of output file name, with default extension in fasta format (.fa)\n");
   fprintf(fp,"-f | --format: \t\t File format of the simulated outpur reads\n");
-  fprintf(fp,"\t <.fa||.fasta>\t nucletide sequence \n \t <.fq||.fastq>\t nucletide sequence with corresponding quality score \n \t <.sam||bam>\t Sequence Alignment Map format\n");
+  fprintf(fp,"\t <.fa||.fasta>\t nucletide sequence \n \t <.fa.gz||.fasta.gz>\t compressed nucletide sequence \n \t <.fq||.fastq>\t nucletide sequence with corresponding quality score \n \t <.fq.gz||.fastq.gz>\t compressed nucletide sequence with corresponding quality score \n \t <.sam||bam>\t Sequence Alignment Map format\n");
   fprintf(fp,"-t | --threads: \t Number of threads to use for simulation\n");
   fprintf(fp,"-s | --seed: \t\t Random seed, default value being computer time\n");
   fprintf(fp,"-a1 | --adapter1: \t Adapter sequence to add for simulated reads (SE) or first read pair (PE)\n");
@@ -65,6 +69,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->QualProfile1 = NULL;
   mypars->QualProfile2 = NULL;
   while(*argv){
+    // Required
     if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->Reference = strdup(*(++argv));
     }
@@ -74,7 +79,7 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
       mypars->OutName = strdup(*(++argv));
     }
-    //optional
+    // Optional
     else if(strcasecmp("-t",*argv)==0 || strcasecmp("--threads",*argv)==0){
       mypars->threads = atoi(*(++argv));
     }
@@ -146,9 +151,11 @@ int main(int argc,char **argv){
 
     const char* Adapt_flag;
     const char* Adapter_1;
+    const char* Adapter_2;
     if (mypars->Adapter1 != NULL){
       Adapt_flag = "true";
       Adapter_1 = mypars->Adapter1;
+      Adapter_2 = mypars->Adapter2;
       //Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
     }
     else{Adapt_flag = "false";}
@@ -160,7 +167,7 @@ int main(int argc,char **argv){
     const char* filename = mypars->OutName; //"chr22_out";
     const char* Seq_Type = mypars->Seq;
 
-    Create_se_threads(seq_ref,threads,Glob_seed,Thread_specific_Read,filename,Adapt_flag,Adapter_1,OutputFormat,Seq_Type);
+    Create_se_threads(seq_ref,threads,Glob_seed,Thread_specific_Read,filename,Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type);
 
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
