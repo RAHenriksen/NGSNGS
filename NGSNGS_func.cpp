@@ -75,11 +75,6 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
         r = 0;
         double u_l = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
         double u_r = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
-        //std::cout << u_l << " " << u_r <<"\n";
-        /*std::default_random_engine generator1(rand()%30000+1);
-        std::geometric_distribution<int> distribution1(lambda);
-        std::default_random_engine generator2(rand()%30000+1);
-        std::geometric_distribution<int> distribution2(lambda);*/
         
         if (u_l > 0.5){
             l = Random_geometric_k(seed+0,0.36);//distribution1(generator1);
