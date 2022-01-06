@@ -4,9 +4,6 @@
 #include <ctime>
 #include <cassert>
 #include <cstdint>
-#include <cmath>
-
-#include <algorithm> //std::reverse
 
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
@@ -14,7 +11,7 @@
 #include <htslib/bgzf.h>
 #include <htslib/kstring.h>
 #include <zlib.h>
-#include <errno.h>
+
 #include <pthread.h>
 
 #include "NGSNGS_func.h"

@@ -5,7 +5,8 @@
 #include <cassert>
 #include <cstdint>
 #include <cmath>
-
+#include <string>
+#include <vector>
 #include <algorithm> //std::reverse
 
 #include <htslib/faidx.h>
@@ -484,9 +485,8 @@ void ransampl_free( ransampl_ws *ws )
 ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile){
   ransampl_ws ***dists = new ransampl_ws**[5];
 
-  gzFile gz = Z_NULL;
-
   std::vector<char *> all_lines;
+  gzFile gz = Z_NULL;
   assert(((gz = gzopen(freqfile,"rb")))!=Z_NULL);
   char buf[LENS];
   while(gzgets(gz,buf,LENS))

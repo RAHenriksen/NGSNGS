@@ -4,9 +4,6 @@
 #include <ctime>
 #include <cassert>
 #include <cstdint>
-#include <cmath>
-
-#include <algorithm> //std::reverse
 
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
@@ -14,8 +11,7 @@
 #include <htslib/bgzf.h>
 #include <htslib/kstring.h>
 #include <zlib.h>
-#include <errno.h>
-#include <pthread.h>
+
 #include <pthread.h>
 
 #include "NGSNGS_func.h"
@@ -529,8 +525,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       struct_for_threads[i].NtQual_r1 = nt_qual_r1;
       struct_for_threads[i].QualDist_r1 = ReadQuality(nt_qual_r1,outputoffset,freqfile_r1);
       struct_for_threads[i].NtQual_r2 = nt_qual_r2;
-      if(strcasecmp("SE",SeqType)==0){struct_for_threads[i].QualDist_r2 = NULL;}
-      else{struct_for_threads[i].QualDist_r2 = ReadQuality(nt_qual_r2,outputoffset,freqfile_r2);}
+      struct_for_threads[i].QualDist_r2 = ReadQuality(nt_qual_r2,outputoffset,freqfile_r2);
       
       
 
