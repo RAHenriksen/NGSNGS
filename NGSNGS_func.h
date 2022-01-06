@@ -1,5 +1,5 @@
-#ifndef SIMULANCIENT_FUNC_H
-#define SIMULANCIENT_FUNC_H
+#ifndef NGSNGSFUNC_H
+#define NGSNGSFUNC_H
 
 void DNA_complement(char seq[]);
 
@@ -27,4 +27,20 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
 
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],int chr_size_cumm[]);
 
-#endif
+typedef struct{
+    int n;
+    int* alias;
+    double* prob;
+} ransampl_ws;
+
+ransampl_ws* ransampl_alloc(int n);
+
+void ransampl_set( ransampl_ws *ws, const double *p );
+
+int ransampl_draw2( ransampl_ws *ws,double r1, double r2); //added below function to make it threadsafe tsk 23dec 2021
+
+void ransampl_free( ransampl_ws *ws );
+
+ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile);
+
+#endif /* NGSNGSFUNC_H */

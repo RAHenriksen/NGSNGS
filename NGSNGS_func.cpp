@@ -14,10 +14,14 @@
 #include <htslib/bgzf.h>
 #include <htslib/kstring.h>
 #include <zlib.h>
+#include <errno.h>
 
 #include <pthread.h>
 
 #include "NGSNGS_func.h"
+
+#define LENS 4096
+#define MAXBINS 100
 
 void DNA_complement(char seq[]){
   while (*seq) {
@@ -188,13 +192,13 @@ const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos,i
 }
 
 double* Qual_array(double* freqval,const char* filename){
-  int LENS = 6000;
-  char buf[LENS];
+  int length = 6000;
+  char buf[length];
   gzFile gz = Z_NULL;
   gz = gzopen(filename,"r");
   assert(gz!=Z_NULL);
   int i = 0;
-  while(gzgets(gz,buf,LENS)){
+  while(gzgets(gz,buf,length)){
     double val1;double val2;double val3;double val4;double val5;double val6;double val7;double val8;
     sscanf(buf,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",&val1,&val2,&val3,&val4,&val5,&val6,&val7,&val8);
     //std::cout << "iter " << i << std::endl;// " " << buf << std::endl;
@@ -294,7 +298,7 @@ int BinarySearch_fraglength(double* SearchArray,int low, int high, double key)
 }
 
 void FragArray(int& number,int*& Length, double*& Frequency,const char* filename){
-  int LENS = 4096;
+  //int LENS = 4096;
   //int* Frag_len = new int[LENS];
   //double* Frag_freq = new double[LENS];
   int n =0;
@@ -378,33 +382,165 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
   }
   return genome;
 }
-/*
-int main(int argc,char **argv){
-  double* Qual_freq_array = new double[6000];
-  Qual_freq_array = Qual_array(Qual_freq_array,"Qual_profiles/Acc_freq1.txt");
-  
-  char * ret;
-  for (size_t i = 0; i < 10000; i++)
-  {
-    ret[0] = Error_lookup(0.34,Qual_freq_array,150, 50,0)[0];
-    fprintf(stderr,"%c\n",ret);
-  }
-  
-  delete[] Qual_freq_array;
-  return 0;
+
+
+//! Allocate workspace for random-number sampling.
+ransampl_ws* ransampl_alloc( int n )
+{
+    ransampl_ws *ws;
+    if ( !(ws = (ransampl_ws*) malloc( sizeof(ransampl_ws) )) ||
+         !(ws->alias = (int*) malloc( n*sizeof(int) )) ||
+         !(ws->prob = (double*) malloc( n*sizeof(double) )) ) {
+        fprintf( stderr, "ransampl: workspace allocation failed\n" );
+        exit(ENOMEM); // ENOMEM
+    }
+    ws->n = n;
+    return ws;
 }
 
-int main(int argc,char **argv){
-  double* Qual_freq_array = new double[6000];
-  Qual_freq_array = Qual_array(Qual_freq_array,"Qual_profiles/Acc_freq1.txt");
+//! Initialize workspace by precompute alias tables from given probabilities.
+void ransampl_set( ransampl_ws *ws, const double* p )
+{
+    const int n = ws->n;
+    int i, a, g;
+
+    // Local workspace:
+    double *P;
+    int *S, *L;
+    if ( !(P = (double*) malloc( n*sizeof(double) ) ) ||
+         !(S = (int*) malloc( n*sizeof(int) ) ) ||
+         !(L = (int*) malloc( n*sizeof(int) ) ) ) {
+        fprintf( stderr, "ransampl: temporary allocation failed\n" );
+        exit(ENOMEM);
+    }
+
+    // Normalise given probabilities:
+    double sum=0;
+    for ( i=0; i<n; ++i ) {
+        if( p[i]<0 ) {
+            fprintf( stderr, "ransampl: invalid probability p[%i]<0\n", i );
+            exit(EINVAL);
+        }
+        sum += p[i];
+    }
+    if ( !sum ) {
+        fprintf( stderr, "ransampl: no nonzero probability\n" );
+        exit(EINVAL);
+    }
+    for ( i=0; i<n; ++i )
+        P[i] = p[i] * n / sum;
+
+    // Set separate index lists for small and large probabilities:
+    int nS = 0, nL = 0;
+    for ( i=n-1; i>=0; --i ) {
+        // at variance from Schwarz, we revert the index order
+        if ( P[i]<1 )
+            S[nS++] = i;
+        else
+            L[nL++] = i;
+    }
+
+    // Work through index lists
+    while ( nS && nL ) {
+        a = S[--nS]; // Schwarz's l
+        g = L[--nL]; // Schwarz's g
+        ws->prob[a] = P[a];
+        ws->alias[a] = g;
+        P[g] = P[g] + P[a] - 1;
+        if ( P[g] < 1 )
+            S[nS++] = g;
+        else
+            L[nL++] = g;
+    }
+
+    while ( nL )
+        ws->prob[ L[--nL] ] = 1;
+
+    while ( nS )
+        // can only happen through numeric instability
+        ws->prob[ S[--nS] ] = 1;
+
+    // Cleanup:
+    free( P );
+    free( S );
+    free( L );
+}
+
+int ransampl_draw2( ransampl_ws *ws,double r1, double r2)
+{   
+    //fprintf(stderr,"%lf\t%lf\n",r1,r2);
+    const int i = (int) (ws->n * r1);
+    return r2 < ws->prob[i] ? i : ws->alias[i];
+}
+
+//! Free the random-number sampling workspace.
+void ransampl_free( ransampl_ws *ws )
+{
+    free( ws->alias );
+    free( ws->prob );
+    free( ws );
+}
+
+ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile){
+  ransampl_ws ***dists = new ransampl_ws**[5];
+
+  gzFile gz = Z_NULL;
+
+  std::vector<char *> all_lines;
+  assert(((gz = gzopen(freqfile,"rb")))!=Z_NULL);
+  char buf[LENS];
+  while(gzgets(gz,buf,LENS))
+    all_lines.push_back(strdup(buf));
+  gzclose(gz);
   
-  char qual[1024] = "\0";
-  for (size_t i = 0; i < 50; i++)
-  {
-    qual[i] = Error_lookup(0.34,Qual_freq_array,150, 50,0)[0];
+  fprintf(stderr,"All lines: %lu\n",all_lines.size());
+  unsigned long readcyclelength = (all_lines.size()-1)/5; //all_lines.size()-1
+
+  fprintf(stderr,"Inferred read cycle lengths: %lu\n",readcyclelength);
+
+  //loop over inputdata
+  int nbins = -1;
+  double probs[MAXBINS];
+  for(int b=0;b<5;b++){
+    dists[b] = new ransampl_ws *[readcyclelength]; //jeg forstår ikke helt hvad der foregår her... det er en struct der har en længde? så hver linje bliver readcyclelength struct?
+    for(int pos = 0 ; pos<readcyclelength;pos++){
+      int at = 0;
+      probs[at++] = atof(strtok(all_lines[1+b*readcyclelength+pos],"\n\t ")); //1+b*readcyclelength+pos
+      char *tok = NULL;
+      while(((tok=strtok(NULL,"\n\t ")))){
+	      probs[at++] = atof(tok);
+	      assert(at<MAXBINS);
+      }
+      if(nbins==-1){
+	      nbins = at;
+	      fprintf(stderr,"Number of qualities/bins in inputfile: %d\n",nbins);
+      }
+      if(nbins!=at){
+	      fprintf(stderr,"Problems, number of columns is different nbins: %d at: %d\n",nbins,at);
+	      exit(0);
+      }
+      dists[b][pos] =  ransampl_alloc( nbins );
+      ransampl_set(dists[b][pos],probs);
+    }
   }
-  fprintf(stderr,"%c\n",qual);
+
+  //printf(all_lines[0]);
+  int idx = 1;
+  //char nt_qual[nbins]; //{(char) (2+outputoffset)}; char nt_qual[8]
+  //nt_qual[idx] = //(char) atoi(strtok(all_lines[0],"\n\t ")); //1+b*readcyclelength+pos
+  fprintf(stderr,"Number of qualities/bins in inputfile: %d\n",nbins);
  
-  delete[] Qual_freq_array;
-  return 0;
-  */
+  //extract the first token
+  ntqual[0] = (char) (atoi(strtok(all_lines[0],"\n\t "))+ntcharoffset);
+  char *tok = NULL;
+
+  //extract the next
+  while(((tok=strtok(NULL,"\n\t ")))){
+	  ntqual[idx++] = (char) (atoi(tok)+ntcharoffset);
+  }
+  
+  //strdup function allocate necessary memory to store the sourcing string implicitly, i need to free the returned string
+  for (int i = 0; i < all_lines.size(); i++){free(all_lines[i]);}
+  
+  return dists;
+}

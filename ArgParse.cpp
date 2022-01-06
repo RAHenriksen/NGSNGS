@@ -29,6 +29,7 @@ typedef struct{
   const char *Adapter2;
   const char *QualProfile1;
   const char *QualProfile2;
+  const char *Briggs;
 }argStruct;
 
 int HelpPage(FILE *fp){
@@ -51,6 +52,8 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-a2 | --adapter2: \t Adapter sequence to add for second read pair (PE) \n");
   fprintf(fp,"-seq | --sequencing: \t Simulate single-end or paired-end\n");
   fprintf(fp,"\t <SE>\t single-end \n \t <PE>\t paired-end\n");
+  fprintf(fp,"-b | --briggs: <nv,Lambda,Delta_s,Delta_d>\t Parameters for the damage patterns (Briggs et al., 2007)\n");
+  fprintf(fp,"\t <nv>\t Nick rate pr site \n \t <Lambda>\t Geometric distribution parameter for overhang length\n \t <Delta_s>\t PMD rate in single-strand regions\n \t <Delta_s>\t PMD rate in double-strand regions");
   exit(1);
   return 0;
 }
@@ -68,6 +71,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Adapter2 = NULL;
   mypars->QualProfile1 = NULL;
   mypars->QualProfile2 = NULL;
+  mypars->Briggs = "0.024,0.36,0.68,0.0097";
   while(*argv){
     // Required
     if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
@@ -105,6 +109,11 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
       mypars->OutFormat = strdup(*(++argv));
     }
+    else if(strcasecmp("-b",*argv)==0 || strcasecmp("--briggs",*argv)==0){
+      mypars->Briggs = strdup(*(++argv));
+    }
+
+    //double nv, double lambda, double delta_s, double delta
     /*else{
       fprintf(stderr,"unrecognized input option, see NGSNGS help page\n\n");
       HelpPage(stderr);
@@ -173,6 +182,15 @@ int main(int argc,char **argv){
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));
   }
+
+  /*delete mypars; 
+   200 (96 direct, 104 indirect) bytes in 1 blocks are definitely lost in loss record 4 of 4
+   operator new(unsigned long) (vg_replace_malloc.c:344)
+   getpars(int, char**) (in /home/wql443/WP1/NGSNGS/a.out)
+
+   adding the delete will give me 
+   bytes in 1 blocks are definitely lost in loss record ->  strdup (in /usr/lib64/libc-2.17.so)
+  */
 }
 
 

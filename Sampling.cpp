@@ -16,6 +16,10 @@
 
 #include "NGSNGS_func.h"
 
+#define LENS 4096
+#define MAXBINS 100
+char nuc2int[255];
+
 pthread_mutex_t Fq_write_mutex;
 
 // ---------------------- SINGLE-END ---------------------- //
@@ -32,7 +36,8 @@ struct Parsarg_for_Fafq_se_thread{
   double* FragFreq;
   int No_Len_Val;
 
-  double* Qualfreq;
+  char *NtQual;
+  ransampl_ws ***QualDist; //double* Qualfreq;
   int threadseed;
   size_t reads;
   
@@ -57,7 +62,7 @@ void* Fafq_thread_se_run(void *arg){
   //casting my struct as arguments for the thread creation
   Parsarg_for_Fafq_se_thread *struct_obj = (Parsarg_for_Fafq_se_thread*) arg;
 
-  fprintf(stderr,"%s",struct_obj->SeqType);
+  //fprintf(stderr,"%s",struct_obj->SeqType);
   // creating random objects for all distributions.
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno;
   
@@ -98,7 +103,7 @@ void* Fafq_thread_se_run(void *arg){
 
     int lengthbin = BinarySearch_fraglength(struct_obj->FragFreq,0, struct_obj->No_Len_Val - 1, rand_val);
 
-    int fraglength = struct_obj->FragLen[lengthbin];//75; //struct_obj->FragLen[lengthbin];
+    int fraglength = 75; //struct_obj->FragLen[lengthbin];//75;
     
     int chr_idx = 0;
     while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}
@@ -128,6 +133,7 @@ void* Fafq_thread_se_run(void *arg){
     if ((int )(pch-seq_r1+1) == 1 && (int)(pch2-seq_r1+1)  == seqlen){memset(seq_r1, 0, sizeof seq_r1);memset(seq_r2, 0, sizeof seq_r2);}
     else{
       SimBriggsModel(seq_r1, seq_r1_mod, fraglength, 0.024, 0.36, 0.68, 0.0097,loc_seed);
+      // seq_r1  = seq_r1_mod
       
       int strand = (int) rand_r(&loc_seed)%2;//1;//rand() % 2;
       if (struct_obj->SAMout){
@@ -187,21 +193,42 @@ void* Fafq_thread_se_run(void *arg){
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
           //fprintf(stderr,"INSIDE FQ TRUE\n");
-          Read_Qual_new(readadapt,qual,loc_seed,struct_obj->Qualfreq,33);
+            for(int p = 0;p<seqlen;p++){
+              int base = seq_r1[p];
+              
+              int qscore = ransampl_draw2(struct_obj->QualDist[nuc2int[base]][p],rand_val,rand_val3);
+              qual[p] = struct_obj->NtQual[qscore];
+            }
+          // Read_Qual_new(readadapt,qual,loc_seed,struct_obj->Qualfreq,33);
           ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,readadapt,qual);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
-            Read_Qual_new(readadapt2,qual2,loc_seed,struct_obj->Qualfreq,33);
-            ksprintf(struct_obj->fqresult_r2,"@%s\n%s\n+\n%s\n",READ_ID,readadapt2,qual2);
+            //Read_Qual_new(readadapt2,qual2,loc_seed,struct_obj->Qualfreq,33);
+            for(int p = 0;p<seqlen;p++){
+              int base = seq_r1[p];
+              int qscore = ransampl_draw2(struct_obj->QualDist[nuc2int[base]][p],rand_val,rand_val3);
+              qual2[p] = struct_obj->NtQual[qscore];
             }
+            ksprintf(struct_obj->fqresult_r2,"@%s\n%s\n+\n%s\n",READ_ID,readadapt2,qual2);
+          }
         }
         if (struct_obj->SAMout){
           //fprintf(stderr,"INSIDE SAM TRUE\n");
           //size_t n_cigar; uint32_t cigar_bitstring; uint32_t cigar_bit_soft; uint32_t cigar_arr[]; const uint32_t *cigar;
-          Read_Qual_new(readadapt,qual,loc_seed,struct_obj->Qualfreq,0);  
+          for(int p = 0;p<seqlen;p++){
+              int base = seq_r1[p];
+              int qscore = ransampl_draw2(struct_obj->QualDist[nuc2int[base]][p],rand_val,rand_val3);
+              qual[p] = struct_obj->NtQual[qscore];
+            }
+          // Read_Qual_new(readadapt,qual,loc_seed,struct_obj->Qualfreq,0);  
           ksprintf(struct_obj->fqresult_r1,"%s",readadapt);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             //fprintf(stderr,"INSIDE SAM PE TRUE\n");
-            Read_Qual_new(readadapt2,qual2,loc_seed,struct_obj->Qualfreq,0);        
+            for(int p = 0;p<seqlen;p++){
+              int base = seq_r1[p];
+              int qscore = ransampl_draw2(struct_obj->QualDist[nuc2int[base]][p],rand_val,rand_val3);
+              qual2[p] = struct_obj->NtQual[qscore];
+            }
+            // Read_Qual_new(readadapt2,qual2,loc_seed,struct_obj->Qualfreq,0);        
             ksprintf(struct_obj->fqresult_r2,"%s",readadapt2);
           }
         }
@@ -212,17 +239,37 @@ void* Fafq_thread_se_run(void *arg){
           if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s\n%s\n",READ_ID,seq_r2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
-          Read_Qual_new(seq_r1,qual,loc_seed,struct_obj->Qualfreq,33);
+          for(int p = 0;p<seqlen;p++){
+              int base = seq_r1[p];
+              int qscore = ransampl_draw2(struct_obj->QualDist[nuc2int[base]][p],myrand(rand_id+1),myrand(rand_id+2));
+              qual[p] = struct_obj->NtQual[qscore];
+            }
+          // Read_Qual_new(seq_r1,qual,loc_seed,struct_obj->Qualfreq,33);
           ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,seq_r1,qual);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
-            Read_Qual_new(seq_r2,qual2,loc_seed,struct_obj->Qualfreq,33);
+            for(int p = 0;p<seqlen;p++){
+              int base = seq_r1[p];
+              int qscore = ransampl_draw2(struct_obj->QualDist[nuc2int[base]][p],rand_val,rand_val3);
+              qual2[p] = struct_obj->NtQual[qscore];
+            }
+            // Read_Qual_new(seq_r2,qual2,loc_seed,struct_obj->Qualfreq,33);
             ksprintf(struct_obj->fqresult_r2,"@%s\n%s\n+\n%s\n",READ_ID,seq_r2,qual2);}
         }
         if (struct_obj->SAMout){
-          Read_Qual_new(seq_r1,qual,loc_seed,struct_obj->Qualfreq,0);
+          for(int p = 0;p<seqlen;p++){
+              int base = seq_r1[p];
+              int qscore = ransampl_draw2(struct_obj->QualDist[nuc2int[base]][p],rand_val,rand_val3);
+              qual[p] = struct_obj->NtQual[qscore];
+          }
+          // Read_Qual_new(seq_r1,qual,loc_seed,struct_obj->Qualfreq,0);
           ksprintf(struct_obj->fqresult_r1,"%s",seq_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
-            Read_Qual_new(seq_r2,qual2,loc_seed,struct_obj->Qualfreq,0);
+            for(int p = 0;p<seqlen;p++){
+              int base = seq_r1[p];
+              int qscore = ransampl_draw2(struct_obj->QualDist[nuc2int[base]][p],rand_val,rand_val3);
+              qual2[p] = struct_obj->NtQual[qscore];
+            }
+            // Read_Qual_new(seq_r2,qual2,loc_seed,struct_obj->Qualfreq,0);
             ksprintf(struct_obj->fqresult_r2,"%s",seq_r2);}
         }
       }
@@ -320,6 +367,14 @@ void* Fafq_thread_se_run(void *arg){
   for(int j=0; j<struct_obj->m;j++){bam_destroy1(struct_obj->list_of_reads[j]);}
 
   fprintf(stderr,"\t number of reads generated by this thread %d \n",localread);
+  
+  for(int b=0;b<5;b++){
+    for(int pos = 0 ; pos<150;pos++){
+      ransampl_free(struct_obj->QualDist[b][pos]);
+    }
+    delete[] struct_obj->QualDist[b]; // 6,000 bytes in 5 blocks are definitely lost -> ReadQuality(char*, int) (supersampler2000.cpp:39)
+  }
+  delete[] struct_obj->QualDist;
 
   return NULL;
 }
@@ -329,6 +384,13 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
   int nthreads=thread_no;
   pthread_t mythreads[nthreads];
   
+  // if its defined globally cant i then move nuc2int out of the functions?
+  nuc2int['a'] = nuc2int['A'] = nuc2int[0] = 0;
+  nuc2int['c'] = nuc2int['C'] = nuc2int[1] = 1;
+  nuc2int['g'] = nuc2int['G'] = nuc2int[2] = 2;
+  nuc2int['t'] = nuc2int['T'] = nuc2int[3] = 3;
+  nuc2int['n'] = nuc2int['N'] = nuc2int[4] = 4; 
+
   int chr_total = faidx_nseq(seq_ref);
   const char *chr_names[chr_total];
   int chr_sizes[chr_total];
@@ -414,10 +476,12 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       Header_func(fmt_hts,filename1,SAMout,SAMHeader,seq_ref,chr_total,genome_size);
     }
   
-    // READ QUAL ARRAY
-    double* Qual_freq_array = new double[6000];
-    Qual_freq_array = Qual_array(Qual_freq_array,"Qual_profiles/Acc_freq1.txt");
-  
+    // SUPER SAMPLER TEST
+    const char *freqfile = "Qual_profiles/Acc_freq1v2.txt";
+    char nt_qual2[1024];
+    int outputoffset = 33;
+    ransampl_ws ***QualDist = ReadQuality(nt_qual2,outputoffset,freqfile);
+
     // FRAGMENT LENGTH CREATING ARRAY
     int* Frag_len = new int[4096];
     double* Frag_freq = new double[4096];
@@ -448,7 +512,9 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       struct_for_threads[i].FragFreq = Frag_freq;
       struct_for_threads[i].No_Len_Val = number; 
 
-      struct_for_threads[i].Qualfreq = Qual_freq_array;
+      //struct_for_threads[i].Qualfreq = Qual_freq_array;
+      struct_for_threads[i].NtQual = nt_qual2;
+      struct_for_threads[i].QualDist = QualDist;
       struct_for_threads[i].reads = reads;
       
       struct_for_threads[i].bgzf_fp1 = bgzf_fp1;
@@ -520,9 +586,11 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     free(fmt_hts);
     delete[] Frag_freq;
     delete[] Frag_len;
-    delete[] Qual_freq_array;
+    //delete[] Qual_freq_array;
     free(genome_data);
     fflush(stderr);
   }
   return NULL;
 }
+//g++ NGSNGS_func.cpp Sampling.cpp ArgParse.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
+//for j in {1..3}; do ./a.out -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 1000000 -s 1 -f fq -o chr22 &>> logfile.txt; done

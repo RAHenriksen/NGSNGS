@@ -33,6 +33,11 @@ Options: \
 3. SE vs PE option
 4. VCF and msms
 
+## GENERATE ERROR PROFILES BASED ON ART's PROFILES
+cd Qual_Profiles
+
+Rscript Read_filter.R HiSeq2500L150R1filter.txt AccFreqL150R1.txt
+
 ## GARGAMMEL
 ./gargammel.pl -c 1 --comp 0,0,1 -f src/sizefreq.size.gz -matfile src/matrices/double- -o data/simulation data/
 
