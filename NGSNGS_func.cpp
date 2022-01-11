@@ -354,7 +354,7 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
   if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile_nam); //outfile
 }
 
-char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],int chr_size_cumm[]){
+char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[]){
   
   size_t genome_size = 0;
   chr_size_cumm[0] = 0;

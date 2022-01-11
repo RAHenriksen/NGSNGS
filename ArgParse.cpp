@@ -4,6 +4,7 @@
 #include <ctime>
 #include <cassert>
 #include <cstdint>
+#include <iostream>
 
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
@@ -30,7 +31,16 @@ typedef struct{
   const char *QualProfile1;
   const char *QualProfile2;
   const char *Briggs;
+  int Length;
+  const char *LengthFile;
 }argStruct;
+
+float myatof(char *str){
+  if (str==NULL)
+    fprintf(stderr,"Could not parse Briggs parameters, provide <nv,Lambda,Delta_s,Delta_d>");
+  
+  return atof(str);
+}
 
 int HelpPage(FILE *fp){
   fprintf(fp,"Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 \n\n");
@@ -71,7 +81,9 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Adapter2 = NULL;
   mypars->QualProfile1 = NULL;
   mypars->QualProfile2 = NULL;
-  mypars->Briggs = "0.024,0.36,0.68,0.0097";
+  mypars->Briggs = NULL; //"0.024,0.36,0.68,0.0097";
+  mypars->Length = -1;
+  mypars->LengthFile = NULL;
   while(*argv){
     // Required
     if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
@@ -111,8 +123,14 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-b",*argv)==0 || strcasecmp("--briggs",*argv)==0){
       mypars->Briggs = strdup(*(++argv));
+      // "0.01,0.036,1.02,2.0"
     }
-
+    else if(strcasecmp("-l",*argv)==0 || strcasecmp("--length",*argv)==0){
+      mypars->Length = atoi(*(++argv));
+    }
+    else if(strcasecmp("-lf",*argv)==0 || strcasecmp("--lengthfile",*argv)==0){
+      mypars->LengthFile = strdup(*(++argv));
+    }
     //double nv, double lambda, double delta_s, double delta
     /*else{
       fprintf(stderr,"unrecognized input option, see NGSNGS help page\n\n");
@@ -124,8 +142,6 @@ argStruct *getpars(int argc,char ** argv){
   }
   return mypars;
 }
-
-//else if(strcasecmp("-f",*argv)==0 || strcasecmp("--out",*argv)==0){}
 
 // ------------------------------ //
 
@@ -175,8 +191,17 @@ int main(int argc,char **argv){
 
     const char* filename = mypars->OutName; //"chr22_out";
     const char* Seq_Type = mypars->Seq;
+    
+    float Param[4];
+    if (mypars->Briggs != NULL){
+      char* BriggsParam = strdup(mypars->Briggs);
+      Param[0] = myatof(strtok(BriggsParam,"\", \t"));
+      Param[1] = myatof(strtok(NULL,"\", \t"));
+      Param[2] = myatof(strtok(NULL,"\", \t"));
+      Param[3] = myatof(strtok(NULL,"\", \t"));
+    }
 
-    Create_se_threads(seq_ref,threads,Glob_seed,Thread_specific_Read,filename,Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type);
+    Create_se_threads(seq_ref,threads,Glob_seed,Thread_specific_Read,filename,Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,Param);
 
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
