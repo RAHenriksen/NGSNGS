@@ -482,7 +482,7 @@ void ransampl_free( ransampl_ws *ws )
     free( ws );
 }
 
-ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile){
+ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile,unsigned long &readcycle){
   ransampl_ws ***dists = new ransampl_ws**[5];
 
   std::vector<char *> all_lines;
@@ -496,8 +496,8 @@ ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile){
   fprintf(stderr,"All lines: %lu\n",all_lines.size());
   unsigned long readcyclelength = (all_lines.size()-1)/5; //all_lines.size()-1
 
-  fprintf(stderr,"Inferred read cycle lengths: %lu\n",readcyclelength);
-
+  //fprintf(stderr,"Inferred read cycle lengths: %lu\n",readcyclelength);
+  readcycle = readcyclelength; 
   //loop over inputdata
   int nbins = -1;
   double probs[MAXBINS];
@@ -513,7 +513,7 @@ ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile){
       }
       if(nbins==-1){
 	      nbins = at;
-	      fprintf(stderr,"Number of qualities/bins in inputfile: %d\n",nbins);
+	      //fprintf(stderr,"Number of qualities/bins in inputfile: %d\n",nbins);
       }
       if(nbins!=at){
 	      fprintf(stderr,"Problems, number of columns is different nbins: %d at: %d\n",nbins,at);
@@ -528,7 +528,7 @@ ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile){
   int idx = 1;
   //char nt_qual[nbins]; //{(char) (2+outputoffset)}; char nt_qual[8]
   //nt_qual[idx] = //(char) atoi(strtok(all_lines[0],"\n\t ")); //1+b*readcyclelength+pos
-  fprintf(stderr,"Number of qualities/bins in inputfile: %d\n",nbins);
+  //fprintf(stderr,"Number of qualities/bins in inputfile: %d\n",nbins);
  
   //extract the first token
   ntqual[0] = (char) (atoi(strtok(all_lines[0],"\n\t "))+ntcharoffset);

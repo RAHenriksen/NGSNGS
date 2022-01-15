@@ -41,6 +41,6 @@ int ransampl_draw2( ransampl_ws *ws,double r1, double r2); //added below functio
 
 void ransampl_free( ransampl_ws *ws );
 
-ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile);
+ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile,unsigned long &readcycle);
 
 #endif /* NGSNGSFUNC_H */

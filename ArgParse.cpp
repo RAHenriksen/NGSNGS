@@ -42,6 +42,10 @@ float myatof(char *str){
   return atof(str);
 }
 
+void Sizebreak(char *str){
+  fprintf(stderr,"Could not parse the length parameters, provide either fixed length size (-l) \n or parse length distribution file (-lf)");
+}
+
 int HelpPage(FILE *fp){
   fprintf(fp,"Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 \n\n");
   fprintf(fp,"Default usage: ./ngsngs <input reference> <numer of reads> \t Generates single-end fasta file named output\n\n");
@@ -122,7 +126,7 @@ argStruct *getpars(int argc,char ** argv){
       mypars->OutFormat = strdup(*(++argv));
     }
     else if(strcasecmp("-b",*argv)==0 || strcasecmp("--briggs",*argv)==0){
-      mypars->Briggs = strdup(*(++argv));
+      mypars->Briggs = strdup(*(++argv)); //double nv, double lambda, double delta_s, double delta
       // "0.01,0.036,1.02,2.0"
     }
     else if(strcasecmp("-l",*argv)==0 || strcasecmp("--length",*argv)==0){
@@ -131,13 +135,13 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-lf",*argv)==0 || strcasecmp("--lengthfile",*argv)==0){
       mypars->LengthFile = strdup(*(++argv));
     }
-    //double nv, double lambda, double delta_s, double delta
+    
     /*else{
       fprintf(stderr,"unrecognized input option, see NGSNGS help page\n\n");
       HelpPage(stderr);
       } */
     
-    // -l || --length, -e1 +2 || --error1 +2 
+    // -e1 +2 || --error1 +2 
     ++argv;
   }
   return mypars;
@@ -171,7 +175,8 @@ int main(int argc,char **argv){
     size_t No_reads = mypars->reads; //1e1;
 
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
-    fprintf(stderr,"\t-> Seed used: %d with %d threads\n",Glob_seed,threads);
+    fprintf(stderr,"\t-> Seed used: %d\n",Glob_seed);
+    fprintf(stderr,"\t-> Number of threads used: %d \n",threads);
     fprintf(stderr,"\t-> Number of simulated reads: %zd\n",No_reads);
 
     const char* Adapt_flag;
@@ -186,12 +191,39 @@ int main(int argc,char **argv){
     else{Adapt_flag = "false";}
 
     const char* OutputFormat = mypars->OutFormat;
+    
+    const char* QualProfile1; const char* QualProfile2;
+    QualProfile1 = mypars->QualProfile1; QualProfile2 = mypars->QualProfile2;
+    if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0){
+      if (QualProfile1 == NULL){
+        fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
+        exit(0);
+      }
+      if(strcasecmp("PE",mypars->Seq)==0 && mypars->QualProfile2 == NULL){
+        fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
+        exit(0);
+      }
+    }
+    
+    int qualstringoffset = 0;
+    if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0){qualstringoffset = 33;}
 
     int Thread_specific_Read = static_cast<int>(No_reads/threads);
 
     const char* filename = mypars->OutName; //"chr22_out";
     const char* Seq_Type = mypars->Seq;
     
+    int FixedSize = mypars->Length;
+    const char* Sizefile = mypars->LengthFile;
+
+    if (Sizefile == NULL){
+      if (FixedSize == -1){
+        fprintf(stderr,"Could not parse the length parameters, provide either fixed length size (-l) or parse length distribution file (-lf) see helppage (-h).");
+        exit(0);
+      }
+    }
+    
+    const char* Briggs_Flag;
     float Param[4];
     if (mypars->Briggs != NULL){
       char* BriggsParam = strdup(mypars->Briggs);
@@ -199,9 +231,13 @@ int main(int argc,char **argv){
       Param[1] = myatof(strtok(NULL,"\", \t"));
       Param[2] = myatof(strtok(NULL,"\", \t"));
       Param[3] = myatof(strtok(NULL,"\", \t"));
+      Briggs_Flag = "True";
     }
+    else{Briggs_Flag = "False";}
 
-    Create_se_threads(seq_ref,threads,Glob_seed,Thread_specific_Read,filename,Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,Param);
+    Create_se_threads(seq_ref,threads,Glob_seed,Thread_specific_Read,filename,
+                      Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
+                      Param,Briggs_Flag,Sizefile,FixedSize,qualstringoffset,QualProfile1,QualProfile2);
 
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
