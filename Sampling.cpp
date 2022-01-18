@@ -124,7 +124,6 @@ void* Fafq_thread_se_run(void *arg){
 
     if (strcasecmp(struct_obj -> OutputFormat,"fa")==0|| strcasecmp(struct_obj -> OutputFormat,"fa.gz")==0){
       readsizelimit = fraglength;
-      //fprintf(stderr,"inside size limit loop \n");
     }
     else{
       readsizelimit = struct_obj->readcycle;
@@ -170,6 +169,13 @@ void* Fafq_thread_se_run(void *arg){
                                                       struct_obj->BriggsParam[2], 
                                                       struct_obj->BriggsParam[3],loc_seed);
         strncpy(seq_r1, seq_r1_mod, sizeof(seq_r1));
+        if (strcasecmp("PE",struct_obj->SeqType)==0){
+          SimBriggsModel(seq_r2, seq_r2_mod, fraglength,struct_obj->BriggsParam[0], 
+                                                      struct_obj->BriggsParam[1], 
+                                                      struct_obj->BriggsParam[2], 
+                                                      struct_obj->BriggsParam[3],loc_seed);
+          strncpy(seq_r2, seq_r2_mod, sizeof(seq_r2));
+        }
       }
 
       int strand = (int) rand_r(&loc_seed)%2;//1;//rand() % 2;
@@ -216,14 +222,14 @@ void* Fafq_thread_se_run(void *arg){
       if(strcasecmp(struct_obj->Adapter_flag,"true")==0){
         strcpy(read, seq_r1);
         strcat(read,struct_obj->Adapter_1);
-        strncpy(readadapt, read, struct_obj->readcycle);
+        strncpy(readadapt, read, readsizelimit);
         //fprintf(stderr,"INSIDE ADAPTER TRUE\n");
 
         if (strcasecmp("PE",struct_obj->SeqType)==0){
           //fprintf(stderr,"INSIDE PE TRUE\n");
           strcpy(read2, seq_r2);
           strcat(read2,struct_obj->Adapter_2);
-          strncpy(readadapt2, read2, struct_obj->readcycle);
+          strncpy(readadapt2, read2, readsizelimit);
         }
 
         if (strcasecmp(struct_obj -> OutputFormat,"fa")==0|| strcasecmp(struct_obj -> OutputFormat,"fa.gz")==0){
@@ -405,7 +411,7 @@ void* Fafq_thread_se_run(void *arg){
 
 void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
                         const char* Adapter_2,const char* OutputFormat,const char* SeqType,float BriggsParam[4],const char* Briggs_flag,
-                        const char* Sizefile,int FixedSize,int qualstringoffset,const char* QualProfile1,const char* QualProfile2){
+                        const char* Sizefile,int FixedSize,int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno){
   //creating an array with the arguments to create multiple threads;
   int nthreads=thread_no;
   pthread_t mythreads[nthreads];
@@ -481,7 +487,8 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     const char* filename2 = NULL;
 
     if(strcasecmp("bam",OutputFormat)!=0){
-      int mt_cores = 1;
+      fprintf(stderr,"not bam loop \n");
+      int mt_cores = threadwriteno;
       int bgzf_buf = 256;
       
       bgzf_fp1 = bgzf_open(filename1,mode);
@@ -494,7 +501,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
         bgzf_mt(bgzf_fp2,mt_cores,bgzf_buf);
       }
 
-      //fprintf(stderr,"\t-> Number of cores for bgzf_mt: %d\n",mt_cores); 
+      fprintf(stderr,"\t-> Number of cores for bgzf_mt: %d \t %d\n",mt_cores,threadwriteno); 
     }
     else{
       SAMout = sam_open_format(filename1, mode, fmt_hts);
@@ -512,15 +519,9 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
 
 
     // SUPER SAMPLER TEST
-    const char *freqfile_r1 = QualProfile1; //"Qual_profiles/AccFreqL150R1.txt";
+    const char *freqfile_r1; //"Qual_profiles/AccFreqL150R1.txt";
     const char *freqfile_r2;
     int outputoffset = qualstringoffset;
-    
-    if(strcasecmp("PE",SeqType)==0){
-      freqfile_r2 = QualProfile2; //"Qual_profiles/AccFreqL150R2.txt";
-    }
-
-    fprintf(stderr,"before read qual creation and before threads creation \n");
     unsigned long readcyclelength;
     ransampl_ws ***QualDist;
     char nt_qual_r1[1024];
@@ -528,15 +529,16 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     char nt_qual_r2[1024];
     
     if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0){
+      freqfile_r1 = QualProfile1;
       QualDist = ReadQuality(nt_qual_r1,outputoffset,freqfile_r1,readcyclelength);
       if(strcasecmp("PE",SeqType)==0){
+        freqfile_r2 = QualProfile2;
         QualDist2 = ReadQuality(nt_qual_r2,outputoffset,freqfile_r2,readcyclelength);
       }
     }
     
     int maxsize = 20;
     //initialzie values that should be used for each thread
-
     for (int i = 0; i < nthreads; i++){
       struct_for_threads[i].fqresult_r1 =new kstring_t;
       struct_for_threads[i].fqresult_r1 -> l = 0;
@@ -615,6 +617,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     fprintf(stderr,"Done joining a bunch of threads\n");
     
     if(strcasecmp("bam",OutputFormat)!=0){
+      fprintf(stderr,"Closing fasta fastq files\n");
       bgzf_close(bgzf_fp1);
       if(strcasecmp("PE",SeqType)==0){bgzf_close(bgzf_fp2);}
     }
@@ -633,7 +636,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       free(struct_for_threads[i].fqresult_r2 -> s);//4 errors from 4 contexts (suppressed: 0 eventhough that delete goes with new and not free
       delete struct_for_threads[i].fqresult_r2;      
     }
-
 
     if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0){
       for(int b=0;b<5;b++){
@@ -655,8 +657,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       }
     }
     
-
-
     free(fmt_hts);
     if(Sizefile!=NULL){
       delete[] Frag_freq;
