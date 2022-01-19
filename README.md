@@ -7,17 +7,15 @@ Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen
 * make HTSSRC=../hstlib
 
 ## USAGE
-Next Generation Simulator for Next Generator Sequencing Data version 0.0.0 
-
 Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 
 
-Default usage: ./ngsngs <input reference> <numer of reads> 	 Generates single-end fasta file named output
+Default usage: ./ngsngs [input reference] [numer of reads] 	 Generates single-end fasta file named output
 
-Usage: ./ngsngs <options> <input reference> <numer of reads> <output file> 
+Usage: ./ngsngs \<options> [input reference] [numer of reads] [output file] 
 
-Required options: 
--i | --input: 			 Reference file in .fasta format to sample reads from
--r | --reads: 			 Number of reads to simulate
+Required options: \
+-i | --input: 			 Reference file in .fasta format to sample reads from\
+-r | --reads: 			 Number of reads to simulate\
 
 Optional options: 
 -h | --help: 			 Print help page
