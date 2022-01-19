@@ -69,3 +69,23 @@ samtools sort chr22se.bam -o chr22sesort.bam
 samtools index chr22sesort.bam
 mapDamage -i chr22sesort.bam -r chr22.fa --no-stats
 ~~~~
+
+## PIPELINE
+Generate NGS reads
+~~~~bash
+./ngsngs -i chr22.fa -r 1000000 -t1 1 -s 1 -lf Size_dist/Size_dist_sampling.txt -q1 Qual_profiles/AccFreqL150R1.txt -seq SE -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -b 0.024,0.36,0.68,0.0097 -f fq -o chr22out
+~~~~
+Trim adapters
+~~~~bash
+fastp -in1 chr22out.fq --ou1 chr22trim.fq --length_required 30
+~~~~
+Alignment and filtering
+~~~~bash
+bwa mem chr22.fa chr22trim.fq > chr22trim_se.bam
+samtools view -F 4 -q 30 chr22trim_se.bam -b | samtools sort -o chr22trim_se_sort.bam
+samtools index chr22trim_se_sort.bam
+~~~~
+Identify deamination pattern
+~~~~bash
+mapDamage -i chr22trim_se_sort.bam -r chr22.fa --no-stats
+~~~~
