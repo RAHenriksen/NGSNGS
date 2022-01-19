@@ -21,12 +21,12 @@ Required: \
 &emsp; \<SE\> &emsp;	 single-end \
 &emsp; \<PE\> &emsp;	 paired-end \
 -f | --format: 			 File format of the simulated outpur reads \
-	 <fa||fasta>		 nucletide sequence \
- 	 <fa.gz||fasta.gz>	 compressed nucletide sequence \
- 	 <fq||fastq>		 nucletide sequence with corresponding quality score \ 
- 	 <fq.gz||fastq.gz>	 compressed nucletide sequence with corresponding quality score \ 
- 	 <bam>			 Sequence Alignment Map format \
--o | --output: 			 Prefix of output file name. \
+&emsp;	 <fa||fasta>&emsp;		 nucletide sequence \
+&emsp; 	 <fa.gz||fasta.gz>&emsp;	 compressed nucletide sequence \
+&emsp; 	 <fq||fastq>&emsp;		nucletide sequence with corresponding quality score \ 
+&emsp; 	 <fq.gz||fastq.gz>&emsp;	 compressed nucletide sequence with corresponding quality score \ 
+&emsp; 	 <bam>&emsp;			 Sequence Alignment Map format \
+-o | --output: 			 Prefix of output file name. 
 
 See helppage for further options and descriptions (./ngsngs -h)
 
