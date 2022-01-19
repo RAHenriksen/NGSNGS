@@ -23,8 +23,8 @@ Required: \
 -f | --format: 			 File format of the simulated outpur reads \
 &emsp;	 <fa||fasta>&emsp;		 nucletide sequence \
 &emsp; 	 <fa.gz||fasta.gz>&emsp;	 compressed nucletide sequence \
-&emsp; 	 <fq||fastq>&emsp;		nucletide sequence with corresponding quality score \ 
-&emsp; 	 <fq.gz||fastq.gz>&emsp;	 compressed nucletide sequence with corresponding quality score \ 
+&emsp; 	 <fq||fastq>&emsp;		nucletide sequence with corresponding quality score \
+&emsp; 	 <fq.gz||fastq.gz>&emsp;	 compressed nucletide sequence with corresponding quality score \
 &emsp; 	 <bam>&emsp;			 Sequence Alignment Map format \
 -o | --output: 			 Prefix of output file name. 
 
@@ -39,5 +39,33 @@ Rscript Read_filter.R HiSeq2500L150R1filter.txt AccFreqL150R1.txt
 
 ### GENERATE SIZE DISTRIBUTIONS
 
-## USAGE EXAMPLE
-./ngsngs -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 100 -s 1 -f bam -o chr22 \
+## EXAMPLES
+### Simulate simple NGS paired-end output in fasta format with fixed length
+~~~~bash
+./ngsngs -i chr22.fa -r 10000 -l 100 -seq PE -f fa -o chr22pe
+~~~~
+### Simulate single-end NGS aDNA reads with deamination 
+~~~~bash
+./ngsngs -i chr22.fa -r 100000 -t1 2 -s 1 -lf Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -f fa -o chr22se
+# -t1: Number of threads to use for sampling sequence reads
+# -s: Random seed
+# -b: Parameters for the damage patterns using the Briggs model <nv,Lambda,Delta_s,Delta_d>
+~~~~
+### Simulate paired-end reads with fixed sized, quality profiles and adapters
+~~~~bash
+./ngsngs -i chr22.fa -r 100000 -t1 2 -s 1 -l 125 -q1 Qual_profiles/AccFreqL150R1.txt -q2 Qual_profiles/AccFreqL150R2.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -seq PE -f fq -o chr22pe
+~~~~
+### Create bam file with deamination pattern
+~~~~bash
+./ngsngs -i chr22.fa -r 100000 -t1 2 -s 1 -lf Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -q1 Qual_profiles/AccFreqL150R1.txt -f bam -o chr22se
+~~~~
+Verify using mapDamage
+~~~~bash
+mapDamage -i chr22se.bam -r chr22.fa --no-stats
+~~~~
+or 
+~~~~bash
+samtools sort chr22se.bam -o chr22sesort.bam
+samtools index chr22sesort.bam
+mapDamage -i chr22sesort.bam -r chr22.fa --no-stats
+~~~~
