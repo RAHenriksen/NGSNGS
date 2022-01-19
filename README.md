@@ -18,8 +18,8 @@ Required: \
 -l | --length: 			 Fixed length of simulated fragments, conflicts with -lf option \
 -lf | --lengthfile: 		 CDF of a length distribution, conflicts with -l option \
 -seq | --sequencing: 		 Simulate single-end or paired-end reads \
-&emsp \<SE\> &emsp	 single-end \
-&emsp \<PE\> &emsp	 paired-end \
+&emsp; \<SE\> &emsp;	 single-end \
+&emsp; \<PE\> &emsp;	 paired-end \
 -f | --format: 			 File format of the simulated outpur reads \
 	 <fa||fasta>		 nucletide sequence \
  	 <fa.gz||fasta.gz>	 compressed nucletide sequence \
