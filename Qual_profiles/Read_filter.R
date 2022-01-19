@@ -27,7 +27,7 @@ profile <- read.table(args[1], fill = TRUE, header = FALSE,col.names=paste0('V',
 
 #Extracts every second line with the occurences of the qual
 Occurence <- as.data.frame(profile[3:ncol(profile)])
-Occurence <- head(Occurence,-(nrow(profile)/6)) # removes those starting wiht "." (average)
+Occurence <- tail(Occurence,-(nrow(profile)/6)) # removes those positions starting with "." (average quality)
 toDelete <- seq(2, nrow(Occurence), 2)
 Occurence <- Occurence[ toDelete ,]
 Occurence[is.na(Occurence)] = 0
@@ -55,6 +55,7 @@ for(i in 1:ncol(Frequencies)){
 
 mydf <- data.frame(mydata)
 colnames(mydf) <- colnames
+mydf <- mydf %>% mutate_all(~replace(., is.nan(.), 1))
 
 ### ASCII VALUES OF THE QUALITIES
 

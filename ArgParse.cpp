@@ -47,24 +47,31 @@ void Sizebreak(char *str){
   fprintf(stderr,"Could not parse the length parameters, provide either fixed length size (-l) \n or parse length distribution file (-lf)");
 }
 
+void ErrMsg(int messageno){
+  if(messageno == 1){fprintf(stderr,"test");}
+  else if(messageno == 2){fprintf(stderr,"test2");}
+  else {fprintf(stderr,"test4");}
+}
+
+
 int HelpPage(FILE *fp){
   fprintf(fp,"Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 \n\n");
-  fprintf(fp,"Default usage: ./ngsngs <input reference> <numer of reads> \t Generates single-end fasta file named output\n\n");
-  fprintf(fp,"Usage: ./ngsngs <options> <input reference> <numer of reads> <output file> \n\n");
-  fprintf(fp,"Required options: \n");
+  fprintf(fp,"Usage\n./ngsngs [options] -i <input_reference.fa> -r <Number of reads> -l/-lf <fixed length or length file> -seq <SE/PE> -f <Output format> -o <Output name>\n");
+  fprintf(fp,"\nRequired: \n");
   fprintf(fp,"-i | --input: \t\t\t Reference file in .fasta format to sample reads from\n");
   fprintf(fp,"-r | --reads: \t\t\t Number of reads to simulate\n");
-  fprintf(fp,"\n");
-  fprintf(fp,"Optional options: \n");
-  fprintf(fp,"-h | --help: \t\t\t Print help page\n");
-  fprintf(fp,"-v | --version: \t\t Print help page\n");
-  fprintf(fp,"-o | --output: \t\t\t Prefix of output file name. No input generates output file 'output.fa'\n");
-  fprintf(fp,"-f | --format: \t\t\t File format of the simulated outpur reads\n");
-  fprintf(fp,"\t <.fa||.fasta>\t\t nucletide sequence \n \t <.fa.gz||.fasta.gz>\t compressed nucletide sequence \n \t <.fq||.fastq>\t\t nucletide sequence with corresponding quality score \n \t <.fq.gz||.fastq.gz>\t compressed nucletide sequence with corresponding quality score \n \t <.bam>\t\t\t Sequence Alignment Map format\n");
   fprintf(fp,"-l | --length: \t\t\t Fixed length of simulated fragments, conflicts with -lf option\n");
   fprintf(fp,"-lf | --lengthfile: \t\t CDF of a length distribution, conflicts with -l option\n");
+  fprintf(fp,"-seq | --sequencing: \t\t Simulate single-end or paired-end reads\n");
+  fprintf(fp,"\t <SE>\t single-end \n \t <PE>\t paired-end\n");
+  fprintf(fp,"-f | --format: \t\t\t File format of the simulated outpur reads\n");
+  fprintf(fp,"\t <fa||fasta>\t\t nucletide sequence \n \t <fa.gz||fasta.gz>\t compressed nucletide sequence \n \t <fq||fastq>\t\t nucletide sequence with corresponding quality score \n \t <fq.gz||fastq.gz>\t compressed nucletide sequence with corresponding quality score \n \t <bam>\t\t\t Sequence Alignment Map format\n");
+  fprintf(fp,"-o | --output: \t\t\t Prefix of output file name.\n");
+  fprintf(fp,"\nOptional: \n");
+  fprintf(fp,"-h | --help: \t\t\t Print help page\n");
+  fprintf(fp,"-v | --version: \t\t Print help page\n");
   fprintf(fp,"-t1 | --threads1: \t\t Number of threads to use for sampling sequence reads\n");
-  fprintf(fp,"-t2 | --threads2: \t\t Number of threads to use write down sampled reads, default = threads1\n");
+  fprintf(fp,"-t2 | --threads2: \t\t Number of threads to use write down sampled reads, default = 1\n");
   fprintf(fp,"-s | --seed: \t\t\t Random seed, default value being computer time\n");
   fprintf(fp,"-a1 | --adapter1: \t\t Adapter sequence to add for simulated reads (SE) or first read pair (PE)\n");
   fprintf(fp,"\t e.g. Illumina TruSeq Adapter 1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG \n");
@@ -72,11 +79,9 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t e.g. Illumina TruSeq Adapter 2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT \n");
   fprintf(fp,"-q1 | --quality1: \t\t Read Quality profile for simulated reads (SE) or first read pair (PE)\n");
   fprintf(fp,"-q2 | --quality2: \t\t Read Quality profile for for second read pair (PE)\n");
-  fprintf(fp,"-seq | --sequencing: \t\t Simulate single-end or paired-end reads\n");
-  fprintf(fp,"\t <SE>\t single-end \n \t <PE>\t paired-end\n");
   fprintf(fp,"-b | --briggs: \t\t\t Parameters for the damage patterns using the Briggs model\n");
   fprintf(fp,"\t <nv,Lambda,Delta_s,Delta_d> : 0.024,0.36,0.68,0.0097 (from Briggs et al., 2007)\n");
-  fprintf(fp,"\t\t nv: Nick rate pr site \n \t\t Lambda: Geometric distribution parameter for overhang length\n \t\t Delta_s: PMD rate in single-strand regions\n \t\t Delta_s: PMD rate in double-strand regions\n");
+  fprintf(fp,"\t nv: Nick rate pr site \n \t Lambda: Geometric distribution parameter for overhang length\n \t Delta_s: PMD rate in single-strand regions\n \t Delta_s: PMD rate in double-strand regions\n");
   exit(1);
   return 0;
 }
@@ -86,17 +91,17 @@ argStruct *getpars(int argc,char ** argv){
   mypars->threads1 = 1;
   mypars->threads2 = -1;
   mypars->reads = -1;
+  mypars->Length = -1;
   mypars->Glob_seed = (int) time(NULL);
-  mypars->OutFormat = "fa";
-  mypars->OutName = "output";
-  mypars->Seq = "SE";
+  mypars->OutFormat = NULL; //"fa";
+  mypars->OutName = NULL; //"output";
+  mypars->Seq = NULL; // "SE";
   mypars->Reference = NULL;
   mypars->Adapter1 = NULL;
   mypars->Adapter2 = NULL;
   mypars->QualProfile1 = NULL;
   mypars->QualProfile2 = NULL;
   mypars->Briggs = NULL; //"0.024,0.36,0.68,0.0097";
-  mypars->Length = -1;
   mypars->LengthFile = NULL;
   while(*argv){
     if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
@@ -169,16 +174,25 @@ int main(int argc,char **argv){
     clock_t t = clock();
     time_t t2 = time(NULL);
 
-    const char *fastafile = mypars->Reference; //"/willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa";
+    const char *fastafile = mypars->Reference;
+    const char* OutputFormat = mypars->OutFormat;
+    const char* filename = mypars->OutName; //"chr22_out";
+    const char* Seq_Type = mypars->Seq;
+    size_t No_reads = mypars->reads;
+
+    if (fastafile == NULL){fprintf(stderr,"Input reference file not recognized, provide -i | --input\n");exit(0);}
+    if (OutputFormat == NULL){fprintf(stderr,"Output format not recognized, provide -f | --format : <fa, fa.gz, fq, fq.gz, bam>\n");exit(0);}
+    if (filename == NULL){fprintf(stderr,"Output filename not provided, provide -o\n");exit(0);}
+    if (Seq_Type == NULL){fprintf(stderr,"Sequence type not provided. provide -seq || --sequence : SE (single-end) or PE (paired-end)\n");exit(0);}
+    if (No_reads == -1){fprintf(stderr,"Number of reads to simulate not provided, provide -r \n");exit(0);}
+ 
     faidx_t *seq_ref = NULL;
     seq_ref  = fai_load(fastafile);
-
-    fprintf(stderr,"\t-> fasta load \n");
     
     assert(seq_ref!=NULL);
     
     int chr_total = faidx_nseq(seq_ref);
-    int Glob_seed = mypars->Glob_seed; //(int) time(NULL);
+    int Glob_seed = mypars->Glob_seed; 
     int threads1 = mypars->threads1;
     int threads2;
     if (mypars->threads2 == -1){
@@ -188,7 +202,9 @@ int main(int argc,char **argv){
       threads2 = mypars->threads2;
     }
     
-    size_t No_reads = mypars->reads; //1e1;
+     //1e1;
+    
+    int Thread_specific_Read = static_cast<int>(No_reads/threads1);
 
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
     fprintf(stderr,"\t-> Seed used: %d\n",Glob_seed);
@@ -207,8 +223,7 @@ int main(int argc,char **argv){
     }
     else{Adapt_flag = "false";}
 
-    const char* OutputFormat = mypars->OutFormat;
-    
+    // QUALITY PROFILES
     const char* QualProfile1; const char* QualProfile2;
     QualProfile1 = mypars->QualProfile1; QualProfile2 = mypars->QualProfile2;
     if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0){
@@ -225,17 +240,20 @@ int main(int argc,char **argv){
     int qualstringoffset = 0;
     if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0){qualstringoffset = 33;}
 
-    int Thread_specific_Read = static_cast<int>(No_reads/threads1);
-
-    const char* filename = mypars->OutName; //"chr22_out";
-    const char* Seq_Type = mypars->Seq;
-    
+    // LENGTH     
     int FixedSize = mypars->Length;
     const char* Sizefile = mypars->LengthFile;
 
     if (Sizefile == NULL){
       if (FixedSize == -1){
-        fprintf(stderr,"Could not parse the length parameters, provide either fixed length size (-l) or parse length distribution file (-lf) see helppage (-h).");
+        fprintf(stderr,"Could not parse the length parameters, provide either fixed length size (-l) or parse length distribution file (-lf) see helppage (-h).\n");
+        exit(0);
+      }
+    }
+
+    if (Sizefile != NULL){
+      if (FixedSize != -1){
+        fprintf(stderr,"Could not parse both length parameters, provide either fixed length size (-l) or parse length distribution file (-lf) see helppage (-h).\n");
         exit(0);
       }
     }
@@ -268,13 +286,14 @@ int main(int argc,char **argv){
   free((char *)mypars->Seq);
   free((char *)mypars->OutFormat);
   free((char *)mypars->OutName);
+  free((char *)mypars->LengthFile);
+
   // OPTIONAL DEALLOCATIONS
   free((char *)mypars->Adapter1);
   free((char *)mypars->Adapter2);
   free((char *)mypars->QualProfile1);
   free((char *)mypars->QualProfile2);
   free((char *)mypars->Briggs);
-  free((char *)mypars->LengthFile);
   
   delete mypars;
 }
