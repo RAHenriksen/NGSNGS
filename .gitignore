@@ -4,6 +4,8 @@
 *.fq*
 *.sam
 *.bam
+*.bai
+*.fai
 *.vcf
 *.bcf
 *.out
