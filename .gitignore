@@ -9,6 +9,7 @@
 *.vcf
 *.bcf
 *.out
+ngsngs
 *.gz
 .nfs*
 *.o

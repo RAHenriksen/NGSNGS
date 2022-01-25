@@ -34,6 +34,7 @@ typedef struct{
   const char *Briggs;
   int Length;
   const char *LengthFile;
+  const char *Poly;
 }argStruct;
 
 float myatof(char *str){
@@ -77,6 +78,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t e.g. Illumina TruSeq Adapter 1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG \n");
   fprintf(fp,"-a2 | --adapter2: \t\t Adapter sequence to add for second read pair (PE) \n");
   fprintf(fp,"\t e.g. Illumina TruSeq Adapter 2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT \n");
+  fprintf(fp,"-p | --poly: \t\t Create Poly(X) tails for reads already containing adapters but below the inferred readcycle length. e.g -p G or -p A \n");
   fprintf(fp,"-q1 | --quality1: \t\t Read Quality profile for simulated reads (SE) or first read pair (PE)\n");
   fprintf(fp,"-q2 | --quality2: \t\t Read Quality profile for for second read pair (PE)\n");
   fprintf(fp,"-b | --briggs: \t\t\t Parameters for the damage patterns using the Briggs model\n");
@@ -103,7 +105,10 @@ argStruct *getpars(int argc,char ** argv){
   mypars->QualProfile2 = NULL;
   mypars->Briggs = NULL; //"0.024,0.36,0.68,0.0097";
   mypars->LengthFile = NULL;
+  mypars->Poly = NULL;
+  ++argv;
   while(*argv){
+    fprintf(stderr,"ARGV %s\n",*argv);
     if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->Reference = strdup(*(++argv));
     }
@@ -150,11 +155,16 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-lf",*argv)==0 || strcasecmp("--lengthfile",*argv)==0){
       mypars->LengthFile = strdup(*(++argv));
     }
-    /*else{
-      fprintf(stderr,"unrecognized input option %s, see NGSNGS help page\n\n",strdup(*(++argv)));
-    }*/
+    else if(strcasecmp("-p",*argv)==0 || strcasecmp("--poly",*argv)==0){
+      mypars->Poly = strdup(*(++argv));
+    }
+    else{
+      fprintf(stderr,"unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
+      exit(0);
+    }
     
     // -e1 +2 || --error1 +2 
+    // -p || --poly G T
     ++argv;
   }
   return mypars;
@@ -214,29 +224,44 @@ int main(int argc,char **argv){
     const char* Adapt_flag;
     const char* Adapter_1;
     const char* Adapter_2;
+    const char* Polynt;
     if (mypars->Adapter1 != NULL){
       Adapt_flag = "true";
       Adapter_1 = mypars->Adapter1;
       Adapter_2 = mypars->Adapter2;
       //Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
       //Adapter_2 = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT";
+      if (mypars->Poly != NULL){Polynt =mypars->Poly;}
     }
-    else{Adapt_flag = "false";}
+    else{
+      Adapt_flag = "false";
+      if (mypars->Poly != NULL){fprintf(stderr,"Poly tail error: Missing adapter sequence, provide adapter sequence (-a1,-a2) as well\n");exit(0);}
+    }
 
     // QUALITY PROFILES
     const char* QualProfile1; const char* QualProfile2;
     QualProfile1 = mypars->QualProfile1; QualProfile2 = mypars->QualProfile2;
-    if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0){
-      if (QualProfile1 == NULL){
-        fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
-        exit(0);
+    
+    const char* QualStringFlag;
+    if (QualProfile1 == NULL){QualStringFlag = "false";}
+    else{QualStringFlag = "true";}
+    //fprintf(stderr,"qualstring test %s",QualStringFlag);
+    if (QualStringFlag == "true"){
+      if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0){
+        if (Seq_Type == "PE" && QualProfile2 == NULL){
+          fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
+          exit(0);
+        }
       }
-      if(strcasecmp("PE",mypars->Seq)==0 && mypars->QualProfile2 == NULL){
+    }
+    else
+    {
+      if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0){
         fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
         exit(0);
       }
     }
-    
+        
     int qualstringoffset = 0;
     if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0){qualstringoffset = 33;}
 
@@ -250,7 +275,6 @@ int main(int argc,char **argv){
         exit(0);
       }
     }
-
     if (Sizefile != NULL){
       if (FixedSize != -1){
         fprintf(stderr,"Could not parse both length parameters, provide either fixed length size (-l) or parse length distribution file (-lf) see helppage (-h).\n");
@@ -269,11 +293,11 @@ int main(int argc,char **argv){
       Briggs_Flag = "True";
     }
     else{Briggs_Flag = "False";}
-
+    
     Create_se_threads(seq_ref,threads1,Glob_seed,Thread_specific_Read,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,qualstringoffset,
-                      QualProfile1,QualProfile2,threads2);
+                      QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt);
 
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
@@ -294,7 +318,6 @@ int main(int argc,char **argv){
   free((char *)mypars->QualProfile1);
   free((char *)mypars->QualProfile2);
   free((char *)mypars->Briggs);
-  
   delete mypars;
 }
 
@@ -310,3 +333,16 @@ int main(int argc,char **argv){
 // ./ngsngs -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 100 -s 1 -seq PE -f fq -o chr22
 
 //g++ NGSNGS_func.cpp Sampling.cpp ArgParse.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
+
+/*
+const char* poly_test;
+  poly_test = strdup("G");
+  char test[1024];
+  memset(test,(char) poly_test[0], 150);
+  std::cout << test << std::endl;
+  char test2[1024] = "TTTTTT";
+  strncpy(test, test2, strlen(test2));
+  std::cout << test << std::endl;
+  std::cout << test2 << std::endl;
+  exit(0);
+  */
