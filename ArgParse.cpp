@@ -5,6 +5,8 @@
 #include <cassert>
 #include <cstdint>
 #include <iostream>
+#include <cmath>
+#include <algorithm>
 
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
@@ -319,21 +321,31 @@ int main(int argc,char **argv){
   free((char *)mypars->QualProfile2);
   free((char *)mypars->Briggs);
   delete mypars;
+
+  /*double lambda = 0.36;
+  std::default_random_engine generator1(rand()%30000+1); // value between 1 and 30000
+  std::geometric_distribution<int> distribution1(lambda); // creates lambda distribution
+  std::default_random_engine generator2(rand()%30000+1);
+  std::geometric_distribution<int> distribution2(lambda);
+  unsigned int gen_1 = (unsigned int) myrandgenmodulo((unsigned int) (1000+2),30000); 
+  unsigned int seed = 10;
+  for (int i = 0; i < 100000; i++){
+    int l = distribution1(generator1);
+    int l2 = distribution1(generator2);
+    int l3 = Random_geometric_k((int) ((rand_r(&seed)%30000)+1),lambda);
+    int l4 = Random_geometric_k((int) ((rand_r(&seed)%30000)+1),lambda);
+    fprintf(stderr,"%d \t %d\t %d\t %d\n",l,l2,l3,l4);
+  }*/
 }
 
 
 // g++ NGSNGS_func.cpp atomic_fq.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
-// valgrind --tool=memcheck --leak-check=full  --track-origins=yes ./a.out
-//cat chr22_out.fq | grep '@' | cut -d_ -f4 | sort | uniq -d | wc -l
-// ./a.out -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 100 -s 1 -f bam -o chr22
-// ./a.out -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 1000 -f fq -s 1 -o chr22_out
-// ./a.out -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 100 -s 1 -seq SE -f fq -o chr22
-// ./a.out -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 100 -s 1 -seq PE -f fq -o chr22
+
 //  make HTSSRC=/home/wql443/scratch/htslib/
 // ./ngsngs -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 100 -s 1 -seq PE -f fq -o chr22
 
 //g++ NGSNGS_func.cpp Sampling.cpp ArgParse.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
-
+// ./ngsngs -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 10 -s 1 -t1 1 -lf Size_dist/Size_dist_sampling.txt -b 0.024,0.36,0.68,0.0097 -seq SE -q1 Qual_profiles/AccFreqL150R1.txt -f fq -o chr22
 /*
 const char* poly_test;
   poly_test = strdup("G");

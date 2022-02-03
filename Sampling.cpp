@@ -111,7 +111,7 @@ void* Fafq_thread_se_run(void *arg){
     double rand_val2 = rand_val*RAND_MAX;
     double rand_val3 = myrand((unsigned int) rand_val2); //((double) rand_r(&test)/ RAND_MAX);// 
     rand_start = rand_val3 * (genome_len-300); //genome_len-100000;
-
+    // fprintf(stderr,"READ %d with rand val 1: %f 2: %lf 3: %f\n",current_reads_atom,rand_val,rand_val2,rand_val3); // ALL RANDOM
     // Fragment length creation
     int fraglength;
     if (struct_obj->No_Len_Val != -1){
@@ -141,8 +141,8 @@ void* Fafq_thread_se_run(void *arg){
     
     if(strcasecmp("PE",struct_obj->SeqType)==0){
       if (fraglength > readsizelimit){
-        std::cout << rand_start+fraglength-1-readsizelimit << std::endl;
-        std::cout << rand_start-1 << std::endl;
+        /*std::cout << rand_start+fraglength-1-readsizelimit << std::endl;
+        std::cout << rand_start-1 << std::endl;*/
         strncpy(seq_r2,struct_obj->genome+rand_start+fraglength-1-readsizelimit,readsizelimit);
         } // case 1
       else {strncpy(seq_r2,struct_obj->genome+rand_start-1,fraglength);}  // case 2
@@ -151,6 +151,7 @@ void* Fafq_thread_se_run(void *arg){
     int rand_id = (rand_val * fraglength-1); //100
     double rand_val4 = myrand(rand_id+1);
     double rand_val5 = myrand(rand_id+2);
+    //fprintf(stderr,"READ ID %d \t with rand val 4: %f 5: %f\n",rand_id,rand_val4,rand_val5); //All random
 
     //removes reads with NNN
     char * pch;
@@ -185,6 +186,8 @@ void* Fafq_thread_se_run(void *arg){
       }
 
       int strand = (int) rand_r(&loc_seed)%2;//1;//rand() % 2;
+      //fprintf(stderr,"strand %d \n",strand); // 1 or 0
+
       if (struct_obj->SAMout){
         // in bam files the reads are all aligning to the forward strand, but the flags identify read property
         if (strcasecmp("SE",struct_obj->SeqType)==0){
@@ -261,7 +264,7 @@ void* Fafq_thread_se_run(void *arg){
           //fprintf(stderr,"INSIDE FQ TRUE\n");
           for(int p = 0;p<strlen(readadapt);p++){
             int base = seq_r1[p];
-            int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],rand_val4,rand_val5);
+            int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],myrand((unsigned int) (rand_val-p-current_reads_atom)),myrand((unsigned int) (rand_val+p+current_reads_atom)));
             qual_r1[p] = struct_obj->NtQual_r1[qscore];
           }
 
@@ -278,7 +281,7 @@ void* Fafq_thread_se_run(void *arg){
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             for(int p = 0;p<strlen(readadapt2);p++){
               int base = seq_r2[p];
-              int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],rand_val4,rand_val5);
+              int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],myrand((unsigned int) (rand_val2+p+current_reads_atom)),myrand((unsigned int) (rand_val2-p-current_reads_atom)));
               qual_r2[p] = struct_obj->NtQual_r2[qscore];
             }
             
@@ -299,14 +302,14 @@ void* Fafq_thread_se_run(void *arg){
             //fprintf(stderr,"INSIDE QUAL STRING IF\n");
             for(int p = 0;p<strlen(readadapt);p++){
                 int base = seq_r1[p];
-                int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],rand_val4,rand_val5);
+                int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],myrand((unsigned int) (rand_val-p-current_reads_atom)),myrand((unsigned int) (rand_val+p+current_reads_atom)));
                 qual_r1[p] = struct_obj->NtQual_r1[qscore];
               }
             if (strcasecmp("PE",struct_obj->SeqType)==0){
               //fprintf(stderr,"INSIDE SAM PE TRUE\n");
               for(int p = 0;p<strlen(readadapt2);p++){
                 int base = seq_r2[p];
-                int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],rand_val4,rand_val5);
+                int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],myrand((unsigned int) (rand_val2+p+current_reads_atom)),myrand((unsigned int) (rand_val2-p-current_reads_atom)));
                 qual_r2[p] = struct_obj->NtQual_r2[qscore];
               }
             }
@@ -322,15 +325,17 @@ void* Fafq_thread_se_run(void *arg){
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
           for(int p = 0;p<seqlen;p++){
+              //fprintf(stderr,"Read %d SE rand val 4: %f and rand val 5: %f\n",current_reads_atom,myrand((unsigned int) (rand_val-p-current_reads_atom)),myrand((unsigned int) (rand_val+p+current_reads_atom)));
               int base = seq_r1[p];
-              int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],rand_val4,rand_val5);
+              int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],myrand((unsigned int) (rand_val-p-current_reads_atom)),myrand((unsigned int) (rand_val+p+current_reads_atom)));
               qual_r1[p] = struct_obj->NtQual_r1[qscore];
             }
           ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             for(int p = 0;p<seqlen;p++){
+              //fprintf(stderr,"Read %d PE rand val 4: %f and rand val 5: %f\n",current_reads_atom,myrand((rand_val2+p+current_reads_atom)),myrand((rand_val2-p-current_reads_atom)));
               int base = seq_r2[p];
-              int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],rand_val4,rand_val5);
+              int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],myrand((unsigned int) (rand_val2+p+current_reads_atom)),myrand((unsigned int) (rand_val2-p-current_reads_atom)));
               qual_r2[p] = struct_obj->NtQual_r2[qscore];
             }
             ksprintf(struct_obj->fqresult_r2,"@%s\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);}
@@ -341,14 +346,14 @@ void* Fafq_thread_se_run(void *arg){
             //fprintf(stderr,"QUAL DIST IF \n");
             for(int p = 0;p<seqlen;p++){
                 int base = seq_r1[p];
-                int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],rand_val4,rand_val5);
+                int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],myrand((unsigned int) (rand_val-p-current_reads_atom)),myrand((unsigned int) (rand_val+p+current_reads_atom)));
                 qual_r1[p] = struct_obj->NtQual_r1[qscore];
             }
             // Read_Qual_new(seq_r1,qual,loc_seed,struct_obj->Qualfreq,0);
             if (strcasecmp("PE",struct_obj->SeqType)==0){
               for(int p = 0;p<seqlen;p++){
                 int base = seq_r2[p];
-                int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],rand_val4,rand_val5);
+                int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],myrand((unsigned int) (rand_val2+p+current_reads_atom)),myrand((unsigned int) (rand_val2-p-current_reads_atom)));
                 qual_r2[p] = struct_obj->NtQual_r2[qscore];
               }
               // Read_Qual_new(seq_r2,qual2,loc_seed,struct_obj->Qualfreq,0);
@@ -751,6 +756,4 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
   }
   return NULL;
 }
-//g++ NGSNGS_func.cpp Sampling.cpp ArgParse.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
-//./a.out -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 10 -s 1 -f fq -o chr22 
-//for j in {1..3}; do ./a.out -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 1000000 -s 1 -f fq -o chr22 &>> logfile.txt; done
+//./ngsngs -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 1000000 -s 1 -t1 2 -lf Size_dist/Size_dist_sampling.txt -b 0.024,0.36,0.68,0.0097 -seq SE -f bam -o chr22

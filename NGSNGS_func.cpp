@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 #include <algorithm> //std::reverse
-
+#include <iostream>
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
 #include <htslib/vcf.h>
@@ -52,14 +52,38 @@ void DNA_complement(char seq[]){
   }
 }
 
+double uniform(){
+    /*
+     U(0,1): AS 183: Appl. Stat. 31:188-190
+     Wichmann BA & Hill ID.  1982.  An efficient and portable
+     pseudo-random number generator.  Appl. Stat. 31:188-190
+     x, y, z are any numbers in the range 1-30000.  Integer operation up
+     to 30323 required.
+     
+     Suggested to me by Ziheng Yang who also provided me with
+     the source code used here.  I use it because it is both fast and portable.
+     */
+    static int x_rndu=11, y_rndu=23,z_rndu=137;
+    double r;
+    
+    x_rndu = 171*(x_rndu%177) -  2*(x_rndu/177);
+    y_rndu = 172*(y_rndu%176) - 35*(y_rndu/176);
+    z_rndu = 170*(z_rndu%178) - 63*(z_rndu/178);
+    if (x_rndu<0) x_rndu+=30269;
+    if (y_rndu<0) y_rndu+=30307;
+    if (z_rndu<0) z_rndu+=30323;
+    r = x_rndu/30269.0 + y_rndu/30307.0 + z_rndu/30323.0;
+    return (r-(int)r);
+}
+
 void reverseChar(char* str) {
     std::reverse(str, str + strlen(str));
 }
 
 int Random_geometric_k(unsigned int  seed, const double p)
 {
-  double u = ((double) rand_r(&seed)/ RAND_MAX);
-  double k;
+  double u = ((double) rand_r(&seed)/ RAND_MAX); // this between 0 and 1
+  int k;
 
   if (p == 1){k = 1;}
   else if(p == 0){k=0;}
@@ -72,52 +96,77 @@ double myrand(unsigned int persistent){
   return ((double) rand_r(&persistent)/ RAND_MAX);
 }
 
+int myrandgenmodulo(unsigned int seed, int modulo){
+  return ((double) (rand_r(&seed)%modulo)+1);
+}
+
 void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, unsigned int seed){
     int l = 0;
+    int l_2 = 0;
     int r = L-1;
+    int r_2 = L-1;
+    //fprintf(stderr,"----------------------\n");
+    //fprintf(stderr,"THE SEED IS %u and l : %d and r : %d\n",&seed,l,r);
     while (l+r > L-2){
-        l = 0;
-        r = 0;
-        double u_l = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
-        double u_r = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
-        
-        if (u_l > 0.5){
-            l = Random_geometric_k(seed+0,0.36);//distribution1(generator1);
-            //fprintf(stderr,"U_L LEI %d\n",l);
-            //cout << l << "\n";
-        }
-        if (u_r > 0.5){
-          //fprintf(stderr,"U_R");
-          r = Random_geometric_k(seed+1,0.36); //distribution1(generator2);
-          //fprintf(stderr,"U_R LEI %d\n",r);
-          //fprintf(stderr,"U_R %lf", r);
-          //cout << r << "\n";
-        }
+      l = 0;
+      r = 0;
+      double u_l = myrand((unsigned int) (seed)); //((double) rand_r(&seed)/ RAND_MAX);//uniform(); // between 0 and 1
+      double u_r = myrand((unsigned int) (seed+1)); //((double) rand_r(&seed)/ RAND_MAX);//uniform(); //between 0 and 1
+      // fprintf(stderr,"uniform %f \t %f \n",u_l,u_r);
+
+      // fprintf(stderr," LEI RAND seed 1 %d \t and 2 %d \n ",rand()%30000+1,rand()%30000+1);
+      // fprintf(stderr," RAS RAND seed 1 %d \t and 2 %d\n",(int)((double) (rand_r(&seed)%30000)+1),(int)((double) (rand_r(&seed)%30000)+1));
+
+      // std::default_random_engine generator1(rand()%30000+1); // value between 1 and 30000
+      // std::geometric_distribution<int> distribution1(lambda); // creates lambda distribution
+      // std::default_random_engine generator2(rand()%30000+1);
+      // std::geometric_distribution<int> distribution2(lambda);
+      
+      if (u_l > 0.5){
+        l = Random_geometric_k((int) ((rand_r(&seed)%30000)+1),lambda); //Random_geometric_k(23424,lambda);//distribution1(generator1);
+        //fprintf(stderr,"%d \t %d test 1 RAS \n",Random_geometric_k(gen_1,lambda),Random_geometric_k(gen_1,lambda));
+        //fprintf(stderr,"RAS ul test 1 %d \t %d\n",Random_geometric_k((int) ((rand_r(&seed)%30000)+1),lambda),Random_geometric_k((int) ((rand_r(&seed)%30000)+1),lambda));
+        // l_2 = distribution1(generator1); // select k value based on random seed
+        // fprintf(stderr,"Lei ul test 2 %d \t %d\n",distribution1(generator1),distribution1(generator1));
+        // fprintf(stderr,"U_L RAS 1 %d \t LEI %d\n",l,l_2);
+      }
+      if (u_r > 0.5){
+        r = Random_geometric_k((int) ((rand_r(&seed)%30000)+1),lambda); //Random_geometric_k(seed,lambda); //distribution1(generator2);
+        // r_2 = distribution2(generator2);
+        // fprintf(stderr,"U_R RAS %d \t LEI %d\n",r,r_2);
+      }
     }
-    //cout << l << " " << r <<"\n";
+    //fprintf(stderr,"R and L values %d \t %d\n",r,l);
     for (int i = 0; i<l; i++){
-        if (reffrag[i] == 'C' || reffrag[i] == 'c' ){
-            double u = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
-            if (u < delta_s){
-                frag[i] = 'T';
-            }else{
-                frag[i] = 'C';
-            }
+      // l means left overhang (ss)
+      //fprintf(stderr,"FIRST FOR LOOP \n");
+      if (reffrag[i] == 'C' || reffrag[i] == 'c' ){
+        double u = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
+        //fprintf(stderr,"Double u C 1 %f and seed %d \n",u,&seed);
+        if (u < delta_s){
+          frag[i] = 'T';
         }else{
-            frag[i] = reffrag[i];
+          frag[i] = 'C';
         }
+      }else{
+        frag[i] = reffrag[i];
+      }
     }
     for (int i = 0; i < r; i++){
-        if (reffrag[L-i-1] == 'G' || reffrag[L-i-1] == 'g'){
-            double u = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
-            if (u < delta_s){
-                frag[L-i-1] = 'A';
-            }else{
-                frag[L-i-1] = 'G';
-            }
-        }else{
-            frag[L-i-1] = reffrag[L-i-1];
+      // r means right overhan (ss)
+      //fprintf(stderr,"SECOND FOR LOOP \n");
+      if (reffrag[L-i-1] == 'G' || reffrag[L-i-1] == 'g'){
+        double u = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
+        //fprintf(stderr,"Double u G 1 %f and seed %d \n",u,&seed);
+        if (u < delta_s){
+          frag[L-i-1] = 'A';
         }
+        else{
+          frag[L-i-1] = 'G';
+        }
+      }else{
+        frag[L-i-1] = reffrag[L-i-1];
+      }
     }
     double u_nick = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
     double d = nv/((L-l-r-1)*nv+1-nv);
@@ -128,8 +177,11 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
         p_nick +=1;
     }
     for (int i = l; i < L-r; i++){
+      // The double strand part, the left and right hand overhang are probably cut, so only the midlle part of our DNA fragments (ds)
+      //fprintf(stderr,"THIRD FOR LOOP \n");
         if ((reffrag[i] == 'C' || reffrag[i] == 'c') && i<=p_nick){
             double u = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
+            //fprintf(stderr,"Double u C 2 %f\n",u);
             if (u < delta){
                 frag[i] = 'T';
             }else{
@@ -137,6 +189,7 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
             }
         }else if ((reffrag[i] == 'G' || reffrag[i] == 'g') && i>p_nick){
             double u = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
+            //fprintf(stderr,"Double u G 2 %f\n",u);
             if (u < delta){
                 frag[i] = 'A';
             }else{
