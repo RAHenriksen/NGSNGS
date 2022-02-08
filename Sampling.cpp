@@ -83,8 +83,10 @@ void* Fafq_thread_se_run(void *arg){
   size_t genome_len = strlen(struct_obj->genome);
   
   //coverage method2
-  char seq_r1[1024] = {0};
-  char seq_r1_mod[1024] = {0};
+  char seq_r1[1024] = {0}; //original
+  char seq_r1_mod[1024] = {0}; //modifying
+
+
   char read[1024] = {0};
   char readadapt[1024] = {0};
 
@@ -107,8 +109,8 @@ void* Fafq_thread_se_run(void *arg){
   int current_reads_atom = 0;
   int readsizelimit;
   while (current_reads_atom < reads){
-    double rand_val = ((double) rand_r(&loc_seed)/ RAND_MAX);
-    double rand_val2 = rand_val*RAND_MAX;
+    double rand_val = ((double) rand_r(&loc_seed)/ RAND_MAX); //random between 0 and 1
+    double rand_val2 = rand_val*RAND_MAX; // between 0 and maximum 
     double rand_val3 = myrand((unsigned int) rand_val2); //((double) rand_r(&test)/ RAND_MAX);// 
     rand_start = rand_val3 * (genome_len-300); //genome_len-100000;
     // fprintf(stderr,"READ %d with rand val 1: %f 2: %lf 3: %f\n",current_reads_atom,rand_val,rand_val2,rand_val3); // ALL RANDOM
@@ -169,22 +171,6 @@ void* Fafq_thread_se_run(void *arg){
     if ((int )(pch-seq_r1+1) == 1 || (int)(pch2-seq_r1+1)  == seqlen){
       memset(seq_r1, 0, sizeof seq_r1);memset(seq_r2, 0, sizeof seq_r2);}
     else{
-      if(strcasecmp(struct_obj->Briggs_flag,"true")==0){
-        // SimBriggsModel(seq_r1, seq_r1_mod, fraglength, 0.024, 0.36, 0.68, 0.0097,loc_seed);
-        SimBriggsModel(seq_r1, seq_r1_mod, fraglength,struct_obj->BriggsParam[0], 
-                                                      struct_obj->BriggsParam[1], 
-                                                      struct_obj->BriggsParam[2], 
-                                                      struct_obj->BriggsParam[3],loc_seed);
-        strncpy(seq_r1, seq_r1_mod, sizeof(seq_r1));
-        if (strcasecmp("PE",struct_obj->SeqType)==0){
-          SimBriggsModel(seq_r2, seq_r2_mod, fraglength,struct_obj->BriggsParam[0], 
-                                                      struct_obj->BriggsParam[1], 
-                                                      struct_obj->BriggsParam[2], 
-                                                      struct_obj->BriggsParam[3],loc_seed);
-          strncpy(seq_r2, seq_r2_mod, sizeof(seq_r2));
-        }
-      }
-
       int strand = (int) rand_r(&loc_seed)%2;//1;//rand() % 2;
       //fprintf(stderr,"strand %d \n",strand); // 1 or 0
 
@@ -192,16 +178,42 @@ void* Fafq_thread_se_run(void *arg){
         // in bam files the reads are all aligning to the forward strand, but the flags identify read property
         if (strcasecmp("SE",struct_obj->SeqType)==0){
           if (strand == 0){flag = 0;} // se read forward strand
-          else{flag = 16;} // reverse strand
+          else{flag = 16;
+            DNA_complement(seq_r1);
+            reverseChar(seq_r1);
+          } // reverse strand
         }
         if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 0){
           flag = 97;  //Paired, mate reverse, first
           flag2 = 145; // Paired, reverse strand, second
+          DNA_complement(seq_r2);
+          reverseChar(seq_r2);
         }
         else if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 1){
           flag = 81; // Paired, reverse strand, first
           flag2 = 161; // Paired, mate reverse, second
+          DNA_complement(seq_r1);
+          reverseChar(seq_r1);
         }
+
+        if(strcasecmp(struct_obj->Briggs_flag,"true")==0){
+          // SimBriggsModel(seq_r1, seq_r1_mod, fraglength, 0.024, 0.36, 0.68, 0.0097,loc_seed);
+          SimBriggsModel(seq_r1, seq_r1_mod, fraglength,struct_obj->BriggsParam[0], 
+                                                        struct_obj->BriggsParam[1], 
+                                                        struct_obj->BriggsParam[2], 
+                                                        struct_obj->BriggsParam[3],loc_seed);
+          strncpy(seq_r1, seq_r1_mod, sizeof(seq_r1));
+          if (strcasecmp("PE",struct_obj->SeqType)==0){
+            SimBriggsModel(seq_r2, seq_r2_mod, fraglength,struct_obj->BriggsParam[0], 
+                                                        struct_obj->BriggsParam[1], 
+                                                        struct_obj->BriggsParam[2], 
+                                                        struct_obj->BriggsParam[3],loc_seed);
+            strncpy(seq_r2, seq_r2_mod, sizeof(seq_r2));
+          }
+        }
+
+        if (flag == 16 || flag == 81){DNA_complement(seq_r1);reverseChar(seq_r1);}
+        else if (flag == 97){DNA_complement(seq_r2);reverseChar(seq_r2);}  
       }
       else{
         // in fasta and fastq the sequences need to be on forward or reverse strand, i.e we need reverse complementary
@@ -217,6 +229,23 @@ void* Fafq_thread_se_run(void *arg){
         else if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 1){
           DNA_complement(seq_r1);
           reverseChar(seq_r1);
+        }
+
+        // ADDING PMD AFTER THE STRAND IS CHOSEN AS TO NOT INFLUENCE THE SYMMETRY MORE
+        if(strcasecmp(struct_obj->Briggs_flag,"true")==0){
+          // SimBriggsModel(seq_r1, seq_r1_mod, fraglength, 0.024, 0.36, 0.68, 0.0097,loc_seed);
+          SimBriggsModel(seq_r1, seq_r1_mod, fraglength,struct_obj->BriggsParam[0], 
+                                                        struct_obj->BriggsParam[1], 
+                                                        struct_obj->BriggsParam[2], 
+                                                        struct_obj->BriggsParam[3],loc_seed);
+          strncpy(seq_r1, seq_r1_mod, sizeof(seq_r1));
+          if (strcasecmp("PE",struct_obj->SeqType)==0){
+            SimBriggsModel(seq_r2, seq_r2_mod, fraglength,struct_obj->BriggsParam[0], 
+                                                        struct_obj->BriggsParam[1], 
+                                                        struct_obj->BriggsParam[2], 
+                                                        struct_obj->BriggsParam[3],loc_seed);
+            strncpy(seq_r2, seq_r2_mod, sizeof(seq_r2));
+          }
         }
       }
       
@@ -442,8 +471,7 @@ void* Fafq_thread_se_run(void *arg){
       
       memset(readadapt, 0, sizeof readadapt);
       memset(readadapt2, 0, sizeof readadapt2);
-
-      
+            
       chr_idx = 0;
       //fprintf(stderr,"start %d, fraglength %d\n",rand_start,fraglength);
       iter++;
@@ -487,7 +515,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
   nuc2int['g'] = nuc2int['G'] = nuc2int[2] = 2;
   nuc2int['c'] = nuc2int['C'] = nuc2int[3] = 3;
   nuc2int['n'] = nuc2int['N'] = nuc2int[4] = 4; 
-
   int chr_total = faidx_nseq(seq_ref);
   const char *chr_names[chr_total];
   int chr_sizes[chr_total];
