@@ -11,7 +11,7 @@ double myrand(unsigned int persistent);
 
 int myrandgenmodulo(unsigned int seed, int modulo);
 double uniform();
-void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, unsigned int seed);
+void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, unsigned int seed,struct drand48_data buffer);
 
 const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos,int outputoffset);
 
@@ -43,6 +43,6 @@ int ransampl_draw2( ransampl_ws *ws,double r1, double r2); //added below functio
 
 void ransampl_free( ransampl_ws *ws );
 
-ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile,unsigned long &readcycle);
+ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb,int ntcharoffset,const char *freqfile,unsigned long &readcycle);
 
 #endif /* NGSNGSFUNC_H */

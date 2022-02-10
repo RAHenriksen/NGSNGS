@@ -100,49 +100,56 @@ int myrandgenmodulo(unsigned int seed, int modulo){
   return ((double) (rand_r(&seed)%modulo)+1);
 }
 
-void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, unsigned int seed){
+void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, unsigned int seed,struct drand48_data buffer){
+    double dtemp1;double dtemp2;
+    drand48_r(&buffer, &dtemp1);
+    drand48_r(&buffer, &dtemp2);
+    //fprintf(stderr,"buffer val 1 %f \t val 2 %f \n",dtemp1,dtemp2);
     int l = 0;
-    int l_2 = 0;
     int r = L-1;
-    int r_2 = L-1;
     //fprintf(stderr,"----------------------\n");
     //fprintf(stderr,"THE SEED IS %u and l : %d and r : %d\n",&seed,l,r);
     while (l+r > L-2){
       l = 0;
       r = 0;
-      double u_l = myrand((unsigned int) (seed)); //((double) rand_r(&seed)/ RAND_MAX);//uniform(); // between 0 and 1
-      double u_r = myrand((unsigned int) (seed+1)); //((double) rand_r(&seed)/ RAND_MAX);//uniform(); //between 0 and 1
-      // fprintf(stderr,"uniform %f \t %f \n",u_l,u_r);
+      double u_l = dtemp1; // myrand((unsigned int) (seed)); //((double) rand_r(&seed)/ RAND_MAX);//uniform(); // between 0 and 1
+      double u_r = dtemp2; // myrand((unsigned int) (seed+1)); //((double) rand_r(&seed)/ RAND_MAX);//uniform(); //between 0 and 1
+      //fprintf(stderr,"uniform %f \t %f \n",u_l,u_r);
 
       // fprintf(stderr," LEI RAND seed 1 %d \t and 2 %d \n ",rand()%30000+1,rand()%30000+1);
       // fprintf(stderr," RAS RAND seed 1 %d \t and 2 %d\n",(int)((double) (rand_r(&seed)%30000)+1),(int)((double) (rand_r(&seed)%30000)+1));
 
-      // std::default_random_engine generator1(rand()%30000+1); // value between 1 and 30000
-      // std::geometric_distribution<int> distribution1(lambda); // creates lambda distribution
+      //std::default_random_engine generator1(rand()%30000+1); // value between 1 and 30000
+      //std::geometric_distribution<int> distribution1(lambda); // creates lambda distribution
       // std::default_random_engine generator2(rand()%30000+1);
       // std::geometric_distribution<int> distribution2(lambda);
-      
+      drand48_r(&buffer, &dtemp1);
+      drand48_r(&buffer, &dtemp2);
+      //fprintf(stderr,"buffer val 1 %f \t val 2 %f \n ---------------\n",dtemp1,dtemp2);
       if (u_l > 0.5){
-        l = Random_geometric_k((int) ((rand_r(&seed)%30000)+1),lambda); //Random_geometric_k(23424,lambda);//distribution1(generator1);
+        l = Random_geometric_k((int) ((dtemp1*30000)+1),lambda); //Random_geometric_k(23424,lambda);//distribution1(generator1);
         //fprintf(stderr,"%d \t %d test 1 RAS \n",Random_geometric_k(gen_1,lambda),Random_geometric_k(gen_1,lambda));
         //fprintf(stderr,"RAS ul test 1 %d \t %d\n",Random_geometric_k((int) ((rand_r(&seed)%30000)+1),lambda),Random_geometric_k((int) ((rand_r(&seed)%30000)+1),lambda));
         // l_2 = distribution1(generator1); // select k value based on random seed
         // fprintf(stderr,"Lei ul test 2 %d \t %d\n",distribution1(generator1),distribution1(generator1));
-        // fprintf(stderr,"U_L RAS 1 %d \t LEI %d\n",l,l_2);
+        //fprintf(stderr,"U_L RAS l %d \t rand val 1 %d \t rand val 2 %d \t rand val 3 %d\n",l,(int) ((dtemp1*30000)+1),(int) ((rand_r(&seed)%30000)+1),generator1);
       }
       if (u_r > 0.5){
-        r = Random_geometric_k((int) ((rand_r(&seed)%30000)+1),lambda); //Random_geometric_k(seed,lambda); //distribution1(generator2);
+        r = Random_geometric_k((int) ((dtemp2*30000)+1),lambda); //Random_geometric_k(seed,lambda); //distribution1(generator2); //(int) ((rand_r(&seed)%30000)+1)
         // r_2 = distribution2(generator2);
         // fprintf(stderr,"U_R RAS %d \t LEI %d\n",r,r_2);
       }
     }
     //fprintf(stderr,"R and L values %d \t %d\n",r,l);
+    //drand48_r(&buffer, &dtemp1);
+    //
     for (int i = 0; i<l; i++){
       // l means left overhang (ss)
       //fprintf(stderr,"FIRST FOR LOOP \n");
       if (reffrag[i] == 'C' || reffrag[i] == 'c' ){
-        double u = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
-        //fprintf(stderr,"Double u C 1 %f and seed %d \n",u,&seed);
+        drand48_r(&buffer, &dtemp1);
+        double u = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);//uniform();
+        //fprintf(stderr,"Double u C 1 %f\n",u);
         if (u < delta_s){
           frag[i] = 'T';
         }else{
@@ -156,8 +163,9 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
       // r means right overhan (ss)
       //fprintf(stderr,"SECOND FOR LOOP \n");
       if (reffrag[L-i-1] == 'G' || reffrag[L-i-1] == 'g'){
-        double u = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
-        //fprintf(stderr,"Double u G 1 %f and seed %d \n",u,&seed);
+        drand48_r(&buffer, &dtemp2);
+        double u = dtemp2;//((double) rand_r(&seed)/ RAND_MAX);//uniform();
+        //fprintf(stderr,"Double u G 1 %f\n",u);
         if (u < delta_s){
           frag[L-i-1] = 'A';
         }
@@ -168,7 +176,9 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
         frag[L-i-1] = reffrag[L-i-1];
       }
     }
-    double u_nick = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
+    drand48_r(&buffer, &dtemp1);
+    double u_nick = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);//uniform();
+    //fprintf(stderr,"Double u_nick %f\n",u_nick);
     double d = nv/((L-l-r-1)*nv+1-nv);
     int p_nick = l;
     double cumd = 0;
@@ -180,25 +190,30 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
       // The double strand part, the left and right hand overhang are probably cut, so only the midlle part of our DNA fragments (ds)
       //fprintf(stderr,"THIRD FOR LOOP \n");
         if ((reffrag[i] == 'C' || reffrag[i] == 'c') && i<=p_nick){
-            double u = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
-            //fprintf(stderr,"Double u C 2 %f\n",u);
-            if (u < delta){
-                frag[i] = 'T';
-            }else{
-                frag[i] = 'C';
-            }
-        }else if ((reffrag[i] == 'G' || reffrag[i] == 'g') && i>p_nick){
-            double u = ((double) rand_r(&seed)/ RAND_MAX);//uniform();
-            //fprintf(stderr,"Double u G 2 %f\n",u);
-            if (u < delta){
-                frag[i] = 'A';
-            }else{
-                frag[i] = 'G';
-            }
+          drand48_r(&buffer, &dtemp1);
+          double u = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);//uniform();
+          //fprintf(stderr,"Double u C 2 %f\n",u);
+          if (u < delta){
+            frag[i] = 'T';
+          }
+          else{
+            frag[i] = 'C';
+          }
+        }
+        else if ((reffrag[i] == 'G' || reffrag[i] == 'g') && i>p_nick){
+          drand48_r(&buffer, &dtemp2);
+          double u = dtemp2; //((double) rand_r(&seed)/ RAND_MAX);//uniform();
+          //fprintf(stderr,"Double u G 2 %f\n",u);
+          if (u < delta){
+            frag[i] = 'A';
+          }else{
+            frag[i] = 'G';
+          }
         }else{
             frag[i] = reffrag[i];
         }
     }
+  //std::cout << "-----------------" << std::endl;
 }
 
 const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos,int outputoffset){
@@ -535,7 +550,7 @@ void ransampl_free( ransampl_ws *ws )
     free( ws );
 }
 
-ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile,unsigned long &readcycle){
+ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const char *freqfile,unsigned long &readcycle){
   ransampl_ws ***dists = new ransampl_ws**[5];
 
   std::vector<char *> all_lines;
@@ -545,9 +560,10 @@ ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile,u
   while(gzgets(gz,buf,LENS))
     all_lines.push_back(strdup(buf));
   gzclose(gz);
-  
-  //fprintf(stderr,"All lines: %lu\n",all_lines.size());
-  unsigned long readcyclelength = (all_lines.size()-1)/5; //all_lines.size()-1
+
+  fprintf(stderr,"All lines: %lu\n",all_lines.size());
+
+  unsigned long readcyclelength = (all_lines.size()-2)/5; //all_lines.size()-1
 
   fprintf(stderr,"\t -> Inferred read cycle lengths: %lu\n",readcyclelength);
   readcycle = readcyclelength; 
@@ -558,7 +574,7 @@ ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile,u
     dists[b] = new ransampl_ws *[readcyclelength];
     for(int pos = 0 ; pos<readcyclelength;pos++){
       int at = 0;
-      probs[at++] = atof(strtok(all_lines[1+b*readcyclelength+pos],"\n\t ")); //1+b*readcyclelength+pos
+      probs[at++] = atof(strtok(all_lines[2+b*readcyclelength+pos],"\n\t ")); //1+b*readcyclelength+pos
       char *tok = NULL;
       while(((tok=strtok(NULL,"\n\t ")))){
 	      probs[at++] = atof(tok);
@@ -578,20 +594,21 @@ ransampl_ws ***ReadQuality(char *ntqual, int ntcharoffset,const char *freqfile,u
   }
 
   //printf(all_lines[0]);
-  int idx = 1;
-  //char nt_qual[nbins]; //{(char) (2+outputoffset)}; char nt_qual[8]
-  //nt_qual[idx] = //(char) atoi(strtok(all_lines[0],"\n\t ")); //1+b*readcyclelength+pos
-  //fprintf(stderr,"Number of qualities/bins in inputfile: %d\n",nbins);
- 
+  int qualidx = 1;
   //extract the first token
   ntqual[0] = (char) (atoi(strtok(all_lines[0],"\n\t "))+ntcharoffset);
-  char *tok = NULL;
-
+  char *qualtok = NULL;
   //extract the next
-  while(((tok=strtok(NULL,"\n\t ")))){
-	  ntqual[idx++] = (char) (atoi(tok)+ntcharoffset);
-  }
+  while(((qualtok=strtok(NULL,"\n\t ")))){ntqual[qualidx++] = (char) (atoi(qualtok)+ntcharoffset);}
   
+  double ErrArr[8];
+  int Err_idx = 1;
+  ErrProb[0] = atof(strtok(all_lines[1],"\n\t"));
+  char *Errtok = NULL;
+  while ((Errtok=strtok (NULL,"\n\t"))){ErrProb[Err_idx++] = (double) atof(Errtok);}
+  
+
+
   //strdup function allocate necessary memory to store the sourcing string implicitly, i need to free the returned string
   for (int i = 0; i < all_lines.size(); i++){free(all_lines[i]);}
   
