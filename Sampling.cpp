@@ -408,14 +408,14 @@ void* Fafq_thread_se_run(void *arg){
             qual_r1[p] = struct_obj->NtQual_r1[qscore];
 
             drand48_r(&buffer, &dtemp1);
-            drand48_r(&buffer, &dtemp2);
-            /*if (dtemp1 < struct_obj->NtErr_r1[qscore]){
-              if (dtemp2 <= 0.25){seq_r1[p] = 'X';}
-              else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r1[p] = 'Q';}
-              else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r1[p] = 'Z';}
-              else if (0.75 < dtemp2 && dtemp2 <= 1){seq_r1[p] = 'W';}
-            }*/
-            
+            drand48_r(&buffer, &dtemp2);            
+            if (dtemp1 < struct_obj->NtErr_r1[qscore]){
+              //fprintf(stderr,"sub at pos %d\n",p);
+              if (dtemp2 <= 0.25){seq_r1[p] = 'A';}
+              else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r1[p] = 'T';}
+              else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r1[p] = 'G';}
+              else if (0.75 < dtemp2 && dtemp2 <= 1){seq_r1[p] = 'C';}
+            }
             //std::cout << myrand((unsigned int) (rand_val-p-current_reads_atom)) << std::endl;
             //fprintf(stderr,"Double value SE %f \t %f \n", dtemp1,dtemp2);
             //std::cout << "-----------------------------" << std::endl;
@@ -432,12 +432,13 @@ void* Fafq_thread_se_run(void *arg){
               qual_r2[p] = struct_obj->NtQual_r2[qscore];
               drand48_r(&buffer, &dtemp1);
               drand48_r(&buffer, &dtemp2);
-              /*if (dtemp1 < struct_obj->NtErr_r2[qscore]){
-                if (dtemp2 <= 0.25){seq_r2[p] = 'Y';}
-                else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r2[p] = 'R';}
-                else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r2[p] = 'O';}
-                else if (0.75 < dtemp2 && dtemp2 <= 1){seq_r2[p] = 'P';}
-              }*/
+              if (dtemp1 < struct_obj->NtErr_r2[qscore]){
+                fprintf(stderr,"THIS IS PE LOOP WHICH WE DONT WANT.");
+                if (dtemp2 <= 0.25){seq_r2[p] = 'A';}
+                else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r2[p] = 'T';}
+                else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r2[p] = 'G';}
+                else if (0.75 < dtemp2 && dtemp2 <= 1){seq_r2[p] = 'C';}
+              }
             }
             ksprintf(struct_obj->fqresult_r2,"@%s\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);}
         }

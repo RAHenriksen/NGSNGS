@@ -110,7 +110,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Poly = NULL;
   ++argv;
   while(*argv){
-    fprintf(stderr,"ARGV %s\n",*argv);
+    //fprintf(stderr,"ARGV %s\n",*argv);
     if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->Reference = strdup(*(++argv));
     }
