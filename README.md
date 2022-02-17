@@ -2,6 +2,8 @@
 
 # NEXT GENERATION SIMULATOR FOR NEXT GENERATION SEQUENCING DATA
 Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen 
+contact: rasmus.henriksen@sund.ku.dk
+
 ## Installation & Requirements
 * Use local installation of htslib
 
