@@ -73,9 +73,8 @@ Both the nucleotide quality profile  and the read length distributions are the c
 ### GENERATE NUCLEOTIDE QUALITY PROFILES BASED ON ART's PROFILES
 See more nucleotide quality profiles on https://github.com/scchess/Art. 
 
-cd Qual_Profiles
-Rscript Read_filter.R HiSeq2500L150R1filter.txt AccFreqL150R1.txt
 ~~~~bash
+cd Qual_Profiles
 Rscript Read_filter.R <Input file> <Output file>
 ~~~~
 Conversion of Illumina Hiseq 2500 profile for read with lengths of 150 bp.
@@ -84,54 +83,29 @@ Rscript Read_filter.R HiSeq2500L150R1filter.txt AccFreqL150R1.txt
 ~~~~
 
 ### GENERATE SIZE DISTRIBUTIONS
-
+~~~~bash
+cd Size_dist
+Rscript 
+~~~~
 ## EXAMPLE OF USAGE
-### Simulate simple NGS paired-end output in fasta format with fixed length
+### Simulate 10000 paired-end reads in .fa format with fixed length
 ~~~~bash
 ./ngsngs -i chr22.fa -r 10000 -l 100 -seq PE -f fa -o chr22pe
 ~~~~
-### Simulate single-end NGS aDNA reads with deamination 
+### Simulate single-end NGS aDNA reads with PMD, depth of coverage of 3, 2 threads, seed of 1 given a length distribution in .fa
 ~~~~bash
-./ngsngs -i chr22.fa -r 100000 -t1 2 -s 1 -lf Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -f fa -o chr22se
-# -t1: Number of threads to use for sampling sequence reads
-# -s: Random seed
-# -b: Parameters for the damage patterns using the Briggs model <nv,Lambda,Delta_s,Delta_d>
+./ngsngs -i chr22.fa -c 3 -t1 2 -s 1 -lf Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -f fa -o chr22se
 ~~~~
-### Simulate paired-end reads with fixed sized, quality profiles and adapters
+### Simulate 10000 paired-end reads with a read length distribution, 2 threads, seed of 1, quality profiles and adapters in .fq format
 ~~~~bash
-./ngsngs -i chr22.fa -r 100000 -t1 2 -s 1 -l 125 -q1 Qual_profiles/AccFreqL150R1.txt -q2 Qual_profiles/AccFreqL150R2.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -seq PE -f fq -o chr22pe
+./ngsngs -i chr22.fa -r 100000 -t1 2 -s 1 -lf Size_dist/Size_dist_sampling.txt -q1 Qual_profiles/AccFreqL150R1.txt -q2 Qual_profiles/AccFreqL150R2.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -seq PE -f fq -o chr22pe
 ~~~~
-### Create bam file with deamination pattern
+### Simulate single-end reads with a read length distribution, coverage of 2, 2 threads, seed of 1, quality profiles, adapters, substitution errors and poly G tails in .fq format
+~~~~bash
+./ngsngs -i chr22.fa -c 2 -t1 2 -s 1 -lf Size_dist/Size_dist_sampling.txt -q1 Qual_profiles/AccFreqL150R1.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -seq SE -e T -p G -f fq -o chr22se
+~~~~
+### Simulate 10000 single-end reads with PMD with length distribution using 2 threads, seed of 1, quality profiles in .bam format
 ~~~~bash
 ./ngsngs -i chr22.fa -r 100000 -t1 2 -s 1 -lf Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -q1 Qual_profiles/AccFreqL150R1.txt -f bam -o chr22se
 ~~~~
-Verify using mapDamage
-~~~~bash
-mapDamage -i chr22se.bam -r chr22.fa --no-stats
-~~~~
-or 
-~~~~bash
-samtools sort chr22se.bam -o chr22sesort.bam
-samtools index chr22sesort.bam
-mapDamage -i chr22sesort.bam -r chr22.fa --no-stats
-~~~~
 
-## PIPELINE
-Generate NGS reads
-~~~~bash
-./ngsngs -i chr22.fa -r 1000000 -t1 1 -s 1 -lf Size_dist/Size_dist_sampling.txt -q1 Qual_profiles/AccFreqL150R1.txt -seq SE -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -b 0.024,0.36,0.68,0.0097 -f fq -o chr22out
-~~~~
-Trim adapters
-~~~~bash
-fastp -in1 chr22out.fq --ou1 chr22trim.fq --length_required 30
-~~~~
-Alignment and filtering
-~~~~bash
-bwa mem chr22.fa chr22trim.fq > chr22trim_se.bam
-samtools view -F 4 -q 30 chr22trim_se.bam -b | samtools sort -o chr22trim_se_sort.bam
-samtools index chr22trim_se_sort.bam
-~~~~
-Identify deamination pattern
-~~~~bash
-mapDamage -i chr22trim_se_sort.bam -r chr22.fa --no-stats
-~~~~
