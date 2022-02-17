@@ -74,6 +74,7 @@ struct Parsarg_for_Fafq_se_thread{
   const char* SeqType;
   const char* QualFlag;
 
+  char ErrorFlag;
   char PolyNt;
 };
       
@@ -85,21 +86,14 @@ void* Fafq_thread_se_run(void *arg){
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
   size_t genome_len = strlen(struct_obj->genome);
   
+  //fprintf(stderr,"Thread number %d and error flag %c\n",struct_obj->threadno,struct_obj->ErrorFlag);
   //srand48(loc_seed);
   struct drand48_data buffer;
   srand48_r(loc_seed, &buffer);
-  /*for (size_t i = 0; i < 100; i++){
-    double dtemp1;double dtemp2;
-    drand48_r(&buffer, &dtemp1);
-    drand48_r(&buffer, &dtemp2);
-    fprintf(stderr,"Double value %f \t %f \n ----------\n", dtemp1,dtemp2);
-  }
-  exit(0);*/
   
-  //coverage method2
-  char seq_r1[1024] = {0}; //original
-  char seq_r1_mod[1024] = {0}; //modifying
-
+  // sequence reads, original, modified, with adapters, pe
+  char seq_r1[1024] = {0};
+  char seq_r1_mod[1024] = {0};
 
   char read[1024] = {0};
   char readadapt[1024] = {0};
@@ -111,9 +105,7 @@ void* Fafq_thread_se_run(void *arg){
   
   int reads = struct_obj -> reads;
 
-  //float cov_current = 0;
   size_t rand_start;
-  //int nread = 0;
 
   char qual_r1[1024] = "\0";
   char qual_r2[1024] = "\0"; // {0};
@@ -122,8 +114,6 @@ void* Fafq_thread_se_run(void *arg){
   int iter = 0;
   int current_reads_atom = 0;
   int readsizelimit;
-
-  double ErrArray[8] = {0.6309573,0.2511886,0.03162278,0.006309573,0.001995262,0.0005011872,0.0001995262,0.0001};
 
   double dtemp1;double dtemp2;
   
@@ -140,6 +130,7 @@ void* Fafq_thread_se_run(void *arg){
     if (struct_obj->No_Len_Val != -1){
       int lengthbin = BinarySearch_fraglength(struct_obj->FragFreq,0, struct_obj->No_Len_Val - 1, rand_val);
       fraglength =  struct_obj->FragLen[lengthbin]; //struct_obj->FragLen[lengthbin];//75;
+      //fprintf(stderr,"Fraglenth %d\n",fraglength);
     }
     else{
       //fprintf(stderr,"FIXED LENGTH \n");
@@ -326,9 +317,20 @@ void* Fafq_thread_se_run(void *arg){
             drand48_r(&buffer, &dtemp1);
             drand48_r(&buffer, &dtemp2);
             
-            int base = seq_r1[p];
+            int base = readadapt[p];
             int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
             qual_r1[p] = struct_obj->NtQual_r1[qscore];
+            if (struct_obj->ErrorFlag == 'T'){
+              drand48_r(&buffer, &dtemp1);
+              drand48_r(&buffer, &dtemp2);
+              if (dtemp1 < struct_obj->NtErr_r1[qscore]){
+                //fprintf(stderr,"THIS IS PE LOOP WHICH WE DONT WANT.");
+                if (dtemp2 <= 0.25){readadapt[p] = 'A';} // 'A'
+                else if (0.25 < dtemp2 && dtemp2 <= 0.5){readadapt[p] = 'T';} // 'T'
+                else if (0.5 < dtemp2 && dtemp2 <= 0.75){readadapt[p] = 'G';} // 'G'
+                else if (0.75 < dtemp2 && dtemp2 <= 1){readadapt[p] = 'C';} // 'C'
+              }
+            }
           }
 
           if (struct_obj->PolyNt != 'F'){
@@ -347,9 +349,20 @@ void* Fafq_thread_se_run(void *arg){
               drand48_r(&buffer, &dtemp1);
               drand48_r(&buffer, &dtemp2);
 
-              int base = seq_r2[p];
+              int base = readadapt2[p];
               int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],dtemp1,dtemp2);
               qual_r2[p] = struct_obj->NtQual_r2[qscore];
+              if (struct_obj->ErrorFlag == 'T'){
+                drand48_r(&buffer, &dtemp1);
+                drand48_r(&buffer, &dtemp2);
+                if (dtemp1 < struct_obj->NtErr_r2[qscore]){
+                  //fprintf(stderr,"THIS IS PE LOOP WHICH WE DONT WANT.");
+                  if (dtemp2 <= 0.25){readadapt2[p] = 'A';} // 'A'
+                  else if (0.25 < dtemp2 && dtemp2 <= 0.5){readadapt2[p] = 'T';} // 'T'
+                  else if (0.5 < dtemp2 && dtemp2 <= 0.75){readadapt2[p] = 'G';} // 'G'
+                  else if (0.75 < dtemp2 && dtemp2 <= 1){readadapt2[p] = 'C';} // 'C'
+                }
+              }
             }
             
             if (struct_obj->PolyNt != 'F'){
@@ -365,15 +378,27 @@ void* Fafq_thread_se_run(void *arg){
         }
         if (struct_obj->SAMout){
           //fprintf(stderr,"INSIDE SAM TRUE\n");
+          //fprintf(stderr,"READ SIZE LIMIT SAM %d\n",readsizelimit);
           if(strcasecmp("true",struct_obj->QualFlag)==0){
             //fprintf(stderr,"INSIDE QUAL STRING IF\n");
             for(int p = 0;p<strlen(readadapt);p++){
               double dtemp1;double dtemp2;
               drand48_r(&buffer, &dtemp1);
               drand48_r(&buffer, &dtemp2);
-              int base = seq_r1[p];
+              int base = readadapt[p];
               int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
               qual_r1[p] = struct_obj->NtQual_r1[qscore];
+              if (struct_obj->ErrorFlag == 'T'){
+                drand48_r(&buffer, &dtemp1);
+                drand48_r(&buffer, &dtemp2);
+                if (dtemp1 < struct_obj->NtErr_r1[qscore]){
+                  //fprintf(stderr,"THIS IS PE LOOP WHICH WE DONT WANT.");
+                  if (dtemp2 <= 0.25){readadapt[p] = 'A';} // 'A'
+                  else if (0.25 < dtemp2 && dtemp2 <= 0.5){readadapt[p] = 'T';} // 'T'
+                  else if (0.5 < dtemp2 && dtemp2 <= 0.75){readadapt[p] = 'G';} // 'G'
+                  else if (0.75 < dtemp2 && dtemp2 <= 1){readadapt[p] = 'C';} // 'C'
+                }
+              }
             }
             if (strcasecmp("PE",struct_obj->SeqType)==0){
               //fprintf(stderr,"INSIDE SAM PE TRUE\n");
@@ -381,17 +406,47 @@ void* Fafq_thread_se_run(void *arg){
                 double dtemp1;double dtemp2;
                 drand48_r(&buffer, &dtemp1);
                 drand48_r(&buffer, &dtemp2);
-                int base = seq_r2[p];
+                int base = readadapt2[p];
                 int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],dtemp1,dtemp2);
                 qual_r2[p] = struct_obj->NtQual_r2[qscore];
+                
+                if (struct_obj->ErrorFlag == 'T'){
+                  drand48_r(&buffer, &dtemp1);
+                  drand48_r(&buffer, &dtemp2);
+                  if (dtemp1 < struct_obj->NtErr_r2[qscore]){
+                    //fprintf(stderr,"THIS IS PE LOOP WHICH WE DONT WANT.");
+                    if (dtemp2 <= 0.25){readadapt2[p] = 'A';} // 'A'
+                    else if (0.25 < dtemp2 && dtemp2 <= 0.5){readadapt2[p] = 'T';} // 'T'
+                    else if (0.5 < dtemp2 && dtemp2 <= 0.75){readadapt2[p] = 'G';} // 'G'
+                    else if (0.75 < dtemp2 && dtemp2 <= 1){readadapt2[p] = 'C';} // 'C'
+                  }
+                }
               }
             }
           }
-          ksprintf(struct_obj->fqresult_r1,"%s",readadapt);
-          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,"%s",readadapt2);}
+          if (struct_obj->PolyNt != 'F'){
+            //fprintf(stderr,"READ SIZE LIMIT SAM POLY %d\n",readsizelimit);
+            char PolyChar[1024] = "\0"; char QualPoly[1024]= "\0";
+            memset(PolyChar,struct_obj->PolyNt, readsizelimit);
+            strncpy(PolyChar, readadapt, strlen(readadapt));
+            ksprintf(struct_obj->fqresult_r1,"%s",PolyChar);
+            if (strcasecmp("PE",struct_obj->SeqType)==0){
+              char PolyChar[1024] = "\0"; char QualPoly[1024]= "\0";
+              memset(PolyChar,struct_obj->PolyNt, readsizelimit);
+              strncpy(PolyChar, readadapt2, strlen(readadapt2));
+              ksprintf(struct_obj->fqresult_r2,"%s",PolyChar);
+            } 
+          }
+          else{
+            ksprintf(struct_obj->fqresult_r1,"%s",readadapt);
+            if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,"%s",readadapt2);} 
+          }
+          
+                   
         }
       }
       else{
+        //fprintf(stderr,"not adapter loop\n");
         if (strcasecmp(struct_obj -> OutputFormat,"fa")==0|| strcasecmp(struct_obj -> OutputFormat,"fa.gz")==0){
           ksprintf(struct_obj->fqresult_r1,">%s\n%s\n",READ_ID,seq_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s\n%s\n",READ_ID,seq_r2);}
@@ -403,23 +458,19 @@ void* Fafq_thread_se_run(void *arg){
             //fprintf(stderr,"Read %d SE rand val 4: %f and rand val 5: %f\n",current_reads_atom,myrand((unsigned int) (rand_val-p-current_reads_atom)),myrand((unsigned int) (rand_val+p+current_reads_atom)));
             int base = seq_r1[p];
             int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
-
-            //int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],myrand((unsigned int) (rand_val-p-current_reads_atom)),myrand((unsigned int) (rand_val+p+current_reads_atom)));
             qual_r1[p] = struct_obj->NtQual_r1[qscore];
 
-            drand48_r(&buffer, &dtemp1);
-            drand48_r(&buffer, &dtemp2);            
-            if (dtemp1 < struct_obj->NtErr_r1[qscore]){
-              //fprintf(stderr,"sub at pos %d\n",p);
-              if (dtemp2 <= 0.25){seq_r1[p] = 'A';}
-              else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r1[p] = 'T';}
-              else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r1[p] = 'G';}
-              else if (0.75 < dtemp2 && dtemp2 <= 1){seq_r1[p] = 'C';}
+            if (struct_obj->ErrorFlag == 'T'){
+              drand48_r(&buffer, &dtemp1);
+              drand48_r(&buffer, &dtemp2);            
+              if (dtemp1 < struct_obj->NtErr_r1[qscore]){
+                //fprintf(stderr,"sub at pos %d\n",p);
+                if (dtemp2 <= 0.25){seq_r1[p] = 'A';} //'A'
+                else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r1[p] = 'T';} //'T'
+                else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r1[p] = 'G';} //'G'
+                else if (0.75 < dtemp2 && dtemp2 <= 1){seq_r1[p] = 'C';} // 'C'
+              }
             }
-            //std::cout << myrand((unsigned int) (rand_val-p-current_reads_atom)) << std::endl;
-            //fprintf(stderr,"Double value SE %f \t %f \n", dtemp1,dtemp2);
-            //std::cout << "-----------------------------" << std::endl;
-
           }
           ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
@@ -428,16 +479,18 @@ void* Fafq_thread_se_run(void *arg){
               drand48_r(&buffer, &dtemp2);
               int base = seq_r2[p];
               int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],dtemp1,dtemp2);
-              //int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],myrand((unsigned int) (rand_val2+p+current_reads_atom)),myrand((unsigned int) (rand_val2-p-current_reads_atom)));
+
               qual_r2[p] = struct_obj->NtQual_r2[qscore];
-              drand48_r(&buffer, &dtemp1);
-              drand48_r(&buffer, &dtemp2);
-              if (dtemp1 < struct_obj->NtErr_r2[qscore]){
-                fprintf(stderr,"THIS IS PE LOOP WHICH WE DONT WANT.");
-                if (dtemp2 <= 0.25){seq_r2[p] = 'A';}
-                else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r2[p] = 'T';}
-                else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r2[p] = 'G';}
-                else if (0.75 < dtemp2 && dtemp2 <= 1){seq_r2[p] = 'C';}
+              if (struct_obj->ErrorFlag == 'T'){
+                drand48_r(&buffer, &dtemp1);
+                drand48_r(&buffer, &dtemp2);
+                if (dtemp1 < struct_obj->NtErr_r2[qscore]){
+                  //fprintf(stderr,"THIS IS PE LOOP WHICH WE DONT WANT.");
+                  if (dtemp2 <= 0.25){seq_r2[p] = 'A';} // 'A'
+                  else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r2[p] = 'T';} // 'T'
+                  else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r2[p] = 'G';} // 'G'
+                  else if (0.75 < dtemp2 && dtemp2 <= 1){seq_r2[p] = 'C';} // 'C'
+                }
               }
             }
             ksprintf(struct_obj->fqresult_r2,"@%s\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);}
@@ -453,8 +506,18 @@ void* Fafq_thread_se_run(void *arg){
               int base = seq_r1[p];
 
               int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);              
-              //int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],myrand((unsigned int) (rand_val-p-current_reads_atom)),myrand((unsigned int) (rand_val+p+current_reads_atom)));
               qual_r1[p] = struct_obj->NtQual_r1[qscore];
+              if (struct_obj->ErrorFlag == 'T'){
+                drand48_r(&buffer, &dtemp1);
+                drand48_r(&buffer, &dtemp2);            
+                if (dtemp1 < struct_obj->NtErr_r1[qscore]){
+                  //fprintf(stderr,"sub at pos %d\n",p);
+                  if (dtemp2 <= 0.25){seq_r1[p] = 'A';} //'A'
+                  else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r1[p] = 'T';} //'T'
+                  else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r1[p] = 'G';} //'G'
+                  else if (0.75 < dtemp2 && dtemp2 <= 1){seq_r1[p] = 'C';} // 'C'
+                }
+              }
             }
             // Read_Qual_new(seq_r1,qual,loc_seed,struct_obj->Qualfreq,0);
             if (strcasecmp("PE",struct_obj->SeqType)==0){
@@ -464,9 +527,20 @@ void* Fafq_thread_se_run(void *arg){
                 drand48_r(&buffer, &dtemp2);
                 int base = seq_r2[p];
 
-                //int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],myrand((unsigned int) (rand_val-p-current_reads_atom)),myrand((unsigned int) (rand_val+p+current_reads_atom)));
                 int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],dtemp1,dtemp2);
                 qual_r2[p] = struct_obj->NtQual_r2[qscore];
+                
+                if (struct_obj->ErrorFlag == 'T'){
+                  drand48_r(&buffer, &dtemp1);
+                  drand48_r(&buffer, &dtemp2);
+                  if (dtemp1 < struct_obj->NtErr_r2[qscore]){
+                    //fprintf(stderr,"THIS IS PE LOOP WHICH WE DONT WANT.");
+                    if (dtemp2 <= 0.25){seq_r2[p] = 'A';} // 'A'
+                    else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r2[p] = 'T';} // 'T'
+                    else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r2[p] = 'G';} // 'G'
+                    else if (0.75 < dtemp2 && dtemp2 <= 1){seq_r2[p] = 'C';} // 'C'
+                  }
+                }
               }
               // Read_Qual_new(seq_r2,qual2,loc_seed,struct_obj->Qualfreq,0);
               
@@ -554,6 +628,8 @@ void* Fafq_thread_se_run(void *arg){
       
       memset(readadapt, 0, sizeof readadapt);
       memset(readadapt2, 0, sizeof readadapt2);
+
+      //memset(PolyChar,0, sizeof PolyChar);
             
       chr_idx = 0;
       //fprintf(stderr,"start %d, fraglength %d\n",rand_start,fraglength);
@@ -593,7 +669,7 @@ void* Fafq_thread_se_run(void *arg){
 void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
                         const char* Adapter_2,const char* OutputFormat,const char* SeqType,float BriggsParam[4],const char* Briggs_flag,
                         const char* Sizefile,int FixedSize,int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
-                        const char* QualStringFlag,const char* Polynt){
+                        const char* QualStringFlag,const char* Polynt,const char* ErrorFlag){
   //creating an array with the arguments to create multiple threads;
   
   int nthreads=thread_no;
@@ -613,7 +689,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
   size_t genome_size = strlen(genome_data);
 
   if (genome_data != NULL){
-    fprintf(stderr,"\t-> Done creating the large concatenated contig, with size of %lu\n",genome_size);
+    fprintf(stderr,"\t-> Done creating the large concatenated contig, with size of %lu bp\n",genome_size);
   
     Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
 
@@ -681,7 +757,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     const char* filename2 = NULL;
 
     if(alnformatflag == 0){
-      fprintf(stderr,"not bam loop \n");
+      //fprintf(stderr,"not bam loop \n");
       int mt_cores = threadwriteno;
       int bgzf_buf = 256;
       
@@ -694,7 +770,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
         bgzf_fp2 = bgzf_open(filename2,mode);
         bgzf_mt(bgzf_fp2,mt_cores,bgzf_buf);
       }
-      fprintf(stderr,"\t-> Number of cores for bgzf_mt: %d \t %d\n",mt_cores,threadwriteno); 
+      //fprintf(stderr,"\t-> Number of cores for bgzf_mt: %d \t %d\n",mt_cores,threadwriteno); 
     }
     else{
       fprintf(stderr,"bam loop \n");
@@ -711,7 +787,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     }
     else{number = -1;}
 
-    // SUPER SAMPLER TEST
     const char *freqfile_r1; //"Qual_profiles/AccFreqL150R1.txt";
     const char *freqfile_r2;
     int outputoffset = qualstringoffset;
@@ -725,10 +800,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     double ErrArray_r2[1024];
 
     const char* bamQflag = QualStringFlag;
+
     //fprintf(stderr,"\n bamQflag %s\n",QualStringFlag);
     
     if(strcasecmp("true",QualStringFlag)==0){ //|| strcasecmp("bam",OutputFormat)==0
-      //fprintf(stderr,"BAMFLAG FOR OUTPUT");
       freqfile_r1 = QualProfile1;
       QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1,readcyclelength);
       if(strcasecmp("PE",SeqType)==0){
@@ -736,14 +811,17 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
         QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2,readcyclelength);
       }
     }
+    
     //fprintf(stderr,"Qualities %c \t %c \t %c \t %c \n",nt_qual_r1[0],nt_qual_r1[1],nt_qual_r1[6],nt_qual_r1[7]);
     //fprintf(stderr,"Err Prob %f \t %f \t %f \t %f \n",ErrArray_r1[0],ErrArray_r1[1],ErrArray_r1[6],ErrArray_r1[7]);
 
     int maxsize = 20;
     char polynucleotide;
-    if (strlen(Polynt) == 1){polynucleotide = (char) Polynt[0];}
+    
+    if (Polynt != NULL && strlen(Polynt) == 1){polynucleotide = (char) Polynt[0];}
     else{polynucleotide = 'F';}
-
+    
+    //fprintf(stderr,"initialzie values for each thread\n"); 
     //initialzie values that should be used for each thread
     for (int i = 0; i < nthreads; i++){
       struct_for_threads[i].fqresult_r1 =new kstring_t;
@@ -775,7 +853,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
 
       struct_for_threads[i].readcycle = (int) readcyclelength;
       struct_for_threads[i].reads = reads;
-      
+
       struct_for_threads[i].bgzf_fp1 = bgzf_fp1;
       struct_for_threads[i].bgzf_fp2 = bgzf_fp2;
       struct_for_threads[i].SAMout = SAMout;
@@ -795,10 +873,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       struct_for_threads[i].SeqType = SeqType;
       struct_for_threads[i].QualFlag = QualStringFlag;
       struct_for_threads[i].PolyNt = polynucleotide;
+      struct_for_threads[i].ErrorFlag = (char) ErrorFlag[0];
 
       //declaring the size of the different arrays
       struct_for_threads[i].size_cumm = (size_t*)malloc(sizeof(size_t) * (struct_for_threads[i].chr_no+1));
-      //fprintf(stderr,"struct_for_threads[i]: %p\n",struct_for_threads[i]);
       struct_for_threads[i].size_cumm[0] = 0;
       memcpy(struct_for_threads[i].size_cumm, chr_size_cumm, sizeof(chr_size_cumm));
       
@@ -817,8 +895,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     //fprintf(stderr,"Done Creating a bunch of threads\n");
     
 
-    for (int i = 0; i < nthreads; i++)
-    {  
+    for (int i = 0; i < nthreads; i++){  
       //fprintf(stderr,"joing threads\n");fflush(stderr);
       pthread_join(mythreads[i],NULL);
       //fprintf(stderr, "\t[ANDET STED] walltime used for join =  %.2f sec\n", (float)(time(NULL) - t3));  

@@ -341,8 +341,8 @@ void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval,int ou
   //fprintf(stderr,"EXITING FUNCITON NOW \n");
 }
 
-int BinarySearch_fraglength(double* SearchArray,int low, int high, double key)
-{
+int BinarySearch_fraglength(double* SearchArray,int low, int high, double key){
+    //fprintf(stderr,"first element %lf\n",SearchArray[low]);
     int ans = 0; 
     while (low <= high) {
         int mid = low + (high - low + 1) / 2;
@@ -561,11 +561,11 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
     all_lines.push_back(strdup(buf));
   gzclose(gz);
 
-  fprintf(stderr,"All lines: %lu\n",all_lines.size());
+  //fprintf(stderr,"All lines: %lu\n",all_lines.size());
 
   unsigned long readcyclelength = (all_lines.size()-2)/5; //all_lines.size()-1
 
-  fprintf(stderr,"\t -> Inferred read cycle lengths: %lu\n",readcyclelength);
+  fprintf(stderr,"\t-> Inferred read cycle lengths: %lu\n",readcyclelength);
   readcycle = readcyclelength; 
   //loop over inputdata
   int nbins = -1;
