@@ -51,10 +51,10 @@ Options: \
 -a2  | --adapter2: 		 Adapter sequence to add for second read pair (PE). 
 	 e.g. Illumina TruSeq Adapter 2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT 
 
--p   | --poly: 			 Create Poly(X) tails for reads, containing adapters with lengths below the inferred readcycle length. 
+-p   | --poly: 			 Create Poly(X) tails for reads containing adapters with lengths below the inferred readcycle length. 
  	 e.g -p G or -p A 
 -q1  | --quality1: 		 Read Quality profile for single-end reads (SE) or first read pair (PE).
--q2  | --quality2: 		 Read Quality profile for for second read pair (PE).
+-q2  | --quality2: 		 Read Quality profile for second read pair (PE).
 -b   | --briggs: 		 Parameters for the damage patterns using the Briggs model.
 	 <nv,Lambda,Delta_s,Delta_d> : 0.024,0.36,0.68,0.0097 (from Briggs et al., 2007).
 	 nv: Nick rate pr site. 
@@ -62,6 +62,10 @@ Options: \
  	 Delta_s: PMD rate in single-strand regions.
  	 Delta_s: PMD rate in double-strand regions.
 ~~~~
+
+## Output format
+* When quality profiles are provided, NGSNGS infers the read lengths based on the position specific quality scores and creates a length limitations independent of the fixed length or the length disribution. 
+* To simulate Fastq the quality profiles needs to be provided. For Sequence-Alignment-Map formats if no quality profile have been provided, then the nucleotide quality string will be the lowest quality.
 
 ## ERROR PROFILES AND FRAGMENT LENGTH DISTRIBUTIONS
 
