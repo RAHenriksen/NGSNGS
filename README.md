@@ -68,7 +68,7 @@ Options:
 * When providing the '-e' option the nucleotides will be equally substituted between on of the four nucleotide depending on the error probability of the nucleotide quality score for a given position.
 * The read ID's for all the reads follows this structure:
 ~~~~bash
-ThreadNumber_RandomID_StrandInfo_Chromosome:start-end_length:sequencelength
+T<threadNumber>_RID<randomID>_S<strandinfo>_chr<chromosome>:<start>-<end>_length:<sequencelength>
 ~~~~
 e.g. in .fq format
 ~~~~bash
