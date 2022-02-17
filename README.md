@@ -26,23 +26,23 @@ Usage
 ~~~~bash
 ./ngsngs [options] -i <Reference.fa> -r/-c <Number of reads or Depth of coverage> -l/-lf <Fixed length or Length file> -seq <SE/PE> -f <Output format> -o <Prefix output name>
 
-Options: \
+Options: 
 -i   | --input: 		 Reference file in fasta format (.fa or .fasta) to sample reads.
 -r   | --reads: 		 Number of reads to simulate, conflicts with -c option.
 -c   | --coverage: 		 Depth of Coverage to simulate, conflics with -r option.
 -l   | --length: 		 Fixed length of simulated fragments, conflicts with -lf option.
 -lf  | --lengthfile: 		 CDF of a length distribution, conflicts with -l option.
 -seq | --sequencing: 		 Simulate single-end or paired-end reads.
-	 <SE>	 single-end 
+	 <SE>	 single-end. 
  	 <PE>	 paired-end.
 -f   | --format: 		 File format of the simulated output reads.
-	 <fa||fasta>		 Nucletide sequence. 
- 	 <fa.gz||fasta.gz>	 Compressed nucletide sequence. 
- 	 <fq||fastq>		 Nucletide sequence with corresponding quality score. 
- 	 <fq.gz||fastq.gz>	 Compressed nucletide sequence with corresponding quality score. 
- 	 <bam>			 Sequence Alignment Map format.
+	 <fa.  || fasta>	 Nucletide sequence. 
+ 	 <fa.gz|| fasta.gz>	 Compressed nucletide sequence. 
+ 	 <fq   || fastq>	 Nucletide sequence with corresponding quality score. 
+ 	 <fq.gz|| fastq.gz>	 Compressed nucletide sequence with corresponding quality score. 
+ 	 <sam  || bam>		 Sequence Alignment Map format.
 -o   | --output: 		 Prefix of output file name.
--t1  | --threads1: 		 Number of threads to use for sampling sequence reads.
+-t1  | --threads1: 		 Number of threads to use for sampling sequence reads, default = 1.
 -t2  | --threads2: 		 Number of threads to use write down sampled reads, default = 1.
 -s   | --seed: 			 Random seed, default = current calendar time (s).
 -a1  | --adapter1: 		 Adapter sequence to add for simulated reads (SE) or first read pair (PE).
@@ -50,7 +50,7 @@ Options: \
 
 -a2  | --adapter2: 		 Adapter sequence to add for second read pair (PE). 
 	 e.g. Illumina TruSeq Adapter 2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT 
-
+-e   | --error: 		 Adding sequencing errors depending of the nucleotide quality score and the corresponding error rate. 
 -p   | --poly: 			 Create Poly(X) tails for reads containing adapters with lengths below the inferred readcycle length. 
  	 e.g -p G or -p A 
 -q1  | --quality1: 		 Read Quality profile for single-end reads (SE) or first read pair (PE).
