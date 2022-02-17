@@ -4,12 +4,17 @@
 Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen 
 ## Installation & Requirements
 * Use local installation of htslib
+
 git clone https://github.com/RAHenriksen/NGSNGS.git
+
 git clone https://github.com/samtools/htslib.git
+
 cd htslib; make; cd ../NGSNGS; make HTSSRC=../htslib
 
 * Use systemwide installation of htslib
+
 git clone https://github.com/RAHenriksen/NGSNGS.git
+
 cd NGSNGS; make
 
 ## Usage
