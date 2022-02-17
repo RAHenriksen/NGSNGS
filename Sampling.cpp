@@ -24,11 +24,10 @@ char nuc2int[255];
 
 pthread_mutex_t Fq_write_mutex;
 
-// ---------------------- SINGLE-END ---------------------- //
-struct Parsarg_for_Fafq_se_thread{
+struct Parsarg_for_Sampling_thread{
   kstring_t *fqresult_r1;
   kstring_t *fqresult_r2;
-  char *genome; // The actual concatenated genome
+  char *genome;
   int chr_no;
   int threadno;
   size_t *size_cumm;
@@ -40,8 +39,8 @@ struct Parsarg_for_Fafq_se_thread{
 
   char *NtQual_r1;
   char *NtQual_r2;
-  ransampl_ws ***QualDist_r1; //double* Qualfreq;
-  ransampl_ws ***QualDist_r2; //double* Qualfreq;
+  ransampl_ws ***QualDist_r1;
+  ransampl_ws ***QualDist_r2;
   double *NtErr_r1;
   double *NtErr_r2;
 
@@ -78,16 +77,14 @@ struct Parsarg_for_Fafq_se_thread{
   char PolyNt;
 };
       
-void* Fafq_thread_se_run(void *arg){
+void* Sampling_threads(void *arg){
   //casting my struct as arguments for the thread creation
-  Parsarg_for_Fafq_se_thread *struct_obj = (Parsarg_for_Fafq_se_thread*) arg;
-  //fprintf(stderr,"%s",struct_obj->SeqType);
+  Parsarg_for_Sampling_thread *struct_obj = (Parsarg_for_Sampling_thread*) arg;
+
   // creating random objects for all distributions.
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
   size_t genome_len = strlen(struct_obj->genome);
   
-  //fprintf(stderr,"Thread number %d and error flag %c\n",struct_obj->threadno,struct_obj->ErrorFlag);
-  //srand48(loc_seed);
   struct drand48_data buffer;
   srand48_r(loc_seed, &buffer);
   
@@ -124,13 +121,12 @@ void* Fafq_thread_se_run(void *arg){
     double rand_val2 = rand_val*RAND_MAX; // between 0 and maximum 
     double rand_val3 = myrand((unsigned int) rand_val2); //((double) rand_r(&test)/ RAND_MAX);// 
     rand_start = rand_val3 * (genome_len-300); //genome_len-100000;
-    // fprintf(stderr,"READ %d with rand val 1: %f 2: %lf 3: %f\n",current_reads_atom,rand_val,rand_val2,rand_val3); // ALL RANDOM
+
     // Fragment length creation
     int fraglength;
     if (struct_obj->No_Len_Val != -1){
       int lengthbin = BinarySearch_fraglength(struct_obj->FragFreq,0, struct_obj->No_Len_Val - 1, rand_val);
-      fraglength =  struct_obj->FragLen[lengthbin]; //struct_obj->FragLen[lengthbin];//75;
-      //fprintf(stderr,"Fraglenth %d\n",fraglength);
+      fraglength =  struct_obj->FragLen[lengthbin];
     }
     else{
       //fprintf(stderr,"FIXED LENGTH \n");
@@ -138,25 +134,20 @@ void* Fafq_thread_se_run(void *arg){
     } 
     if(strcasecmp("false",struct_obj->QualFlag)==0){
       readsizelimit = fraglength;
-      // fprintf(stderr,"READ SIZE LIMIT IF %d \n",readsizelimit);
     }
     else{
       readsizelimit = struct_obj->readcycle;
-      // fprintf(stderr,"READ SIZE LIMIT ELSE %d\n",readsizelimit);
     }
     
-    //fprintf(stderr,"Fragment length %d\n",fraglength);
-
     int chr_idx = 0;
-    while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;} //extracting the correct chromosome id for the start pos
+    while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;} 
 
     if (fraglength > readsizelimit){strncpy(seq_r1,struct_obj->genome+rand_start-1,readsizelimit);}   // case 1
     else {strncpy(seq_r1,struct_obj->genome+rand_start-1,fraglength);}  // case 2
     
     if(strcasecmp("PE",struct_obj->SeqType)==0){
       if (fraglength > readsizelimit){
-        /*std::cout << rand_start+fraglength-1-readsizelimit << std::endl;
-        std::cout << rand_start-1 << std::endl;*/
+
         strncpy(seq_r2,struct_obj->genome+rand_start+fraglength-1-readsizelimit,readsizelimit);
         } // case 1
       else {strncpy(seq_r2,struct_obj->genome+rand_start-1,fraglength);}  // case 2
@@ -165,26 +156,23 @@ void* Fafq_thread_se_run(void *arg){
     int rand_id = (rand_val * fraglength-1); //100
     double rand_val4 = myrand(rand_id+1);
     double rand_val5 = myrand(rand_id+2);
-    //fprintf(stderr,"READ ID %d \t with rand val 4: %f 5: %f\n",rand_id,rand_val4,rand_val5); //All random
 
     //removes reads with NNN
     char * pch;
     char * pch2;
     pch = strchr(seq_r1,'N');
     pch2 = strrchr(seq_r1,'N');
-    //fprintf(stderr,"STRCHR %d %s\n",(int)(pch2-seq_r1+1),seq_r1);
-    //if (pch != NULL){continue;}
+
     int seqlen = strlen(seq_r1);
     int seqlen2 = strlen(seq_r2);
     
     size_t n_cigar;const uint32_t *cigar;const uint32_t *cigar2; uint16_t flag; uint16_t flag2;
     uint32_t cigar_bitstring = bam_cigar_gen(seqlen, BAM_CMATCH);
-    //fprintf(stderr,"SEQUENCE LENGTH %d \t %d \t %d\n", strlen(seq_r1),seqlen,strlen(seq_r2));
+
     if ((int )(pch-seq_r1+1) == 1 || (int)(pch2-seq_r1+1)  == seqlen){
       memset(seq_r1, 0, sizeof seq_r1);memset(seq_r2, 0, sizeof seq_r2);}
     else{
       int strand = (int) rand_r(&loc_seed)%2;//1;//rand() % 2;
-      //fprintf(stderr,"strand %d \n",strand); // 1 or 0
 
       if (struct_obj->SAMout){
         // in bam files the reads are all aligning to the forward strand, but the flags identify read property
@@ -209,17 +197,10 @@ void* Fafq_thread_se_run(void *arg){
         }
 
         if(strcasecmp(struct_obj->Briggs_flag,"true")==0){
-          // SimBriggsModel(seq_r1, seq_r1_mod, fraglength, 0.024, 0.36, 0.68, 0.0097,loc_seed);
-          //if (seq_r1[0]=='C' ||seq_r1[0]=='c'){C_count++;} // all C
-          //if (seq_r1[strlen(seq_r1)-1]=='G'||seq_r1[strlen(seq_r1)-1]=='g'){G_count++;}
-
           SimBriggsModel(seq_r1, seq_r1_mod, fraglength,struct_obj->BriggsParam[0], 
                                                         struct_obj->BriggsParam[1], 
                                                         struct_obj->BriggsParam[2], 
                                                         struct_obj->BriggsParam[3],loc_seed,buffer);
-
-          //if ((seq_r1[0]=='C'||seq_r1[0]=='c') && (seq_r1_mod[0]=='T' || seq_r1_mod[0]=='t')){CT_count++;}
-          //if ((seq_r1[strlen(seq_r1)-1]=='G'||seq_r1[strlen(seq_r1)-1]=='g') && (seq_r1_mod[strlen(seq_r1)-1]=='A' || seq_r1_mod[strlen(seq_r1)-1]=='a')){GA_count++;}
           
           strncpy(seq_r1, seq_r1_mod, sizeof(seq_r1));
           if (strcasecmp("PE",struct_obj->SeqType)==0){
@@ -239,7 +220,6 @@ void* Fafq_thread_se_run(void *arg){
         if (strcasecmp("SE",struct_obj->SeqType)==0 && strand == 1){
           DNA_complement(seq_r1);
           reverseChar(seq_r1);
-          //if (seq_r1[strlen(seq_r1)-1]=='G'){G_count++;}
         }
 
         if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 0){
@@ -251,9 +231,8 @@ void* Fafq_thread_se_run(void *arg){
           reverseChar(seq_r1);
         }
 
-        // ADDING PMD AFTER THE STRAND IS CHOSEN AS TO NOT INFLUENCE THE SYMMETRY MORE
+        // Adding PMD after strand is selected, as to not influence the symmetry of the PMD
         if(strcasecmp(struct_obj->Briggs_flag,"true")==0){
-          // SimBriggsModel(seq_r1, seq_r1_mod, fraglength, 0.024, 0.36, 0.68, 0.0097,loc_seed);
           SimBriggsModel(seq_r1, seq_r1_mod, fraglength,struct_obj->BriggsParam[0], 
                                                         struct_obj->BriggsParam[1], 
                                                         struct_obj->BriggsParam[2], 
@@ -275,43 +254,31 @@ void* Fafq_thread_se_run(void *arg){
         struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
         fraglength);
       
-      /*read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%d_length:%d", struct_obj->threadno, rand_id*2,strand,
-        rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],fraglength);*/
-      
       if(strcasecmp(struct_obj->Adapter_flag,"true")==0){
-        //consider stpcpy for concatenation
         strcpy(read, seq_r1);
         strcat(read,struct_obj->Adapter_1);
-        //fprintf(stderr,"STRING LENGTH SEQ %d AND ADAPTER %d AND READ %d\n",strlen(seq_r1),strlen(struct_obj->Adapter_1),strlen(read));
-        //fprintf(stderr,"READ %s\n",read);
+
         if(strcasecmp("false",struct_obj->QualFlag)==0){
-          //fprintf(stderr,"INSIDE false\n");
           strncpy(readadapt, read, strlen(read));
           readsizelimit = strlen(read);
         }
         else{strncpy(readadapt, read, readsizelimit);}
-        //fprintf(stderr,"INSIDE ADAPTER TRUE\n");
-        //fprintf(stderr,"READ SIZE LIMIT %d\n",readsizelimit);
 
         if (strcasecmp("PE",struct_obj->SeqType)==0){
           strcpy(read2, seq_r2);
           strcat(read2,struct_obj->Adapter_2);
           if(strcasecmp("false",struct_obj->QualFlag)==0){
-            //fprintf(stderr,"INSIDE false\n");
             strncpy(readadapt2, read2, strlen(read2));
             readsizelimit = strlen(read2);
           }
           else{strncpy(readadapt2, read2, readsizelimit);}
-          //fprintf(stderr,"INSIDE PE TRUE\n");
         }
 
         if (strcasecmp(struct_obj -> OutputFormat,"fa")==0|| strcasecmp(struct_obj -> OutputFormat,"fa.gz")==0){
-          //fprintf(stderr,"INSIDE FA TRUE\n");
           ksprintf(struct_obj->fqresult_r1,">%s\n%s\n",READ_ID,readadapt);
           if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s\n%s\n",READ_ID,readadapt2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
-          //fprintf(stderr,"INSIDE FQ TRUE\n");
           for(int p = 0;p<strlen(readadapt);p++){
             double dtemp1;double dtemp2;
             drand48_r(&buffer, &dtemp1);
@@ -324,7 +291,6 @@ void* Fafq_thread_se_run(void *arg){
               drand48_r(&buffer, &dtemp1);
               drand48_r(&buffer, &dtemp2);
               if (dtemp1 < struct_obj->NtErr_r1[qscore]){
-                //fprintf(stderr,"THIS IS PE LOOP WHICH WE DONT WANT.");
                 if (dtemp2 <= 0.25){readadapt[p] = 'A';} // 'A'
                 else if (0.25 < dtemp2 && dtemp2 <= 0.5){readadapt[p] = 'T';} // 'T'
                 else if (0.5 < dtemp2 && dtemp2 <= 0.75){readadapt[p] = 'G';} // 'G'
@@ -356,7 +322,6 @@ void* Fafq_thread_se_run(void *arg){
                 drand48_r(&buffer, &dtemp1);
                 drand48_r(&buffer, &dtemp2);
                 if (dtemp1 < struct_obj->NtErr_r2[qscore]){
-                  //fprintf(stderr,"THIS IS PE LOOP WHICH WE DONT WANT.");
                   if (dtemp2 <= 0.25){readadapt2[p] = 'A';} // 'A'
                   else if (0.25 < dtemp2 && dtemp2 <= 0.5){readadapt2[p] = 'T';} // 'T'
                   else if (0.5 < dtemp2 && dtemp2 <= 0.75){readadapt2[p] = 'G';} // 'G'
@@ -377,10 +342,7 @@ void* Fafq_thread_se_run(void *arg){
           }
         }
         if (struct_obj->SAMout){
-          //fprintf(stderr,"INSIDE SAM TRUE\n");
-          //fprintf(stderr,"READ SIZE LIMIT SAM %d\n",readsizelimit);
           if(strcasecmp("true",struct_obj->QualFlag)==0){
-            //fprintf(stderr,"INSIDE QUAL STRING IF\n");
             for(int p = 0;p<strlen(readadapt);p++){
               double dtemp1;double dtemp2;
               drand48_r(&buffer, &dtemp1);
@@ -392,7 +354,6 @@ void* Fafq_thread_se_run(void *arg){
                 drand48_r(&buffer, &dtemp1);
                 drand48_r(&buffer, &dtemp2);
                 if (dtemp1 < struct_obj->NtErr_r1[qscore]){
-                  //fprintf(stderr,"THIS IS PE LOOP WHICH WE DONT WANT.");
                   if (dtemp2 <= 0.25){readadapt[p] = 'A';} // 'A'
                   else if (0.25 < dtemp2 && dtemp2 <= 0.5){readadapt[p] = 'T';} // 'T'
                   else if (0.5 < dtemp2 && dtemp2 <= 0.75){readadapt[p] = 'G';} // 'G'
@@ -401,7 +362,6 @@ void* Fafq_thread_se_run(void *arg){
               }
             }
             if (strcasecmp("PE",struct_obj->SeqType)==0){
-              //fprintf(stderr,"INSIDE SAM PE TRUE\n");
               for(int p = 0;p<strlen(readadapt2);p++){
                 double dtemp1;double dtemp2;
                 drand48_r(&buffer, &dtemp1);
@@ -414,7 +374,6 @@ void* Fafq_thread_se_run(void *arg){
                   drand48_r(&buffer, &dtemp1);
                   drand48_r(&buffer, &dtemp2);
                   if (dtemp1 < struct_obj->NtErr_r2[qscore]){
-                    //fprintf(stderr,"THIS IS PE LOOP WHICH WE DONT WANT.");
                     if (dtemp2 <= 0.25){readadapt2[p] = 'A';} // 'A'
                     else if (0.25 < dtemp2 && dtemp2 <= 0.5){readadapt2[p] = 'T';} // 'T'
                     else if (0.5 < dtemp2 && dtemp2 <= 0.75){readadapt2[p] = 'G';} // 'G'
@@ -425,7 +384,6 @@ void* Fafq_thread_se_run(void *arg){
             }
           }
           if (struct_obj->PolyNt != 'F'){
-            //fprintf(stderr,"READ SIZE LIMIT SAM POLY %d\n",readsizelimit);
             char PolyChar[1024] = "\0"; char QualPoly[1024]= "\0";
             memset(PolyChar,struct_obj->PolyNt, readsizelimit);
             strncpy(PolyChar, readadapt, strlen(readadapt));
@@ -446,7 +404,6 @@ void* Fafq_thread_se_run(void *arg){
         }
       }
       else{
-        //fprintf(stderr,"not adapter loop\n");
         if (strcasecmp(struct_obj -> OutputFormat,"fa")==0|| strcasecmp(struct_obj -> OutputFormat,"fa.gz")==0){
           ksprintf(struct_obj->fqresult_r1,">%s\n%s\n",READ_ID,seq_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s\n%s\n",READ_ID,seq_r2);}
@@ -455,7 +412,6 @@ void* Fafq_thread_se_run(void *arg){
           for(int p = 0;p<seqlen;p++){
             drand48_r(&buffer, &dtemp1);
             drand48_r(&buffer, &dtemp2);
-            //fprintf(stderr,"Read %d SE rand val 4: %f and rand val 5: %f\n",current_reads_atom,myrand((unsigned int) (rand_val-p-current_reads_atom)),myrand((unsigned int) (rand_val+p+current_reads_atom)));
             int base = seq_r1[p];
             int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
             qual_r1[p] = struct_obj->NtQual_r1[qscore];
@@ -464,7 +420,6 @@ void* Fafq_thread_se_run(void *arg){
               drand48_r(&buffer, &dtemp1);
               drand48_r(&buffer, &dtemp2);            
               if (dtemp1 < struct_obj->NtErr_r1[qscore]){
-                //fprintf(stderr,"sub at pos %d\n",p);
                 if (dtemp2 <= 0.25){seq_r1[p] = 'A';} //'A'
                 else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r1[p] = 'T';} //'T'
                 else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r1[p] = 'G';} //'G'
@@ -485,7 +440,6 @@ void* Fafq_thread_se_run(void *arg){
                 drand48_r(&buffer, &dtemp1);
                 drand48_r(&buffer, &dtemp2);
                 if (dtemp1 < struct_obj->NtErr_r2[qscore]){
-                  //fprintf(stderr,"THIS IS PE LOOP WHICH WE DONT WANT.");
                   if (dtemp2 <= 0.25){seq_r2[p] = 'A';} // 'A'
                   else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r2[p] = 'T';} // 'T'
                   else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r2[p] = 'G';} // 'G'
@@ -496,9 +450,7 @@ void* Fafq_thread_se_run(void *arg){
             ksprintf(struct_obj->fqresult_r2,"@%s\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);}
         }
         if (struct_obj->SAMout){
-          //fprintf(stderr,"SAM LOOP \n");
           if(strcasecmp("true",struct_obj->QualFlag)==0){
-            //fprintf(stderr,"QUAL DIST IF \n");
             for(int p = 0;p<seqlen;p++){
               double dtemp1;double dtemp2;
               drand48_r(&buffer, &dtemp1);
@@ -511,7 +463,6 @@ void* Fafq_thread_se_run(void *arg){
                 drand48_r(&buffer, &dtemp1);
                 drand48_r(&buffer, &dtemp2);            
                 if (dtemp1 < struct_obj->NtErr_r1[qscore]){
-                  //fprintf(stderr,"sub at pos %d\n",p);
                   if (dtemp2 <= 0.25){seq_r1[p] = 'A';} //'A'
                   else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r1[p] = 'T';} //'T'
                   else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r1[p] = 'G';} //'G'
@@ -519,7 +470,6 @@ void* Fafq_thread_se_run(void *arg){
                 }
               }
             }
-            // Read_Qual_new(seq_r1,qual,loc_seed,struct_obj->Qualfreq,0);
             if (strcasecmp("PE",struct_obj->SeqType)==0){
               for(int p = 0;p<seqlen;p++){
                 double dtemp1;double dtemp2;
@@ -534,7 +484,6 @@ void* Fafq_thread_se_run(void *arg){
                   drand48_r(&buffer, &dtemp1);
                   drand48_r(&buffer, &dtemp2);
                   if (dtemp1 < struct_obj->NtErr_r2[qscore]){
-                    //fprintf(stderr,"THIS IS PE LOOP WHICH WE DONT WANT.");
                     if (dtemp2 <= 0.25){seq_r2[p] = 'A';} // 'A'
                     else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r2[p] = 'T';} // 'T'
                     else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r2[p] = 'G';} // 'G'
@@ -542,8 +491,6 @@ void* Fafq_thread_se_run(void *arg){
                   }
                 }
               }
-              // Read_Qual_new(seq_r2,qual2,loc_seed,struct_obj->Qualfreq,0);
-              
             }
           }
           ksprintf(struct_obj->fqresult_r1,"%s",seq_r1);
@@ -552,9 +499,7 @@ void* Fafq_thread_se_run(void *arg){
       }
       if (struct_obj->bgzf_fp1){
         if (struct_obj->fqresult_r1->l > 30000000){
-          //fprintf(stderr,"\t Buffer mutex with thread no %d\n", struct_obj->threadno);fflush(stderr);
           pthread_mutex_lock(&Fq_write_mutex);
-          // bgzf_write(struct_obj->bgzf,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l);
           assert(bgzf_write(struct_obj->bgzf_fp1,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l)!=0);
           if (strcasecmp("PE",struct_obj->SeqType)==0){assert(bgzf_write(struct_obj->bgzf_fp2,struct_obj->fqresult_r2->s,struct_obj->fqresult_r2->l)!=0);}
           pthread_mutex_unlock(&Fq_write_mutex);
@@ -596,21 +541,13 @@ void* Fafq_thread_se_run(void *arg){
         else if (strcasecmp("SE",struct_obj->SeqType)==0){
           bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length,READ_ID,flag,chr_idx,min_beg,mapq,
           n_cigar,cigar,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
-          
-          /*uint8_t *old_md = bam_aux_get(struct_obj->list_of_reads[struct_obj->l++], "MD");
-          bam_aux_del(struct_obj->list_of_reads[struct_obj->l++], old_md);
-          bam_aux_append(struct_obj->list_of_reads[struct_obj->l++], "MD", 'Z', struct_obj->fqresult_r1->l + 1, (uint8_t*)struct_obj->fqresult_r1->s);
-          if (bam_aux_append(struct_obj->list_of_reads[struct_obj->l++], "MD", 'Z', struct_obj->fqresult_r1->l + 1, (uint8_t*)struct_obj->fqresult_r1->s) < 0)
-            fprintf(stderr,"AUXILLARY FAILED\n");*/
         }
         
         if (struct_obj->l < struct_obj->m){   
           pthread_mutex_lock(&Fq_write_mutex);
           for (int k = 0; k < struct_obj->l; k++){
             assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) != 1);
-            //sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]);
           }
-          //fprintf(stderr,"\n sam_write works\n");
           pthread_mutex_unlock(&Fq_write_mutex);
           struct_obj->l = 0;
         }
@@ -628,11 +565,8 @@ void* Fafq_thread_se_run(void *arg){
       
       memset(readadapt, 0, sizeof readadapt);
       memset(readadapt2, 0, sizeof readadapt2);
-
-      //memset(PolyChar,0, sizeof PolyChar);
             
       chr_idx = 0;
-      //fprintf(stderr,"start %d, fraglength %d\n",rand_start,fraglength);
       iter++;
       localread++;
       current_reads_atom++;
@@ -658,7 +592,6 @@ void* Fafq_thread_se_run(void *arg){
   //Freeing allocated memory
   free(struct_obj->size_cumm);
   free(struct_obj->names);
-  //bam_destroy1(struct_obj->list_of_reads[0]);
   for(int j=0; j<struct_obj->m;j++){bam_destroy1(struct_obj->list_of_reads[j]);}
 
   fprintf(stderr,"\t-> Number of reads generated by thread %d is %d \n",struct_obj->threadno,localread);
@@ -675,7 +608,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
   int nthreads=thread_no;
   pthread_t mythreads[nthreads];
 
-  // if its defined globally cant i then move nuc2int out of the functions?
   nuc2int['a'] = nuc2int['A'] = nuc2int[0] = 0;
   nuc2int['t'] = nuc2int['T'] = nuc2int[1] = 1;
   nuc2int['g'] = nuc2int['G'] = nuc2int[2] = 2;
@@ -691,7 +623,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
   if (genome_data != NULL){
     fprintf(stderr,"\t-> Done creating the large concatenated contig, with size of %lu bp\n",genome_size);
   
-    Parsarg_for_Fafq_se_thread struct_for_threads[nthreads];
+    Parsarg_for_Sampling_thread struct_for_threads[nthreads];
 
     // declare files and headers
     BGZF *bgzf_fp1 = NULL;
@@ -770,7 +702,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
         bgzf_fp2 = bgzf_open(filename2,mode);
         bgzf_mt(bgzf_fp2,mt_cores,bgzf_buf);
       }
-      //fprintf(stderr,"\t-> Number of cores for bgzf_mt: %d \t %d\n",mt_cores,threadwriteno); 
     }
     else{
       fprintf(stderr,"bam loop \n");
@@ -801,8 +732,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
 
     const char* bamQflag = QualStringFlag;
 
-    //fprintf(stderr,"\n bamQflag %s\n",QualStringFlag);
-    
     if(strcasecmp("true",QualStringFlag)==0){ //|| strcasecmp("bam",OutputFormat)==0
       freqfile_r1 = QualProfile1;
       QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1,readcyclelength);
@@ -811,9 +740,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
         QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2,readcyclelength);
       }
     }
-    
-    //fprintf(stderr,"Qualities %c \t %c \t %c \t %c \n",nt_qual_r1[0],nt_qual_r1[1],nt_qual_r1[6],nt_qual_r1[7]);
-    //fprintf(stderr,"Err Prob %f \t %f \t %f \t %f \n",ErrArray_r1[0],ErrArray_r1[1],ErrArray_r1[6],ErrArray_r1[7]);
 
     int maxsize = 20;
     char polynucleotide;
@@ -821,8 +747,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     if (Polynt != NULL && strlen(Polynt) == 1){polynucleotide = (char) Polynt[0];}
     else{polynucleotide = 'F';}
     
-    //fprintf(stderr,"initialzie values for each thread\n"); 
-    //initialzie values that should be used for each thread
     for (int i = 0; i < nthreads; i++){
       struct_for_threads[i].fqresult_r1 =new kstring_t;
       struct_for_threads[i].fqresult_r1 -> l = 0;
@@ -888,23 +812,15 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     
-    //fprintf(stderr,"Creating a bunch of threads\n"); 
     for (int i = 0; i < nthreads; i++){
-      pthread_create(&mythreads[i],&attr,Fafq_thread_se_run,&struct_for_threads[i]);
+      pthread_create(&mythreads[i],&attr,Sampling_threads,&struct_for_threads[i]);
     }
-    //fprintf(stderr,"Done Creating a bunch of threads\n");
     
-
     for (int i = 0; i < nthreads; i++){  
-      //fprintf(stderr,"joing threads\n");fflush(stderr);
       pthread_join(mythreads[i],NULL);
-      //fprintf(stderr, "\t[ANDET STED] walltime used for join =  %.2f sec\n", (float)(time(NULL) - t3));  
     }
-    
-    //fprintf(stderr,"Done joining a bunch of threads\n");
-    
+        
     if(alnformatflag == 0){
-      //fprintf(stderr,"Closing fasta fastq files\n");
       bgzf_close(bgzf_fp1);
       if(strcasecmp("PE",SeqType)==0){bgzf_close(bgzf_fp2);}
     }
@@ -913,20 +829,16 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       sam_close(SAMout);
     } 
     
-    //fprintf(stderr,"Before memory cleaning\n");
-
     for(int i=0;i<nthreads;i++){
-      free(struct_for_threads[i].fqresult_r1 -> s);//4 errors from 4 contexts (suppressed: 0 eventhough that delete goes with new and not free
+      free(struct_for_threads[i].fqresult_r1 -> s);
       free(struct_for_threads[i].list_of_reads);
       delete struct_for_threads[i].fqresult_r1;
 
-      free(struct_for_threads[i].fqresult_r2 -> s);//4 errors from 4 contexts (suppressed: 0 eventhough that delete goes with new and not free
+      free(struct_for_threads[i].fqresult_r2 -> s);
       delete struct_for_threads[i].fqresult_r2;      
     }
     
-
-    if(strcasecmp("true",QualStringFlag)==0){ //if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || bamQflag == "TRUE"){ //strcasecmp("bam",OutputFormat)==0
-      //fprintf(stderr,"INSIDE TRUE QUALSTRING IF FINAL\n");
+    if(strcasecmp("true",QualStringFlag)==0){
       for(int b=0;b<5;b++){
         for(int pos = 0 ; pos< (int) readcyclelength;pos++){
           ransampl_free(QualDist[b][pos]);
@@ -957,4 +869,3 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
   }
   return NULL;
 }
-//./ngsngs -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 1000000 -s 1 -t1 2 -lf Size_dist/Size_dist_sampling.txt -b 0.024,0.36,0.68,0.0097 -seq SE -f bam -o chr22

@@ -208,8 +208,6 @@ argStruct *getpars(int argc,char ** argv){
       exit(0);
     }
     
-    // -e1 +2 || --error1 +2 
-    // -p || --poly G T
     ++argv;
   }
   return mypars;
@@ -247,7 +245,6 @@ int main(int argc,char **argv){
       }
     }
 
-    // LENGTH     
     int FixedSize = mypars->Length;
     const char* Sizefile = mypars->LengthFile;
     int meanlength;
@@ -269,7 +266,7 @@ int main(int argc,char **argv){
       gz = gzopen(Sizefile,"r");
       assert(gz!=Z_NULL);
       while(gzgets(gz,buf,LENS)){
-        Length_tmp[n] = atof(strtok(buf,"\n\t ")); //before it was Frag_len[n]
+        Length_tmp[n] = atof(strtok(buf,"\n\t "));
         Frequency_tmp[n] = atof(strtok(NULL,"\n\t "));
         sum = sum + (Length_tmp[n]*(Frequency_tmp[n]-Frequency_tmp[n-1]));
         n++;
@@ -278,12 +275,10 @@ int main(int argc,char **argv){
 
       delete[] Frequency_tmp;delete[] Length_tmp;
       meanlength = (int) sum;
-      //fprintf(stderr,"mean length of dist %d\n",meanlength);
 
       if (FixedSize != -1){ErrMsg(5.0);}
     }
 
-    // sequence file
     faidx_t *seq_ref = NULL;
     seq_ref  = fai_load(fastafile);
     
@@ -293,10 +288,9 @@ int main(int argc,char **argv){
     int Glob_seed = mypars->Glob_seed; 
     int threads1 = mypars->threads1;
     int threads2;
-    if (mypars->threads2 == -1){threads2 = 1;} //threads1}
+    if (mypars->threads2 == -1){threads2 = 1;}
     else{threads2 = mypars->threads2;}
     
-     //1e1;
     int Thread_specific_Read;
     if (No_reads != -1){
       if (No_reads == 1 && threads1 > 1){ErrMsg(2.6);}
@@ -327,8 +321,7 @@ int main(int argc,char **argv){
       Adapt_flag = "true";
       Adapter_1 = mypars->Adapter1;
       Adapter_2 = mypars->Adapter2;
-      //Adapter_1 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG";
-      //Adapter_2 = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT";
+
       if (mypars->Poly != NULL){Polynt =mypars->Poly;}
       else{Polynt = "F";}
       
@@ -416,8 +409,3 @@ int main(int argc,char **argv){
   delete mypars;
 
 }
-
-//  make HTSSRC=/home/wql443/scratch/htslib/
-// ./ngsngs -i /willerslev/users-shared/science-snm-willerslev-wql443/scratch/reference_files/Human/chr22.fa -r 100 -s 1 -seq PE -f fq -o chr22
-
-//cat chr22.fq |sed -n '2~4p' | sed 's/\(.\)/\1\n/g'|sort|uniq -c
