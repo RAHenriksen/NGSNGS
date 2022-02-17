@@ -22,7 +22,6 @@ cd NGSNGS; make
 ## GENERAL
 Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 
 
-Usage
 ~~~~bash
 ./ngsngs [options] -i <Reference.fa> -r/-c <Number of reads or Depth of coverage> -l/-lf <Fixed length or Length file> -seq <SE/PE> -f <Output format> -o <Prefix output name>
 
@@ -69,11 +68,20 @@ Options:
 * When providing the '-e' option the nucleotides will be equally substituted between on of the four nucleotide depending on the error probability of the nucleotide quality score for a given position.
 
 ## ERROR PROFILES AND FRAGMENT LENGTH DISTRIBUTIONS
+Both the nucleotide quality profile  and the read length distributions are the cumulative relative frequency distribution.
 
-### GENERATE ERROR PROFILES BASED ON ART's PROFILES
+### GENERATE NUCLEOTIDE QUALITY PROFILES BASED ON ART's PROFILES
+See more nucleotide quality profiles on https://github.com/scchess/Art. 
+
 cd Qual_Profiles
-
 Rscript Read_filter.R HiSeq2500L150R1filter.txt AccFreqL150R1.txt
+~~~~bash
+Rscript Read_filter.R <Input file> <Output file>
+~~~~
+Conversion of Illumina Hiseq 2500 profile for read with lengths of 150 bp.
+~~~~bash
+Rscript Read_filter.R HiSeq2500L150R1filter.txt AccFreqL150R1.txt
+~~~~
 
 ### GENERATE SIZE DISTRIBUTIONS
 
