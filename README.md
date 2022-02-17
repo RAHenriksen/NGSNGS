@@ -1,7 +1,7 @@
  # [![make](https://github.com/RAHenriksen/SimulAncient/actions/workflows/make.yml/badge.svg)](https://github.com/RAHenriksen/NGSNGS/actions/workflows/make.yml) NGSNGS
 
 # NEXT GENERATION SIMULATOR FOR NEXT GENERATION SEQUENCING DATA
-Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen \\
+Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen \
 contact: rasmus.henriksen@sund.ku.dk
 
 ## Installation & Requirements
