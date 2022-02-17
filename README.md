@@ -24,29 +24,18 @@ Next Generation Simulator for Next Generator Sequencing Data version 1.0.0
 
 Usage
 ~~~~bash
-./ngsngs [options] -i \<Input reference.fa\> -r/-c \<Number of reads or Depth of coverage\> -l/-lf \<Fixed length or Length file\> -seq \<SE/PE\> -f \<Output format\> -o \<Prefix output name\>
-~~~~
+./ngsngs [options] -i <Reference.fa> -r/-c <Number of reads or Depth of coverage> -l/-lf <Fixed length or Length file> -seq <SE/PE> -f <Output format> -o <Prefix output name>
 
-~~~~bash
 Options: \
--i   | --input: 		 Reference file in fasta format (.fa,.fasta) to sample reads. \
--r   | --reads: 		 Number of reads to simulate, conflicts with -c option. \
--c   | --coverage: 		 Depth of Coverage to simulate, conflics with -r option.\
+-i   | --input: 		 Reference file in fasta format (.fa,.fasta) to sample reads.
+-r   | --reads: 		 Number of reads to simulate, conflicts with -c option.
+-c   | --coverage: 		 Depth of Coverage to simulate, conflics with -r option.
+-l   | --length: 		 Fixed length of simulated fragments, conflicts with -lf option.
+-lf  | --lengthfile: 		 CDF of a length distribution, conflicts with -l option.
+-seq | --sequencing: 		 Simulate single-end or paired-end reads.
+	  <SE>	 single-end 
+ 	 <PE>	 paired-end.
 ~~~~
--l   | --length: 		 Fixed length of simulated fragments, conflicts with -lf option.\
--lf  | --lengthfile: 		 CDF of a length distribution, conflicts with -l option.\
--seq | --sequencing: 		 Simulate single-end or paired-end reads.\
-&emsp; \<SE\> &emsp;	 single-end. \
-&emsp; \<PE\> &emsp;	 paired-end. \
--f   | --format: 		 File format of the simulated output reads.\
-&emsp;	  <fa||fasta>&emsp;		 nucletide sequence \
-&emsp; 	 <fa.gz||fasta.gz>&emsp;	 compressed nucletide sequence \
-&emsp; 	 <fq||fastq>&emsp;		nucletide sequence with corresponding quality score \
-&emsp; 	 <fq.gz||fastq.gz>&emsp;	 compressed nucletide sequence with corresponding quality score \
-&emsp; 	 <bam>&emsp;			 Sequence Alignment Map format \
--o | --output: 			 Prefix of output file name. 
-
-See helppage for further options and descriptions (./ngsngs -h)
 
 ## ERROR PROFILES AND FRAGMENT LENGTH DISTRIBUTIONS
 
