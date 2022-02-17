@@ -2,7 +2,7 @@
 
 # NEXT GENERATION SIMULATOR FOR NEXT GENERATION SEQUENCING DATA
 Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen \
-contact: rasmus.henriksen@sund.ku.dk
+Contact: rasmus.henriksen@sund.ku.dk
 
 ## Installation & Requirements
 * Use local installation of htslib
@@ -19,22 +19,23 @@ git clone https://github.com/RAHenriksen/NGSNGS.git
 
 cd NGSNGS; make
 
-## Usage
+## General
 Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 
 
 Usage
-./ngsngs [options] -i \<input reference.fa\> -r \<Number of reads\> -l/-lf \<fixed length or length file\> -seq \<SE/PE\> -f \<Output format\> -o \<Output name\>
+./ngsngs [options] -i \<Input reference.fa\> -r/-c \<Number of reads or Depth of coverage\> -l/-lf \<Fixed length or Length file\> -seq \<SE/PE\> -f \<Output format\> -o \<Prefix output name\>
 
-Required: \
--i | --input: 			 Reference file in .fasta format to sample reads from \
--r | --reads: 			 Number of reads to simulate \
--l | --length: 			 Fixed length of simulated fragments, conflicts with -lf option \
--lf | --lengthfile: 		 CDF of a length distribution, conflicts with -l option \
--seq | --sequencing: 		 Simulate single-end or paired-end reads \
-&emsp; \<SE\> &emsp;	 single-end \
-&emsp; \<PE\> &emsp;	 paired-end \
--f | --format: 			 File format of the simulated outpur reads \
-&emsp;	 <fa||fasta>&emsp;		 nucletide sequence \
+Options: \
+-i   | --input: 		 Reference file in fasta format (.fa,.fasta) to sample reads. \
+-r   | --reads: 		 Number of reads to simulate, conflicts with -c option. \
+-c   | --coverage: 		 Depth of Coverage to simulate, conflics with -r option.\
+-l   | --length: 		 Fixed length of simulated fragments, conflicts with -lf option.\
+-lf  | --lengthfile: 		 CDF of a length distribution, conflicts with -l option.\
+-seq | --sequencing: 		 Simulate single-end or paired-end reads.\
+&emsp; \<SE\> &emsp;	 single-end. \
+&emsp; \<PE\> &emsp;	 paired-end. \
+-f   | --format: 		 File format of the simulated output reads.\
+&emsp;	  <fa||fasta>&emsp;		 nucletide sequence \
 &emsp; 	 <fa.gz||fasta.gz>&emsp;	 compressed nucletide sequence \
 &emsp; 	 <fq||fastq>&emsp;		nucletide sequence with corresponding quality score \
 &emsp; 	 <fq.gz||fastq.gz>&emsp;	 compressed nucletide sequence with corresponding quality score \
