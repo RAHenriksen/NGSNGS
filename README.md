@@ -4,26 +4,13 @@
 Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen 
 ## Installation & Requirements
 * Use local installation of htslib
-git clone https://github.com/samtools/htslib.git;
-cd htslib;
-make;
-cd ../NGSNGS;
-make HTSSRC=../htslib
+git clone https://github.com/RAHenriksen/NGSNGS.git
+git clone https://github.com/samtools/htslib.git
+cd htslib; make; cd ../NGSNGS; make HTSSRC=../htslib
+
 * Use systemwide installation of htslib
-git clone https://github.com/angsd/angsd.git;
-cd 
-
-Using a local folder containing htslib
-git clone https://github.com/samtools/htslib.git;
-
-git clone https://github.com/angsd/angsd.git;
-
-cd htslib;make;cd ../angsd;make HTSSRC=../htslib
-
-Systemwide installation of htslib
-git clone https://github.com/angsd/angsd.git;
-cd NGSNGS;
-make;
+git clone https://github.com/RAHenriksen/NGSNGS.git
+cd NGSNGS; make
 
 ## Usage
 Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 
