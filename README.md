@@ -66,7 +66,16 @@ Options:
 * When quality profiles are provided, NGSNGS infers the read lengths based on the position specific quality scores and creates a readlength limitation independent of the fixed length or the length disribution. 
 * To simulate .Fastq the quality profiles needs to be provided. For Sequence-Alignment-Map formats if no quality profile have been provided, then the nucleotide quality string will be the lowest quality.
 * When providing the '-e' option the nucleotides will be equally substituted between on of the four nucleotide depending on the error probability of the nucleotide quality score for a given position.
+* The read ID's for all the reads follows this structure:
+~~~~bash
+ThreadNumber_RandomID_StrandInfo_Chromosome:start-end_length:sequencelength
+~~~~
+e.g. in .fq format
+~~~~bash
+@T1_RID25_S1_chr22:21441362-21441421_length:60
 
+S0 is the forward strand and S1 is the reverse strand
+~~~~
 ## ERROR PROFILES AND FRAGMENT LENGTH DISTRIBUTIONS
 Both the nucleotide quality profile  and the read length distributions are the cumulative relative frequency distribution.
 
