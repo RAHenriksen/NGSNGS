@@ -4,7 +4,7 @@
 Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen \
 Contact: rasmus.henriksen@sund.ku.dk
 
-## Installation & Requirements
+## INSTALLATION & REQUIREMENTS
 * Use local installation of htslib
 
 git clone https://github.com/RAHenriksen/NGSNGS.git
@@ -19,7 +19,7 @@ git clone https://github.com/RAHenriksen/NGSNGS.git
 
 cd NGSNGS; make
 
-## General
+## GENERAL
 Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 
 
 Usage
@@ -63,9 +63,10 @@ Options: \
  	 Delta_s: PMD rate in double-strand regions.
 ~~~~
 
-## Output format
-* When quality profiles are provided, NGSNGS infers the read lengths based on the position specific quality scores and creates a length limitations independent of the fixed length or the length disribution. 
-* To simulate Fastq the quality profiles needs to be provided. For Sequence-Alignment-Map formats if no quality profile have been provided, then the nucleotide quality string will be the lowest quality.
+## Output format - FQ, SAM
+* When quality profiles are provided, NGSNGS infers the read lengths based on the position specific quality scores and creates a readlength limitation independent of the fixed length or the length disribution. 
+* To simulate .Fastq the quality profiles needs to be provided. For Sequence-Alignment-Map formats if no quality profile have been provided, then the nucleotide quality string will be the lowest quality.
+* When providing the '-e' option the nucleotides will be equally substituted between on of the four nucleotide depending on the error probability of the nucleotide quality score for a given position.
 
 ## ERROR PROFILES AND FRAGMENT LENGTH DISTRIBUTIONS
 
@@ -76,7 +77,7 @@ Rscript Read_filter.R HiSeq2500L150R1filter.txt AccFreqL150R1.txt
 
 ### GENERATE SIZE DISTRIBUTIONS
 
-## EXAMPLES
+## EXAMPLE OF USAGE
 ### Simulate simple NGS paired-end output in fasta format with fixed length
 ~~~~bash
 ./ngsngs -i chr22.fa -r 10000 -l 100 -seq PE -f fa -o chr22pe
