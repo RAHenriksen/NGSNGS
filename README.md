@@ -1,4 +1,4 @@
- # [![make](https://github.com/RAHenriksen/SimulAncient/actions/workflows/make.yml/badge.svg)](https://github.com/RAHenriksen/NGSNGS/actions/workflows/make.yml) NGSNGS
+ # [![make](https://github.com/RAHenriksen/SimulAncient/actions/workflows/make.yml/badge.svg)](https://github.com/RAHenriksen/NGSNGS/actions/workflows/make.yml) NEXT GENERATION SIMULATOR FOR NEXT GENERATION SEQUENCING DATA
 
 # NEXT GENERATION SIMULATOR FOR NEXT GENERATION SEQUENCING DATA
 Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen \
@@ -18,6 +18,8 @@ cd htslib; make; cd ../NGSNGS; make HTSSRC=../htslib
 git clone https://github.com/RAHenriksen/NGSNGS.git
 
 cd NGSNGS; make
+
+The htslib installation must include bam_set1.
 
 ## GENERAL
 Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 
