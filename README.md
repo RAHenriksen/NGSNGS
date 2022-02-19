@@ -19,7 +19,7 @@ git clone https://github.com/RAHenriksen/NGSNGS.git
 
 cd NGSNGS; make
 
-NOTE: Newer version of htslib which includes bam_set1 is required
+**NOTE:** Newer version of htslib which includes bam_set1 is required
 
 ## GENERAL
 Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 
