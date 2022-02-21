@@ -93,10 +93,47 @@ Conversion of Illumina Hiseq 2500 profile for read with lengths of 150 bp.
 Rscript Read_filter.R HiSeq2500L150R1filter.txt AccFreqL150R1.txt
 ~~~~
 
+### STRUCTURE OF THE NUCLEOTIDE QUALITY PROFILES
+1st line: information regarding the nucleotide qualities
+2nd line: Nucleotide quality converted into the probability of the base call being wrong
+3rd - end: The CDF of the nucleotide quality distribution for a given nulceotide at a given position. 
+~~~~bash
+e.g. for Illumina HISEQ 2500 Read length 150, the top is for Nucleotide A, the Bottom from Nucleotde N.
+2	6	15	22	27	33	37	40
+0.6309573	0.2511886	0.03162278	0.006309573	0.001995262	0.0005011872	0.0001995262	0.0001
+4.99876280620546e-07	0.000500876033181788	0.0192102454642476	0.0418921316974049	0.145226556427284	1	1	1
+3.57155740260631e-07	0.000417515060364677	0.0117939968548866	0.0281474438899403	0.0982699733097515	1	1	1
+2.62498333135585e-07	0.000614246099537268	0.0446979536679942	0.105743516028673	0.239278780579743	1	1	1
+.
+.
+.
+1	1	1	1	1	1	1	1
+1	1	1	1	1	1	1	1
+1	1	1	1	1	1	1	1
+~~~~
+Line 3 - 152 -> A nucleotide, 153 - 302 -> T, 303 - 452 -> G, 453 -> 602 -> C, 603 -> 752 -> N.
 ### GENERATE SIZE DISTRIBUTIONS
+Using the same size distribution as provided in Gargammel
 ~~~~bash
 cd Size_dist
 Rscript 
+~~~~
+### STRUCTURE OF THE SIZE DISTRIBUTION
+The CDF of the fragment lengths of Ancient DNA.
+~~~~bash
+35	0.00540914
+36	0.01326621
+37	0.02248544
+38	0.03442894
+39	0.04907704
+.
+.
+.
+187	0.9997630062
+188	0.9998814542
+189	0.999920937
+190	0.9999406784
+191	1
 ~~~~
 ## EXAMPLE OF USAGE
 ### Simulate 10000 paired-end reads in .fa format with fixed length
