@@ -94,24 +94,28 @@ Rscript Read_filter.R HiSeq2500L150R1filter.txt AccFreqL150R1.txt
 ~~~~
 
 ### STRUCTURE OF THE NUCLEOTIDE QUALITY PROFILES
-1st line: information regarding the nucleotide qualities
-2nd line: Nucleotide quality converted into the probability of the base call being wrong
-3rd - end: The CDF of the nucleotide quality distribution for a given nulceotide at a given position. 
+e.g. for Illumina HISEQ 2500 Read length 150, covering all 4 nucleotides and N, giving the CDF distributions a length of 750 as well as 2 lines with Quality information, with a total length of 752. \
+1st line: Information regarding the nucleotide qualities \
+2nd line: Nucleotide quality converted into the probability of the base call being wrong \
+3rd - end: The CDF of the nucleotide quality distribution for a given nulceotide at a given position.  \
 ~~~~bash
-e.g. for Illumina HISEQ 2500 Read length 150, the top is for Nucleotide A, the Bottom from Nucleotde N.
-2	6	15	22	27	33	37	40
-0.6309573	0.2511886	0.03162278	0.006309573	0.001995262	0.0005011872	0.0001995262	0.0001
-4.99876280620546e-07	0.000500876033181788	0.0192102454642476	0.0418921316974049	0.145226556427284	1	1	1
-3.57155740260631e-07	0.000417515060364677	0.0117939968548866	0.0281474438899403	0.0982699733097515	1	1	1
-2.62498333135585e-07	0.000614246099537268	0.0446979536679942	0.105743516028673	0.239278780579743	1	1	1
+Line1: 2	6	15	22	27	33	37	40
+Line2: 0.6309573	0.2511886	0.03162278	0.006309573	0.001995262	0.0005011872	0.0001995262	0.0001
+Line3: 4.99876280620546e-07	0.000500876033181788	0.0192102454642476	0.0418921316974049	0.145226556427284	1	1	1
+Line4: 3.57155740260631e-07	0.000417515060364677	0.0117939968548866	0.0281474438899403	0.0982699733097515	1	1	1
+Line5: 2.62498333135585e-07	0.000614246099537268	0.0446979536679942	0.105743516028673	0.239278780579743	1	1	1
 .
 .
 .
-1	1	1	1	1	1	1	1
-1	1	1	1	1	1	1	1
-1	1	1	1	1	1	1	1
+Line750: 1	1	1	1	1	1	1	1
+Line751: 1	1	1	1	1	1	1	1
+Line752: 1	1	1	1	1	1	1	1
 ~~~~
-Line 3 - 152 -> A nucleotide, 153 - 302 -> T, 303 - 452 -> G, 453 -> 602 -> C, 603 -> 752 -> N.
+Line 3 - 152 -> A nucleotide \ 
+Line 153 - 302 -> T  \
+Line 303 - 452 -> G  \
+Line 453 - 602 -> C  \
+Line 603 -> 752 -> N.
 ### GENERATE SIZE DISTRIBUTIONS
 Using the same size distribution as provided in Gargammel
 ~~~~bash
