@@ -299,7 +299,7 @@ void* Sampling_threads(void *arg){
               drand48_r(&buffer, &dtemp1);
               drand48_r(&buffer, &dtemp2);
               if (dtemp1 < struct_obj->NtErr_r1[qscore]){
-                fprintf(stderr,"WE ARE IN THE SUBSTITUTION LOOP\n");
+                //fprintf(stderr,"WE ARE IN THE SUBSTITUTION LOOP\n");
                 if (dtemp2 <= 0.25){readadapt[p] = 'A';} // 'A'
                 else if (0.25 < dtemp2 && dtemp2 <= 0.5){readadapt[p] = 'T';} // 'T'
                 else if (0.5 < dtemp2 && dtemp2 <= 0.75){readadapt[p] = 'G';} // 'G'
@@ -429,7 +429,7 @@ void* Sampling_threads(void *arg){
               drand48_r(&buffer, &dtemp1);
               drand48_r(&buffer, &dtemp2);            
               if (dtemp1 < struct_obj->NtErr_r1[qscore]){
-                fprintf(stderr,"WE ARE IN THE SUBSTITUTION LOOP 2\n");
+                //fprintf(stderr,"WE ARE IN THE SUBSTITUTION LOOP 2\n");
                 if (dtemp2 <= 0.25){seq_r1[p] = 'A';} //'A'
                 else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r1[p] = 'T';} //'T'
                 else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r1[p] = 'G';} //'G'
