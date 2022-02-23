@@ -11,22 +11,23 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        name: [Ubuntulatest,Ubuntu1804]
-        include:
-          - name: Ubuntulatest
-            os: ubuntu-latest
-            compiler: clang
-          - name: Ubuntu1804
-            os: ubuntu-18.04
-            compiler: [clang, gcc]
+        os: [ubuntu-18.04,ubuntu-latest,macos-latest]
+        compiler: [clang, gcc]
   
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
-      run: sudo apt-get install libcurl4-openssl-dev
+      run: |
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          sudo apt-get install libcurl4-openssl-dev
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          brew install openssl curl
     - name: prepare htslib
       run: git clone --branch=develop --recursive git://github.com/samtools/htslib.git;cd htslib; make;cd ..;
     - name: make
       run: export HTSSRC=`pwd`/htslib; make
     - name: make
       run: make
+ if: ${{ matrix.config.os == 'macOS-latest' }}
+        run: |
+          
