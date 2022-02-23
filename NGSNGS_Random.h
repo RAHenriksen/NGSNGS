@@ -1,5 +1,5 @@
-#ifndef RANDOM_H
-#define RANDOM_H
+#ifndef NGSNGS_RANDOM_H
+#define NGSNGS_RANDOM_H
 
 int __drand48_iterate (unsigned short int xsubi[3], struct drand48_data *buffer);
 

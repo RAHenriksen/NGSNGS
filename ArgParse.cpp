@@ -22,8 +22,10 @@
 #define LENS 4096
 #define MAXBINS 100
 
-#ifdef __APPLE__
-#include <Random.h>
+//#ifdef __APPLE__
+
+#if defined(__APPLE__) && defined(__MACH__) 
+#include "NGSNGS_Random.h"
 #endif /* __APPLE__ */
 
 typedef struct{

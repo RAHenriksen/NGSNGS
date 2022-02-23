@@ -21,8 +21,8 @@
 
 #include "NGSNGS_func.h"
 
-#ifdef __APPLE__
-#include <Random.h>
+#if defined(__APPLE__) && defined(__MACH__) 
+#include "NGSNGS_Random.h"
 #endif /* __APPLE__ */
 
 #define LENS 4096

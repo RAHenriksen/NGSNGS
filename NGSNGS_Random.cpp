@@ -1,3 +1,5 @@
+#if defined(__APPLE__) && defined(__MACH__) 
+#include "NGSNGS_Random.h"
 #include <ieee754.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -6,8 +8,6 @@
 #include <math.h>
 #include <stdint.h>
 #include <sys/types.h>
-
-//#include "Random.h"
 
 /* Copyright (C) 1995-2019 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
@@ -124,4 +124,4 @@ rand_r (unsigned int *seed)
     
 }*/
 
-//g++ Random.cpp -std=c++11
+#endif
