@@ -80,6 +80,23 @@ void reverseChar(char* str) {
     std::reverse(str, str + strlen(str));
 }
 
+void deletechar(char* array,int seq_len, size_t index_to_remove, int del_len){
+  /*memmove(&array[index_to_remove],
+        &array[index_to_remove + 5],
+        seq_len - index_to_remove - 5);*/
+  std::string s(array);
+  s.erase(s.begin()+index_to_remove, s.end()-(seq_len-index_to_remove-del_len));
+  strcpy(array, s.c_str());
+}
+
+
+
+void InsertChar(char* array,std::string ins,int index){
+  std::string s(array);
+  s.insert(index,ins);  
+  strcpy(array, s.c_str());    
+}
+
 int Random_geometric_k(unsigned int  seed, const double p)
 {
   double u = ((double) rand_r(&seed)/ RAND_MAX); // this between 0 and 1
@@ -399,7 +416,7 @@ void printTime(FILE *fp){
   fprintf (fp, "\t-> %s", asctime (timeinfo) );
 }
 
-void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total, size_t genome_len){
+void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total,int chr_idx_arr[],size_t genome_len){
   // Creates a header for the bamfile. The header is initialized before the function is called //
 
   if (header == NULL) { fprintf(stderr, "sam_hdr_init");}
@@ -408,7 +425,8 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
   
   char genome_len_buf[1024];
   for(int i=0;i<chr_total;i++){
-    const char *name = faidx_iseq(seq_ref,i);
+    const char *name = faidx_iseq(seq_ref,chr_idx_arr[i]);
+    fprintf(stderr,"HEAHDEHDHEHR %d\n",chr_idx_arr[i]);
 
     int name_len =  faidx_seq_len(seq_ref,name);
     snprintf(genome_len_buf,1024,"%d", name_len);
@@ -423,7 +441,7 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
 }
 
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[]){
-  
+  fprintf(stderr,"WITHIN LOOP\n");
   size_t genome_size = 0;
   chr_size_cumm[0] = 0;
   for (int i = 0; i < chr_total; i++){
@@ -431,6 +449,39 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
     int chr_len = faidx_seq_len(seq_ref,chr_name);
     chr_sizes[i] = chr_len;
     chr_names[i] = chr_name;
+    genome_size += chr_len;
+    chr_size_cumm[i+1] = genome_size;
+    std::cout << "I " << i << std::endl;
+    std::cout << chr_name << std::endl;
+  }
+
+  char* genome = (char*) malloc(sizeof(char) * (genome_size+chr_total));
+  genome[0] = 0; //Init to create proper C string before strcat
+  //chr_total
+  for (int i = 0; i < chr_total; i++){
+
+    const char *data = fai_fetch(seq_ref,chr_names[i],&chr_sizes[i]);
+    std::cout << chr_names[i] << std::endl;
+    //sprintf(&genome[strlen(genome)],data);
+    //strcat(genome,data);  //Both gives conditional jump or move error
+    if (data != NULL){
+      sprintf(genome+strlen(genome),data); 
+    }
+    // several of the build in functions allocates memory without freeing it again.
+    free((char*)data); //Free works on const pointers, so we have to cast into a const char pointer
+  }
+  return genome;
+}
+
+char* partial_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[]){
+  
+  size_t genome_size = 0;
+  chr_size_cumm[0] = 0;
+  for (int i = 0; i < chr_total; i++){
+    int chr_len = faidx_seq_len(seq_ref,chr_names[i]);
+    std::cout << chr_names[i] << std::endl;
+    fprintf(stderr,"chr len %d\n",chr_len);
+    chr_sizes[i] = chr_len;
     genome_size += chr_len;
     chr_size_cumm[i+1] = genome_size;
   }

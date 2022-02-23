@@ -25,9 +25,11 @@ void FragArray(int& number,int*& Length, double*& Frequency,const char* filename
 
 void printTime(FILE *fp);
 
-void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total, size_t genome_len);
+void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total, int chr_idx[], size_t genome_len);
 
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[]);
+
+char* partial_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[]);
 
 typedef struct{
     int n;
@@ -44,5 +46,9 @@ int ransampl_draw2( ransampl_ws *ws,double r1, double r2); //added below functio
 void ransampl_free( ransampl_ws *ws );
 
 ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb,int ntcharoffset,const char *freqfile,unsigned long &readcycle);
+
+void deletechar(char* str,int seq_len, size_t index_to_remove,int del_len);
+
+void InsertChar(char* array,std::string ins,int index);
 
 #endif /* NGSNGSFUNC_H */

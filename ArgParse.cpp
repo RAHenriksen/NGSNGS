@@ -20,6 +20,7 @@
 #include "NGSNGS_func.h"
 #include "Sampling.h"
 #define LENS 4096
+#define MAXBINS 100
 
 typedef struct{
   int threads1;
@@ -40,6 +41,7 @@ typedef struct{
   int Length;
   const char *LengthFile;
   const char *Poly;
+  const char *Chromosomes;
 }argStruct;
 
 
@@ -50,6 +52,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-h   | --help: \t\t\t Print help page.\n");
   fprintf(fp,"-v   | --version: \t\t Print help page.\n\n");
   fprintf(fp,"-i   | --input: \t\t Reference file in fasta format (.fa,.fasta) to sample reads.\n");
+  fprintf(fp,"-chr | --chromosomes: \t\t Specific chromosomes from input reference file.\n");
   fprintf(fp,"-r   | --reads: \t\t Number of reads to simulate, conflicts with -c option.\n");
   fprintf(fp,"-c   | --coverage: \t\t Depth of Coverage to simulate, conflics with -r option.\n");
   fprintf(fp,"-l   | --length: \t\t Fixed length of simulated fragments, conflicts with -lf option.\n");
@@ -129,6 +132,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->ErrorFlag = NULL;
   mypars->Briggs = NULL; //"0.024,0.36,0.68,0.0097";
   mypars->LengthFile = NULL;
+  mypars->Chromosomes = NULL;
   mypars->Poly = NULL;
   ++argv;
   while(*argv){
@@ -175,7 +179,7 @@ argStruct *getpars(int argc,char ** argv){
       mypars->QualProfile2 = strdup(*(++argv));
     }
     else if(strcasecmp("-e",*argv)==0 || strcasecmp("--error",*argv)==0){
-      mypars->ErrorFlag = strdup(*(++argv));
+      mypars->ErrorFlag = "T"; // strdup(*(++argv));
     }
     else if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
       mypars->OutFormat = strdup(*(++argv));
@@ -195,6 +199,9 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-lf",*argv)==0 || strcasecmp("--lengthfile",*argv)==0){
       mypars->LengthFile = strdup(*(++argv));
     }
+    else if(strcasecmp("-chr",*argv)==0 || strcasecmp("--chromosomes",*argv)==0){
+      mypars->Chromosomes = strdup(*(++argv));
+    }
     else if(strcasecmp("-p",*argv)==0 || strcasecmp("--poly",*argv)==0){
       mypars->Poly = strdup(*(++argv));
       if(strcasecmp("A",mypars->Poly)!=0 && 
@@ -207,7 +214,6 @@ argStruct *getpars(int argc,char ** argv){
       fprintf(stderr,"unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
       exit(0);
     }
-    
     ++argv;
   }
   return mypars;
@@ -307,7 +313,7 @@ int main(int argc,char **argv){
       }
       Thread_specific_Read = static_cast<int>(((readcov*genome_size)/meanlength)/threads1);
     }
-  
+
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
     fprintf(stderr,"\t-> Seed used: %d\n",Glob_seed);
     fprintf(stderr,"\t-> Number of threads used for sampling: %d and for writing down: %d\n",threads1,threads2);
@@ -358,10 +364,7 @@ int main(int argc,char **argv){
     const char* ErrorFlag;
     if (mypars->ErrorFlag != NULL){
       ErrorFlag = mypars->ErrorFlag;
-      if (strcasecmp("F",ErrorFlag)!=0 && strcasecmp("T",ErrorFlag)!=0 ){
-        fprintf(stderr,"Could not parse error flag, please provide boolean character i.e F or T. See helppage (-h) \n");
-        exit(0);
-      }
+      //fprintf(stderr,"ERROR FLAG IS %s\n",mypars->ErrorFlag);
     }
     else{ErrorFlag = "F";}
 
@@ -380,10 +383,24 @@ int main(int argc,char **argv){
     }
     else{Briggs_Flag = "False";}
     
+    const char* Specific_Chr[1024] = {'\0'};
+    if (mypars->Chromosomes != NULL){
+      int chr_idx_partial = 0;
+      Specific_Chr[chr_idx_partial++] = strtok(strdup(mypars->Chromosomes),"\", \t");
+      char *chrtok = NULL;
+      while(((chrtok=strtok(NULL,"\", \t")))){
+	      Specific_Chr[chr_idx_partial++] = strdup(chrtok);
+	      assert(chr_idx_partial<MAXBINS);
+      }
+      Specific_Chr[chr_idx_partial++] = '\0';
+    }
+    
+    //if(Specific_Chr[0]=='\0'){fprintf(stderr,"HURRA");}
+
     Create_se_threads(seq_ref,threads1,Glob_seed,Thread_specific_Read,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,qualstringoffset,
-                      QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,ErrorFlag);
+                      QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,ErrorFlag,Specific_Chr);
 
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
@@ -405,7 +422,7 @@ int main(int argc,char **argv){
   free((char *)mypars->QualProfile2);
   free((char *)mypars->Briggs);
   free((char *)mypars->Poly);
-  free((char *)mypars->ErrorFlag);
+  //free((char *)mypars->ErrorFlag);
   delete mypars;
 
 }
