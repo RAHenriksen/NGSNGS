@@ -389,7 +389,7 @@ int main(int argc,char **argv){
     }
     else{Briggs_Flag = "False";}
     
-    const char* Specific_Chr[1024] = {'\0'};
+    const char* Specific_Chr[1024] = {};
     if (mypars->Chromosomes != NULL){
       int chr_idx_partial = 0;
       Specific_Chr[chr_idx_partial++] = strtok(strdup(mypars->Chromosomes),"\", \t");
@@ -398,7 +398,7 @@ int main(int argc,char **argv){
 	      Specific_Chr[chr_idx_partial++] = strdup(chrtok);
 	      assert(chr_idx_partial<MAXBINS);
       }
-      Specific_Chr[chr_idx_partial++] = '\0';
+      Specific_Chr[chr_idx_partial++] = "\0";
     }
     
     //if(Specific_Chr[0]=='\0'){fprintf(stderr,"HURRA");}
