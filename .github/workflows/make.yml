@@ -18,9 +18,9 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install dependencies
       run: |
-        if ${{matrix.os}} != 'macos-latest'; then
+        if ${{runner.os}} == 'Linux';
           sudo apt-get install libcurl4-openssl-dev
-        elif ${{matrix.os}} == 'macos-latest'; then
+        elif ${{runner.os}} == 'macOS';
           brew install openssl curl
     - name: prepare htslib
       run: git clone --branch=develop --recursive git://github.com/samtools/htslib.git;cd htslib; make;cd ..;
