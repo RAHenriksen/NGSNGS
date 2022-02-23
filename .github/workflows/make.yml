@@ -28,6 +28,3 @@ jobs:
       run: export HTSSRC=`pwd`/htslib; make
     - name: make
       run: make
- if: ${{ matrix.config.os == 'macOS-latest' }}
-        run: |
-          
