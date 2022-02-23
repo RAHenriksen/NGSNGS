@@ -21,6 +21,10 @@
 
 #include "NGSNGS_func.h"
 
+#ifdef __APPLE__
+#include <Random.h>
+#endif /* __APPLE__ */
+
 #define LENS 4096
 #define MAXBINS 100
 

@@ -22,6 +22,10 @@
 #define LENS 4096
 #define MAXBINS 100
 
+#ifdef __APPLE__
+#include <Random.h>
+#endif /* __APPLE__ */
+
 typedef struct{
   int threads1;
   int threads2;
