@@ -1,5 +1,0 @@
-Input test 0	3
-Input test 1	3
-Input test 2	3
-Input test 3	3
-Input test 4	3

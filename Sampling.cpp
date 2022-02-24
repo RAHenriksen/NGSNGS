@@ -238,15 +238,21 @@ void* Sampling_threads(void *arg){
           DNA_complement(seq_r1);
           reverseChar(seq_r1);
         }
-
+        //std::cout << seq_r1 << std::endl;
+        //deletechar(seq_r1,145, 10, 5);
+        //deletechar(seq_r1,145, 132, 5);
+        //InsertChar(seq_r1,"GCATC",143);
+        //InsertChar(seq_r1,"ATACG",9);
+        //std::cout << seq_r1 << std::endl;
+        
         // Adding PMD after strand is selected, as to not influence the symmetry of the PMD
         if(strcasecmp(struct_obj->Briggs_flag,"true")==0){
-          SimBriggsModel(seq_r1, seq_r1_mod, fraglength,struct_obj->BriggsParam[0], 
+          SimBriggsModel(seq_r1, seq_r1_mod, strlen(seq_r1),struct_obj->BriggsParam[0], 
                                                         struct_obj->BriggsParam[1], 
                                                         struct_obj->BriggsParam[2], 
                                                         struct_obj->BriggsParam[3],loc_seed,buffer);
           strncpy(seq_r1, seq_r1_mod, sizeof(seq_r1));
-          
+
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             SimBriggsModel(seq_r2, seq_r2_mod, fraglength,struct_obj->BriggsParam[0], 
                                                         struct_obj->BriggsParam[1], 
@@ -255,6 +261,7 @@ void* Sampling_threads(void *arg){
             strncpy(seq_r2, seq_r2_mod, sizeof(seq_r2));
           }
         }
+        
       }
       
       char READ_ID[1024]; int read_id_length;
@@ -418,7 +425,7 @@ void* Sampling_threads(void *arg){
           if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s\n%s\n",READ_ID,seq_r2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
-          for(int p = 0;p<seqlen;p++){
+          for(int p = 0;p<strlen(seq_r1);p++){
             drand48_r(&buffer, &dtemp1);
             drand48_r(&buffer, &dtemp2);
             int base = seq_r1[p];
