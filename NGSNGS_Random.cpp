@@ -1,13 +1,13 @@
 #if defined(__APPLE__) && defined(__MACH__) 
 #include "NGSNGS_Random.h"
-#include <ieee754.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <limits.h>
 #include <errno.h>
 #include <math.h>
-#include <stdint.h>
-#include <sys/types.h>
+#include <stdlib.h>
+#include <machine/endian.h>
+
+# define weak_alias(name, aliasname) _weak_alias (name, aliasname)
+# define _weak_alias(name, aliasname) \
+  extern __typeof (name) aliasname __attribute__ ((weak, alias (#name)));
 
 /* Copyright (C) 1995-2019 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
@@ -24,20 +24,13 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-/* Global state for non-reentrant functions.  */
-struct drand48_data __libc_drand48_data;
+//https://code.woboq.org/userspace/glibc/stdlib/drand48-iter.c.html#__drand48_iterate
 int
 __drand48_iterate (unsigned short int xsubi[3], struct drand48_data *buffer)
 {
   uint64_t X;
   uint64_t result;
-  /* Initialize buffer, if not yet done.  */
-  if (__glibc_unlikely (!buffer->__init))
-    {
-      buffer->__a = 0x5deece66dull;
-      buffer->__c = 0xb;
-      buffer->__init = 1;
-    }
+  
   /* Do the real work.  We choose a data type which contains at least
      48 bits.  Because we compute the modulus it does not care how
      many bits really are computed.  */
@@ -48,9 +41,69 @@ __drand48_iterate (unsigned short int xsubi[3], struct drand48_data *buffer)
   xsubi[2] = (result >> 32) & 0xffff;
   return 0;
 }
+//https://code.woboq.org/userspace/glibc/sysdeps/ieee754/ieee754.h.html#ieee754_double
+union ieee754_double
+  {
+    double d;
+    /* This is the IEEE 754 double-precision format.  */
+    struct
+      {
+/*#if        __BYTE_ORDER == __BIG_ENDIAN
+        unsigned int negative:1;
+        unsigned int exponent:11;*/
+        /* Together these comprise the mantissa.  */
+        /*unsigned int mantissa0:20;
+        unsigned int mantissa1:32;
+#endif*/                                /* Big endian.  */
+#if        __BYTE_ORDER == __LITTLE_ENDIAN
+# if        __FLOAT_WORD_ORDER == __BIG_ENDIAN
+        unsigned int mantissa0:20;
+        unsigned int exponent:11;
+        unsigned int negative:1;
+        unsigned int mantissa1:32;
+# else
+        /* Together these comprise the mantissa.  */
+        unsigned int mantissa1:32;
+        unsigned int mantissa0:20;
+        unsigned int exponent:11;
+        unsigned int negative:1;
+# endif
+#endif                                /* Little endian.  */
+      } ieee;
+    /* This format makes it easier to see if a NaN is a signalling NaN.  */
+    struct
+      {
+#if        __BYTE_ORDER == __BIG_ENDIAN
+        unsigned int negative:1;
+        unsigned int exponent:11;
+        unsigned int quiet_nan:1;
+        /* Together these comprise the mantissa.  */
+        unsigned int mantissa0:19;
+        unsigned int mantissa1:32;
+#else
+# if        __FLOAT_WORD_ORDER == __BIG_ENDIAN
+        unsigned int mantissa0:19;
+        unsigned int quiet_nan:1;
+        unsigned int exponent:11;
+        unsigned int negative:1;
+        unsigned int mantissa1:32;
+# else
+        /* Together these comprise the mantissa.  */
+        unsigned int mantissa1:32;
+        unsigned int mantissa0:19;
+        unsigned int quiet_nan:1;
+        unsigned int exponent:11;
+        unsigned int negative:1;
+# endif
+#endif
+      } ieee_nan;
+  };
 
+#define IEEE754_DOUBLE_BIAS     0x3ff /* Added to exponent.  */
+
+//https://code.woboq.org/userspace/glibc/stdlib/erand48_r.c.html#47
 int
-__erand48_r (unsigned short int xsubi[3], struct drand48_data *buffer,
+erand48_r (unsigned short int xsubi[3], struct drand48_data *buffer,
              double *result)
 {
   union ieee754_double temp;
@@ -67,11 +120,18 @@ __erand48_r (unsigned short int xsubi[3], struct drand48_data *buffer,
   *result = temp.d - 1.0;
   return 0;
 }
-//weak_alias (__erand48_r, erand48_r);
 
-
+//https://code.woboq.org/userspace/glibc/stdlib/drand48_r.c.html#drand48_r
 int
-__srand48_r (long int seedval, struct drand48_data *buffer)
+drand48_r (struct drand48_data *buffer, double *result)
+{
+  return erand48_r (buffer->__x, buffer, result);
+}
+
+//modified the name instead of using the weak alias
+//https://code.woboq.org/userspace/glibc/stdlib/srand48_r.c.html#srand48_r
+int
+srand48_r (long int seedval, struct drand48_data *buffer)
 {
   /* The standards say we only have 32 bits.  */
   if (sizeof (long int) > 4)
@@ -84,44 +144,5 @@ __srand48_r (long int seedval, struct drand48_data *buffer)
   buffer->__init = 1;
   return 0;
 }
-
-int
-drand48_r (struct drand48_data *buffer, double *result)
-{
-  return __erand48_r (buffer->__x, buffer, result);
-}
-
-int
-rand_r (unsigned int *seed)
-{
-  unsigned int next = *seed;
-  int result;
-  next *= 1103515245;
-  next += 12345;
-  result = (unsigned int) (next / 65536) % 2048;
-  next *= 1103515245;
-  next += 12345;
-  result <<= 10;
-  result ^= (unsigned int) (next / 65536) % 1024;
-  next *= 1103515245;
-  next += 12345;
-  result <<= 10;
-  result ^= (unsigned int) (next / 65536) % 1024;
-  *seed = next;
-  return result;
-}
-
-/*int main(int argc, char *argv[])
-{   
-    struct drand48_data buffer;
-    
-    for(int i; i<10; i++) {
-        srand48_r(i*i, &buffer);
-        double dtemp1;
-        drand48_r(&buffer, &dtemp1);
-        fprintf(stderr,"test %f \n",dtemp1);
-    }
-    
-}*/
 
 #endif
