@@ -445,7 +445,6 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
 }
 
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[]){
-  fprintf(stderr,"WITHIN LOOP\n");
   size_t genome_size = 0;
   chr_size_cumm[0] = 0;
   for (int i = 0; i < chr_total; i++){
@@ -455,8 +454,6 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
     chr_names[i] = chr_name;
     genome_size += chr_len;
     chr_size_cumm[i+1] = genome_size;
-    std::cout << "I " << i << std::endl;
-    std::cout << chr_name << std::endl;
   }
 
   char* genome = (char*) malloc(sizeof(char) * (genome_size+chr_total));
@@ -465,7 +462,6 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
   for (int i = 0; i < chr_total; i++){
 
     const char *data = fai_fetch(seq_ref,chr_names[i],&chr_sizes[i]);
-    std::cout << chr_names[i] << std::endl;
     //sprintf(&genome[strlen(genome)],data);
     //strcat(genome,data);  //Both gives conditional jump or move error
     if (data != NULL){
@@ -483,8 +479,7 @@ char* partial_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const
   chr_size_cumm[0] = 0;
   for (int i = 0; i < chr_total; i++){
     int chr_len = faidx_seq_len(seq_ref,chr_names[i]);
-    std::cout << chr_names[i] << std::endl;
-    fprintf(stderr,"chr len %d\n",chr_len);
+    //fprintf(stderr,"chr len %d\n",chr_len);
     chr_sizes[i] = chr_len;
     genome_size += chr_len;
     chr_size_cumm[i+1] = genome_size;

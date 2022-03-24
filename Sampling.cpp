@@ -147,9 +147,7 @@ void* Sampling_threads(void *arg){
     int bam_idx = 0;
     while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}
     bam_idx = struct_obj->chr_idx_array[chr_idx];
-    /*std::cout << "olo " << chr_idx << std::endl;
-    std::cout << "lol " << bam_idx << std::endl;
-    std::cout << struct_obj->chr_idx_array[0] <<struct_obj->chr_idx_array[1] << std::endl;*/
+
     if (fraglength > readsizelimit){strncpy(seq_r1,struct_obj->genome+rand_start-1,readsizelimit);}   // case 1
     else {strncpy(seq_r1,struct_obj->genome+rand_start-1,fraglength);}  // case 2
     
@@ -436,7 +434,6 @@ void* Sampling_threads(void *arg){
               drand48_r(&buffer, &dtemp1);
               drand48_r(&buffer, &dtemp2);            
               if (dtemp1 < struct_obj->NtErr_r1[qscore]){
-                //fprintf(stderr,"WE ARE IN THE SUBSTITUTION LOOP 2\n");
                 if (dtemp2 <= 0.25){seq_r1[p] = 'A';} //'A'
                 else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r1[p] = 'T';} //'T'
                 else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r1[p] = 'G';} //'G'
@@ -645,15 +642,15 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
   int chr_sizes[chr_total];
   int chr_idx_arr[chr_total];
   size_t chr_size_cumm[chr_total+1];
-  fprintf(stderr,"Chromosome count %d\n",chr_total);
-  fprintf(stderr,"DONE WITH LOOP\n");
+  /*fprintf(stderr,"Chromosome count %d\n",chr_total);
+  fprintf(stderr,"DONE WITH LOOP\n");*/
   
   if (chr_total < faidx_nseq(seq_ref)){
     for (int j = 0; j < faidx_nseq(seq_ref); j++){
       for (int i = 0; i < chr_total; i++){
         if(strcasecmp(faidx_iseq(seq_ref, j),Specific_Chr[i])==0){
           chr_idx_arr[i] = j;
-          fprintf(stderr,"index j %d and i %d and value %d\n",j,i,chr_idx_arr[i]);
+          //fprintf(stderr,"index j %d and i %d and value %d\n",j,i,chr_idx_arr[i]);
         }
       } 
     }
@@ -662,28 +659,18 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
   {
     for (int j = 0; j < faidx_nseq(seq_ref); j++){chr_idx_arr[j] = j;}
   }
-  
-  std::cout << chr_idx_arr[0] << "\t" << chr_idx_arr[1];
-  
+    
   if (chr_total == faidx_nseq(seq_ref)){
     genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
-    for (int i = 0; i < chr_total; i++){
-      fprintf(stderr,"CHromosome name %s and index full %d\n",chr_names[i],i);
-    }
   }  
   else{
     genome_data = partial_genome_create(seq_ref,chr_total,chr_sizes,Specific_Chr,chr_size_cumm);
     for (int i = 0; i < chr_total; i++){
       chr_names[i] = Specific_Chr[i];
-      fprintf(stderr,"CHromosome name version 2 %s\n",chr_names[i]);
-      if (faidx_has_seq(seq_ref, faidx_iseq(seq_ref, i)) == 1){
-        fprintf(stderr,"CHromosome name %s and index %d\n",chr_names[i],i);
-      }
     }
   }
   
   size_t genome_size = strlen(genome_data);;
-  fprintf(stderr,"GNENOME SIZE %zu\n",genome_size);
   if (genome_data != NULL){
     fprintf(stderr,"\t-> Done creating the large concatenated contig, with size of %lu bp\n",genome_size);
   
