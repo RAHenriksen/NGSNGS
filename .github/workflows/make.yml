@@ -25,7 +25,7 @@ jobs:
     - name: Install dependencies
       run: sudo apt-get install libcurl4-openssl-dev
     - name: prepare htslib
-      run: git clone --branch=develop --recursive git://github.com/samtools/htslib.git;cd htslib; make;cd ..;
+      run: git clone --branch=develop --recursive https://github.com/samtools/htslib.git;cd htslib; make;cd ..;
     - name: make
       run: export HTSSRC=`pwd`/htslib; make
     - name: make
