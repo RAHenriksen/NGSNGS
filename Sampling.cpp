@@ -17,10 +17,7 @@
 #include <pthread.h>
 
 #include "NGSNGS_func.h"
-
-#if defined(__APPLE__) && defined(__MACH__) 
-#include "NGSNGS_Random.h"
-#endif /* __APPLE__ */
+#include "mrand.h"
 
 #define LENS 4096
 #define MAXBINS 100
