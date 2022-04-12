@@ -54,7 +54,9 @@ typedef struct{
 int HelpPage(FILE *fp){
   fprintf(fp,"Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 \n\n");
   fprintf(fp,"Usage\n./ngsngs [options] -i <input_reference.fa> -r/-c <Number of reads or depth of coverage> -l/-lf <fixed length or length file> -seq <SE/PE> -f <output format> -o <output name prefix>\n");
-  fprintf(fp,"\n Options: \n");
+  fprintf(fp,"\nExample \n./ngsngs -i Test_examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 2 -s 1 -lf Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -q1 Qual_profiles/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut\n");
+  fprintf(fp,"\n./ngsngs -i Default/Mycobacterium_leprae.fa.gz -c 3 -t1 2 -s 1 -l 100 -seq PE -e -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Qual_profiles/AccFreqL150R1.txt -q2 Qual_profiles/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut\n");  
+  fprintf(fp,"\nOptions: \n");
   fprintf(fp,"-h   | --help: \t\t\t Print help page.\n");
   fprintf(fp,"-v   | --version: \t\t Print help page.\n\n");
   fprintf(fp,"-i   | --input: \t\t Reference file in fasta format (.fa,.fasta) to sample reads.\n");
@@ -68,6 +70,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-f   | --format: \t\t File format of the simulated output reads.\n");
   fprintf(fp,"\t <fa||fasta>\t\t Nucletide sequence. \n \t <fa.gz||fasta.gz>\t Compressed nucletide sequence. \n \t <fq||fastq>\t\t Nucletide sequence with corresponding quality score. \n \t <fq.gz||fastq.gz>\t Compressed nucletide sequence with corresponding quality score. \n \t <bam>\t\t\t Sequence Alignment Map format.\n");
   fprintf(fp,"-o   | --output: \t\t Prefix of output file name.\n");
+  fprintf(fp,"-e   | --error: \t\t Adding nucleotide subsitutions calculating based on nucleotide qualities.\n");
   fprintf(fp,"-t1  | --threads1: \t\t Number of threads to use for sampling sequence reads.\n");
   fprintf(fp,"-t2  | --threads2: \t\t Number of threads to use write down sampled reads, default = 1.\n");
   fprintf(fp,"-s   | --seed: \t\t\t Random seed, default = current calendar time (s).\n");
