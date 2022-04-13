@@ -29,8 +29,8 @@ typedef struct{
 int HelpPage(FILE *fp){
   fprintf(fp,"Read Quality Profile converter - converting ART profiles to NGSNGS format\n\n");
   fprintf(fp,"Usage\n./QualConvert -i <ART platform profile> -o <NGSNGS quality profile>\n");
-  fprintf(fp,"Usage\n./QualConvert -i <ART platform profile> -o <NGSNGS quality profile>\n");
-  fprintf(fp,"Usage\n./QualConvert --Art_in  --NGSNGS_out <NGSNGS quality profile>\n");
+  fprintf(fp,"\nExample\n./QualConvert -i HiSeq2500L150R1filter.txt -o HiSeq2500L150R1_CDF.txt\n");
+  fprintf(fp,"./QualConvert --Art_in HiSeq2500L150R1filter.txt --NGSNGS_out HiSeq2500L150R1_CDF.txt\n");
   fprintf(fp,"\nOptions: \n");
   fprintf(fp,"-h   | --help: \t\t\t Print help page.\n");
   fprintf(fp,"-v   | --version: \t\t Print help page.\n\n");
@@ -232,7 +232,6 @@ int main(int argc,char **argv){
                             }
                             else if (CDF_array[0] == 1.000000e+00 )
                             {   
-                                std::cout << "IN FIRST CDF loop 2" << std::endl;
                                 fprintf(ReadQual_2,"%e \t",1.00);
                             }
                             else{fprintf(ReadQual_2,"%e \t",CDF_array[col_i-1]);} // so the column index which are skipped received the same value as previous to keep the CDF

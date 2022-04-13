@@ -83,7 +83,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-q2  | --quality2: \t\t Read Quality profile for for second read pair (PE).\n");
   fprintf(fp,"-b   | --briggs: \t\t Parameters for the damage patterns using the Briggs model.\n");
   fprintf(fp,"\t <nv,Lambda,Delta_s,Delta_d> : 0.024,0.36,0.68,0.0097 (from Briggs et al., 2007).\n");
-  fprintf(fp,"\t nv: Nick rate pr site. \n \t Lambda: Geometric distribution parameter for overhang length.\n \t Delta_s: PMD rate in single-strand regions.\n \t Delta_s: PMD rate in double-strand regions.\n");
+  fprintf(fp,"\t nv: Nick rate pr site. \n \t Lambda: Geometric distribution parameter for overhang length.\n \t Delta_s: PMD rate in single-strand regions.\n \t Delta_d: PMD rate in double-strand regions.\n");
   exit(1);
   return 0;
 }
@@ -103,11 +103,12 @@ void Sizebreak(char *str){
 void ErrMsg(double messageno){
   if(messageno == 1.0){fprintf(stderr,"\nInput reference file not recognized, provide -i | --input\n");}
   else if(messageno == 2.0){fprintf(stderr,"\nNumber of reads or depth to simulate not recognized, provide either number of reads (-r) or depth of coverage (-c).\n");}
-  else if(messageno == 2.2){fprintf(stderr,"\nUnable to utilize the desired number for depth of coverage, use values above 0.\n");}
-  else if(messageno == 2.4){fprintf(stderr,"\nUnable to utilize the desired number of reads to simulate, use integers above 0.\n");}
+  else if(messageno == 2.2){fprintf(stderr,"\nUnable to utilize the desired number for depth of coverage (-c), use values above 0.\n");}
+  else if(messageno == 2.4){fprintf(stderr,"\nUnable to utilize the desired number of reads to simulate (-r), use integers above 0.\n");}
   else if(messageno == 2.6){fprintf(stderr,"\nUnable to utilize the desired number of reads to simulate for the provided number of threads, i.e threads > no. reads when no. reads equals 1.\n");}
-  else if(messageno == 3.0){fprintf(stderr,"\nCould not parse both the number reads and depth to simulate, provide either number of reads (-r) or depth of coverage (-c).\n");}
-  else if(messageno == 4.0){fprintf(stderr,"\nCould not parse the length parameters, provide either fixed length size (-l) or parse length distribution file (-lf).\n");}
+  else if(messageno == 2.99){fprintf(stderr,"\nCould not parse both the number reads and depth to simulate, provide either number of reads (-r) or depth of coverage (-c).\n");}
+  else if(messageno == 3.0){fprintf(stderr,"\nCould not parse the length parameters, provide either fixed length size (-l) or parse length distribution file (-lf).\n");}
+  else if(messageno == 3.2){fprintf(stderr,"\nUnable to simulate reads of the desired fixed length (-l), use integers above 0.\n");}
   else if(messageno == 5.0){fprintf(stderr,"\nCould not parse both length parameters, provide either fixed length size (-l) or parse length distribution file (-lf).\n");}
   else if(messageno == 6.0){fprintf(stderr,"\nSequence type not provided. provide -seq || --sequence : SE (single-end) or PE (paired-end).\n");}
   else if(messageno == 6.5){fprintf(stderr,"\nSequence type not recognized. provide either SE (single-end) or PE (paired-end).\n");}
@@ -204,6 +205,7 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-l",*argv)==0 || strcasecmp("--length",*argv)==0){
       mypars->Length = atoi(*(++argv));
+      if (mypars->Length <= 0.0){ErrMsg(3.2);}
     }
     else if(strcasecmp("-lf",*argv)==0 || strcasecmp("--lengthfile",*argv)==0){
       mypars->LengthFile = strdup(*(++argv));
@@ -254,7 +256,7 @@ int main(int argc,char **argv){
     if (OutputFormat == NULL){ErrMsg(7.0);}
     if (filename == NULL){ErrMsg(8.0);}
     
-    if (No_reads == -1){
+    if (No_reads == (unsigned long int) -1){
       if (readcov == -1.0){
         ErrMsg(2.0);
       }
@@ -265,7 +267,7 @@ int main(int argc,char **argv){
     int meanlength;
 
     if (Sizefile == NULL){
-      if (FixedSize == -1){ErrMsg(4.0);}
+      if (FixedSize == -1){ErrMsg(3.0);}
       else{
         meanlength = FixedSize;
       } 
@@ -307,11 +309,11 @@ int main(int argc,char **argv){
     else{threads2 = mypars->threads2;}
     
     int Thread_specific_Read;
-    if (No_reads != -1){
+    if (No_reads != (unsigned long int) -1){
       if (No_reads == 1 && threads1 > 1){ErrMsg(2.6);}
      
       Thread_specific_Read = static_cast<int>(No_reads/threads1);
-      if (readcov != -1){ErrMsg(3.0);}
+      if (readcov != -1){ErrMsg(2.99);}
     }
     else if (readcov != -1){
       size_t genome_size = 0;
@@ -354,9 +356,9 @@ int main(int argc,char **argv){
     if (QualProfile1 == NULL){QualStringFlag = "false";}
     else{QualStringFlag = "true";}
     //fprintf(stderr,"qualstring test %s",QualStringFlag);
-    if (QualStringFlag == "true"){
+    if (strcasecmp("true",QualStringFlag)==0){
       if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0){
-        if (Seq_Type == "PE" && QualProfile2 == NULL){
+        if (strcasecmp("PE",Seq_Type)==0 && QualProfile2 == NULL){
           fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
           exit(0);
         }
@@ -389,6 +391,7 @@ int main(int argc,char **argv){
       Param[2] = myatof(strtok(NULL,"\", \t"));
       Param[3] = myatof(strtok(NULL,"\", \t"));
       Briggs_Flag = "True";
+      free(BriggsParam); // Again using strdup
     }
     else{Briggs_Flag = "False";}
     

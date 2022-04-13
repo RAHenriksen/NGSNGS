@@ -203,7 +203,7 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
     double d = nv/((L-l-r-1)*nv+1-nv);
     int p_nick = l;
     double cumd = 0;
-    while (u_nick > cumd & p_nick < L-r-1){
+    while ((u_nick > cumd) && (p_nick < L-r-1)){
         cumd += d;
         p_nick +=1;
     }
@@ -298,68 +298,6 @@ double* Qual_array(double* freqval,const char* filename){
   }
   gzclose(gz);
   return freqval;
-}
-
-void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval,int outputoffset){
-  //memset(qual, '\0', sizeof(qual));
-  //fprintf(stderr,"INSIDE FUNCITON NOW \n");
-  int Tstart = 150;
-  int Gstart = 300;
-  int Cstart = 450;
-  int Nstart = 600;
-
-  //srand(time( NULL ));
-  //srand(seed);
-
-  //srand48(seed);
-  int seqlen = strlen(seq);
-
-  for (int row_idx = 0; row_idx < seqlen; row_idx++){
-    //fprintf(stderr,"index %d \n",row_idx);
-    double r = ((double) rand_r(&seed)/ RAND_MAX);
-    //double r = 0.43; // drand48();//0.43;//(double) rand()/RAND_MAX;
-    //fprintf(stderr,"random value %lf \n",r);
-    //fprintf(stderr,"Seq idx %c \n",seq[row_idx]);
-    switch(seq[row_idx]){
-      //fprintf(stderr,"qual %s \n",qual);
-      case 'A':
-      case 'a':
-        //fprintf(stderr,"err %s \n",Error_lookup(r,freqval,0,row_idx,outputoffset));
-        qual[row_idx] = 'F'; //Error_lookup(r,freqval,0,row_idx,outputoffset)[0];
-        //qual[row_idx+1] = '\0';
-        //strncat(qual, Error_lookup(r,freqval,0,row_idx,outputoffset), 1);
-        //puts(qual);
-        break;
-      case 'T':
-      case 't':
-        qual[row_idx] =  'I'; // Error_lookup(r,freqval,Tstart,row_idx,outputoffset)[0];
-        //qual[row_idx+1] = '\0';
-        //strncat(qual, Error_lookup(r,freqval,Tstart,row_idx,outputoffset), 1);
-        break;  
-      case 'G':
-      case 'g':
-        qual[row_idx] = '!'; // Error_lookup(r,freqval,Gstart,row_idx,outputoffset)[0];
-        //qual[row_idx+1] = '\0';
-        // fprintf(stderr,"string error %c \n",Error_lookup(r,freqval,Gstart,row_idx,outputoffset)[0]);
-        //strncat(qual, Error_lookup(r,freqval,Gstart,row_idx,outputoffset), 1);
-        break;
-      case 'C':
-      case 'c':
-        qual[row_idx] = 'B'; // Error_lookup(r,freqval,Cstart,row_idx,outputoffset)[0];
-        //qual[row_idx+1] = '\0';
-        //strncat(qual, Error_lookup(r,freqval,Cstart,row_idx,outputoffset), 1);
-        break;
-      case 'N':
-      case 'n':
-        qual[row_idx] = '<'; // Error_lookup(r,freqval,Nstart,row_idx,outputoffset)[0];
-        //qual[row_idx+1] = '\0';
-        //strncat(qual, Error_lookup(r,freqval,Nstart,row_idx,outputoffset), 1);
-        break;
-    }
-  }
-  qual[seqlen] = '\0';
-  //memset(qual, 0, sizeof(qual)); //remove this to create the full nucleotide string but also the 4 mistakes?
-  //fprintf(stderr,"EXITING FUNCITON NOW \n");
 }
 
 int BinarySearch_fraglength(double* SearchArray,int low, int high, double key){
@@ -622,7 +560,7 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
   double probs[MAXBINS];
   for(int b=0;b<5;b++){
     dists[b] = new ransampl_ws *[readcyclelength];
-    for(int pos = 0 ; pos<readcyclelength;pos++){
+    for(unsigned long pos = 0 ; pos<readcyclelength;pos++){
       int at = 0;
       probs[at++] = atof(strtok(all_lines[2+b*readcyclelength+pos],"\n\t ")); //1+b*readcyclelength+pos
       char *tok = NULL;
@@ -651,16 +589,13 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
   //extract the next
   while(((qualtok=strtok(NULL,"\n\t ")))){ntqual[qualidx++] = (char) (atoi(qualtok)+ntcharoffset);}
   
-  double ErrArr[8];
   int Err_idx = 1;
   ErrProb[0] = atof(strtok(all_lines[1],"\n\t"));
   char *Errtok = NULL;
   while ((Errtok=strtok (NULL,"\n\t"))){ErrProb[Err_idx++] = (double) atof(Errtok);}
   
-
-
   //strdup function allocate necessary memory to store the sourcing string implicitly, i need to free the returned string
-  for (int i = 0; i < all_lines.size(); i++){free(all_lines[i]);}
+  for (unsigned long i = 0; i < all_lines.size(); i++){free(all_lines[i]);}
   
   return dists;
 }

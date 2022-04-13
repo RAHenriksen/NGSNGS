@@ -21,7 +21,7 @@
 
 #define LENS 4096
 #define MAXBINS 100
-char nuc2int[255];
+unsigned char nuc2int[255];
 
 pthread_mutex_t Fq_write_mutex;
 
@@ -114,9 +114,7 @@ void* Sampling_threads(void *arg){
   int readsizelimit;
 
   double dtemp1;double dtemp2;
-  
-  int C_count = 0;int G_count = 0;int A_count = 0;int T_count = 0;double CT_count = 0;double GA_count = 0;
-  
+    
   while (current_reads_atom < reads){
     double rand_val = ((double) rand_r(&loc_seed)/ RAND_MAX); //random between 0 and 1
     double rand_val2 = rand_val*RAND_MAX; // between 0 and maximum 
@@ -141,9 +139,7 @@ void* Sampling_threads(void *arg){
     }
     
     int chr_idx = 0;
-    int bam_idx = 0;
     while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}
-    bam_idx = struct_obj->chr_idx_array[chr_idx];
 
     if (fraglength > readsizelimit){strncpy(seq_r1,struct_obj->genome+rand_start-1,readsizelimit);}   // case 1
     else {strncpy(seq_r1,struct_obj->genome+rand_start-1,fraglength);}  // case 2
@@ -157,8 +153,6 @@ void* Sampling_threads(void *arg){
     }
 
     int rand_id = (rand_val * fraglength-1); //100
-    double rand_val4 = myrand(rand_id+1);
-    double rand_val5 = myrand(rand_id+2);
 
     //removes reads with NNN
     char * pch;
@@ -167,7 +161,6 @@ void* Sampling_threads(void *arg){
     pch2 = strrchr(seq_r1,'N');
 
     int seqlen = strlen(seq_r1);
-    int seqlen2 = strlen(seq_r2);
     
     size_t n_cigar;const uint32_t *cigar;const uint32_t *cigar2; uint16_t flag; uint16_t flag2;
     uint32_t cigar_bitstring = bam_cigar_gen(seqlen, BAM_CMATCH);
@@ -260,9 +253,8 @@ void* Sampling_threads(void *arg){
       }
       
       char READ_ID[1024]; int read_id_length;
-      read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%s:%d-%d_length:%d", struct_obj->threadno, rand_id,strand,
-        struct_obj->names[chr_idx],rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],
-        fraglength);
+      read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%s:%zu-%zu_length:%d", struct_obj->threadno, rand_id,strand,struct_obj->names[chr_idx],
+        rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],fraglength);
       
       if(strcasecmp(struct_obj->Adapter_flag,"true")==0){
         strcpy(read, seq_r1);
@@ -289,7 +281,7 @@ void* Sampling_threads(void *arg){
           if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s\n%s\n",READ_ID,readadapt2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
-          for(int p = 0;p<strlen(readadapt);p++){
+          for(long unsigned int p = 0;p<strlen(readadapt);p++){
             double dtemp1;double dtemp2;
             drand48_r(&buffer, &dtemp1);
             drand48_r(&buffer, &dtemp2);
@@ -321,7 +313,7 @@ void* Sampling_threads(void *arg){
           else{ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,readadapt,qual_r1);}
           
           if (strcasecmp("PE",struct_obj->SeqType)==0){
-            for(int p = 0;p<strlen(readadapt2);p++){
+            for(long unsigned int p = 0;p<strlen(readadapt2);p++){
               double dtemp1;double dtemp2;
               drand48_r(&buffer, &dtemp1);
               drand48_r(&buffer, &dtemp2);
@@ -354,7 +346,7 @@ void* Sampling_threads(void *arg){
         }
         if (struct_obj->SAMout){
           if(strcasecmp("true",struct_obj->QualFlag)==0){
-            for(int p = 0;p<strlen(readadapt);p++){
+            for(long unsigned int p = 0;p<strlen(readadapt);p++){
               double dtemp1;double dtemp2;
               drand48_r(&buffer, &dtemp1);
               drand48_r(&buffer, &dtemp2);
@@ -373,7 +365,7 @@ void* Sampling_threads(void *arg){
               }
             }
             if (strcasecmp("PE",struct_obj->SeqType)==0){
-              for(int p = 0;p<strlen(readadapt2);p++){
+              for(long unsigned int p = 0;p<strlen(readadapt2);p++){
                 double dtemp1;double dtemp2;
                 drand48_r(&buffer, &dtemp1);
                 drand48_r(&buffer, &dtemp2);
@@ -395,12 +387,12 @@ void* Sampling_threads(void *arg){
             }
           }
           if (struct_obj->PolyNt != 'F'){
-            char PolyChar[1024] = "\0"; char QualPoly[1024]= "\0";
+            char PolyChar[1024] = "\0";
             memset(PolyChar,struct_obj->PolyNt, readsizelimit);
             strncpy(PolyChar, readadapt, strlen(readadapt));
             ksprintf(struct_obj->fqresult_r1,"%s",PolyChar);
             if (strcasecmp("PE",struct_obj->SeqType)==0){
-              char PolyChar[1024] = "\0"; char QualPoly[1024]= "\0";
+              char PolyChar[1024] = "\0";
               memset(PolyChar,struct_obj->PolyNt, readsizelimit);
               strncpy(PolyChar, readadapt2, strlen(readadapt2));
               ksprintf(struct_obj->fqresult_r2,"%s",PolyChar);
@@ -420,7 +412,7 @@ void* Sampling_threads(void *arg){
           if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s\n%s\n",READ_ID,seq_r2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
-          for(int p = 0;p<strlen(seq_r1);p++){
+          for(long unsigned int p = 0;p<strlen(seq_r1);p++){
             drand48_r(&buffer, &dtemp1);
             drand48_r(&buffer, &dtemp2);
             int base = seq_r1[p];
@@ -578,7 +570,6 @@ void* Sampling_threads(void *arg){
       memset(readadapt2, 0, sizeof readadapt2);
             
       chr_idx = 0;
-      bam_idx = 0;
       iter++;
       localread++;
       current_reads_atom++;
@@ -594,12 +585,6 @@ void* Sampling_threads(void *arg){
       struct_obj->fqresult_r2->l =0;
     } 
   }
-  /*fprintf(stderr,"\t -> C count %d\n",C_count);
-  fprintf(stderr,"\t -> G count %d\n",G_count);
-  fprintf(stderr,"\t -> CT count %f\n",CT_count);
-  fprintf(stderr,"\t -> CT freq %f\n",CT_count/C_count);
-  fprintf(stderr,"\t -> GA count %f\n",GA_count);
-  fprintf(stderr,"\t -> GA freq %f\n",GA_count/G_count);*/
 
   //Freeing allocated memory
   free(struct_obj->size_cumm);
@@ -777,8 +762,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
 
     double ErrArray_r1[1024];
     double ErrArray_r2[1024];
-
-    const char* bamQflag = QualStringFlag;
 
     if(strcasecmp("true",QualStringFlag)==0){ //|| strcasecmp("bam",OutputFormat)==0
       freqfile_r1 = QualProfile1;
