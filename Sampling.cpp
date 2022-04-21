@@ -654,7 +654,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
   
   size_t genome_size = strlen(genome_data);;
   if (genome_data != NULL){
-    fprintf(stderr,"\t-> Done creating the large concatenated contig, with size of %lu bp\n",genome_size);
+    fprintf(stderr,"\t-> Creating the large concatenated contig, with size of %lu bp\n",genome_size);
   
     Parsarg_for_Sampling_thread struct_for_threads[nthreads];
 
@@ -678,6 +678,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     const char *mode;
     int alnformatflag = 0;
     if(strcasecmp("fa",OutputFormat)==0){
+      //fprintf(stderr,"\t-> FA SE FILE\n");
       mode = "wu";
       if(strcasecmp("SE",SeqType)==0){suffix1 = ".fa";}
       else{suffix1 = "_r1.fa";suffix2 = "_r2.fa";}
@@ -688,6 +689,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       else{suffix1 = "_r1.fa.gz";suffix2 = "_r2.fa.gz";}
     }
     else if(strcasecmp("fq",OutputFormat)==0){
+      //fprintf(stderr,"\t-> FQ SE FILE\n");
       mode = "wu";
       if(strcasecmp("SE",SeqType)==0){suffix1 = ".fq";}
       else{suffix1 = "_r1.fq";suffix2 = "_r2.fq";}
@@ -698,11 +700,13 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       else{suffix1 = "_r1.fq.gz";suffix2 = "_r2.fq.gz";}
     }
     else if(strcasecmp("sam",OutputFormat)==0){
+      //fprintf(stderr,"\t-> SAM SE FILE\n");
       mode = "ws";
       suffix1 = ".sam";
       alnformatflag++;
     }
     else if(strcasecmp("bam",OutputFormat)==0){
+      //fprintf(stderr,"\t-> BAM SE FILE\n");
       mode = "wb";
       suffix1 = ".bam";
       alnformatflag++;
@@ -728,7 +732,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       
       bgzf_fp1 = bgzf_open(filename1,mode);
       bgzf_mt(bgzf_fp1,mt_cores,bgzf_buf);
-
+      //fprintf(stderr,"\t-> BGZF FILE\n");
       if(strcasecmp("PE",SeqType)==0){
         strcat(file2,suffix2);
         filename2 = file2;
@@ -737,17 +741,19 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       }
     }
     else{
-      fprintf(stderr,"bam loop \n");
+      //fprintf(stderr,"bam loop \n");
       SAMout = sam_open_format(filename1, mode, fmt_hts);
       SAMHeader = sam_hdr_init();
       Header_func(fmt_hts,filename1,SAMout,SAMHeader,seq_ref,chr_total,chr_idx_arr,genome_size);
     }
-  
+    //fprintf(stderr,"\t-> AFTER OUTPUT FORMAT\n");
+
     int number; int* Frag_len; double* Frag_freq;
     if(Sizefile!=NULL){
       Frag_len = new int[LENS];
       Frag_freq = new double[LENS];
       FragArray(number,Frag_len,Frag_freq,Sizefile); //Size_dist_sampling //"Size_dist/Size_freq_modern.txt"
+      //fprintf(stderr,"\t-> FRAG ARRAY LE\n");
     }
     else{number = -1;}
 
@@ -755,29 +761,35 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     const char *freqfile_r2;
     int outputoffset = qualstringoffset;
     unsigned long readcyclelength;
+    //fprintf(stderr,"\t-> FRAG ARRAY LE\n");
     ransampl_ws ***QualDist;
     char nt_qual_r1[1024];
     ransampl_ws ***QualDist2;
     char nt_qual_r2[1024];
-
+    //fprintf(stderr,"\t-> QUAL POINTER POINTER POINTER\n");
     double ErrArray_r1[1024];
     double ErrArray_r2[1024];
-
+    //fprintf(stderr,"\t-> BEFORE QUAL STRING IF\n");
     if(strcasecmp("true",QualStringFlag)==0){ //|| strcasecmp("bam",OutputFormat)==0
       freqfile_r1 = QualProfile1;
       QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1,readcyclelength);
+      //fprintf(stderr,"\t-> CREATING QUALDIST\n");
       if(strcasecmp("PE",SeqType)==0){
+        //fprintf(stderr,"\t-> PE LOOP\n");
         freqfile_r2 = QualProfile2;
         QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2,readcyclelength);
       }
     }
-
+    //fprintf(stderr,"\t-> AFTER QUAL STRING IF\n");
+    
     int maxsize = 20;
     char polynucleotide;
-    
+    //fprintf(stderr,"\t-> BEFORE POLY\n");
     if (Polynt != NULL && strlen(Polynt) == 1){polynucleotide = (char) Polynt[0];}
     else{polynucleotide = 'F';}
-    
+    //fprintf(stderr,"\t-> AFTER POLY\n");
+
+    //fprintf(stderr,"\t-> Before threads\n");
     for (int i = 0; i < nthreads; i++){
       struct_for_threads[i].fqresult_r1 =new kstring_t;
       struct_for_threads[i].fqresult_r1 -> l = 0;

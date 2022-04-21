@@ -368,7 +368,7 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
   char genome_len_buf[1024];
   for(int i=0;i<chr_total;i++){
     const char *name = faidx_iseq(seq_ref,chr_idx_arr[i]);
-    fprintf(stderr,"HEAHDEHDHEHR %d\n",chr_idx_arr[i]);
+    //fprintf(stderr,"chromosomes added to bam header %d\n",chr_idx_arr[i]);
 
     int name_len =  faidx_seq_len(seq_ref,name);
     snprintf(genome_len_buf,1024,"%d", name_len);
@@ -580,6 +580,7 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
       ransampl_set(dists[b][pos],probs);
     }
   }
+  //fprintf(stderr,"\t-> ransampl_ws done\n");
 
   //printf(all_lines[0]);
   int qualidx = 1;
@@ -596,6 +597,6 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
   
   //strdup function allocate necessary memory to store the sourcing string implicitly, i need to free the returned string
   for (unsigned long i = 0; i < all_lines.size(); i++){free(all_lines[i]);}
-  
+  //fprintf(stderr,"\t-> Before return in READQUAL FUNC\n");
   return dists;
 }

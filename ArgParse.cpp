@@ -54,8 +54,8 @@ typedef struct{
 int HelpPage(FILE *fp){
   fprintf(fp,"Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 \n\n");
   fprintf(fp,"Usage\n./ngsngs [options] -i <input_reference.fa> -r/-c <Number of reads or depth of coverage> -l/-lf <fixed length or length file> -seq <SE/PE> -f <output format> -o <output name prefix>\n");
-  fprintf(fp,"\nExample \n./ngsngs -i Test_examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 2 -s 1 -lf Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -q1 Qual_profiles/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut\n");
-  fprintf(fp,"\n./ngsngs -i Default/Mycobacterium_leprae.fa.gz -c 3 -t1 2 -s 1 -l 100 -seq PE -e -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Qual_profiles/AccFreqL150R1.txt -q2 Qual_profiles/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut\n");  
+  fprintf(fp,"\nExample \n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 2 -s 1 -lf Test_Examples/Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut\n");
+  fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t1 2 -s 1 -l 100 -seq PE -e -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -q2 Test_Examples/Qual_profiles/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut\n");  
   fprintf(fp,"\nOptions: \n");
   fprintf(fp,"-h   | --help: \t\t\t Print help page.\n");
   fprintf(fp,"-v   | --version: \t\t Print help page.\n\n");
@@ -68,7 +68,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-seq | --sequencing: \t\t Simulate single-end or paired-end reads.\n");
   fprintf(fp,"\t <SE>\t single-end \n \t <PE>\t paired-end.\n");
   fprintf(fp,"-f   | --format: \t\t File format of the simulated output reads.\n");
-  fprintf(fp,"\t <fa||fasta>\t\t Nucletide sequence. \n \t <fa.gz||fasta.gz>\t Compressed nucletide sequence. \n \t <fq||fastq>\t\t Nucletide sequence with corresponding quality score. \n \t <fq.gz||fastq.gz>\t Compressed nucletide sequence with corresponding quality score. \n \t <bam>\t\t\t Sequence Alignment Map format.\n");
+  fprintf(fp,"\t <fa||fasta>\t\t Nucletide sequence. \n \t <fa.gz||fasta.gz>\t Compressed nucletide sequence. \n \t <fq||fastq>\t\t Nucletide sequence with corresponding quality score. \n \t <fq.gz||fastq.gz>\t Compressed nucletide sequence with corresponding quality score. \n \t <sam||bam>\t\t\t Sequence Alignment Map format.\n");
   fprintf(fp,"-o   | --output: \t\t Prefix of output file name.\n");
   fprintf(fp,"-e   | --error: \t\t Adding nucleotide subsitutions calculating based on nucleotide qualities.\n");
   fprintf(fp,"-t1  | --threads1: \t\t Number of threads to use for sampling sequence reads.\n");
@@ -116,12 +116,18 @@ void ErrMsg(double messageno){
   else if(messageno == 8.0){fprintf(stderr,"\nOutput filename not provided, provide -o.\n");}
   else if(messageno == 9.0){fprintf(stderr,"\nUnable to utilize the provided number of threads, use integers above 0.\n");}
   else if(messageno == 10.0){fprintf(stderr,"\nNucleotide for poly(x) homopolymers not recognized, provide -p : <A,G,C,T,N>.\n");}
+  else if(messageno == 11.0){fprintf(stderr,"\nCould not parse the Nucleotide Quality profile(s), for format <fq, fq.gz, sam, bam> provide -q1 for SE and -q1, -q2 for PE.\n");}
   else {fprintf(stderr,"\nError with input parameters, see helppage (-h)");}
   fprintf(stderr,"see helppage (-h)\n");
   exit(0);
 }
 
-
+void WarMsg(double messageno){
+  if(messageno == 1.0){fprintf(stderr,"\nWarning: for the output format <fa> the quality profiles (-q1, -q2) remains unused\n");}
+  else if(messageno == 2.0){fprintf(stderr,"\nWarning: for the output format <fa,sam,bam> the parameter (-p) is rendered moot without the nucleotide quality profiles (-q1, -q2), since poly(x) tails cannot be added to the reads since the read length cannot be inferred\n");}
+  else if(messageno == 3.0){fprintf(stderr,"\nWarning: sequencing errors (-e) are not added to the sequence reads without the nucleotide quality profiles (-q1, -q2) \n");}
+  else if(messageno == 4.0){fprintf(stderr,"\nWarning: for the output format <fa> the provided nucleotide qualities (-q1, -q2) will not be used \n");}
+}
 
 argStruct *getpars(int argc,char ** argv){
   argStruct *mypars = new argStruct;
@@ -335,6 +341,7 @@ int main(int argc,char **argv){
     const char* Adapter_2;
     const char* Polynt;
     if (mypars->Adapter1 != NULL){
+      fprintf(stderr,"\t-> ARGPARSE ADAPTER + POLY\n");
       Adapt_flag = "true";
       Adapter_1 = mypars->Adapter1;
       Adapter_2 = mypars->Adapter2;
@@ -344,10 +351,11 @@ int main(int argc,char **argv){
       
     }
     else{
+      fprintf(stderr,"\t-> ARGPARSE ADAPT FLAG+ POLY\n");
       Adapt_flag = "false";
       if (mypars->Poly != NULL){fprintf(stderr,"Poly tail error: Missing adapter sequence, provide adapter sequence (-a1,-a2) as well\n");exit(0);}
+      else{Polynt = "F";}
     }
-
     // QUALITY PROFILES
     const char* QualProfile1; const char* QualProfile2;
     QualProfile1 = mypars->QualProfile1; QualProfile2 = mypars->QualProfile2;
@@ -357,9 +365,10 @@ int main(int argc,char **argv){
     else{QualStringFlag = "true";}
     //fprintf(stderr,"qualstring test %s",QualStringFlag);
     if (strcasecmp("true",QualStringFlag)==0){
-      if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0){
+      if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("sam",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0){
         if (strcasecmp("PE",Seq_Type)==0 && QualProfile2 == NULL){
-          fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
+          ErrMsg(11.0);
+          //fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
           exit(0);
         }
       }
@@ -367,17 +376,27 @@ int main(int argc,char **argv){
     else
     {
       if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0){
-        fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
+        ErrMsg(11.0);
+        //fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
         exit(0);
       }
     }
+    fprintf(stderr,"\t-> ADAPTER FLAG IS:%s\n",Adapt_flag);
+    fprintf(stderr,"\t-> QUAL STRING FLAG IS:%s\n",QualStringFlag);
 
     const char* ErrorFlag;
     if (mypars->ErrorFlag != NULL){
       ErrorFlag = mypars->ErrorFlag;
-      //fprintf(stderr,"ERROR FLAG IS %s\n",mypars->ErrorFlag);
     }
     else{ErrorFlag = "F";}
+
+    if (strcasecmp("false",QualStringFlag)==0){
+      if(strcasecmp("true",Adapt_flag)==0 && mypars->Poly != NULL){WarMsg(2.0);}
+      if(mypars->ErrorFlag != NULL){WarMsg(3.0);}
+    }
+    if (strcasecmp("true",QualStringFlag)==0){
+      if(strcasecmp("fa",OutputFormat)==0 || strcasecmp("fa.gz",OutputFormat)==0){WarMsg(4.0);}
+    }
 
     int qualstringoffset = 0;
     if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0){qualstringoffset = 33;}

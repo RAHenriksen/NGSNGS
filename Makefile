@@ -35,7 +35,7 @@ ifdef HTSSRC
 	$(CXX) -MM $(CXXFLAGS)  -I$(HTS_INCDIR) $*.cpp >$*.d
 
 ngsngs: $(OBJ)
-	$(CXX) $(FLAGS)  -o ngsngs *.o $(HTS_LIBDIR) -lz -llzma -lbz2 -lpthread -lcurl -lgsl 
+	$(CXX) $(FLAGS)  -o ngsngs *.o $(HTS_LIBDIR) -lz -llzma -lbz2 -lpthread -lcurl -lgsl -lgslcblas 
 else
 %.o: %.c
 	$(CC) -c  $(CFLAGS)  $*.c
@@ -46,7 +46,7 @@ else
 	$(CXX) -MM $(CXXFLAGS)  $*.cpp >$*.d
 
 ngsngs: $(OBJ)
-	$(CXX) $(FLAGS)  -o ngsngs *.o -lz -llzma -lbz2 -lpthread -lcurl -lhts -lgsl
+	$(CXX) $(FLAGS)  -o ngsngs *.o -lz -llzma -lbz2 -lpthread -lcurl -lhts -lgsl -lgslcblas
 endif
 
 clean:	
