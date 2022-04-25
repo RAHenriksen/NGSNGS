@@ -15,7 +15,7 @@ mrand_t *mrand_alloc(int type_a,long int seedval){
   if(ret->type==1){
     fprintf(stderr,"In Apple loop if ->  APPLE LOOP\n");
     ret->eng = std::default_random_engine(seedval);
-    ret->distr = std::uniform_real_distribution<double>(0, 1);
+    ret->distr = std::uniform_real_distribution<float>(0, 1);
   }
 #else
   else{
