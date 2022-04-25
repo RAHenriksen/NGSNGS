@@ -19,14 +19,32 @@
 
 #include "NGSNGS_func.h"
 #include "Sampling.h"
+#include "mrand.h"
+
 #define LENS 4096
 #define MAXBINS 100
 
-//#ifdef __APPLE__
+//#if defined(__APPLE__) && defined(__MACH__) 
+//#include "NGSNGS_Random.h"
+//#endif /* __APPLE__ */
+/*
+#ifndef __APPLE__
+  int MacroRandType = 0;
+#endif
 
-#if defined(__APPLE__) && defined(__MACH__) 
-#include "NGSNGS_Random.h"
-#endif /* __APPLE__ */
+#if defined(__APPLE__) || defined(__MACH__) 
+  int MacroRandType = 1;
+#endif
+*/
+
+/*#if defined(__linux__) || defined(__unix__) // all unices not caught above
+    // Unix
+  int MacroRandType = 0;
+#elif defined(__APPLE__) || defined(__MACH__)
+  int MacroRandType = 1;
+#else
+#   error "Unknown compiler"
+#endif*/
 
 typedef struct{
   int threads1;
@@ -239,6 +257,7 @@ argStruct *getpars(int argc,char ** argv){
 // ------------------------------ //
 
 int main(int argc,char **argv){
+  //fprintf(stderr,"PRINT TYPE %d\n",MacroRandType);
   argStruct *mypars = NULL;
   if(argc==1||(argc==2&&(strcasecmp(argv[1],"--version")==0||strcasecmp(argv[1],"-v")==0||
                         strcasecmp(argv[1],"--help")==0||strcasecmp(argv[1],"-h")==0))){

@@ -10,7 +10,7 @@ CSRC = $(wildcard *.c)
 CXXSRC = $(wildcard *.cpp)
 OBJ = $(CSRC:.c=.o) $(CXXSRC:.cpp=.o)
 
-all: ngsngs
+all: ngsngs #qualconvert
 
 
 # Adjust $(HTSSRC) to point to your top-level htslib directory
@@ -36,6 +36,9 @@ ifdef HTSSRC
 
 ngsngs: $(OBJ)
 	$(CXX) $(FLAGS)  -o ngsngs *.o $(HTS_LIBDIR) -lz -llzma -lbz2 -lpthread -lcurl -lgsl -lgslcblas 
+
+#qualconvert: $(CXX) $(FLAGS) -o qualconvert ReadQualConverter.cpp -lz -llzma -lbz2 -lpthread -lcurl -lhts -lgsl -lgslcblas
+
 else
 %.o: %.c
 	$(CC) -c  $(CFLAGS)  $*.c
@@ -47,6 +50,9 @@ else
 
 ngsngs: $(OBJ)
 	$(CXX) $(FLAGS)  -o ngsngs *.o -lz -llzma -lbz2 -lpthread -lcurl -lhts -lgsl -lgslcblas
+
+#qualconvert: $(CXX) $(FLAGS) -o qualconvert ReadQualConverter.cpp -lz -llzma -lbz2 -lpthread -lcurl -lhts -lgsl -lgslcblas
+
 endif
 
 clean:	

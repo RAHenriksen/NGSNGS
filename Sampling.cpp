@@ -82,12 +82,35 @@ struct Parsarg_for_Sampling_thread{
 void* Sampling_threads(void *arg){
   //casting my struct as arguments for the thread creation
   Parsarg_for_Sampling_thread *struct_obj = (Parsarg_for_Sampling_thread*) arg;
-
+  #if defined(__linux__) || defined(__unix__) // all unices not caught above
+    // Unix
+    int MacroRandType = 0;
+  #elif defined(__APPLE__) || defined(__MACH__)
+    int MacroRandType = 1;
+  #else
+  #   error "Unknown compiler"
+  #endif
+  fprintf(stderr,"PRINT TYPE %d\n",MacroRandType);
   // creating random objects for all distributions.
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
   size_t genome_len = strlen(struct_obj->genome);
+  fprintf(stderr,"RANDOM TYPE IN SAMPLING %d\n",MacroRandType);
   struct drand48_data buffer;
   srand48_r(loc_seed, &buffer);
+  mrand_t *drand_alloc = mrand_alloc(MacroRandType,loc_seed);
+  mrand_t *drand_alloc_nt = mrand_alloc(MacroRandType,loc_seed);
+  mrand_t *drand_alloc_nt_adapt = mrand_alloc(MacroRandType,loc_seed);
+  fprintf(stderr,"Macro type %d \t Seed val %d\n",MacroRandType,loc_seed);
+  mrand_t *drand_alloc_briggs = mrand_alloc(MacroRandType,loc_seed);
+
+  /*fprintf(stderr,"RANDOM VALUES\n");
+  fprintf(stderr,"%f\n",mrand_pop(drand_alloc));
+  fprintf(stderr,"%f\n",mrand_pop(drand_alloc));
+  for(int i=0;i<10;i++){
+    fprintf(stderr,"%d) : %f\n",i,mrand_pop(drand_alloc));
+    fprintf(stderr,"%d v2) : %f\n",i,mrand_pop(drand_alloc_nt));
+  }
+  exit(0);*/
   
   // sequence reads, original, modified, with adapters, pe
   char seq_r1[1024] = {0};
@@ -112,20 +135,24 @@ void* Sampling_threads(void *arg){
   int iter = 0;
   int current_reads_atom = 0;
   int readsizelimit;
-
-  double dtemp1;double dtemp2;
-    
+   
   while (current_reads_atom < reads){
-    double rand_val = ((double) rand_r(&loc_seed)/ RAND_MAX); //random between 0 and 1
+    /*double rand_val = ((double) rand_r(&loc_seed)/ RAND_MAX); //random between 0 and 1
     double rand_val2 = rand_val*RAND_MAX; // between 0 and maximum 
     double rand_val3 = myrand((unsigned int) rand_val2); //((double) rand_r(&test)/ RAND_MAX);// 
-    rand_start = rand_val3 * (genome_len-300); //genome_len-100000;
-
+    rand_start = rand_val3 * (genome_len-300); //genome_len-100000;*/
+    double rand_val = mrand_pop(drand_alloc);
+    rand_start = rand_val * (genome_len-300); //genome_len-100000;
+    fprintf(stderr,"-----------\nrandom start %f \t %zu\n",rand_val,rand_start);
+    //fprintf(stderr,"random start2 %zu\n-----------\n",rand_start2);
     // Fragment length creation
     int fraglength;
     if (struct_obj->No_Len_Val != -1){
+      // random start and length are not dependent on the same rand val
+      //fprintf(stderr,"Legth%f \n",mrand_pop(drand_alloc));
       int lengthbin = BinarySearch_fraglength(struct_obj->FragFreq,0, struct_obj->No_Len_Val - 1, rand_val);
       fraglength =  struct_obj->FragLen[lengthbin];
+      //fprintf(stderr,"rand val %f \t fraglent %d\n",rand_val,fraglength);
     }
     else{
       //fprintf(stderr,"FIXED LENGTH \n");
@@ -137,7 +164,13 @@ void* Sampling_threads(void *arg){
     else{
       readsizelimit = struct_obj->readcycle;
     }
-    
+    //we need a new random value here otherwise the random ID would be the same for 
+    //based on the fragment lengths
+    double rand_val_id = mrand_pop(drand_alloc);
+    //int rand_id = (rand_val * fraglength-1); //100
+    int rand_id = (rand_val_id * fraglength-1); //100
+    //fprintf(stderr,"Random val %f \t id %d\n",rand_val_id,rand_id);
+
     int chr_idx = 0;
     while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}
 
@@ -151,8 +184,6 @@ void* Sampling_threads(void *arg){
         } // case 1
       else {strncpy(seq_r2,struct_obj->genome+rand_start-1,fraglength);}  // case 2
     }
-
-    int rand_id = (rand_val * fraglength-1); //100
 
     //removes reads with NNN
     char * pch;
@@ -168,8 +199,10 @@ void* Sampling_threads(void *arg){
     if ((int )(pch-seq_r1+1) == 1 || (int)(pch2-seq_r1+1)  == seqlen){
       memset(seq_r1, 0, sizeof seq_r1);memset(seq_r2, 0, sizeof seq_r2);}
     else{
-      int strand = (int) rand_r(&loc_seed)%2;//1;//rand() % 2;
-
+      // then all the same start pos would have the same strand no matter the chromosome?
+      int strand = (int) rand_start%2;//(int) rand_r(&loc_seed)%2;//1;//rand() % 2;
+      //fprintf(stderr,"STRAND %d\n",strand);
+      //fprintf(stderr,"STRAND %d\t%d\t%f\t%d\n",rand_r(&loc_seed),(int) rand_r(&loc_seed)%2,mrand_pop(drand_alloc),rand_start%2);
       if (struct_obj->SAMout){
         // in bam files the reads are all aligning to the forward strand, but the flags identify read property
         if (strcasecmp("SE",struct_obj->SeqType)==0){
@@ -196,14 +229,14 @@ void* Sampling_threads(void *arg){
           SimBriggsModel(seq_r1, seq_r1_mod, fraglength,struct_obj->BriggsParam[0], 
                                                         struct_obj->BriggsParam[1], 
                                                         struct_obj->BriggsParam[2], 
-                                                        struct_obj->BriggsParam[3],loc_seed,buffer);
+                                                        struct_obj->BriggsParam[3],loc_seed,drand_alloc_briggs);
           
           strncpy(seq_r1, seq_r1_mod, sizeof(seq_r1));
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             SimBriggsModel(seq_r2, seq_r2_mod, fraglength,struct_obj->BriggsParam[0], 
                                                         struct_obj->BriggsParam[1], 
                                                         struct_obj->BriggsParam[2], 
-                                                        struct_obj->BriggsParam[3],loc_seed,buffer);
+                                                        struct_obj->BriggsParam[3],loc_seed,drand_alloc_briggs);
             strncpy(seq_r2, seq_r2_mod, sizeof(seq_r2));
           }
         }
@@ -238,14 +271,14 @@ void* Sampling_threads(void *arg){
           SimBriggsModel(seq_r1, seq_r1_mod, strlen(seq_r1),struct_obj->BriggsParam[0], 
                                                         struct_obj->BriggsParam[1], 
                                                         struct_obj->BriggsParam[2], 
-                                                        struct_obj->BriggsParam[3],loc_seed,buffer);
+                                                        struct_obj->BriggsParam[3],loc_seed,drand_alloc_briggs);
           strncpy(seq_r1, seq_r1_mod, sizeof(seq_r1));
 
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             SimBriggsModel(seq_r2, seq_r2_mod, fraglength,struct_obj->BriggsParam[0], 
                                                         struct_obj->BriggsParam[1], 
                                                         struct_obj->BriggsParam[2], 
-                                                        struct_obj->BriggsParam[3],loc_seed,buffer);
+                                                        struct_obj->BriggsParam[3],loc_seed,drand_alloc_briggs);
             strncpy(seq_r2, seq_r2_mod, sizeof(seq_r2));
           }
         }
@@ -282,22 +315,30 @@ void* Sampling_threads(void *arg){
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
           for(long unsigned int p = 0;p<strlen(readadapt);p++){
+            //double rand_val = mrand_pop(drand_alloc);
             double dtemp1;double dtemp2;
-            drand48_r(&buffer, &dtemp1);
-            drand48_r(&buffer, &dtemp2);
-            
+            dtemp1 = mrand_pop(drand_alloc_nt_adapt);
+            //drand48_r(&buffer, &dtemp1);
+            dtemp2 = mrand_pop(drand_alloc_nt_adapt);
+            //drand48_r(&buffer, &dtemp2);
+            //fprintf(stderr,"temp lol 1 %f \t temp 2 %f\n",dtemp1,dtemp2);
+
             int base = readadapt[p];
             int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
             qual_r1[p] = struct_obj->NtQual_r1[qscore];
             if (struct_obj->ErrorFlag == 'T'){
-              drand48_r(&buffer, &dtemp1);
-              drand48_r(&buffer, &dtemp2);
-              if (dtemp1 < struct_obj->NtErr_r1[qscore]){
+              double dtemp3;double dtemp4;
+              dtemp3 = mrand_pop(drand_alloc_nt_adapt);
+              //drand48_r(&buffer, &dtemp1);
+              dtemp4 = mrand_pop(drand_alloc_nt_adapt);
+              //drand48_r(&buffer, &dtemp3);
+              //drand48_r(&buffer, &dtemp4);
+              if (dtemp3 < struct_obj->NtErr_r1[qscore]){
                 //fprintf(stderr,"WE ARE IN THE SUBSTITUTION LOOP\n");
-                if (dtemp2 <= 0.25){readadapt[p] = 'A';} // 'A'
-                else if (0.25 < dtemp2 && dtemp2 <= 0.5){readadapt[p] = 'T';} // 'T'
-                else if (0.5 < dtemp2 && dtemp2 <= 0.75){readadapt[p] = 'G';} // 'G'
-                else if (0.75 < dtemp2 && dtemp2 <= 1){readadapt[p] = 'C';} // 'C'
+                if (dtemp4 <= 0.25){readadapt[p] = 'A';} // 'A'
+                else if (0.25 < dtemp4 && dtemp4 <= 0.5){readadapt[p] = 'T';} // 'T'
+                else if (0.5 < dtemp4 && dtemp4 <= 0.75){readadapt[p] = 'G';} // 'G'
+                else if (0.75 < dtemp4 && dtemp4 <= 1){readadapt[p] = 'C';} // 'C'
               }
             }
           }
@@ -315,20 +356,25 @@ void* Sampling_threads(void *arg){
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             for(long unsigned int p = 0;p<strlen(readadapt2);p++){
               double dtemp1;double dtemp2;
-              drand48_r(&buffer, &dtemp1);
-              drand48_r(&buffer, &dtemp2);
+              dtemp1 = mrand_pop(drand_alloc_nt_adapt);
+              dtemp2 = mrand_pop(drand_alloc_nt_adapt);
+              //drand48_r(&buffer, &dtemp1);
+              //drand48_r(&buffer, &dtemp2);
 
               int base = readadapt2[p];
               int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],dtemp1,dtemp2);
               qual_r2[p] = struct_obj->NtQual_r2[qscore];
               if (struct_obj->ErrorFlag == 'T'){
-                drand48_r(&buffer, &dtemp1);
-                drand48_r(&buffer, &dtemp2);
-                if (dtemp1 < struct_obj->NtErr_r2[qscore]){
-                  if (dtemp2 <= 0.25){readadapt2[p] = 'A';} // 'A'
-                  else if (0.25 < dtemp2 && dtemp2 <= 0.5){readadapt2[p] = 'T';} // 'T'
-                  else if (0.5 < dtemp2 && dtemp2 <= 0.75){readadapt2[p] = 'G';} // 'G'
-                  else if (0.75 < dtemp2 && dtemp2 <= 1){readadapt2[p] = 'C';} // 'C'
+                double dtemp3;double dtemp4;
+                dtemp3 = mrand_pop(drand_alloc_nt_adapt);
+                dtemp4 = mrand_pop(drand_alloc_nt_adapt);
+                //drand48_r(&buffer, &dtemp1);
+                //drand48_r(&buffer, &dtemp2);
+                if (dtemp3 < struct_obj->NtErr_r2[qscore]){
+                  if (dtemp4 <= 0.25){readadapt2[p] = 'A';} // 'A'
+                  else if (0.25 < dtemp4 && dtemp4 <= 0.5){readadapt2[p] = 'T';} // 'T'
+                  else if (0.5 < dtemp4 && dtemp4 <= 0.75){readadapt2[p] = 'G';} // 'G'
+                  else if (0.75 < dtemp4 && dtemp4 <= 1){readadapt2[p] = 'C';} // 'C'
                 }
               }
             }
@@ -348,39 +394,51 @@ void* Sampling_threads(void *arg){
           if(strcasecmp("true",struct_obj->QualFlag)==0){
             for(long unsigned int p = 0;p<strlen(readadapt);p++){
               double dtemp1;double dtemp2;
-              drand48_r(&buffer, &dtemp1);
-              drand48_r(&buffer, &dtemp2);
+              dtemp1 = mrand_pop(drand_alloc_nt_adapt);
+              dtemp2 = mrand_pop(drand_alloc_nt_adapt);
+              //double dtemp1;double dtemp2;
+              //drand48_r(&buffer, &dtemp1);
+              //drand48_r(&buffer, &dtemp2);
               int base = readadapt[p];
               int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
               qual_r1[p] = struct_obj->NtQual_r1[qscore];
               if (struct_obj->ErrorFlag == 'T'){
-                drand48_r(&buffer, &dtemp1);
-                drand48_r(&buffer, &dtemp2);
-                if (dtemp1 < struct_obj->NtErr_r1[qscore]){
-                  if (dtemp2 <= 0.25){readadapt[p] = 'A';} // 'A'
-                  else if (0.25 < dtemp2 && dtemp2 <= 0.5){readadapt[p] = 'T';} // 'T'
-                  else if (0.5 < dtemp2 && dtemp2 <= 0.75){readadapt[p] = 'G';} // 'G'
-                  else if (0.75 < dtemp2 && dtemp2 <= 1){readadapt[p] = 'C';} // 'C'
+                double dtemp3;double dtemp4;
+                dtemp3 = mrand_pop(drand_alloc_nt_adapt);
+                dtemp4 = mrand_pop(drand_alloc_nt_adapt);
+                //drand48_r(&buffer, &dtemp1);
+                //drand48_r(&buffer, &dtemp2);
+                if (dtemp3 < struct_obj->NtErr_r1[qscore]){
+                  if (dtemp4 <= 0.25){readadapt[p] = 'A';} // 'A'
+                  else if (0.25 < dtemp4 && dtemp4 <= 0.5){readadapt[p] = 'T';} // 'T'
+                  else if (0.5 < dtemp4 && dtemp4 <= 0.75){readadapt[p] = 'G';} // 'G'
+                  else if (0.75 < dtemp4 && dtemp4 <= 1){readadapt[p] = 'C';} // 'C'
                 }
               }
             }
             if (strcasecmp("PE",struct_obj->SeqType)==0){
               for(long unsigned int p = 0;p<strlen(readadapt2);p++){
                 double dtemp1;double dtemp2;
+                dtemp1 = mrand_pop(drand_alloc_nt_adapt);
+                dtemp2 = mrand_pop(drand_alloc_nt_adapt);
+                /*double dtemp1;double dtemp2;
                 drand48_r(&buffer, &dtemp1);
-                drand48_r(&buffer, &dtemp2);
+                drand48_r(&buffer, &dtemp2);*/
                 int base = readadapt2[p];
                 int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],dtemp1,dtemp2);
                 qual_r2[p] = struct_obj->NtQual_r2[qscore];
                 
                 if (struct_obj->ErrorFlag == 'T'){
-                  drand48_r(&buffer, &dtemp1);
-                  drand48_r(&buffer, &dtemp2);
-                  if (dtemp1 < struct_obj->NtErr_r2[qscore]){
-                    if (dtemp2 <= 0.25){readadapt2[p] = 'A';} // 'A'
-                    else if (0.25 < dtemp2 && dtemp2 <= 0.5){readadapt2[p] = 'T';} // 'T'
-                    else if (0.5 < dtemp2 && dtemp2 <= 0.75){readadapt2[p] = 'G';} // 'G'
-                    else if (0.75 < dtemp2 && dtemp2 <= 1){readadapt2[p] = 'C';} // 'C'
+                  double dtemp3;double dtemp4;
+                  dtemp3 = mrand_pop(drand_alloc_nt_adapt);
+                  dtemp4 = mrand_pop(drand_alloc_nt_adapt);
+                  //drand48_r(&buffer, &dtemp1);
+                  //drand48_r(&buffer, &dtemp2);
+                  if (dtemp3 < struct_obj->NtErr_r2[qscore]){
+                    if (dtemp4 <= 0.25){readadapt2[p] = 'A';} // 'A'
+                    else if (0.25 < dtemp4 && dtemp4 <= 0.5){readadapt2[p] = 'T';} // 'T'
+                    else if (0.5 < dtemp4 && dtemp4 <= 0.75){readadapt2[p] = 'G';} // 'G'
+                    else if (0.75 < dtemp4 && dtemp4 <= 1){readadapt2[p] = 'C';} // 'C'
                   }
                 }
               }
@@ -413,40 +471,53 @@ void* Sampling_threads(void *arg){
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
           for(long unsigned int p = 0;p<strlen(seq_r1);p++){
-            drand48_r(&buffer, &dtemp1);
-            drand48_r(&buffer, &dtemp2);
+            double dtemp1;double dtemp2;
+            dtemp1 = mrand_pop(drand_alloc_nt);
+            dtemp2 = mrand_pop(drand_alloc_nt);
+            //drand48_r(&buffer, &dtemp1);
+            //drand48_r(&buffer, &dtemp2);
+            //fprintf(stderr,"NOT ADAPTER tmp1 %f\t%f\n",dtemp1,dtemp2);
             int base = seq_r1[p];
             int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
             qual_r1[p] = struct_obj->NtQual_r1[qscore];
 
             if (struct_obj->ErrorFlag == 'T'){
-              drand48_r(&buffer, &dtemp1);
-              drand48_r(&buffer, &dtemp2);            
-              if (dtemp1 < struct_obj->NtErr_r1[qscore]){
-                if (dtemp2 <= 0.25){seq_r1[p] = 'A';} //'A'
-                else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r1[p] = 'T';} //'T'
-                else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r1[p] = 'G';} //'G'
-                else if (0.75 < dtemp2 && dtemp2 <= 1){seq_r1[p] = 'C';} // 'C'
+              double dtemp3;double dtemp4;
+              dtemp3 = mrand_pop(drand_alloc_nt);
+              dtemp4 = mrand_pop(drand_alloc_nt);
+              //drand48_r(&buffer, &drand_alloc_nt);
+              //drand48_r(&buffer, &dtemp2);            
+              if (dtemp3 < struct_obj->NtErr_r1[qscore]){
+                if (dtemp4 <= 0.25){seq_r1[p] = 'A';} //'A'
+                else if (0.25 < dtemp4 && dtemp4 <= 0.5){seq_r1[p] = 'T';} //'T'
+                else if (0.5 < dtemp4 && dtemp4 <= 0.75){seq_r1[p] = 'G';} //'G'
+                else if (0.75 < dtemp4 && dtemp4 <= 1){seq_r1[p] = 'C';} // 'C'
               }
             }
           }
           ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             for(int p = 0;p<seqlen;p++){
-              drand48_r(&buffer, &dtemp1);
-              drand48_r(&buffer, &dtemp2);
+              double dtemp1;double dtemp2;
+              dtemp1 = mrand_pop(drand_alloc_nt);
+              dtemp2 = mrand_pop(drand_alloc_nt);
+              //drand48_r(&buffer, &dtemp1);
+              //drand48_r(&buffer, &dtemp2);
               int base = seq_r2[p];
               int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],dtemp1,dtemp2);
 
               qual_r2[p] = struct_obj->NtQual_r2[qscore];
               if (struct_obj->ErrorFlag == 'T'){
-                drand48_r(&buffer, &dtemp1);
-                drand48_r(&buffer, &dtemp2);
-                if (dtemp1 < struct_obj->NtErr_r2[qscore]){
-                  if (dtemp2 <= 0.25){seq_r2[p] = 'A';} // 'A'
-                  else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r2[p] = 'T';} // 'T'
-                  else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r2[p] = 'G';} // 'G'
-                  else if (0.75 < dtemp2 && dtemp2 <= 1){seq_r2[p] = 'C';} // 'C'
+                double dtemp3;double dtemp4;
+                dtemp3 = mrand_pop(drand_alloc_nt);
+                dtemp4 = mrand_pop(drand_alloc_nt);
+                //drand48_r(&buffer, &dtemp1);
+                //drand48_r(&buffer, &dtemp2);
+                if (dtemp3 < struct_obj->NtErr_r2[qscore]){
+                  if (dtemp4 <= 0.25){seq_r2[p] = 'A';} // 'A'
+                  else if (0.25 < dtemp4 && dtemp4 <= 0.5){seq_r2[p] = 'T';} // 'T'
+                  else if (0.5 < dtemp4 && dtemp4 <= 0.75){seq_r2[p] = 'G';} // 'G'
+                  else if (0.75 < dtemp4 && dtemp4 <= 1){seq_r2[p] = 'C';} // 'C'
                 }
               }
             }
@@ -456,41 +527,53 @@ void* Sampling_threads(void *arg){
           if(strcasecmp("true",struct_obj->QualFlag)==0){
             for(int p = 0;p<seqlen;p++){
               double dtemp1;double dtemp2;
+              dtemp1 = mrand_pop(drand_alloc_nt);
+              dtemp2 = mrand_pop(drand_alloc_nt);
+              /*double dtemp1;double dtemp2;
               drand48_r(&buffer, &dtemp1);
-              drand48_r(&buffer, &dtemp2);
+              drand48_r(&buffer, &dtemp2);*/
               int base = seq_r1[p];
 
               int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);              
               qual_r1[p] = struct_obj->NtQual_r1[qscore];
               if (struct_obj->ErrorFlag == 'T'){
-                drand48_r(&buffer, &dtemp1);
-                drand48_r(&buffer, &dtemp2);            
-                if (dtemp1 < struct_obj->NtErr_r1[qscore]){
-                  if (dtemp2 <= 0.25){seq_r1[p] = 'A';} //'A'
-                  else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r1[p] = 'T';} //'T'
-                  else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r1[p] = 'G';} //'G'
-                  else if (0.75 < dtemp2 && dtemp2 <= 1){seq_r1[p] = 'C';} // 'C'
+                double dtemp3;double dtemp4;
+                dtemp3 = mrand_pop(drand_alloc_nt);
+                dtemp4 = mrand_pop(drand_alloc_nt);
+                //drand48_r(&buffer, &dtemp1);
+                //drand48_r(&buffer, &dtemp2);            
+                if (dtemp3 < struct_obj->NtErr_r1[qscore]){
+                  if (dtemp4 <= 0.25){seq_r1[p] = 'A';} //'A'
+                  else if (0.25 < dtemp4 && dtemp4 <= 0.5){seq_r1[p] = 'T';} //'T'
+                  else if (0.5 < dtemp4 && dtemp4 <= 0.75){seq_r1[p] = 'G';} //'G'
+                  else if (0.75 < dtemp4 && dtemp4 <= 1){seq_r1[p] = 'C';} // 'C'
                 }
               }
             }
             if (strcasecmp("PE",struct_obj->SeqType)==0){
               for(int p = 0;p<seqlen;p++){
                 double dtemp1;double dtemp2;
+                dtemp1 = mrand_pop(drand_alloc_nt);
+                dtemp2 = mrand_pop(drand_alloc_nt);
+                /*double dtemp1;double dtemp2;
                 drand48_r(&buffer, &dtemp1);
-                drand48_r(&buffer, &dtemp2);
+                drand48_r(&buffer, &dtemp2);*/
                 int base = seq_r2[p];
 
                 int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],dtemp1,dtemp2);
                 qual_r2[p] = struct_obj->NtQual_r2[qscore];
                 
                 if (struct_obj->ErrorFlag == 'T'){
-                  drand48_r(&buffer, &dtemp1);
-                  drand48_r(&buffer, &dtemp2);
-                  if (dtemp1 < struct_obj->NtErr_r2[qscore]){
-                    if (dtemp2 <= 0.25){seq_r2[p] = 'A';} // 'A'
-                    else if (0.25 < dtemp2 && dtemp2 <= 0.5){seq_r2[p] = 'T';} // 'T'
-                    else if (0.5 < dtemp2 && dtemp2 <= 0.75){seq_r2[p] = 'G';} // 'G'
-                    else if (0.75 < dtemp2 && dtemp2 <= 1){seq_r2[p] = 'C';} // 'C'
+                  double dtemp3;double dtemp4;
+                  dtemp3 = mrand_pop(drand_alloc_nt);
+                  dtemp4 = mrand_pop(drand_alloc_nt);
+                  //drand48_r(&buffer, &dtemp1);
+                  //drand48_r(&buffer, &dtemp2);
+                  if (dtemp3 < struct_obj->NtErr_r2[qscore]){
+                    if (dtemp4 <= 0.25){seq_r2[p] = 'A';} // 'A'
+                    else if (0.25 < dtemp4 && dtemp4 <= 0.5){seq_r2[p] = 'T';} // 'T'
+                    else if (0.5 < dtemp4 && dtemp4 <= 0.75){seq_r2[p] = 'G';} // 'G'
+                    else if (0.75 < dtemp4 && dtemp4 <= 1){seq_r2[p] = 'C';} // 'C'
                   }
                 }
               }
@@ -601,7 +684,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
                         const char* Sizefile,int FixedSize,int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024]){
   //creating an array with the arguments to create multiple threads;
-  
+  //fprintf(stderr,"Random MacIntType %d\n",MacroRandType);
   int nthreads=thread_no;
   pthread_t mythreads[nthreads];
 

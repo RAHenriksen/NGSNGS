@@ -1,6 +1,6 @@
 #ifndef NGSNGSFUNC_H
 #define NGSNGSFUNC_H
-
+#include "mrand.h"
 void DNA_complement(char seq[]);
 
 void reverseChar(char* str);
@@ -11,13 +11,11 @@ double myrand(unsigned int persistent);
 
 int myrandgenmodulo(unsigned int seed, int modulo);
 double uniform();
-void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, unsigned int seed,struct drand48_data buffer);
+void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, unsigned int seed,mrand_t *mr);
 
 const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos,int outputoffset);
 
 double* Qual_array(double* freqval,const char* filename);
-
-void Read_Qual_new(char *seq,char *qual,unsigned int seed,double* freqval,int outputoffset);
 
 int BinarySearch_fraglength(double* SearchArray,int low, int high, double key);
 

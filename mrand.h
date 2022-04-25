@@ -1,3 +1,6 @@
+#ifndef MRAND_H
+#define MRAND_H
+
 #include <random>
 #include <cstdlib>
 
@@ -13,3 +16,4 @@ typedef struct{
 //type=1 is osx compatible
 mrand_t *mrand_alloc(int type_a, long int seedval);
 double mrand_pop(mrand_t *mr);
+#endif
