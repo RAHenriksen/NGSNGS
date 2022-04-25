@@ -28,12 +28,15 @@ mrand_t *mrand_alloc(int type_a,long int seedval){
 
 double mrand_pop(mrand_t *mr){
   double res;
-  if(mr->type==0){
-    drand48_r((struct drand48_data*)&mr->buf0,&res);
-  }
-  if(mr->type==1){
-    res =  mr->distr(mr->eng);
-  }
+  #if defined(__linux__) || defined(__unix__)
+    if(mr->type==0){
+      drand48_r((struct drand48_data*)&mr->buf0,&res);
+    }
+  #elif defined(__APPLE__) || defined(__MACH__) 
+    if(mr->type==1){
+      res =  mr->distr(mr->eng);
+    }
+  #endif
   return res;
 }
 
