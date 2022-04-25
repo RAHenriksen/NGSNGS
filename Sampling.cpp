@@ -95,22 +95,12 @@ void* Sampling_threads(void *arg){
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
   size_t genome_len = strlen(struct_obj->genome);
   fprintf(stderr,"RANDOM TYPE IN SAMPLING %d\n",MacroRandType);
-  struct drand48_data buffer;
-  srand48_r(loc_seed, &buffer);
+
   mrand_t *drand_alloc = mrand_alloc(MacroRandType,loc_seed);
   mrand_t *drand_alloc_nt = mrand_alloc(MacroRandType,loc_seed);
   mrand_t *drand_alloc_nt_adapt = mrand_alloc(MacroRandType,loc_seed);
   fprintf(stderr,"Macro type %d \t Seed val %d\n",MacroRandType,loc_seed);
   mrand_t *drand_alloc_briggs = mrand_alloc(MacroRandType,loc_seed);
-
-  /*fprintf(stderr,"RANDOM VALUES\n");
-  fprintf(stderr,"%f\n",mrand_pop(drand_alloc));
-  fprintf(stderr,"%f\n",mrand_pop(drand_alloc));
-  for(int i=0;i<10;i++){
-    fprintf(stderr,"%d) : %f\n",i,mrand_pop(drand_alloc));
-    fprintf(stderr,"%d v2) : %f\n",i,mrand_pop(drand_alloc_nt));
-  }
-  exit(0);*/
   
   // sequence reads, original, modified, with adapters, pe
   char seq_r1[1024] = {0};
@@ -318,9 +308,7 @@ void* Sampling_threads(void *arg){
             //double rand_val = mrand_pop(drand_alloc);
             double dtemp1;double dtemp2;
             dtemp1 = mrand_pop(drand_alloc_nt_adapt);
-            //drand48_r(&buffer, &dtemp1);
             dtemp2 = mrand_pop(drand_alloc_nt_adapt);
-            //drand48_r(&buffer, &dtemp2);
             //fprintf(stderr,"temp lol 1 %f \t temp 2 %f\n",dtemp1,dtemp2);
 
             int base = readadapt[p];
@@ -329,10 +317,7 @@ void* Sampling_threads(void *arg){
             if (struct_obj->ErrorFlag == 'T'){
               double dtemp3;double dtemp4;
               dtemp3 = mrand_pop(drand_alloc_nt_adapt);
-              //drand48_r(&buffer, &dtemp1);
               dtemp4 = mrand_pop(drand_alloc_nt_adapt);
-              //drand48_r(&buffer, &dtemp3);
-              //drand48_r(&buffer, &dtemp4);
               if (dtemp3 < struct_obj->NtErr_r1[qscore]){
                 //fprintf(stderr,"WE ARE IN THE SUBSTITUTION LOOP\n");
                 if (dtemp4 <= 0.25){readadapt[p] = 'A';} // 'A'
@@ -358,8 +343,6 @@ void* Sampling_threads(void *arg){
               double dtemp1;double dtemp2;
               dtemp1 = mrand_pop(drand_alloc_nt_adapt);
               dtemp2 = mrand_pop(drand_alloc_nt_adapt);
-              //drand48_r(&buffer, &dtemp1);
-              //drand48_r(&buffer, &dtemp2);
 
               int base = readadapt2[p];
               int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],dtemp1,dtemp2);
@@ -368,8 +351,7 @@ void* Sampling_threads(void *arg){
                 double dtemp3;double dtemp4;
                 dtemp3 = mrand_pop(drand_alloc_nt_adapt);
                 dtemp4 = mrand_pop(drand_alloc_nt_adapt);
-                //drand48_r(&buffer, &dtemp1);
-                //drand48_r(&buffer, &dtemp2);
+
                 if (dtemp3 < struct_obj->NtErr_r2[qscore]){
                   if (dtemp4 <= 0.25){readadapt2[p] = 'A';} // 'A'
                   else if (0.25 < dtemp4 && dtemp4 <= 0.5){readadapt2[p] = 'T';} // 'T'
@@ -396,9 +378,7 @@ void* Sampling_threads(void *arg){
               double dtemp1;double dtemp2;
               dtemp1 = mrand_pop(drand_alloc_nt_adapt);
               dtemp2 = mrand_pop(drand_alloc_nt_adapt);
-              //double dtemp1;double dtemp2;
-              //drand48_r(&buffer, &dtemp1);
-              //drand48_r(&buffer, &dtemp2);
+
               int base = readadapt[p];
               int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
               qual_r1[p] = struct_obj->NtQual_r1[qscore];
@@ -406,8 +386,7 @@ void* Sampling_threads(void *arg){
                 double dtemp3;double dtemp4;
                 dtemp3 = mrand_pop(drand_alloc_nt_adapt);
                 dtemp4 = mrand_pop(drand_alloc_nt_adapt);
-                //drand48_r(&buffer, &dtemp1);
-                //drand48_r(&buffer, &dtemp2);
+
                 if (dtemp3 < struct_obj->NtErr_r1[qscore]){
                   if (dtemp4 <= 0.25){readadapt[p] = 'A';} // 'A'
                   else if (0.25 < dtemp4 && dtemp4 <= 0.5){readadapt[p] = 'T';} // 'T'
@@ -421,9 +400,7 @@ void* Sampling_threads(void *arg){
                 double dtemp1;double dtemp2;
                 dtemp1 = mrand_pop(drand_alloc_nt_adapt);
                 dtemp2 = mrand_pop(drand_alloc_nt_adapt);
-                /*double dtemp1;double dtemp2;
-                drand48_r(&buffer, &dtemp1);
-                drand48_r(&buffer, &dtemp2);*/
+
                 int base = readadapt2[p];
                 int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],dtemp1,dtemp2);
                 qual_r2[p] = struct_obj->NtQual_r2[qscore];
@@ -432,8 +409,7 @@ void* Sampling_threads(void *arg){
                   double dtemp3;double dtemp4;
                   dtemp3 = mrand_pop(drand_alloc_nt_adapt);
                   dtemp4 = mrand_pop(drand_alloc_nt_adapt);
-                  //drand48_r(&buffer, &dtemp1);
-                  //drand48_r(&buffer, &dtemp2);
+
                   if (dtemp3 < struct_obj->NtErr_r2[qscore]){
                     if (dtemp4 <= 0.25){readadapt2[p] = 'A';} // 'A'
                     else if (0.25 < dtemp4 && dtemp4 <= 0.5){readadapt2[p] = 'T';} // 'T'
@@ -474,8 +450,7 @@ void* Sampling_threads(void *arg){
             double dtemp1;double dtemp2;
             dtemp1 = mrand_pop(drand_alloc_nt);
             dtemp2 = mrand_pop(drand_alloc_nt);
-            //drand48_r(&buffer, &dtemp1);
-            //drand48_r(&buffer, &dtemp2);
+
             //fprintf(stderr,"NOT ADAPTER tmp1 %f\t%f\n",dtemp1,dtemp2);
             int base = seq_r1[p];
             int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
@@ -485,8 +460,7 @@ void* Sampling_threads(void *arg){
               double dtemp3;double dtemp4;
               dtemp3 = mrand_pop(drand_alloc_nt);
               dtemp4 = mrand_pop(drand_alloc_nt);
-              //drand48_r(&buffer, &drand_alloc_nt);
-              //drand48_r(&buffer, &dtemp2);            
+         
               if (dtemp3 < struct_obj->NtErr_r1[qscore]){
                 if (dtemp4 <= 0.25){seq_r1[p] = 'A';} //'A'
                 else if (0.25 < dtemp4 && dtemp4 <= 0.5){seq_r1[p] = 'T';} //'T'
@@ -501,8 +475,7 @@ void* Sampling_threads(void *arg){
               double dtemp1;double dtemp2;
               dtemp1 = mrand_pop(drand_alloc_nt);
               dtemp2 = mrand_pop(drand_alloc_nt);
-              //drand48_r(&buffer, &dtemp1);
-              //drand48_r(&buffer, &dtemp2);
+
               int base = seq_r2[p];
               int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],dtemp1,dtemp2);
 
@@ -511,8 +484,7 @@ void* Sampling_threads(void *arg){
                 double dtemp3;double dtemp4;
                 dtemp3 = mrand_pop(drand_alloc_nt);
                 dtemp4 = mrand_pop(drand_alloc_nt);
-                //drand48_r(&buffer, &dtemp1);
-                //drand48_r(&buffer, &dtemp2);
+
                 if (dtemp3 < struct_obj->NtErr_r2[qscore]){
                   if (dtemp4 <= 0.25){seq_r2[p] = 'A';} // 'A'
                   else if (0.25 < dtemp4 && dtemp4 <= 0.5){seq_r2[p] = 'T';} // 'T'
@@ -529,9 +501,7 @@ void* Sampling_threads(void *arg){
               double dtemp1;double dtemp2;
               dtemp1 = mrand_pop(drand_alloc_nt);
               dtemp2 = mrand_pop(drand_alloc_nt);
-              /*double dtemp1;double dtemp2;
-              drand48_r(&buffer, &dtemp1);
-              drand48_r(&buffer, &dtemp2);*/
+
               int base = seq_r1[p];
 
               int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);              
@@ -540,8 +510,7 @@ void* Sampling_threads(void *arg){
                 double dtemp3;double dtemp4;
                 dtemp3 = mrand_pop(drand_alloc_nt);
                 dtemp4 = mrand_pop(drand_alloc_nt);
-                //drand48_r(&buffer, &dtemp1);
-                //drand48_r(&buffer, &dtemp2);            
+            
                 if (dtemp3 < struct_obj->NtErr_r1[qscore]){
                   if (dtemp4 <= 0.25){seq_r1[p] = 'A';} //'A'
                   else if (0.25 < dtemp4 && dtemp4 <= 0.5){seq_r1[p] = 'T';} //'T'
@@ -555,9 +524,7 @@ void* Sampling_threads(void *arg){
                 double dtemp1;double dtemp2;
                 dtemp1 = mrand_pop(drand_alloc_nt);
                 dtemp2 = mrand_pop(drand_alloc_nt);
-                /*double dtemp1;double dtemp2;
-                drand48_r(&buffer, &dtemp1);
-                drand48_r(&buffer, &dtemp2);*/
+
                 int base = seq_r2[p];
 
                 int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],dtemp1,dtemp2);
@@ -567,8 +534,7 @@ void* Sampling_threads(void *arg){
                   double dtemp3;double dtemp4;
                   dtemp3 = mrand_pop(drand_alloc_nt);
                   dtemp4 = mrand_pop(drand_alloc_nt);
-                  //drand48_r(&buffer, &dtemp1);
-                  //drand48_r(&buffer, &dtemp2);
+
                   if (dtemp3 < struct_obj->NtErr_r2[qscore]){
                     if (dtemp4 <= 0.25){seq_r2[p] = 'A';} // 'A'
                     else if (0.25 < dtemp4 && dtemp4 <= 0.5){seq_r2[p] = 'T';} // 'T'
