@@ -62,7 +62,7 @@ argStruct *getpars(int argc,char ** argv){
   return mypars;
 }
 
-int main(int argc,char **argv){
+int main_qual(int argc,char **argv){
     argStruct *mypars = NULL;
     if(argc==1||(argc==2&&(strcasecmp(argv[1],"--version")==0||strcasecmp(argv[1],"-v")==0||
                             strcasecmp(argv[1],"--help")==0||strcasecmp(argv[1],"-h")==0))){
@@ -252,4 +252,10 @@ int main(int argc,char **argv){
     }
 }
 
+#ifdef __WITH_MAIN__
+int main(int argc,char **argv){
+ main_qual(argc,argv); 
+}
+#endif
+-D__WITH_MAIN__
 //g++ ReadQualConverter.cpp -std=c++11 -lm -lz -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lhts -lgsl -lgslcblas -lm -o QualConvert
