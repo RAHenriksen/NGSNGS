@@ -10,6 +10,9 @@ all: $(PROGRAMS) #$(PROGRAMS_MISC)
 QualConvert: ReadQualConverter.cpp
 	$(CXX) ReadQualConverter.cpp -D __WITH_MAIN__ -lz -o QualConvert
 
+LenConvert: MapDMGlen.cpp
+	$(CXX) MapDMGlen.cpp -D __WITH_MAIN__ -lz -o LenConvert
+
 clean:	
 	rm  -f *.o $(PROGRAMS) *~ 
 
