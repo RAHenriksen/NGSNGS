@@ -255,10 +255,10 @@ int main_qual(int argc,char **argv){
 
 #ifdef __WITH_MAIN__
 int main(int argc,char **argv){
-    main_qual(argc,argv);
+    main_qual(argc,argv); 
     return 0;
 }
 #endif
 
-//-D__WITH_MAIN__
 //g++ ReadQualConverter.cpp -std=c++11 -lm -lz -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lhts -lgsl -lgslcblas -lm -o QualConvert
+//g++ ReadQualConverter.cpp -std=c++11 -lm -lz -D__WITH_MAIN__ -o QualConvert

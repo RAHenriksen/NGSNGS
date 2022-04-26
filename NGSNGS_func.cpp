@@ -154,7 +154,7 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
         double u = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);//uniform();
         //fprintf(stderr,"Double u C 1 %f\n",u);
         if (u < delta_s){
-          frag[i] = 'X'; //T
+          frag[i] = 'T'; //T
         }else{
           frag[i] = 'C'; //C
         }
@@ -170,7 +170,7 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
         double u = dtemp2;//((double) rand_r(&seed)/ RAND_MAX);//uniform();
         //fprintf(stderr,"Double u G 1 %f\n",u);
         if (u < delta_s){
-          frag[L-i-1] = 'X'; //A
+          frag[L-i-1] = 'A'; //A
         }
         else{
           frag[L-i-1] = 'G'; //G
@@ -197,7 +197,7 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
           double u = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);//uniform();
           //fprintf(stderr,"Double u C 2 %f\n",u);
           if (u < delta){
-            frag[i] = 'X'; //T
+            frag[i] = 'T'; //T
           }
           else{
             frag[i] = 'C'; //C
@@ -208,7 +208,7 @@ void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, 
           double u = dtemp2; //((double) rand_r(&seed)/ RAND_MAX);//uniform();
           //fprintf(stderr,"Double u G 2 %f\n",u);
           if (u < delta){
-            frag[i] = 'X'; //A
+            frag[i] = 'A'; //A
           }else{
             frag[i] = 'G'; //G
           }
@@ -384,7 +384,7 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
     //sprintf(&genome[strlen(genome)],data);
     //strcat(genome,data);  //Both gives conditional jump or move error
     if (data != NULL){
-      sprintf(genome+strlen(genome),data); 
+      sprintf(genome+strlen(genome),"%s",data); 
     }
     // several of the build in functions allocates memory without freeing it again.
     free((char*)data); //Free works on const pointers, so we have to cast into a const char pointer
@@ -413,7 +413,7 @@ char* partial_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const
     //sprintf(&genome[strlen(genome)],data);
     //strcat(genome,data);  //Both gives conditional jump or move error
     if (data != NULL){
-      sprintf(genome+strlen(genome),data); 
+      sprintf(genome+strlen(genome),"%s",data);  
     }
     // several of the build in functions allocates memory without freeing it again.
     free((char*)data); //Free works on const pointers, so we have to cast into a const char pointer

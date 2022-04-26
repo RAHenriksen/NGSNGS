@@ -7,13 +7,13 @@ mrand_t *mrand_alloc(int type_a,long int seedval){
   ret->type = type_a;
 #if defined(__linux__) || defined(__unix__)
   if(ret->type==0){
-    fprintf(stderr,"In linux if -> drand48_data\n");
+    //fprintf(stderr,"In linux if -> drand48_data\n");
     srand48_r(seedval,(struct drand48_data *) &ret->buf0);
     //i need to somehow print the value
   }
 #elif defined(__APPLE__) || defined(__MACH__) //try to change this to linux and unix and then it works
   if(ret->type==1){
-    fprintf(stderr,"In Apple loop if ->  APPLE LOOP\n");
+    //fprintf(stderr,"In Apple loop if ->  APPLE LOOP\n");
     ret->eng = std::default_random_engine(seedval);
     ret->distr = std::uniform_real_distribution<float>(0, 1);
   }

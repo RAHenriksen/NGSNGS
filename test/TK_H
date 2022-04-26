@@ -1,0 +1,2 @@
+@SQ	SN:NZ_CP029543.1	LN:3187112
+@PG	ID:samtools	PN:samtools	VN:1.12	CL:samtools view -H MycoBactBamSEOut.bam

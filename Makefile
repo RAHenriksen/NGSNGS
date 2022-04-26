@@ -12,6 +12,7 @@ OBJ = $(CSRC:.c=.o) $(CXXSRC:.cpp=.o)
 
 all: ngsngs #qualconvert
 
+.PHONY: all clean test
 
 # Adjust $(HTSSRC) to point to your top-level htslib directory
 ifdef HTSSRC
@@ -37,8 +38,6 @@ ifdef HTSSRC
 ngsngs: $(OBJ)
 	$(CXX) $(FLAGS)  -o ngsngs *.o $(HTS_LIBDIR) -lz -llzma -lbz2 -lpthread -lcurl -lgsl -lgslcblas 
 
-#qualconvert: $(CXX) $(FLAGS) -o qualconvert ReadQualConverter.cpp -lz -llzma -lbz2 -lpthread -lcurl -lhts -lgsl -lgslcblas
-
 else
 %.o: %.c
 	$(CC) -c  $(CFLAGS)  $*.c
@@ -57,3 +56,7 @@ endif
 
 clean:	
 	rm  -f ngsngs *.o *.d
+
+test:
+	echo "Subprograms is being tested";
+	cd test; sh testAll.sh;
