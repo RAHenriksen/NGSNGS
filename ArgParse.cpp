@@ -86,7 +86,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-seq | --sequencing: \t\t Simulate single-end or paired-end reads.\n");
   fprintf(fp,"\t <SE>\t single-end \n \t <PE>\t paired-end.\n");
   fprintf(fp,"-f   | --format: \t\t File format of the simulated output reads.\n");
-  fprintf(fp,"\t <fa||fasta>\t\t Nucletide sequence. \n \t <fa.gz||fasta.gz>\t Compressed nucletide sequence. \n \t <fq||fastq>\t\t Nucletide sequence with corresponding quality score. \n \t <fq.gz||fastq.gz>\t Compressed nucletide sequence with corresponding quality score. \n \t <sam||bam>\t\t\t Sequence Alignment Map format.\n");
+  fprintf(fp,"\t <fa||fasta>\t\t Nucletide sequence. \n \t <fa.gz||fasta.gz>\t Compressed nucletide sequence. \n \t <fq||fastq>\t\t Nucletide sequence with corresponding quality score. \n \t <fq.gz||fastq.gz>\t Compressed nucletide sequence with corresponding quality score. \n \t <sam||bam||cram>\t\t\t Sequence Alignment Map format.\n");
   fprintf(fp,"-o   | --output: \t\t Prefix of output file name.\n");
   fprintf(fp,"-e   | --error: \t\t Adding nucleotide subsitutions calculating based on nucleotide qualities.\n");
   fprintf(fp,"-t1  | --threads1: \t\t Number of threads to use for sampling sequence reads.\n");
@@ -130,11 +130,11 @@ void ErrMsg(double messageno){
   else if(messageno == 5.0){fprintf(stderr,"\nCould not parse both length parameters, provide either fixed length size (-l) or parse length distribution file (-lf).\n");}
   else if(messageno == 6.0){fprintf(stderr,"\nSequence type not provided. provide -seq || --sequence : SE (single-end) or PE (paired-end).\n");}
   else if(messageno == 6.5){fprintf(stderr,"\nSequence type not recognized. provide either SE (single-end) or PE (paired-end).\n");}
-  else if(messageno == 7.0){fprintf(stderr,"\nOutput format not recognized, provide -f | --format : <fa, fa.gz, fq, fq.gz, sam, bam>.\n");}
+  else if(messageno == 7.0){fprintf(stderr,"\nOutput format not recognized, provide -f | --format : <fa, fa.gz, fq, fq.gz, sam, bam, cram>.\n");}
   else if(messageno == 8.0){fprintf(stderr,"\nOutput filename not provided, provide -o.\n");}
   else if(messageno == 9.0){fprintf(stderr,"\nUnable to utilize the provided number of threads, use integers above 0.\n");}
   else if(messageno == 10.0){fprintf(stderr,"\nNucleotide for poly(x) homopolymers not recognized, provide -p : <A,G,C,T,N>.\n");}
-  else if(messageno == 11.0){fprintf(stderr,"\nCould not parse the Nucleotide Quality profile(s), for format <fq, fq.gz, sam, bam> provide -q1 for SE and -q1, -q2 for PE.\n");}
+  else if(messageno == 11.0){fprintf(stderr,"\nCould not parse the Nucleotide Quality profile(s), for format <fq, fq.gz, sam, bam, cram> provide -q1 for SE and -q1, -q2 for PE.\n");}
   else {fprintf(stderr,"\nError with input parameters, see helppage (-h)");}
   fprintf(stderr,"see helppage (-h)\n");
   exit(0);
@@ -142,7 +142,7 @@ void ErrMsg(double messageno){
 
 void WarMsg(double messageno){
   if(messageno == 1.0){fprintf(stderr,"\nWarning: for the output format <fa> the quality profiles (-q1, -q2) remains unused\n");}
-  else if(messageno == 2.0){fprintf(stderr,"\nWarning: for the output format <fa,sam,bam> the parameter (-p) is rendered moot without the nucleotide quality profiles (-q1, -q2), since poly(x) tails cannot be added to the reads since the read length cannot be inferred\n");}
+  else if(messageno == 2.0){fprintf(stderr,"\nWarning: for the output format <fa, sam, bam, cram> the parameter (-p) is rendered moot without the nucleotide quality profiles (-q1, -q2), since poly(x) tails cannot be added to the reads since the read length cannot be inferred\n");}
   else if(messageno == 3.0){fprintf(stderr,"\nWarning: sequencing errors (-e) are not added to the sequence reads without the nucleotide quality profiles (-q1, -q2) \n");}
   else if(messageno == 4.0){fprintf(stderr,"\nWarning: for the output format <fa> the provided nucleotide qualities (-q1, -q2) will not be used \n");}
 }
@@ -222,7 +222,8 @@ argStruct *getpars(int argc,char ** argv){
       strcasecmp("fq",mypars->OutFormat)!=0 &&
       strcasecmp("fq.gz",mypars->OutFormat)!=0 &&
       strcasecmp("sam",mypars->OutFormat)!=0 &&
-      strcasecmp("bam",mypars->OutFormat)!=0){ErrMsg(7.0);}      
+      strcasecmp("bam",mypars->OutFormat)!=0 &&
+      strcasecmp("cram",mypars->OutFormat)!=0){ErrMsg(7.0);}      
     }
     else if(strcasecmp("-b",*argv)==0 || strcasecmp("--briggs",*argv)==0){
       mypars->Briggs = strdup(*(++argv)); //double nv, double lambda, double delta_s, double delta -> 0.024,0.36,0.68,0.0097
@@ -384,7 +385,7 @@ int main(int argc,char **argv){
     else{QualStringFlag = "true";}
     //fprintf(stderr,"qualstring test %s",QualStringFlag);
     if (strcasecmp("true",QualStringFlag)==0){
-      if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("sam",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0){
+      if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("sam",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0 || strcasecmp("cram",OutputFormat)==0){
         if (strcasecmp("PE",Seq_Type)==0 && QualProfile2 == NULL){
           ErrMsg(11.0);
           //fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
@@ -446,11 +447,11 @@ int main(int argc,char **argv){
     }
     
     //if(Specific_Chr[0]=='\0'){fprintf(stderr,"HURRA");}
-
+    
     Create_se_threads(seq_ref,threads1,Glob_seed,Thread_specific_Read,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,qualstringoffset,
-                      QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,ErrorFlag,Specific_Chr);
+                      QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,ErrorFlag,Specific_Chr,fastafile);
 
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);

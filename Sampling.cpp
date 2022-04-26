@@ -637,6 +637,7 @@ void* Sampling_threads(void *arg){
   free(struct_obj->size_cumm);
   free(struct_obj->names);
   for(int j=0; j<struct_obj->m;j++){bam_destroy1(struct_obj->list_of_reads[j]);}
+  
   free(drand_alloc);
   free(drand_alloc_nt);
   free(drand_alloc_nt_adapt);
@@ -650,7 +651,7 @@ void* Sampling_threads(void *arg){
 void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
                         const char* Adapter_2,const char* OutputFormat,const char* SeqType,float BriggsParam[4],const char* Briggs_flag,
                         const char* Sizefile,int FixedSize,int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
-                        const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024]){
+                        const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName){
   //creating an array with the arguments to create multiple threads;
   //fprintf(stderr,"Random MacIntType %d\n",MacroRandType);
   int nthreads=thread_no;
@@ -758,20 +759,18 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     }
     else if(strcasecmp("bam",OutputFormat)==0){
       //fprintf(stderr,"\t-> BAM SE FILE\n");
-      mode = "wb";
-      suffix1 = ".bam";
+      mode = "wb";//"wc";
+      suffix1 = ".bam"; //".cram";
+      alnformatflag++;
+    }
+    else if(strcasecmp("cram",OutputFormat)==0){
+      mode = "wc";
+      suffix1 = ".cram";
       alnformatflag++;
     }
     else{fprintf(stderr,"\t-> Fileformat is currently not supported \n");}
     strcat(file1,suffix1);
 
-    /*
-    else if(strcasecmp("cram",OutputFormat)==0){
-      mode = "wc";
-      suffix1 = ".cram"; //Does create a cram file but fix: [E::cram_encode_container] Failed to load reference #0, [E::cram_get_ref] Failed to populate reference for id 0
-      alnformatflag++;
-    }
-    */
     fprintf(stderr,"\t-> File output name is %s\n",file1);
     const char* filename1 = file1;
     const char* filename2 = NULL;
@@ -783,6 +782,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       
       bgzf_fp1 = bgzf_open(filename1,mode);
       bgzf_mt(bgzf_fp1,mt_cores,bgzf_buf);
+      
       //fprintf(stderr,"\t-> BGZF FILE\n");
       if(strcasecmp("PE",SeqType)==0){
         strcat(file2,suffix2);
@@ -792,9 +792,16 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       }
     }
     else{
-      //fprintf(stderr,"bam loop \n");
+      fprintf(stderr,"Fasta input file name is %s\n",FastaFileName);
+      char *ref =(char*) malloc(10 + strlen(FastaFileName) + 1);
+      sprintf(ref, "reference=%s", FastaFileName);
+      //char *ref =(char*) malloc(10 + strlen("Test_Examples/Mycobacterium_leprae.fa.gz") + 1);
+      //sprintf(ref, "reference=%s", "Test_Examples/Mycobacterium_leprae.fa.gz");
+      hts_opt_add((hts_opt **)&fmt_hts->specific,ref);
+      fprintf(stderr,"Writing mode is %s\n",mode);
       SAMout = sam_open_format(filename1, mode, fmt_hts);
       SAMHeader = sam_hdr_init();
+      
       Header_func(fmt_hts,filename1,SAMout,SAMHeader,seq_ref,chr_total,chr_idx_arr,genome_size);
     }
     //fprintf(stderr,"\t-> AFTER OUTPUT FORMAT\n");

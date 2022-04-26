@@ -4,6 +4,9 @@
 *.fq*
 *.sam
 *.bam
+*.cram
+*.sai
+*.crai
 *.bai
 *.fai
 *.vcf
