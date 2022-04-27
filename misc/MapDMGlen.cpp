@@ -34,8 +34,8 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\nOptions: \n");
   fprintf(fp,"-h   | --help: \t\t\t Print help page.\n");
   fprintf(fp,"-v   | --version: \t\t Print help page.\n\n");
-  fprintf(fp,"-i   | --MapDMG_in: \t\t ART platform profile intput in .txt format or .txt.gz\n");
-  fprintf(fp,"-o   | --NGSNGS_out: \t\t NGSNGS nucletide quality profile in .txt format\n");
+  fprintf(fp,"-i   | --MapDMG_in: \t\t MapDamage fragment length intput in .txt format or .txt.gz\n");
+  fprintf(fp,"-o   | --NGSNGS_out: \t\t NGSNGS fragment length output in .txt format\n");
   exit(1);
   return 0;
 }
@@ -127,9 +127,8 @@ int main_Length(int argc,char **argv){
         delete[] Len_Val_tmp;
         delete[] Len_Obs_tmp;
 
-    }
-    
-    return 0;
+    }  
+  return 0;
 }
 
 #ifdef __WITH_MAIN__

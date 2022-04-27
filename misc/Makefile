@@ -3,7 +3,7 @@
 CC  ?= gcc -std=c++11
 CXX ?= g++
 
-PROGRAMS = QualConvert
+PROGRAMS = QualConvert LenConvert MisConvert
 #PROGRAMS_MISC = XXX
 all: $(PROGRAMS) #$(PROGRAMS_MISC)
 
@@ -12,6 +12,9 @@ QualConvert: ReadQualConverter.cpp
 
 LenConvert: MapDMGlen.cpp
 	$(CXX) MapDMGlen.cpp -D __WITH_MAIN__ -lz -o LenConvert
+
+MisConvert: MapDMGlen.cpp
+	$(CXX) MapDMGmis.cpp -D __WITH_MAIN__ -lz -o MisConvert
 
 clean:	
 	rm  -f *.o $(PROGRAMS) *~ 
