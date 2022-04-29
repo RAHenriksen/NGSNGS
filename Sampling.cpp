@@ -43,6 +43,11 @@ struct Parsarg_for_Sampling_thread{
   char *NtQual_r2;
   ransampl_ws ***QualDist_r1;
   ransampl_ws ***QualDist_r2;
+
+  double* MisMatch;
+  const char* SubFlag;
+  int MisLength;
+
   double *NtErr_r1;
   double *NtErr_r2;
 
@@ -99,7 +104,7 @@ void* Sampling_threads(void *arg){
   mrand_t *drand_alloc_nt_adapt = mrand_alloc(MacroRandType,loc_seed);
   mrand_t *drand_alloc_briggs = mrand_alloc(MacroRandType,loc_seed);
   //fprintf(stderr,"Macro type %d \t Seed val %d\n",MacroRandType,loc_seed);
-  
+   
   // sequence reads, original, modified, with adapters, pe
   char seq_r1[1024] = {0};
   char seq_r1_mod[1024] = {0};
@@ -270,7 +275,15 @@ void* Sampling_threads(void *arg){
             strncpy(seq_r2, seq_r2_mod, sizeof(seq_r2));
           }
         }
-        
+
+        if(strcasecmp("true",struct_obj->SubFlag)==0){
+          fprintf(stderr,"mismatch matrix %f \t %f \t %f \t %f \t %f \t %f \n",struct_obj->MisMatch[0],struct_obj->MisMatch[10],struct_obj->MisMatch[14],struct_obj->MisMatch[15],struct_obj->MisMatch[30],struct_obj->MisMatch[45]);
+          fprintf(stderr,"SEQUENCE %s\n",seq_r1);
+          Deam_File(seq_r1,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
+          fprintf(stderr,"SEQUENCE %s\n",seq_r1);
+          exit(0);
+        }
+        else{fprintf(stderr,"LOOOOOAOOGODGOSOGGOD\n");}
       }
       
       char READ_ID[1024]; int read_id_length;
@@ -312,17 +325,12 @@ void* Sampling_threads(void *arg){
             int base = readadapt[p];
             int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
             qual_r1[p] = struct_obj->NtQual_r1[qscore];
+            
             if (struct_obj->ErrorFlag == 'T'){
               double dtemp3;double dtemp4;
               dtemp3 = mrand_pop(drand_alloc_nt_adapt);
               dtemp4 = mrand_pop(drand_alloc_nt_adapt);
-              if (dtemp3 < struct_obj->NtErr_r1[qscore]){
-                //fprintf(stderr,"WE ARE IN THE SUBSTITUTION LOOP\n");
-                if (dtemp4 <= 0.25){readadapt[p] = 'A';} // 'A'
-                else if (0.25 < dtemp4 && dtemp4 <= 0.5){readadapt[p] = 'T';} // 'T'
-                else if (0.5 < dtemp4 && dtemp4 <= 0.75){readadapt[p] = 'G';} // 'G'
-                else if (0.75 < dtemp4 && dtemp4 <= 1){readadapt[p] = 'C';} // 'C'
-              }
+              if (dtemp3 < struct_obj->NtErr_r1[qscore]){ErrorSub(dtemp4,readadapt,p);}
             }
           }
 
@@ -349,13 +357,7 @@ void* Sampling_threads(void *arg){
                 double dtemp3;double dtemp4;
                 dtemp3 = mrand_pop(drand_alloc_nt_adapt);
                 dtemp4 = mrand_pop(drand_alloc_nt_adapt);
-
-                if (dtemp3 < struct_obj->NtErr_r2[qscore]){
-                  if (dtemp4 <= 0.25){readadapt2[p] = 'A';} // 'A'
-                  else if (0.25 < dtemp4 && dtemp4 <= 0.5){readadapt2[p] = 'T';} // 'T'
-                  else if (0.5 < dtemp4 && dtemp4 <= 0.75){readadapt2[p] = 'G';} // 'G'
-                  else if (0.75 < dtemp4 && dtemp4 <= 1){readadapt2[p] = 'C';} // 'C'
-                }
+                if (dtemp3 < struct_obj->NtErr_r2[qscore]){ErrorSub(dtemp4,readadapt2,p);}
               }
             }
             
@@ -384,13 +386,7 @@ void* Sampling_threads(void *arg){
                 double dtemp3;double dtemp4;
                 dtemp3 = mrand_pop(drand_alloc_nt_adapt);
                 dtemp4 = mrand_pop(drand_alloc_nt_adapt);
-
-                if (dtemp3 < struct_obj->NtErr_r1[qscore]){
-                  if (dtemp4 <= 0.25){readadapt[p] = 'A';} // 'A'
-                  else if (0.25 < dtemp4 && dtemp4 <= 0.5){readadapt[p] = 'T';} // 'T'
-                  else if (0.5 < dtemp4 && dtemp4 <= 0.75){readadapt[p] = 'G';} // 'G'
-                  else if (0.75 < dtemp4 && dtemp4 <= 1){readadapt[p] = 'C';} // 'C'
-                }
+                if (dtemp3 < struct_obj->NtErr_r1[qscore]){ErrorSub(dtemp4,readadapt,p);}
               }
             }
             if (strcasecmp("PE",struct_obj->SeqType)==0){
@@ -408,12 +404,7 @@ void* Sampling_threads(void *arg){
                   dtemp3 = mrand_pop(drand_alloc_nt_adapt);
                   dtemp4 = mrand_pop(drand_alloc_nt_adapt);
 
-                  if (dtemp3 < struct_obj->NtErr_r2[qscore]){
-                    if (dtemp4 <= 0.25){readadapt2[p] = 'A';} // 'A'
-                    else if (0.25 < dtemp4 && dtemp4 <= 0.5){readadapt2[p] = 'T';} // 'T'
-                    else if (0.5 < dtemp4 && dtemp4 <= 0.75){readadapt2[p] = 'G';} // 'G'
-                    else if (0.75 < dtemp4 && dtemp4 <= 1){readadapt2[p] = 'C';} // 'C'
-                  }
+                  if (dtemp3 < struct_obj->NtErr_r2[qscore]){ErrorSub(dtemp4,readadapt2,p);}
                 }
               }
             }
@@ -458,13 +449,7 @@ void* Sampling_threads(void *arg){
               double dtemp3;double dtemp4;
               dtemp3 = mrand_pop(drand_alloc_nt);
               dtemp4 = mrand_pop(drand_alloc_nt);
-         
-              if (dtemp3 < struct_obj->NtErr_r1[qscore]){
-                if (dtemp4 <= 0.25){seq_r1[p] = 'A';} //'A'
-                else if (0.25 < dtemp4 && dtemp4 <= 0.5){seq_r1[p] = 'T';} //'T'
-                else if (0.5 < dtemp4 && dtemp4 <= 0.75){seq_r1[p] = 'G';} //'G'
-                else if (0.75 < dtemp4 && dtemp4 <= 1){seq_r1[p] = 'C';} // 'C'
-              }
+              if (dtemp3 < struct_obj->NtErr_r1[qscore]){ErrorSub(dtemp4,seq_r1,p);}
             }
           }
           ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
@@ -483,12 +468,7 @@ void* Sampling_threads(void *arg){
                 dtemp3 = mrand_pop(drand_alloc_nt);
                 dtemp4 = mrand_pop(drand_alloc_nt);
 
-                if (dtemp3 < struct_obj->NtErr_r2[qscore]){
-                  if (dtemp4 <= 0.25){seq_r2[p] = 'A';} // 'A'
-                  else if (0.25 < dtemp4 && dtemp4 <= 0.5){seq_r2[p] = 'T';} // 'T'
-                  else if (0.5 < dtemp4 && dtemp4 <= 0.75){seq_r2[p] = 'G';} // 'G'
-                  else if (0.75 < dtemp4 && dtemp4 <= 1){seq_r2[p] = 'C';} // 'C'
-                }
+                if (dtemp3 < struct_obj->NtErr_r2[qscore]){ErrorSub(dtemp4,seq_r2,p);}
               }
             }
             ksprintf(struct_obj->fqresult_r2,"@%s\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);}
@@ -508,13 +488,8 @@ void* Sampling_threads(void *arg){
                 double dtemp3;double dtemp4;
                 dtemp3 = mrand_pop(drand_alloc_nt);
                 dtemp4 = mrand_pop(drand_alloc_nt);
-            
-                if (dtemp3 < struct_obj->NtErr_r1[qscore]){
-                  if (dtemp4 <= 0.25){seq_r1[p] = 'A';} //'A'
-                  else if (0.25 < dtemp4 && dtemp4 <= 0.5){seq_r1[p] = 'T';} //'T'
-                  else if (0.5 < dtemp4 && dtemp4 <= 0.75){seq_r1[p] = 'G';} //'G'
-                  else if (0.75 < dtemp4 && dtemp4 <= 1){seq_r1[p] = 'C';} // 'C'
-                }
+
+                if (dtemp3 < struct_obj->NtErr_r1[qscore]){ErrorSub(dtemp4,seq_r1,p);}
               }
             }
             if (strcasecmp("PE",struct_obj->SeqType)==0){
@@ -533,12 +508,7 @@ void* Sampling_threads(void *arg){
                   dtemp3 = mrand_pop(drand_alloc_nt);
                   dtemp4 = mrand_pop(drand_alloc_nt);
 
-                  if (dtemp3 < struct_obj->NtErr_r2[qscore]){
-                    if (dtemp4 <= 0.25){seq_r2[p] = 'A';} // 'A'
-                    else if (0.25 < dtemp4 && dtemp4 <= 0.5){seq_r2[p] = 'T';} // 'T'
-                    else if (0.5 < dtemp4 && dtemp4 <= 0.75){seq_r2[p] = 'G';} // 'G'
-                    else if (0.75 < dtemp4 && dtemp4 <= 1){seq_r2[p] = 'C';} // 'C'
-                  }
+                  if (dtemp3 < struct_obj->NtErr_r2[qscore]){ErrorSub(dtemp4,seq_r2,p);}
                 }
               }
             }
@@ -651,7 +621,8 @@ void* Sampling_threads(void *arg){
 void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
                         const char* Adapter_2,const char* OutputFormat,const char* SeqType,float BriggsParam[4],const char* Briggs_flag,
                         const char* Sizefile,int FixedSize,int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
-                        const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName){
+                        const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName,
+                        const char* MisMatchFlag,const char* SubProfile,int MisLength){
   //creating an array with the arguments to create multiple threads;
   //fprintf(stderr,"Random MacIntType %d\n",MacroRandType);
   int nthreads=thread_no;
@@ -847,6 +818,18 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     else{polynucleotide = 'F';}
     //fprintf(stderr,"\t-> AFTER POLY\n");
 
+    const char *Sub_mat = SubProfile;
+    double* DeamFreqArray = new double[LENS];
+    int deamcyclelength = 0;
+    if (SubProfile != NULL){
+      std::cout << Sub_mat << std::endl;
+      DeamFreqArray = DeamFileArray(DeamFreqArray,SubProfile,deamcyclelength);
+      std::cout << DeamFreqArray[0] << std::endl;
+      fprintf(stderr,"INFERRED READ LENGTH %d \n",deamcyclelength);
+    }
+    else{std::cout << "LOLRT " << std::endl;}
+    
+    
     //fprintf(stderr,"\t-> Before threads\n");
     for (int i = 0; i < nthreads; i++){
       struct_for_threads[i].fqresult_r1 =new kstring_t;
@@ -877,6 +860,9 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       struct_for_threads[i].NtErr_r1 = ErrArray_r1;
       struct_for_threads[i].NtErr_r2 = ErrArray_r2;
 
+      struct_for_threads[i].MisMatch = DeamFreqArray;
+      struct_for_threads[i].SubFlag = MisMatchFlag;
+      struct_for_threads[i].MisLength = (int) deamcyclelength;
       struct_for_threads[i].readcycle = (int) readcyclelength;
       struct_for_threads[i].reads = reads;
 
@@ -964,6 +950,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     if(Sizefile!=NULL){
       delete[] Frag_freq;
       delete[] Frag_len;
+    }
+    
+    if(SubProfile != NULL){
+      delete[] DeamFreqArray;
     }
     
     free(genome_data);

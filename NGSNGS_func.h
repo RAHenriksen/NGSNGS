@@ -10,8 +10,14 @@ int Random_geometric_k(unsigned int  seed,const double p);
 double myrand(unsigned int persistent);
 
 int myrandgenmodulo(unsigned int seed, int modulo);
+
 double uniform();
+
 void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, unsigned int seed,mrand_t *mr);
+
+double* DeamFileArray(double* freqval,const char* filename,int &deamcyclelength);
+
+void Deam_File(char seq[],mrand_t *mr,double* freqval,int LEN);
 
 const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos,int outputoffset);
 
@@ -48,5 +54,7 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb,int ntcharoffset,const 
 void deletechar(char* str,int seq_len, size_t index_to_remove,int del_len);
 
 void InsertChar(char* array,std::string ins,int index);
+
+void ErrorSub(double randval,char seqchar[], int pos);
 
 #endif /* NGSNGSFUNC_H */

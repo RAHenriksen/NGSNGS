@@ -60,6 +60,7 @@ typedef struct{
   const char *Adapter2;
   const char *QualProfile1;
   const char *QualProfile2;
+  const char *SubProfile;
   const char *ErrorFlag;
   const char *Briggs;
   int Length;
@@ -92,6 +93,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-t1  | --threads1: \t\t Number of threads to use for sampling sequence reads.\n");
   fprintf(fp,"-t2  | --threads2: \t\t Number of threads to use write down sampled reads, default = 1.\n");
   fprintf(fp,"-s   | --seed: \t\t\t Random seed, default = current calendar time (s).\n");
+  fprintf(fp,"-mf  | --mismatch: \t\t\t Nucleotide substitution frequency file.\n");
   fprintf(fp,"-a1  | --adapter1: \t\t Adapter sequence to add for simulated reads (SE) or first read pair (PE).\n");
   fprintf(fp,"\t e.g. Illumina TruSeq Adapter 1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG \n\n");
   fprintf(fp,"-a2  | --adapter2: \t\t Adapter sequence to add for second read pair (PE). \n");
@@ -135,6 +137,7 @@ void ErrMsg(double messageno){
   else if(messageno == 9.0){fprintf(stderr,"\nUnable to utilize the provided number of threads, use integers above 0.\n");}
   else if(messageno == 10.0){fprintf(stderr,"\nNucleotide for poly(x) homopolymers not recognized, provide -p : <A,G,C,T,N>.\n");}
   else if(messageno == 11.0){fprintf(stderr,"\nCould not parse the Nucleotide Quality profile(s), for format <fq, fq.gz, sam, bam, cram> provide -q1 for SE and -q1, -q2 for PE.\n");}
+  else if(messageno == 12.0){fprintf(stderr,"\nBoth a mismatch file and briggs deamination parameters has been provided. Provide either briggs (-p) og mismatch (-mf).\n");}
   else {fprintf(stderr,"\nError with input parameters, see helppage (-h)");}
   fprintf(stderr,"see helppage (-h)\n");
   exit(0);
@@ -163,6 +166,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Adapter2 = NULL;
   mypars->QualProfile1 = NULL;
   mypars->QualProfile2 = NULL;
+  mypars->SubProfile = NULL;
   mypars->ErrorFlag = NULL;
   mypars->Briggs = NULL; //"0.024,0.36,0.68,0.0097";
   mypars->LengthFile = NULL;
@@ -211,6 +215,9 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-q2",*argv)==0 || strcasecmp("--quality2",*argv)==0){
       mypars->QualProfile2 = strdup(*(++argv));
+    }
+    else if(strcasecmp("-mf",*argv)==0 || strcasecmp("--mismatch",*argv)==0){
+      mypars->SubProfile = strdup(*(++argv));
     }
     else if(strcasecmp("-e",*argv)==0 || strcasecmp("--error",*argv)==0){
       mypars->ErrorFlag = "T"; // strdup(*(++argv));
@@ -403,7 +410,7 @@ int main(int argc,char **argv){
     }
     fprintf(stderr,"\t-> ADAPTER FLAG IS:%s\n",Adapt_flag);
     fprintf(stderr,"\t-> QUAL STRING FLAG IS:%s\n",QualStringFlag);
-
+    
     const char* ErrorFlag;
     if (mypars->ErrorFlag != NULL){
       ErrorFlag = mypars->ErrorFlag;
@@ -434,6 +441,17 @@ int main(int argc,char **argv){
     }
     else{Briggs_Flag = "False";}
     
+    const char* SubProfile; const char* SubFlag;
+    
+    SubProfile = mypars->SubProfile;
+    if (SubProfile == NULL){SubFlag = "false";}
+    else{SubFlag = "true";}
+    fprintf(stderr,"SUB FLAG IS %s\n",SubFlag);
+    if(SubProfile != NULL && mypars->Briggs != NULL){
+      ErrMsg(12.0);
+      exit(0);
+    }
+
     const char* Specific_Chr[1024] = {};
     if (mypars->Chromosomes != NULL){
       int chr_idx_partial = 0;
@@ -447,11 +465,12 @@ int main(int argc,char **argv){
     }
     
     //if(Specific_Chr[0]=='\0'){fprintf(stderr,"HURRA");}
-    
+    int DeamLength;
     Create_se_threads(seq_ref,threads1,Glob_seed,Thread_specific_Read,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,qualstringoffset,
-                      QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,ErrorFlag,Specific_Chr,fastafile);
+                      QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,
+                      ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength);
 
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
@@ -471,6 +490,7 @@ int main(int argc,char **argv){
   free((char *)mypars->Adapter2);
   free((char *)mypars->QualProfile1);
   free((char *)mypars->QualProfile2);
+  free((char *)mypars->SubProfile);
   free((char *)mypars->Briggs);
   free((char *)mypars->Poly);
   //free((char *)mypars->ErrorFlag);

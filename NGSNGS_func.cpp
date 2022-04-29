@@ -94,12 +94,101 @@ void deletechar(char* array,int seq_len, size_t index_to_remove, int del_len){
   strcpy(array, s.c_str());
 }
 
-
-
 void InsertChar(char* array,std::string ins,int index){
   std::string s(array);
   s.insert(index,ins);  
   strcpy(array, s.c_str());    
+}
+
+void ErrorSub(double randval,char seqchar[], int pos){
+  //fprintf(stderr,"SUBERROR\n");
+  if (seqchar[pos] == 'A' || seqchar[pos] == 'a'){
+    if (randval <= 0.33){seqchar[pos] = 'X';} //G
+    else if (0.33 < randval && randval <= 0.66){seqchar[pos] = 'X';} //T
+    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'X';} //C
+  }
+  else if (seqchar[pos] == 'T'|| seqchar[pos] == 't'){
+    if (randval <= 0.33){seqchar[pos] = 'W';} //G
+    else if (0.33 < randval && randval <= 0.66){seqchar[pos]  = 'W';} //A
+    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'W';} //C
+  }
+  else if (seqchar[pos] == 'G'|| seqchar[pos] == 'g'){
+    if (randval <= 0.33){seqchar[pos] = 'Y';} //A
+    else if (0.33 < randval && randval <= 0.66){seqchar[pos]  = 'Y';} //T
+    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'Y';} //C
+  }
+  else if (seqchar[pos] == 'C'|| seqchar[pos] == 'c'){
+    if (randval <= 0.33){seqchar[pos] = 'Z';} //G
+    else if (0.33 < randval && randval <= 0.66){seqchar[pos]  = 'Z';} //G
+    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'Z';} //G
+  }
+}
+
+double* DeamFileArray(double* freqval,const char* filename,int &deamcyclelength){
+    char buf[LENS];
+    int i = 0;
+    fprintf(stderr,"DEAMFILEARRAY FUNCTION \n");
+    gzFile gz = Z_NULL;
+    gz = gzopen(filename,"r");
+    assert(gz!=Z_NULL);
+    while(gzgets(gz,buf,LENS)){
+        double val1;double val2;double val3;double val4;
+        sscanf(buf,"%lf\t%lf\t%lf\t%lf\n",&val1,&val2,&val3,&val4);
+        //std::cout << "iter " << i << std::endl;// " " << buf << std::endl;
+        freqval[i*4] = val1; freqval[i*4+1] = val2; freqval[i*4+2] = val3; freqval[i*4+3] = val4;
+        i++;
+    }
+    gzclose(gz);
+    deamcyclelength = i/4;
+  return freqval;
+}
+
+void Deam_File(char seq[],mrand_t *mr,double* freqval,int LEN){
+  char ntdeam[4] = {'R', 'Q', 'S', 'U'};//{'R', 'Q', 'S', 'U'}; //{'A', 'T', 'G', 'C'};
+  double dtemp1;
+  int Astart = 0;
+  int Tstart = LEN*4; //4*15
+  int Gstart = LEN*8; //15*8
+  int Cstart = LEN*12; //15*12
+
+  int seqlen = strlen(seq);
+
+  for (int row_idx = 0; row_idx < LEN;row_idx++){
+    dtemp1 = 0.99;// mrand_pop(mr);
+    //fprintf(stderr,"Deam_File function and random value %f\n",dtemp1);
+    switch(seq[row_idx]){
+      case 'A':
+      case 'a':
+        if (dtemp1 <= freqval[Astart+(row_idx*4)]){seq[row_idx] = ntdeam[0];
+          fprintf(stderr,"FIRST IF POS %d \t and random value %f\n",row_idx,dtemp1);
+        }
+        else if (freqval[Astart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Astart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
+        else if (freqval[Astart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Astart+(row_idx*4)+2]){seq[row_idx] = ntdeam[2];}
+        else if (freqval[Astart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Astart+(row_idx*4)+3]){seq[row_idx] = ntdeam[3];}
+        break;
+      case 'T':
+      case 't':
+        if (dtemp1 <= freqval[Tstart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}
+        else if (freqval[Tstart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Tstart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
+        else if (freqval[Tstart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Tstart+(row_idx*4)+2]){seq[row_idx] = ntdeam[2];}
+        else if (freqval[Tstart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Tstart+(row_idx*4)+3]){seq[row_idx] = ntdeam[3];}
+        break;
+      case 'G':
+      case 'g':
+        if (dtemp1 <= freqval[Gstart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}
+        else if (freqval[Gstart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Gstart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
+        else if (freqval[Gstart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Gstart+(row_idx*4)+2]){seq[row_idx] = ntdeam[2];}
+        else if (freqval[Gstart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Gstart+(row_idx*4)+3]){seq[row_idx] = ntdeam[3];}
+        break;
+      case 'C':
+      case 'c':
+        if (dtemp1 <= freqval[Cstart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}
+        else if (freqval[Cstart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Cstart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
+        else if (freqval[Cstart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Cstart+(row_idx*4)+2]){seq[row_idx] = ntdeam[2];}
+        else if (freqval[Cstart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Cstart+(row_idx*4)+3]){seq[row_idx] = ntdeam[3];}
+        break;
+    }
+  }
 }
 
 int Random_geometric_k(unsigned int  seed, const double p)
