@@ -101,26 +101,26 @@ void InsertChar(char* array,std::string ins,int index){
 }
 
 void ErrorSub(double randval,char seqchar[], int pos){
-  //fprintf(stderr,"SUBERROR\n");
+  //fprintf(stderr,"SUBERROR\n"); X, W, Z, Y
   if (seqchar[pos] == 'A' || seqchar[pos] == 'a'){
-    if (randval <= 0.33){seqchar[pos] = 'X';} //G
-    else if (0.33 < randval && randval <= 0.66){seqchar[pos] = 'X';} //T
-    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'X';} //C
+    if (randval <= 0.33){seqchar[pos] = 'G';} //X 
+    else if (0.33 < randval && randval <= 0.66){seqchar[pos] = 'T';} //T
+    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'C';} //C
   }
   else if (seqchar[pos] == 'T'|| seqchar[pos] == 't'){
-    if (randval <= 0.33){seqchar[pos] = 'W';} //G
-    else if (0.33 < randval && randval <= 0.66){seqchar[pos]  = 'W';} //A
-    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'W';} //C
+    if (randval <= 0.33){seqchar[pos] = 'G';} //G
+    else if (0.33 < randval && randval <= 0.66){seqchar[pos]  = 'A';} //A
+    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'C';} //C
   }
   else if (seqchar[pos] == 'G'|| seqchar[pos] == 'g'){
-    if (randval <= 0.33){seqchar[pos] = 'Y';} //A
-    else if (0.33 < randval && randval <= 0.66){seqchar[pos]  = 'Y';} //T
-    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'Y';} //C
+    if (randval <= 0.33){seqchar[pos] = 'A';} //A
+    else if (0.33 < randval && randval <= 0.66){seqchar[pos]  = 'T';} //T
+    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'C';} //C
   }
-  else if (seqchar[pos] == 'C'|| seqchar[pos] == 'c'){
-    if (randval <= 0.33){seqchar[pos] = 'Z';} //G
-    else if (0.33 < randval && randval <= 0.66){seqchar[pos]  = 'Z';} //G
-    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'Z';} //G
+  else if (seqchar[pos] == 'C'|| seqchar[pos] == 'c'){ //'Z'
+    if (randval <= 0.33){seqchar[pos] = 'G';} //Z
+    else if (0.33 < randval && randval <= 0.66){seqchar[pos]  = 'T';} //G
+    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'A';} //G
   }
 }
 
@@ -144,7 +144,7 @@ double* DeamFileArray(double* freqval,const char* filename,int &deamcyclelength)
 }
 
 void Deam_File(char seq[],mrand_t *mr,double* freqval,int LEN){
-  char ntdeam[4] = {'R', 'Q', 'S', 'U'};//{'X', 'Y', 'Z', 'W'}; //{'A', 'T', 'G', 'C'};
+  char ntdeam[4] = {'A', 'T', 'G', 'C'};//{'R', 'Q', 'S', 'U'};//{'X', 'Y', 'Z', 'W'}; //{'A', 'T', 'G', 'C'};
   double dtemp1;
   // 5' moving downwards from the 1 postion in the sequence 
   int Astart = 0;
@@ -161,7 +161,8 @@ void Deam_File(char seq[],mrand_t *mr,double* freqval,int LEN){
   int seqlen = strlen(seq);
   //5'
   for (int row_idx = 0; row_idx < LEN;row_idx++){
-    dtemp1 = 0.99;// mrand_pop(mr);
+    dtemp1 = mrand_pop(mr);//0.99;// mrand_pop(mr);
+    //fprintf(stderr,"RANDOM VALUE %lf\n",dtemp1);
     int row_idx_3p = seqlen-row_idx-1;
     if (seq[row_idx] == 'A' || seq[row_idx] == 'a'){
       if (dtemp1 <= freqval[Astart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}

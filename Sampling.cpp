@@ -277,13 +277,11 @@ void* Sampling_threads(void *arg){
         }
 
         if(strcasecmp("true",struct_obj->SubFlag)==0){
-          fprintf(stderr,"mismatch matrix %f \t %f \t %f \t %f \t %f \t %f \n",struct_obj->MisMatch[0],struct_obj->MisMatch[10],struct_obj->MisMatch[14],struct_obj->MisMatch[15],struct_obj->MisMatch[30],struct_obj->MisMatch[45]);
-          fprintf(stderr,"SEQUENCE %s\n",seq_r1);
+          //fprintf(stderr,"mismatch matrix %f \t %f \t %f \t %f \t %f \t %f \n",struct_obj->MisMatch[0],struct_obj->MisMatch[10],struct_obj->MisMatch[14],struct_obj->MisMatch[15],struct_obj->MisMatch[30],struct_obj->MisMatch[45]);
+          //fprintf(stderr,"SEQUENCE %s\n",seq_r1);
           Deam_File(seq_r1,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
-          fprintf(stderr,"SEQUENCE %s\n",seq_r1);
-          exit(0);
+          //fprintf(stderr,"SEQUENCE %s\n",seq_r1);
         }
-        else{fprintf(stderr,"LOOOOOAOOGODGOSOGGOD\n");}
       }
       
       char READ_ID[1024]; int read_id_length;
