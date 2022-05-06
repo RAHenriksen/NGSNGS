@@ -25,6 +25,8 @@ unsigned char nuc2int[255];
 
 pthread_mutex_t Fq_write_mutex;
 
+int MacroRandType = 0;
+
 struct Parsarg_for_Sampling_thread{
   kstring_t *fqresult_r1;
   kstring_t *fqresult_r2;
@@ -82,22 +84,23 @@ struct Parsarg_for_Sampling_thread{
 
   char ErrorFlag;
   char PolyNt;
+
+  int RandMacro;
 };
       
 void* Sampling_threads(void *arg){
   //casting my struct as arguments for the thread creation
   Parsarg_for_Sampling_thread *struct_obj = (Parsarg_for_Sampling_thread*) arg;
-  #if defined(__linux__) || defined(__unix__) // all unices not caught above
-    // Unix
-    int MacroRandType = 0;
-  #elif defined(__APPLE__) || defined(__MACH__)
-    int MacroRandType = 1;
-  #else
-  #   error "Unknown compiler"
-  #endif
+
+  int MacroRandType;
+  MacroRandType = struct_obj -> RandMacro; //LLLLLL
+  fprintf(stderr,"RANDOM VALUE %d \n",MacroRandType);
+  fprintf(stderr,"RANDOM VALUE2 %d \n",MacroRandType);
   // creating random objects for all distributions.
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
   size_t genome_len = strlen(struct_obj->genome);
+
+  //int MacroRandType = struct_obj -> RandMacro; //LLLLLL
 
   mrand_t *drand_alloc = mrand_alloc(MacroRandType,loc_seed);
   mrand_t *drand_alloc_nt = mrand_alloc(MacroRandType,loc_seed);
@@ -447,6 +450,7 @@ void* Sampling_threads(void *arg){
               double dtemp3;double dtemp4;
               dtemp3 = mrand_pop(drand_alloc_nt);
               dtemp4 = mrand_pop(drand_alloc_nt);
+              //fprintf(stderr,"temp lol 3 %f \t temp 4 %f\n----------------\n",dtemp3,dtemp4);
               if (dtemp3 < struct_obj->NtErr_r1[qscore]){ErrorSub(dtemp4,seq_r1,p);}
             }
           }
@@ -620,7 +624,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
                         const char* Adapter_2,const char* OutputFormat,const char* SeqType,float BriggsParam[4],const char* Briggs_flag,
                         const char* Sizefile,int FixedSize,int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName,
-                        const char* MisMatchFlag,const char* SubProfile,int MisLength){
+                        const char* MisMatchFlag,const char* SubProfile,int MisLength,int RandMacro){
   //creating an array with the arguments to create multiple threads;
   //fprintf(stderr,"Random MacIntType %d\n",MacroRandType);
   int nthreads=thread_no;
@@ -845,6 +849,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       struct_for_threads[i].chr_idx_array = chr_idx_arr;
       struct_for_threads[i].chr_no = chr_total;
       struct_for_threads[i].threadseed = seed;
+      struct_for_threads[i].RandMacro = RandMacro;
 
       struct_for_threads[i].FragLen = Frag_len;
       struct_for_threads[i].FragFreq = Frag_freq;

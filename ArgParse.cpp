@@ -67,6 +67,7 @@ typedef struct{
   const char *LengthFile;
   const char *Poly;
   const char *Chromosomes;
+  int rand_val;
 }argStruct;
 
 
@@ -172,6 +173,8 @@ argStruct *getpars(int argc,char ** argv){
   mypars->LengthFile = NULL;
   mypars->Chromosomes = NULL;
   mypars->Poly = NULL;
+  mypars->rand_val = -1;
+
   ++argv;
   while(*argv){
     //fprintf(stderr,"ARGV %s\n",*argv);
@@ -253,6 +256,9 @@ argStruct *getpars(int argc,char ** argv){
       strcasecmp("T",mypars->Poly)!=0 &&
       strcasecmp("N",mypars->Poly)!=0){ErrMsg(10.0);}
     }
+    else if(strcasecmp("-rand",*argv)==0){
+      mypars->rand_val = atoi(*(++argv));
+    }
     else{
       fprintf(stderr,"unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
       exit(0);
@@ -283,7 +289,21 @@ int main(int argc,char **argv){
     const char* Seq_Type = mypars->Seq;
     size_t No_reads = mypars->reads;
     double readcov = mypars->coverage;
+    int MacroRandType = mypars->rand_val; //extern int
 
+    if (MacroRandType == -1){
+      #if defined(__linux__) || defined(__unix__) // all unices not caught above
+      // Unix
+        MacroRandType = 0;
+      #elif defined(__APPLE__) || defined(__MACH__)
+        MacroRandType = 1;
+      #else
+      #   error "Unknown compiler"
+      #endif
+    }
+    fprintf(stderr,"RANDOM VALUE %d \n",MacroRandType);
+    
+    
     if (fastafile == NULL){ErrMsg(1.0);}
     if (Seq_Type == NULL){ErrMsg(6.0);}
     if (OutputFormat == NULL){ErrMsg(7.0);}
@@ -470,7 +490,7 @@ int main(int argc,char **argv){
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,qualstringoffset,
                       QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,
-                      ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength);
+                      ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType);
 
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);

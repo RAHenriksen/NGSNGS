@@ -103,24 +103,24 @@ void InsertChar(char* array,std::string ins,int index){
 void ErrorSub(double randval,char seqchar[], int pos){
   //fprintf(stderr,"SUBERROR\n"); X, W, Z, Y
   if (seqchar[pos] == 'A' || seqchar[pos] == 'a'){
-    if (randval <= 0.33){seqchar[pos] = 'G';} //X 
-    else if (0.33 < randval && randval <= 0.66){seqchar[pos] = 'T';} //T
-    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'C';} //C
-  }
-  else if (seqchar[pos] == 'T'|| seqchar[pos] == 't'){
-    if (randval <= 0.33){seqchar[pos] = 'G';} //G
-    else if (0.33 < randval && randval <= 0.66){seqchar[pos]  = 'A';} //A
-    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'C';} //C
-  }
-  else if (seqchar[pos] == 'G'|| seqchar[pos] == 'g'){
-    if (randval <= 0.33){seqchar[pos] = 'A';} //A
-    else if (0.33 < randval && randval <= 0.66){seqchar[pos]  = 'T';} //T
-    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'C';} //C
+    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'C';} //X 
+    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos] = 'G';} //T
+    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'T';} //C
   }
   else if (seqchar[pos] == 'C'|| seqchar[pos] == 'c'){ //'Z'
-    if (randval <= 0.33){seqchar[pos] = 'G';} //Z
-    else if (0.33 < randval && randval <= 0.66){seqchar[pos]  = 'T';} //G
-    else if (0.66 < randval && randval <= 1){seqchar[pos]  = 'A';} //G
+    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'G';} //Z
+    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos]  = 'T';} //G
+    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'A';} //G
+  }
+  else if (seqchar[pos] == 'G'|| seqchar[pos] == 'g'){
+    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'T';} //A
+    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos]  = 'A';} //T
+    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'C';} //C
+  }
+  else if (seqchar[pos] == 'T'|| seqchar[pos] == 't'){
+    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'A';} //G
+    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos]  = 'C';} //A
+    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'G';} //C
   }
 }
 
