@@ -166,10 +166,10 @@ void* Sampling_threads(void *arg){
     //int rand_id = (rand_val * fraglength-1); //100
     int rand_id = (rand_val_id * fraglength-1); //100
     //fprintf(stderr,"Random val %f \t id %d\n",rand_val_id,rand_id);
-
+    
     int chr_idx = 0;
     while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}
-
+    //fprintf(stderr,"chromosome index 2 %d\n",chr_idx);
     if (fraglength > readsizelimit){strncpy(seq_r1,struct_obj->genome+rand_start-1,readsizelimit);}   // case 1
     else {strncpy(seq_r1,struct_obj->genome+rand_start-1,fraglength);}  // case 2
     
@@ -188,12 +188,23 @@ void* Sampling_threads(void *arg){
     pch2 = strrchr(seq_r1,'N');
 
     int seqlen = strlen(seq_r1);
-    
+    //std::cout << seq_r1 << std::endl;
+    //fprintf(stderr,"random_start %zu and chromosome index %d with chromosome size %zu and new size %zu\n",rand_start,chr_idx,struct_obj->size_cumm[chr_idx],struct_obj->size_cumm[chr_idx+1]);
+    //if((rand_start-struct_obj->size_cumm[chr_idx])<seqlen){fprintf(stderr,"LOOOOOOORT %zu \t %zu \t %d \n",rand_start,struct_obj->size_cumm[1],seqlen); exit(0);}
+
     size_t n_cigar;const uint32_t *cigar;const uint32_t *cigar2; uint16_t flag; uint16_t flag2;
     uint32_t cigar_bitstring = bam_cigar_gen(seqlen, BAM_CMATCH);
 
     if ((int )(pch-seq_r1+1) == 1 || (int)(pch2-seq_r1+1)  == seqlen){
       memset(seq_r1, 0, sizeof seq_r1);memset(seq_r2, 0, sizeof seq_r2);}
+    else if ((rand_start-struct_obj->size_cumm[chr_idx+1])<fraglength){ //(rand_start-struct_obj->size_cumm[chr_idx])<fraglength
+      // perhaps readsizelimit or seqlen
+      /*fprintf(stderr,"------------------------\n");
+      std::cout << "RANDOM START LOOP" << std::endl;
+      std::cout << seq_r1 << std::endl;
+      fprintf(stderr,"random_start %zu and chromosome index %d with chromosome size %zu and new size %zu\n",rand_start,chr_idx,struct_obj->size_cumm[chr_idx],struct_obj->size_cumm[chr_idx+1]);*/
+      memset(seq_r1, 0, sizeof seq_r1);memset(seq_r2, 0, sizeof seq_r2);
+    }
     else{
       // then all the same start pos would have the same strand no matter the chromosome?
       int strand = (int) rand_start%2;//(int) rand_r(&loc_seed)%2;//1;//rand() % 2;
@@ -234,6 +245,14 @@ void* Sampling_threads(void *arg){
                                                         struct_obj->BriggsParam[2], 
                                                         struct_obj->BriggsParam[3],loc_seed,drand_alloc_briggs);
             strncpy(seq_r2, seq_r2_mod, sizeof(seq_r2));
+          }
+        }
+
+        // DEAMIN FILE PE AND SE
+        if(strcasecmp("true",struct_obj->SubFlag)==0){
+          Deam_File(seq_r1,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
+          if (strcasecmp("PE",struct_obj->SeqType)==0){
+            Deam_File(seq_r2,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
           }
         }
 
@@ -283,6 +302,10 @@ void* Sampling_threads(void *arg){
           //fprintf(stderr,"mismatch matrix %f \t %f \t %f \t %f \t %f \t %f \n",struct_obj->MisMatch[0],struct_obj->MisMatch[10],struct_obj->MisMatch[14],struct_obj->MisMatch[15],struct_obj->MisMatch[30],struct_obj->MisMatch[45]);
           //fprintf(stderr,"SEQUENCE %s\n",seq_r1);
           Deam_File(seq_r1,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
+          // IS THIS THE WAY TO DO IT?
+          if (strcasecmp("PE",struct_obj->SeqType)==0){
+            Deam_File(seq_r2,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
+          }
           //fprintf(stderr,"SEQUENCE %s\n",seq_r1);
         }
       }

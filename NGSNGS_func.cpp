@@ -163,7 +163,6 @@ void Deam_File(char seq[],mrand_t *mr,double* freqval,int LEN){
   for (int row_idx = 0; row_idx < LEN;row_idx++){
     dtemp1 = mrand_pop(mr);//0.99;// mrand_pop(mr);
     //fprintf(stderr,"RANDOM VALUE %lf\n",dtemp1);
-    int row_idx_3p = seqlen-row_idx-1;
     if (seq[row_idx] == 'A' || seq[row_idx] == 'a'){
       if (dtemp1 <= freqval[Astart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}
       else if (freqval[Astart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Astart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
@@ -192,7 +191,7 @@ void Deam_File(char seq[],mrand_t *mr,double* freqval,int LEN){
   }
   //3'
   for (int row_idx = 0; row_idx < LEN;row_idx++){
-    int row_idx_3p = seqlen-row_idx-1;
+    int row_idx_3p = seqlen-(LEN-row_idx);
     if (seq[row_idx_3p] == 'A' || seq[row_idx_3p] == 'a'){
       if (dtemp1 <= freqval[Aend3-((row_idx)*4)-4]){seq[row_idx_3p] = ntdeam[0];}
       else if (freqval[Aend3-((row_idx)*4)-4] < dtemp1 && dtemp1 <= freqval[Aend3-((row_idx)*4)-3]){seq[row_idx_3p] = ntdeam[1];}
