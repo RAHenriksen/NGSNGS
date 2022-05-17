@@ -1,6 +1,15 @@
 #ifndef NGSNGSFUNC_H
 #define NGSNGSFUNC_H
 #include "mrand.h"
+
+static void delete_seq(char *str, size_t seq_len, size_t del_len, size_t pos,int alt_len);
+
+static void delete_seq_ins(char *str, size_t seq_len, size_t del_len, size_t pos);
+
+static void instert_seq(char *str, size_t len, char insert_seq[],size_t ins_len, size_t pos);
+
+void DNA_CAPITAL(char seq[]);
+
 void DNA_complement(char seq[]);
 
 void reverseChar(char* str);
@@ -35,6 +44,8 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
 
 char* partial_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[]);
 
+char* full_vcf_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[],const char* bcf_file);
+
 typedef struct{
     int n;
     int* alias;
@@ -56,5 +67,6 @@ void deletechar(char* str,int seq_len, size_t index_to_remove,int del_len);
 void InsertChar(char* array,std::string ins,int index);
 
 void ErrorSub(double randval,char seqchar[], int pos);
+
 
 #endif /* NGSNGSFUNC_H */

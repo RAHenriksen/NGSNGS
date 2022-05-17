@@ -647,9 +647,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
                         const char* Adapter_2,const char* OutputFormat,const char* SeqType,float BriggsParam[4],const char* Briggs_flag,
                         const char* Sizefile,int FixedSize,int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName,
-                        const char* MisMatchFlag,const char* SubProfile,int MisLength,int RandMacro){
+                        const char* MisMatchFlag,const char* SubProfile,int MisLength,int RandMacro,const char *VCFformat,const char* Variant_flag){
   //creating an array with the arguments to create multiple threads;
   //fprintf(stderr,"Random MacIntType %d\n",MacroRandType);
+
   int nthreads=thread_no;
   pthread_t mythreads[nthreads];
 
@@ -689,17 +690,23 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
   {
     for (int j = 0; j < faidx_nseq(seq_ref); j++){chr_idx_arr[j] = j;}
   }
-    
-  if (chr_total == faidx_nseq(seq_ref)){
-    genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
-  }  
-  else{
-    genome_data = partial_genome_create(seq_ref,chr_total,chr_sizes,Specific_Chr,chr_size_cumm);
-    for (int i = 0; i < chr_total; i++){
-      chr_names[i] = Specific_Chr[i];
+
+  if(strcasecmp("bcf",Variant_flag)!=0){  
+    fprintf(stderr,"not bcf flag\n");
+    if (chr_total == faidx_nseq(seq_ref)){
+      genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
+    }  
+    else{
+      genome_data = partial_genome_create(seq_ref,chr_total,chr_sizes,Specific_Chr,chr_size_cumm);
+      for (int i = 0; i < chr_total; i++){
+        chr_names[i] = Specific_Chr[i];
+      }
     }
   }
-  
+  else{
+    genome_data = full_vcf_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm,VCFformat);
+  }
+
   size_t genome_size = strlen(genome_data);;
   if (genome_data != NULL){
     fprintf(stderr,"\t-> Creating the large concatenated contig, with size of %lu bp\n",genome_size);

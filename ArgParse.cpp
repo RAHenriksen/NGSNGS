@@ -68,6 +68,7 @@ typedef struct{
   const char *Poly;
   const char *Chromosomes;
   int rand_val;
+  const char *Variant;
 }argStruct;
 
 
@@ -80,6 +81,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-h   | --help: \t\t\t Print help page.\n");
   fprintf(fp,"-v   | --version: \t\t Print help page.\n\n");
   fprintf(fp,"-i   | --input: \t\t Reference file in fasta format (.fa,.fasta) to sample reads.\n");
+  fprintf(fp,"-bcf | -vcf: \t\t Variant Calling Format containing SNPs or Indels.\n");
   fprintf(fp,"-chr | --chromosomes: \t\t Specific chromosomes from input reference file.\n");
   fprintf(fp,"-r   | --reads: \t\t Number of reads to simulate, conflicts with -c option.\n");
   fprintf(fp,"-c   | --coverage: \t\t Depth of Coverage to simulate, conflics with -r option.\n");
@@ -174,12 +176,16 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Chromosomes = NULL;
   mypars->Poly = NULL;
   mypars->rand_val = -1;
+  mypars->Variant = NULL;
 
   ++argv;
   while(*argv){
     //fprintf(stderr,"ARGV %s\n",*argv);
     if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->Reference = strdup(*(++argv));
+    }
+    else if(strcasecmp("-bcf",*argv)==0){
+      mypars->Variant = strdup(*(++argv));
     }
     else if(strcasecmp("-t1",*argv)==0 || strcasecmp("--threads1",*argv)==0){
       mypars->threads1 = atoi(*(++argv));
@@ -284,6 +290,7 @@ int main(int argc,char **argv){
     time_t t2 = time(NULL);
 
     const char *fastafile = mypars->Reference;
+    const char *VCFfile = mypars->Variant;
     const char* OutputFormat = mypars->OutFormat;
     const char* filename = mypars->OutName; //"chr22_out";
     const char* Seq_Type = mypars->Seq;
@@ -484,13 +491,20 @@ int main(int argc,char **argv){
       Specific_Chr[chr_idx_partial++] = "\0";
     }
     
+    const char* Variant_flag;
+    const char* VCFformat;
+    if (mypars->Variant != NULL){
+      Variant_flag = "bcf";
+      VCFformat = mypars->Variant;
+    }
+
     //if(Specific_Chr[0]=='\0'){fprintf(stderr,"HURRA");}
     int DeamLength;
     Create_se_threads(seq_ref,threads1,Glob_seed,Thread_specific_Read,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,qualstringoffset,
                       QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,
-                      ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType);
+                      ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType,VCFformat,Variant_flag);
 
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
