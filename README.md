@@ -13,6 +13,7 @@ git clone https://github.com/samtools/htslib.git
 
 cd htslib; make; cd ../NGSNGS; make HTSSRC=../htslib
 
+
 * Use systemwide installation of htslib
 
 git clone https://github.com/RAHenriksen/NGSNGS.git
