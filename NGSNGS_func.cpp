@@ -542,13 +542,9 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
   if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile_nam); //outfile
 }
 
-char* vcf_info(char genome_data[],int chr_sizes,const char* bcf_file,const char *chr_names[]){
-  //fprintf(stderr,"--------------------INSIDE VCF FUNC--------------------\n");
-  //fprintf(stderr,"CHRSIZE %d \t CHROMOSOME NAME %s\n",chr_sizes,chr_names[0]);
+char* vcf_info(char genome_data[],int chr_sizes,const char* bcf_file,const char *chr_names[],const char* VarType,FILE *VarInfoFile){
+
   DNA_CAPITAL(genome_data);
-  /*std::cout << genome_data[10000] << std::endl;
-  genome_data[10000] = 'C';
-  std::cout << genome_data[10000] << std::endl;*/
 
   htsFile *bcf_obj = NULL;
   bcf_hdr_t *bcf_head = NULL;
@@ -574,7 +570,6 @@ char* vcf_info(char genome_data[],int chr_sizes,const char* bcf_file,const char 
   
   //initializing variation sampling 
   bcf1_t *bcf_records = bcf_init();
-  std::cout << bcf_records << std::endl;
   if (bcf_records == NULL){fprintf(stderr,"WARNING NO VARIANTS IN VCF FILE"); exit(0);}
   else{
     bcf_read(bcf_obj, bcf_head, bcf_records)==0; //ignoring return value (int)
@@ -587,14 +582,19 @@ char* vcf_info(char genome_data[],int chr_sizes,const char* bcf_file,const char 
     int record_indiv;
     size_t old_pos = 0;
     while ((record_indiv = bcf_itr_next(bcf_obj, itr, bcf_records)) == 0){
+      fprintf(stderr,"WHILE LOOP\n");
       if(strcasecmp(bcf_hdr_id2name(bcf_head, bcf_records->rid),chr_names[0])==0){
         bcf_unpack((bcf1_t*)bcf_records, BCF_UN_ALL);
-        //std::cout << bcf_hdr_id2name(bcf_head, bcf_records->rid) << std::endl;
-        //printf("record_indiv: %d - id: %d, pos: %d, len: %d\n", record_indiv, bcf_records->rid, bcf_records->pos, bcf_records->rlen);
+
+        fprintf(stderr,"INSIDE WhILE IF STATEMENT\n");
         size_t pos = (int) bcf_records->pos + 1;
+        std::cout << chr_names[0] << " " << pos << std::endl;
         int n_allele = (int) bcf_records->n_allele;
+        std::cout << n_allele << std::endl;
         char* ref = bcf_records->d.allele[0];
+        std::cout << ref << std::endl;
         char* alt = bcf_records->d.allele[1];
+        fprintf(stderr,"SNP\t%s\t%zu\t%s\n",chr_names[0],pos,ref);
 
         char seqbefore[1024];
         char seqafter[1024];
@@ -606,64 +606,38 @@ char* vcf_info(char genome_data[],int chr_sizes,const char* bcf_file,const char 
         int ref_size = strlen(ref);
         int alt_size = strlen(alt_select);
         size_t new_pos = pos + insert_total + del_total;
-        if(alt[0] != '<'){
+        fprintf(stderr,"SNP\t%s\t%zu\t%s\t%zu\t%s\n",chr_names[0],pos,ref,new_pos,alt_select);
+        if(alt[0] != '<'){ //not CNV
           if(new_pos<old_pos){continue;}//If SNP has been removed due to a previous deletion
           else{
-            //fprintf(stderr,"------------------------\n");
-            //fprintf(stderr,"tmp pos %zu and new pos %zu\n",old_pos,new_pos);
-            // not CNV
-            //if ((strcasecmp(VARFLAG,"snp")==0)||(strcasecmp(VARFLAG,"both")==0))
-            if(ref_size == 1 && alt_size == 1){
-              //fprintf(stderr,"%c%c%c%c%c%c%c%c%c\n",genome_data[new_pos-4],genome_data[new_pos-3],genome_data[new_pos-2],
-              //genome_data[new_pos-1],genome_data[new_pos],genome_data[new_pos+1],genome_data[new_pos+2],genome_data[new_pos+3],genome_data[new_pos+4]);
-              char ref_nt = genome_data[new_pos-1];
-              if(ref_nt == *ref){
-                //fprintf(stderr,"POSITION %d NEW POS %d \t REF DATA-1 %c newpos-1 %c REF VCF %s \t ALT %s \n",pos,new_pos,genome_data[pos-1],genome_data[new_pos-1],ref,alt);
-                genome_data[new_pos-1] = *alt_select;}
-              else{fprintf(stderr,"VCF reference allele doesn't match with the position in the genome data\n");exit(0);}
-              //fprintf(stderr,"%c%c%c%c%c%c%c%c%c\n",genome_data[new_pos-4],genome_data[new_pos-3],genome_data[new_pos-2],
-              //genome_data[new_pos-1],genome_data[new_pos],genome_data[new_pos+1],genome_data[new_pos+2],genome_data[new_pos+3],genome_data[new_pos+4]);
+            fprintf(stderr,"INSIDE NOT CNV STATEMENT\n");
+            if (strcasecmp(VarType,"snp")==0||strcasecmp(VarType,"all")==0){
+              fprintf(stderr,"SNP\t%s\t%zu\t%s\t%zu\t%s\n",chr_names[0],pos,ref,new_pos,alt_select);
+              if(ref_size == 1 && alt_size == 1){
+                fprintf(VarInfoFile,"SNP\t%s\t%zu\t%s\t%zu\t%s\n",chr_names[0],pos,ref,new_pos,alt_select);
+                char ref_nt = genome_data[new_pos-1];
+                if(ref_nt == *ref){genome_data[new_pos-1] = *alt_select;}
+                else{fprintf(stderr,"VCF reference allele doesn't match with the position in the genome data\n");exit(0);}
+              }
             }
             //insertion
-            //else if ((strcasecmp(VARFLAG,"indels")==0)||(strcasecmp(VARFLAG,"both")==0))
-            else if(alt_size > ref_size){
-              //fprintf(stderr,"INSERTION at pos %d and new_pos %zu\n",pos,new_pos);
-              
-              //fprintf(stderr,"%c%c%c%c%c%c%c\n",genome_data[new_pos-3],genome_data[new_pos-2],
-              //genome_data[new_pos-1],genome_data[new_pos],genome_data[new_pos+1],genome_data[new_pos+2],genome_data[new_pos+3]);
-                    
-              instert_seq(genome_data, strlen(genome_data), alt_select,strlen(alt_select), new_pos-1);
-
-              //fprintf(stderr,"%c%c%c%c%c%c%c\n",genome_data[new_pos-3],genome_data[new_pos-2],
-              //genome_data[new_pos-1],genome_data[new_pos],genome_data[new_pos+1],genome_data[new_pos+2],genome_data[new_pos+3]);
-
-              insert_total = insert_total + strlen(alt_select)-1;
-              //exit(0);  
-            }
-            //deletion
-            else if(ref_size > alt_size){
-              //fprintf(stderr,"DELTION at pos %d and new_pos %zu\n",pos,new_pos);
-
-              //fprintf(stderr,"%c%c%c%c%c%c%c%c%c\n",genome_data[new_pos-4],genome_data[new_pos-3],genome_data[new_pos-2],
-              //genome_data[new_pos-1],genome_data[new_pos],genome_data[new_pos+1],genome_data[new_pos+2],genome_data[new_pos+3],genome_data[new_pos+4]);
-
-              //instert_seq(genome_data, strlen(genome_data), alt_select,strlen(alt_select), new_pos-1);
-              //fprintf(stderr,"%c%c%c%c%c%c%c%c%c\n",genome_data[new_pos-4],genome_data[new_pos-3],genome_data[new_pos-2],
-              //genome_data[new_pos-1],genome_data[new_pos],genome_data[new_pos+1],genome_data[new_pos+2],genome_data[new_pos+3],genome_data[new_pos+4]);
-              
-              delete_seq(genome_data, alt_size, ref_size, new_pos,alt_size);
-
-              del_total = del_total - (ref_size-alt_size);
-              //fprintf(stderr,"DELETD BASEPAIRS %d\n",del_total);
-              //fprintf(stderr,"%c%c%c%c%c%c%c%c%c\n",genome_data[new_pos-4],genome_data[new_pos-3],genome_data[new_pos-2],
-              //genome_data[new_pos-1],genome_data[new_pos],genome_data[new_pos+1],genome_data[new_pos+2],genome_data[new_pos+3],genome_data[new_pos+4]);
-              //exit(0);
+            if (strcasecmp(VarType,"indel")==0||strcasecmp(VarType,"all")==0){
+              if(alt_size > ref_size){
+                fprintf(VarInfoFile,"Indel\t%s\t%zu\t%s\t%zu\t%s\n",chr_names[0],pos,ref,new_pos,alt_select);
+                instert_seq(genome_data, strlen(genome_data), alt_select,strlen(alt_select), new_pos-1);
+                insert_total = insert_total + strlen(alt_select)-1;
+              }
+              //deletion
+              else if(ref_size > alt_size){
+                fprintf(VarInfoFile,"Indel\t%s\t%zu\t%s\t%zu\t%s\n",chr_names[0],pos,ref,new_pos,alt_select);
+                delete_seq(genome_data, alt_size, ref_size, new_pos,alt_size);
+                del_total = del_total - (ref_size-alt_size);
+              }
             }
           }
         }
         old_pos = new_pos;
       }
-      
       else{
         fprintf(stderr,"Reference chromosome %s has no variations in vcf file at chromosomes %s\n",chr_names[0],bcf_hdr_id2name(bcf_head, bcf_records->rid));
       }
@@ -735,7 +709,7 @@ char* partial_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const
   return genome;
 }
 
-char* full_vcf_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[],const char* bcf_file){
+char* full_vcf_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[],const char* bcf_file,const char* VarType){
   fprintf(stderr,"BCF FILE %s\n",bcf_file);
   size_t genome_size = 0;
   chr_size_cumm[0] = 0;
@@ -751,19 +725,23 @@ char* full_vcf_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],cons
   char* genome = (char*) malloc(sizeof(char) * (genome_size+chr_total));
   genome[0] = 0; //Init to create proper C string before strcat
   //chr_total
+  FILE *VarInfoFile = fopen("Variant_pos_log.txt", "w");
+  fprintf(VarInfoFile,"Type\tChr\tRef_Pos\tRef\tRead_Pos\tAlt\n");
   for (int i = 0; i < chr_total; i++){
 
     char *data = fai_fetch(seq_ref,chr_names[i],&chr_sizes[i]);
 
     if (data != NULL){
+      fprintf(stderr,"INSIDE NULL DATA \t WITH VARTYPE %s and chr %s\n",VarType,chr_names[i]);
       //char* vcf_info(char genome_data[],int chr_sizes,const char* bcf_file,const char *chr_names[]){
-      vcf_info(data, chr_sizes[i],bcf_file,&chr_names[i]); //Chr14_subset4_bcf
+      vcf_info(data, chr_sizes[i],bcf_file,&chr_names[i],VarType,VarInfoFile); //Chr14_subset4_bcf
       sprintf(genome+strlen(genome),"%s",data); 
     }
     // several of the build in functions allocates memory without freeing it again.
     free((char*)data); //Free works on const pointers, so we have to cast into a const char pointer
   }
-
+  fprintf(stderr,"DONE WITH DATA FOR LOOP \n");
+  fclose(VarInfoFile);
   return genome;
 }
 

@@ -69,6 +69,7 @@ typedef struct{
   const char *Chromosomes;
   int rand_val;
   const char *Variant;
+  const char *Variant_type;
 }argStruct;
 
 
@@ -79,9 +80,9 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t1 2 -s 1 -l 100 -seq PE -e -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -q2 Test_Examples/Qual_profiles/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut\n");  
   fprintf(fp,"\nOptions: \n");
   fprintf(fp,"-h   | --help: \t\t\t Print help page.\n");
-  fprintf(fp,"-v   | --version: \t\t Print help page.\n\n");
   fprintf(fp,"-i   | --input: \t\t Reference file in fasta format (.fa,.fasta) to sample reads.\n");
-  fprintf(fp,"-bcf | -vcf: \t\t Variant Calling Format containing SNPs or Indels.\n");
+  fprintf(fp,"-bcf: \t\t Variant Calling Format containing SNPs or Indels.\n");
+  fprintf(fp,"-v:  | --variant: \t\t Variant Calling Format containing SNPs or Indels.\n");
   fprintf(fp,"-chr | --chromosomes: \t\t Specific chromosomes from input reference file.\n");
   fprintf(fp,"-r   | --reads: \t\t Number of reads to simulate, conflicts with -c option.\n");
   fprintf(fp,"-c   | --coverage: \t\t Depth of Coverage to simulate, conflics with -r option.\n");
@@ -141,6 +142,8 @@ void ErrMsg(double messageno){
   else if(messageno == 10.0){fprintf(stderr,"\nNucleotide for poly(x) homopolymers not recognized, provide -p : <A,G,C,T,N>.\n");}
   else if(messageno == 11.0){fprintf(stderr,"\nCould not parse the Nucleotide Quality profile(s), for format <fq, fq.gz, sam, bam, cram> provide -q1 for SE and -q1, -q2 for PE.\n");}
   else if(messageno == 12.0){fprintf(stderr,"\nBoth a mismatch file and briggs deamination parameters has been provided. Provide either briggs (-p) og mismatch (-mf).\n");}
+  else if(messageno == 13.0){fprintf(stderr,"\nOnly variantion type has been provided (-v). Provide variant calling format (-bcf).\n");}
+  else if(messageno == 13.5){fprintf(stderr,"\nProvide variantion type not recognized, provide either snp, indel or all (default)\n");}
   else {fprintf(stderr,"\nError with input parameters, see helppage (-h)");}
   fprintf(stderr,"see helppage (-h)\n");
   exit(0);
@@ -177,6 +180,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Poly = NULL;
   mypars->rand_val = -1;
   mypars->Variant = NULL;
+  mypars->Variant_type = NULL;
 
   ++argv;
   while(*argv){
@@ -186,6 +190,13 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-bcf",*argv)==0){
       mypars->Variant = strdup(*(++argv));
+    }
+    else if(strcasecmp("-v",*argv)==0 || strcasecmp("--variant",*argv)==0){
+      mypars->Variant_type = strdup(*(++argv));
+      if(mypars->Variant == NULL){ErrMsg(13.0);}
+      else if (strcasecmp("snp",mypars->Variant_type)!=0 && 
+      strcasecmp("indel",mypars->Variant_type)!=0 &&
+      strcasecmp("all",mypars->Variant_type)!=0){ErrMsg(13.5); exit(0);}      
     }
     else if(strcasecmp("-t1",*argv)==0 || strcasecmp("--threads1",*argv)==0){
       mypars->threads1 = atoi(*(++argv));
@@ -279,8 +290,7 @@ argStruct *getpars(int argc,char ** argv){
 int main(int argc,char **argv){
   //fprintf(stderr,"PRINT TYPE %d\n",MacroRandType);
   argStruct *mypars = NULL;
-  if(argc==1||(argc==2&&(strcasecmp(argv[1],"--version")==0||strcasecmp(argv[1],"-v")==0||
-                        strcasecmp(argv[1],"--help")==0||strcasecmp(argv[1],"-h")==0))){
+  if(argc==1||(argc==2&&(strcasecmp(argv[1],"--help")==0||strcasecmp(argv[1],"-h")==0))){
     HelpPage(stderr);
     return 0;
   }
@@ -290,7 +300,6 @@ int main(int argc,char **argv){
     time_t t2 = time(NULL);
 
     const char *fastafile = mypars->Reference;
-    const char *VCFfile = mypars->Variant;
     const char* OutputFormat = mypars->OutFormat;
     const char* filename = mypars->OutName; //"chr22_out";
     const char* Seq_Type = mypars->Seq;
@@ -493,18 +502,26 @@ int main(int argc,char **argv){
     
     const char* Variant_flag;
     const char* VCFformat;
+    const char *VarType;
     if (mypars->Variant != NULL){
       Variant_flag = "bcf";
       VCFformat = mypars->Variant;
+      if(mypars->Variant_type == NULL){
+        VarType = "all";
+      }
+      else if(mypars->Variant_type != NULL){
+        VarType = mypars->Variant_type;
+      }
+      fprintf(stderr,"VARIANT TYPE %s\n",VarType);
     }
-
+    
     //if(Specific_Chr[0]=='\0'){fprintf(stderr,"HURRA");}
     int DeamLength;
     Create_se_threads(seq_ref,threads1,Glob_seed,Thread_specific_Read,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,qualstringoffset,
                       QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,
-                      ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType,VCFformat,Variant_flag);
+                      ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType,VCFformat,Variant_flag,VarType);
 
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
