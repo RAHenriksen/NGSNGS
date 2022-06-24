@@ -143,8 +143,8 @@ double uniform(){
     return (r-(int)r);
 }
 
-void reverseChar(char* str) {
-    std::reverse(str, str + strlen(str));
+void reverseChar(char* str,int length) {
+    std::reverse(str, str + length);
 }
 
 void deletechar(char* array,int seq_len, size_t index_to_remove, int del_len){

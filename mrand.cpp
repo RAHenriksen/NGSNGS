@@ -9,17 +9,17 @@ mrand_t *mrand_alloc(int type_a,long int seedval){
   ret->type = type_a;
 
   if(ret->type==0){
-    fprintf(stderr,"In linux if -> drand48_data\n");
+    //fprintf(stderr,"In linux if -> drand48_data\n");
     srand48_r(seedval,(struct drand48_data *) &ret->buf0);
     //i need to somehow print the value
   }
   if(ret->type==1){
-    fprintf(stderr,"In Apple loop if ->  APPLE LOOP\n");
+    //fprintf(stderr,"In Apple loop if ->  APPLE LOOP\n");
     ret->eng = std::default_random_engine(seedval);
     ret->distr = std::uniform_real_distribution<float>(0, 1);
   }
   if(ret->type==2){
-    fprintf(stderr,"rand_r loop\n");
+    //fprintf(stderr,"rand_r loop\n");
     ret->rand_r_seed = (unsigned int) seedval;
   }
   return ret;

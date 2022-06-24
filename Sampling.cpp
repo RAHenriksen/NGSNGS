@@ -94,8 +94,8 @@ void* Sampling_threads(void *arg){
 
   int MacroRandType;
   MacroRandType = struct_obj -> RandMacro; //LLLLLL
-  fprintf(stderr,"RANDOM VALUE %d \n",MacroRandType);
-  fprintf(stderr,"RANDOM VALUE2 %d \n",MacroRandType);
+  //fprintf(stderr,"RANDOM VALUE %d \n",MacroRandType);
+  //fprintf(stderr,"RANDOM VALUE2 %d \n",MacroRandType);
   // creating random objects for all distributions.
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
   size_t genome_len = strlen(struct_obj->genome);
@@ -120,6 +120,13 @@ void* Sampling_threads(void *arg){
   char read2[1024] = {0};
   char readadapt2[1024] = {0};
   
+  char read_rc_sam1[1024] = {0};
+  char readadapt_rc_sam1[1024] = {0};
+  char read_rc_sam2[1024] = {0};
+  char readadapt_rc_sam2[1024] = {0};
+  char readadapt_err1[1024] = {0};
+  char readadapt_err2[1024] = {0};
+
   int reads = struct_obj -> reads;
 
   size_t rand_start;
@@ -215,23 +222,27 @@ void* Sampling_threads(void *arg){
         if (strcasecmp("SE",struct_obj->SeqType)==0){
           if (strand == 0){flag = 0;} // se read forward strand
           else{flag = 16;
+            //fprintf(stderr,"--------------\nFLAG IS %d\n ORIG\n%s \n",flag,seq_r1);
+            // Simulate reads from the negative strand but change the orientation to 5' to 3' fragment
             DNA_complement(seq_r1);
-            reverseChar(seq_r1);
-          } // reverse strand
+            reverseChar(seq_r1,strlen(seq_r1));
+            //fprintf(stderr,"FIRST REV COMP\n%s \n",seq_r1);
+          }
         }
         if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 0){
           flag = 97;  //Paired, mate reverse, first
           flag2 = 145; // Paired, reverse strand, second
           DNA_complement(seq_r2);
-          reverseChar(seq_r2);
+          reverseChar(seq_r2,strlen(seq_r2));
         }
         else if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 1){
           flag = 81; // Paired, reverse strand, first
           flag2 = 161; // Paired, mate reverse, second
           DNA_complement(seq_r1);
-          reverseChar(seq_r1);
+          reverseChar(seq_r1,strlen(seq_r1));
         }
 
+        // To add deamination we need the fragments to emulate both forward and reverse strand with the real orientation (hence the reverse complement earlier)
         if(strcasecmp(struct_obj->Briggs_flag,"true")==0){
           SimBriggsModel(seq_r1, seq_r1_mod, fraglength,struct_obj->BriggsParam[0], 
                                                         struct_obj->BriggsParam[1], 
@@ -248,7 +259,7 @@ void* Sampling_threads(void *arg){
           }
         }
 
-        // DEAMIN FILE PE AND SE
+        // Similar if we use deamination file
         if(strcasecmp("true",struct_obj->SubFlag)==0){
           Deam_File(seq_r1,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
@@ -256,31 +267,35 @@ void* Sampling_threads(void *arg){
           }
         }
 
-        if (flag == 16 || flag == 81){DNA_complement(seq_r1);reverseChar(seq_r1);}
-        else if (flag == 97){DNA_complement(seq_r2);reverseChar(seq_r2);}  
+        //I chose not to add sequencing errors here, since we need the adapter to be added first.
+
+        // HERE WE USE SEQUENCING ERRORS TO CREATE SUBSTITUTIONS.
+        // ADD SEQUENCING ERROR HERE IN ORDER TO GET CORRECT ORIENATION OF THE ADDED NUCLEOTIDE SUBSTITUTIONS
+
+        // Due to real life empirical sam files and its specifications we need all single-end data to be from the positive strand, as such we need to 
+        // change the orientation and sequence for the reads from the reverse strand back to the forward strand.
+        
+        /*if (flag == 16 || flag == 81){
+          fprintf(stderr,"INSIDE DNA COMPLEMENT LOOP\n------------------\n");
+          DNA_complement(seq_r1);reverseChar(seq_r1);}
+        else if (flag == 97){DNA_complement(seq_r2);reverseChar(seq_r2);}*/  
       }
       else{
         // in fasta and fastq the sequences need to be on forward or reverse strand, i.e we need reverse complementary        
         if (strcasecmp("SE",struct_obj->SeqType)==0 && strand == 1){
           DNA_complement(seq_r1);
-          reverseChar(seq_r1);
+          reverseChar(seq_r1,strlen(seq_r1));
         }
 
         if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 0){
           DNA_complement(seq_r2);
-          reverseChar(seq_r2);
+          reverseChar(seq_r2,strlen(seq_r2));
         }
         else if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 1){
           DNA_complement(seq_r1);
-          reverseChar(seq_r1);
+          reverseChar(seq_r1,strlen(seq_r1));
         }
-        //std::cout << seq_r1 << std::endl;
-        //deletechar(seq_r1,145, 10, 5);
-        //deletechar(seq_r1,145, 132, 5);
-        //InsertChar(seq_r1,"GCATC",143);
-        //InsertChar(seq_r1,"ATACG",9);
-        //std::cout << seq_r1 << std::endl;
-        
+
         // Adding PMD after strand is selected, as to not influence the symmetry of the PMD
         if(strcasecmp(struct_obj->Briggs_flag,"true")==0){
           SimBriggsModel(seq_r1, seq_r1_mod, strlen(seq_r1),struct_obj->BriggsParam[0], 
@@ -398,6 +413,7 @@ void* Sampling_threads(void *arg){
         }
         if (struct_obj->SAMout){
           if(strcasecmp("true",struct_obj->QualFlag)==0){
+            // if we actually want the nucleotide quality string in the sam output
             for(long unsigned int p = 0;p<strlen(readadapt);p++){
               double dtemp1;double dtemp2;
               dtemp1 = mrand_pop(drand_alloc_nt_adapt);
@@ -433,24 +449,49 @@ void* Sampling_threads(void *arg){
               }
             }
           }
+
+          if (flag == 0){sprintf(readadapt_rc_sam1, "%s",readadapt);}
+          else if (flag == 16 || flag == 81){
+            
+            // 16 se reverse strand // 81 first in pair reverse strand
+            // we cannot simply copy the adapter sequence, since sequencing error is possible, as such
+            // readadapt_err is the extracted sequence after Suberr 
+            sprintf(readadapt_err1, "%*s", strlen(readadapt)-strlen(seq_r1), readadapt+strlen(seq_r1));
+            sprintf(read_rc_sam1, "%.*s", strlen(seq_r1), readadapt);
+            DNA_complement(read_rc_sam1);reverseChar(read_rc_sam1,strlen(read_rc_sam1));
+            sprintf(readadapt_rc_sam1, "%s%s", read_rc_sam1,readadapt_err1);
+            if (strcasecmp("PE",struct_obj->SeqType)==0){
+              // the mate to flag 81 will be the second in pair on the forward strand - just to esnrue identical names
+              sprintf(readadapt_rc_sam2, "%s",readadapt2);
+            } 
+          }
+          else if (flag == 97){
+            // 97 first in pair forward strand only for Paired end.
+            sprintf(readadapt_rc_sam1, "%s",readadapt); //to ensure all the reads have identifcal names for the sam output
+
+            // the mate is reverse
+            sprintf(readadapt_err2, "%*s", strlen(readadapt2)-strlen(seq_r2), readadapt2+strlen(seq_r2));
+            sprintf(read_rc_sam2, "%.*s", strlen(seq_r2), readadapt2); // copy the sequence 2 from the sequence 2 + adapter
+            DNA_complement(read_rc_sam2);reverseChar(read_rc_sam2,strlen(read_rc_sam1)); // reverse complement sequence 2 
+            sprintf(readadapt_rc_sam2, "%s%s", read_rc_sam2,readadapt_err2); // create rev comp sequence 2 + adapter
+          }
+
           if (struct_obj->PolyNt != 'F'){
             char PolyChar[1024] = "\0";
             memset(PolyChar,struct_obj->PolyNt, readsizelimit);
-            strncpy(PolyChar, readadapt, strlen(readadapt));
+            strncpy(PolyChar, readadapt_rc_sam1, strlen(readadapt_rc_sam1));
             ksprintf(struct_obj->fqresult_r1,"%s",PolyChar);
             if (strcasecmp("PE",struct_obj->SeqType)==0){
               char PolyChar[1024] = "\0";
               memset(PolyChar,struct_obj->PolyNt, readsizelimit);
-              strncpy(PolyChar, readadapt2, strlen(readadapt2));
+              strncpy(PolyChar, readadapt_rc_sam2, strlen(readadapt_rc_sam2));
               ksprintf(struct_obj->fqresult_r2,"%s",PolyChar);
             } 
           }
           else{
-            ksprintf(struct_obj->fqresult_r1,"%s",readadapt);
-            if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,"%s",readadapt2);} 
-          }
-          
-                   
+            ksprintf(struct_obj->fqresult_r1,"%s",readadapt_rc_sam1);
+            if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,"%s",readadapt_rc_sam2);} 
+          }     
         }
       }
       else{
@@ -459,6 +500,7 @@ void* Sampling_threads(void *arg){
           if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s\n%s\n",READ_ID,seq_r2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
+          //fprintf(stderr,"TEST FQ BC%s\n",qual_r1);
           for(long unsigned int p = 0;p<strlen(seq_r1);p++){
             double dtemp1;double dtemp2;
             dtemp1 = mrand_pop(drand_alloc_nt);
@@ -477,6 +519,7 @@ void* Sampling_threads(void *arg){
               if (dtemp3 < struct_obj->NtErr_r1[qscore]){ErrorSub(dtemp4,seq_r1,p);}
             }
           }
+          //fprintf(stderr,"TEST FQ AC%s\n",qual_r1);
           ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             for(int p = 0;p<seqlen;p++){
@@ -499,24 +542,25 @@ void* Sampling_threads(void *arg){
             ksprintf(struct_obj->fqresult_r2,"@%s\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);}
         }
         if (struct_obj->SAMout){
+
           if(strcasecmp("true",struct_obj->QualFlag)==0){
-            for(int p = 0;p<seqlen;p++){
+            for(long unsigned int p = 0;p<strlen(seq_r1);p++){
               double dtemp1;double dtemp2;
               dtemp1 = mrand_pop(drand_alloc_nt);
               dtemp2 = mrand_pop(drand_alloc_nt);
 
               int base = seq_r1[p];
-
-              int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);              
+              int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
               qual_r1[p] = struct_obj->NtQual_r1[qscore];
+
               if (struct_obj->ErrorFlag == 'T'){
                 double dtemp3;double dtemp4;
                 dtemp3 = mrand_pop(drand_alloc_nt);
                 dtemp4 = mrand_pop(drand_alloc_nt);
-
                 if (dtemp3 < struct_obj->NtErr_r1[qscore]){ErrorSub(dtemp4,seq_r1,p);}
               }
             }
+
             if (strcasecmp("PE",struct_obj->SeqType)==0){
               for(int p = 0;p<seqlen;p++){
                 double dtemp1;double dtemp2;
@@ -538,7 +582,11 @@ void* Sampling_threads(void *arg){
               }
             }
           }
+          //fprintf(stderr,"AFTER SEQ ERR \n%s \n",seq_r1);
+          if (flag == 16 || flag == 81){DNA_complement(seq_r1);reverseChar(seq_r1,strlen(seq_r1));}
+          else if (flag == 97){DNA_complement(seq_r2);reverseChar(seq_r2,strlen(seq_r2));}  
           ksprintf(struct_obj->fqresult_r1,"%s",seq_r1);
+          //fprintf(stderr,"SAVE OUTPUT \n%s \n",seq_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,"%s",seq_r2);}
         }
       }
@@ -577,6 +625,12 @@ void* Sampling_threads(void *arg){
         min_beg = rand_start-struct_obj->size_cumm[chr_idx] - 1;
         max_end = rand_start-struct_obj->size_cumm[chr_idx] + fraglength - 1;
         insert = max_end - min_beg + 1;
+        
+        // since we change the orientation of the reads from the reverse strand, we also have to do it for the qual string
+        // and it should only hold true for the sequence without the adapter
+        if (flag == 16 || flag == 81){reverseChar(qual_r1,strlen(seq_r1));}
+        else if (flag == 97){reverseChar(qual_r2,strlen(seq_r2));}  
+
         if (strcasecmp("PE",struct_obj->SeqType)==0){
           bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length,READ_ID,flag,chr_idx,min_beg,mapq,
           n_cigar,cigar,chr_idx,max_end,insert,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
@@ -599,7 +653,7 @@ void* Sampling_threads(void *arg){
         struct_obj->fqresult_r1->l =0;
         struct_obj->fqresult_r2->l =0;
       }
-
+      
       memset(qual_r1, 0, sizeof qual_r1); 
       memset(qual_r2, 0, sizeof qual_r2);  
       memset(seq_r1, 0, sizeof seq_r1);

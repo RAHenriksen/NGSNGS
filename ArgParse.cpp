@@ -317,7 +317,7 @@ int main(int argc,char **argv){
       #   error "Unknown compiler"
       #endif
     }
-    fprintf(stderr,"RANDOM VALUE %d \n",MacroRandType);
+    //fprintf(stderr,"RANDOM VALUE %d \n",MacroRandType);
     
     
     if (fastafile == NULL){ErrMsg(1.0);}

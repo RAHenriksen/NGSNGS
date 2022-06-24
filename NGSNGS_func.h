@@ -12,7 +12,7 @@ void DNA_CAPITAL(char seq[]);
 
 void DNA_complement(char seq[]);
 
-void reverseChar(char* str);
+void reverseChar(char* str,int length);
 
 int Random_geometric_k(unsigned int  seed,const double p);
 

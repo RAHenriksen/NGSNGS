@@ -130,8 +130,9 @@ int main_qual(int argc,char **argv){
             if (buf[0] == '.'){continue;}
             else if (buf[0] == 'N'){
                 if (count_line % 2){
-                    for (int i = 0; i < col_no; i++){
-                        fprintf(ReadQual_2,"%e \t",1.00);
+                    fprintf(ReadQual_2,"%e \t",1.00);
+                    for (int i = 1; i < col_no; i++){
+                        fprintf(ReadQual_2,"%e \t",0.00);
                     }
                     fprintf(ReadQual_2,"\n");
                 }
@@ -165,8 +166,10 @@ int main_qual(int argc,char **argv){
                     strtok(Count_line1,"\t");
                     char* tok1;
                     tok1 = strtok(NULL,"\t"); //first token is position
-                    //extract all the next tokens, i.e. the nucleotide quality counts to create the total sum of counts
-                    while(((tok1 = strtok(NULL,"\t")))){linesum += atoi(tok1);line_elem++;}
+
+                    //extract all the next tokens, i.e. the nucleotide quality counts, since the counts are cummulative, i only need the final element for each nucleotide position
+
+                    while(((tok1 = strtok(NULL,"\t")))){linesum = atoi(tok1);line_elem++;}  //linesum += atoi(tok1);line_elem++;
 
                     // create new tokens since the Count_line1 tokens are destroyed
                     strtok(Count_line2,"\t");
@@ -176,18 +179,28 @@ int main_qual(int argc,char **argv){
                     int i = 1;
                     // first element of nucleotide quality frequency for that position
                     Freq_array[0] = (double) atof(tok2)/linesum;
+                    //fprintf(stderr,"Linesum %d\n",linesum);
+                    //fprintf(stderr,"Freq arreay one %f\n",Freq_array[0]);
                     // first element of nucleotide quality CDF for that position
                     CDF_array[0] = Freq_array[0];
                     // Since its the CDF the first values should be identical in both.
                     //fprintf(stderr,"Nucleotide quality frequency : %e and CDF value %e \n",Freq_array[0],CDF_array[0]);
-
+                    //fprintf(stderr,"tok2 v1 %s\n",tok2);
+                    char* tok_prev;
+                    tok_prev = tok2;
                     while(((tok2 = strtok(NULL,"\t")))){
-                        Freq_array[i] = (double) atof(tok2)/linesum;
+                        Freq_array[i] = (double) (atof(tok2)-atof(tok_prev))/linesum;
+                        /*fprintf(stderr,"---------\ntok2 prev %s\n",tok_prev);
+                        fprintf(stderr,"tok2 v2 %s\n",tok2);
+                        fprintf(stderr,"Token %f\n",atof(tok2)-atof(tok_prev));
+                        fprintf(stderr,"Freq array v2 %f\n",Freq_array[i]);*/
                         CDF_array[i] = Freq_array[i]+CDF_array[i-1];
+                        //fprintf(stderr,"CDF array v2 %f\n",CDF_array[i]);
+                        tok_prev = tok2;
                         //fprintf(stderr,"Nucleotide quality frequency : %e and CDF value %e for nucelotide index %d\n",Freq_array[i],CDF_array[i],i);
                         i++;
                     }
-
+                    //exit(0);
                     // creates final token of the nucleotide qualities for that position
                     strtok(Qual_line,"\t");
                     strtok(NULL,"\t");
@@ -207,13 +220,12 @@ int main_qual(int argc,char **argv){
                         // if the index of nucleotide qualities match with the total nuceltide quality array, then save the CDF of that index
                         if(FullQual[col_i] == Qual_no[col_i]){
                             if (CDF_array[col_i] < 1.000000e-100){
-                                fprintf(ReadQual_2,"%e \t",1.00);
+                                // after having a CDF_array[col_i-1] to be the value of 1.000000e+00
+                                fprintf(ReadQual_2,"%f \t",0.00);
                             }
-                            else
-                            {
+                            else{
                                 fprintf(ReadQual_2,"%e \t",CDF_array[col_i]);
-                            }
-                            
+                            }                        
                             //fprintf(stderr,"Full quality element : %d line quality %d CDF value %e for column index %d\n",FullQual[col_i],Qual_no[col_i],CDF_array[col_i],col_i);
                         }
                         /* if the nucleotide qualities for the full and for that line doesn't match, then it means that given line doesn't contain a given nt
@@ -227,14 +239,14 @@ int main_qual(int argc,char **argv){
                         if(FullQual[col_i] != Qual_no[col_i]){
                             // if the last column values are below 1.0e-100 after moving several columns into the
                             // quality profile then its an artefact of skipping columns.
+                            //std::cout << CDF_array[col_i-1] << std::endl;
                             if (CDF_array[col_i-1] < 1.000000e-100){
-                                fprintf(ReadQual_2,"%e \t",1.00);
+                                fprintf(ReadQual_2,"%f \t",0.00);
                             }
-                            else if (CDF_array[0] == 1.000000e+00 )
-                            {   
-                                fprintf(ReadQual_2,"%e \t",1.00);
-                            }
-                            else{fprintf(ReadQual_2,"%e \t",CDF_array[col_i-1]);} // so the column index which are skipped received the same value as previous to keep the CDF
+                            // so the column index which are skipped received the value of 0.00 since this is the case when the previous value equals 1.00, 
+                            // as a way to keep the CDF. Previously it was simply given the value of 1.00 
+                            else{fprintf(ReadQual_2,"%e \t",0.00);} 
+                            //fprintf(stderr,"Full quality element : %d line quality %d CDF value %e for column index %d\n",FullQual[col_i],Qual_no[col_i],CDF_array[col_i],col_i);
                         }
                     }
                     fprintf(ReadQual_2,"\n");
