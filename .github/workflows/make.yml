@@ -28,5 +28,7 @@ jobs:
       run: git clone --branch=develop --recursive https://github.com/samtools/htslib.git;cd htslib; make;cd ..;
     - name: make
       run: export HTSSRC=`pwd`/htslib; make
-    - name: make
+    - name: Compile program 
       run: make
+    - name: Run test script
+      run: make test
