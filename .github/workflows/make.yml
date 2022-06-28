@@ -23,7 +23,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
-      run: sudo apt-get update;sudo apt-get install libcurl4-openssl-dev
+      run: sudo apt-get update;sudo apt-get install libcurl4-openssl-dev samtools
     - name: prepare and compile htslib
       run: git clone --branch=develop --recursive https://github.com/samtools/htslib.git;cd htslib; make;cd ..;
     - name: Compile NGSNGS using HTSSRC
