@@ -22,11 +22,11 @@ jobs:
   
     steps:
     - uses: actions/checkout@v2
-    - name: prepare htslib
+    - name: Install dependencies
+      run: sudo apt-get install libcurl-dev
+    - name: prepare and compile htslib
       run: git clone --branch=develop --recursive https://github.com/samtools/htslib.git;cd htslib; make;cd ..;
-    - name: make
+    - name: Compile NGSNGS using HTSSRC
       run: export HTSSRC=`pwd`/htslib; make
-    - name: Compile program 
-      run: make
     - name: Run test script
       run: make test
