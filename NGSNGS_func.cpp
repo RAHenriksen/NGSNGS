@@ -16,7 +16,9 @@
 #include <htslib/kstring.h>
 #include <zlib.h>
 #include <errno.h>
-
+#include <random>
+#include <map>
+#include <math.h>
 #include <pthread.h>
 
 #include "NGSNGS_func.h"
@@ -28,6 +30,83 @@
 
 #define LENS 4096
 #define MAXBINS 100
+
+/*void RandDistLength(int seed,double distval1, double distval2,int DistType,int& mean, int*& Length, double*& Frequency){
+  std::default_random_engine generator(seed);
+  const int nrolls=10000;
+  //uniform
+  if(DistType==1){
+    std::uniform_int_distribution<int> distribution(distval1,distval2);
+    mean = (int) (0.5*(distval1+distval2));
+  }
+  //normal based
+  else if(DistType==2){
+    std::normal_distribution<double> distribution(distval1,distval2);
+    mean = (int) distval1;
+  }
+  else if(DistType==3){
+    //lognormal(4,1)
+    std::lognormal_distribution<double> distribution(distval1,distval2);
+    double param = (distval1+((distval2*distval2)/2));
+    mean = (int) exp(double);
+  }
+  //rate based
+  else if(DistType==4){
+    std::poisson_distribution<int> distribution(distval1);
+    mean = (int) distval1;
+  }
+  else if(DistType==5){
+    std::exponential_distribution<double> distribution(distval1);
+    mean = (int) 1/distval1;
+  }
+  else if(DistType==6){
+    std::gamma_distribution<double> distribution(distval1,distval2);
+    mean = (int) distval1;
+  }
+  else if(DistType==7){
+    std::weibull_distribution<double> distribution(distval1,distval2);
+    mean = (int) distval1;
+  }
+
+  double sum = 0;
+  
+  int p[nrolls]={};
+
+  for (int i=0; i<nrolls; ++i) {
+    int number = (int) distribution(generator);
+    p[i] = number;
+  }
+  
+  int len = sizeof(p)/sizeof(p[0]);
+  
+  sort(p,p+len,std::less<int>());
+
+  std::map<int,int> counts;
+  
+  for (int i =0; i<nrolls;i++){counts[p[i]]++;}
+  
+  int Len_sum = nrolls;
+  double CumCount = 0;
+
+  n = 0;
+  int sum = 0; 
+  for (auto const &key : counts){
+      CumulativeCount += (double) key.second/(double)nrolls;
+      //std::cout << key.first << " " << key.second << " " << CumulativeCount << std::endl;
+      Length[n] = key.first;
+      Frequency[n] = CumulativeCount;
+      sum = sum + (Length[n]*(Frequency[n]-Frequency[n-1]));
+      n++;
+      
+      #35 1 0.0001
+      #39 1 0.0002
+      #40 1 0.0003
+      #41 2 0.0005
+      #42 1 0.0006
+
+  }
+  mean = sum;
+}*/
 
 static void delete_seq(char *str, size_t seq_len, size_t del_len, size_t pos,int alt_len){
     //instert_seq(char *str, size_t len, char insert_seq[],size_t ins_len, size_t pos){

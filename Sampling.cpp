@@ -94,7 +94,7 @@ void* Sampling_threads(void *arg){
 
   int MacroRandType;
   MacroRandType = struct_obj -> RandMacro; //LLLLLL
-  //fprintf(stderr,"RANDOM VALUE %d \n",MacroRandType);
+  fprintf(stderr,"RANDOM VALUE v1 %d \n",MacroRandType);
   //fprintf(stderr,"RANDOM VALUE2 %d \n",MacroRandType);
   // creating random objects for all distributions.
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 

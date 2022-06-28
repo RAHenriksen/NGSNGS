@@ -7,7 +7,9 @@
 
 typedef struct{
   int type;
-  struct drand48_data buf0;
+  #if defined(__linux__) || defined(__unix__)
+    struct drand48_data buf0;
+  #endif
   std::random_device rd;
   std::default_random_engine eng;
   std::uniform_real_distribution<float> distr;

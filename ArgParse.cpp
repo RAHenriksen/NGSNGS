@@ -38,7 +38,6 @@
 */
 
 /*#if defined(__linux__) || defined(__unix__) // all unices not caught above
-    // Unix
   int MacroRandType = 0;
 #elif defined(__APPLE__) || defined(__MACH__)
   int MacroRandType = 1;

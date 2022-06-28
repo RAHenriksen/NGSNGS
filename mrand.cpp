@@ -5,12 +5,15 @@
 
 //((double) rand_r(&seed)/ RAND_MAX);
 mrand_t *mrand_alloc(int type_a,long int seedval){
+  fprintf(stderr,"TYPE A %d\n",type_a);
   mrand_t *ret = (mrand_t *) malloc(sizeof(mrand_t));
   ret->type = type_a;
 
   if(ret->type==0){
     //fprintf(stderr,"In linux if -> drand48_data\n");
+    #if defined(__linux__) || defined(__unix__)
     srand48_r(seedval,(struct drand48_data *) &ret->buf0);
+    #endif
     //i need to somehow print the value
   }
   if(ret->type==1){
@@ -28,7 +31,9 @@ mrand_t *mrand_alloc(int type_a,long int seedval){
 double mrand_pop(mrand_t *mr){
   double res;
   if(mr->type==0){
+    #if defined(__linux__) || defined(__unix__)
     drand48_r((struct drand48_data*)&mr->buf0,&res);
+    #endif
   }
   else if(mr->type==1){
     res =  mr->distr(mr->eng);
