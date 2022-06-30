@@ -701,7 +701,8 @@ void* Sampling_threads(void *arg){
 
 void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
                         const char* Adapter_2,const char* OutputFormat,const char* SeqType,float BriggsParam[4],const char* Briggs_flag,
-                        const char* Sizefile,int FixedSize,int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
+                        const char* Sizefile,int FixedSize,int SizeDistType, int val1, int val2,
+                        int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName,
                         const char* MisMatchFlag,const char* SubProfile,int MisLength,int RandMacro,const char *VCFformat,const char* Variant_flag,const char *VarType){
   //creating an array with the arguments to create multiple threads;
@@ -865,14 +866,22 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     //fprintf(stderr,"\t-> AFTER OUTPUT FORMAT\n");
 
     int number; int* Frag_len; double* Frag_freq;
-    if(Sizefile!=NULL){
+    fprintf(stderr,"SizeDistType %d \t FixedSize %d\n",SizeDistType,FixedSize);
+    if(FixedSize==-1 && SizeDistType==-1){
+      fprintf(stderr,"\t-> FRAG DIST FILE\n");
       Frag_len = new int[LENS];
       Frag_freq = new double[LENS];
       FragArray(number,Frag_len,Frag_freq,Sizefile); //Size_dist_sampling //"Size_dist/Size_freq_modern.txt"
       //fprintf(stderr,"\t-> FRAG ARRAY LE\n");
     }
-    else{number = -1;}
-
+    else if(SizeDistType!=-1){
+      fprintf(stderr,"\t-> FRAG DIST LENGTH\n");
+      Frag_len = new int[LENS];
+      Frag_freq = new double[LENS];
+      FragDistArray(number,Frag_len,Frag_freq,SizeDistType,seed,val1, val2);
+    }
+    else if(FixedSize!=-1){number = -1;}
+    fprintf(stderr,"THE NUMBER IS %d\n",number);
     const char *freqfile_r1; //"Qual_profiles/AccFreqL150R1.txt";
     const char *freqfile_r2;
     int outputoffset = qualstringoffset;
@@ -914,7 +923,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       std::cout << DeamFreqArray[0] << std::endl;
       fprintf(stderr,"INFERRED READ LENGTH %d \n",deamcyclelength);
     }
-    else{std::cout << "LOLRT " << std::endl;}
+    //else{std::cout << "LOLRT " << std::endl;}
     
     
     //fprintf(stderr,"\t-> Before threads\n");

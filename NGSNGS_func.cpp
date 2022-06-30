@@ -31,82 +31,94 @@
 #define LENS 4096
 #define MAXBINS 100
 
-/*void RandDistLength(int seed,double distval1, double distval2,int DistType,int& mean, int*& Length, double*& Frequency){
+void FragDistArray(int& number,int*& Length, double*& Frequency,int SizeDistType,int seed,int val1, int val2){
   std::default_random_engine generator(seed);
   const int nrolls=10000;
+  int p[nrolls]={};
+  
+  if (SizeDistType==1){std::uniform_int_distribution<int> distribution(val1,val2);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
+  else if (SizeDistType==2){std::normal_distribution<double> distribution(val1,val2);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
+  else if (SizeDistType==3){std::lognormal_distribution<double> distribution(val1,val2);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
+  else if (SizeDistType==4){std::poisson_distribution<int> distribution(val1);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
+  else if (SizeDistType==5){std::exponential_distribution<double> distribution(val1);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
+  else if (SizeDistType==6){std::gamma_distribution<double> distribution(val1,val2);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
+
+  
+  int len = sizeof(p)/sizeof(p[0]);
+  sort(p,p+len,std::less<int>());
+
+  std::map<int,int> counts;
+  for (int i =0; i<nrolls;i++){counts[p[i]]++;}
+
+  int n =1;
+
+  Length[0] = 0; Frequency[0] = (float) 0;
+  double CumulativeCount = 0;
+  for (auto const &key : counts){
+      CumulativeCount += (double) key.second/(double)nrolls;
+      Length[n] = key.first;
+      Frequency[n] = CumulativeCount;
+      n++;
+  }
+  number = n;
+}
+
+void RandDistLength(int seed,double distval1, double distval2,int DistType,int& mean, int*& Length, double*& Frequency){
+  std::default_random_engine generator(seed);
+  const int nrolls=10000;
+  int p[nrolls]={};
+
   //uniform
   if(DistType==1){
     std::uniform_int_distribution<int> distribution(distval1,distval2);
+    for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}
     mean = (int) (0.5*(distval1+distval2));
   }
   //normal based
   else if(DistType==2){
     std::normal_distribution<double> distribution(distval1,distval2);
+    for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}
     mean = (int) distval1;
   }
   else if(DistType==3){
     //lognormal(4,1)
     std::lognormal_distribution<double> distribution(distval1,distval2);
+    for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}
     double param = (distval1+((distval2*distval2)/2));
-    mean = (int) exp(double);
+    mean = (int) exp(param);
   }
   //rate based
   else if(DistType==4){
     std::poisson_distribution<int> distribution(distval1);
+    for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}
     mean = (int) distval1;
   }
   else if(DistType==5){
     std::exponential_distribution<double> distribution(distval1);
+    for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}
     mean = (int) 1/distval1;
   }
   else if(DistType==6){
     std::gamma_distribution<double> distribution(distval1,distval2);
-    mean = (int) distval1;
-  }
-  else if(DistType==7){
-    std::weibull_distribution<double> distribution(distval1,distval2);
-    mean = (int) distval1;
+    for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}
+    mean = (int) (distval1/distval2);
   }
 
-  double sum = 0;
-  
-  int p[nrolls]={};
-
-  for (int i=0; i<nrolls; ++i) {
-    int number = (int) distribution(generator);
-    p[i] = number;
-  }
-  
   int len = sizeof(p)/sizeof(p[0]);
-  
   sort(p,p+len,std::less<int>());
 
   std::map<int,int> counts;
-  
   for (int i =0; i<nrolls;i++){counts[p[i]]++;}
-  
-  int Len_sum = nrolls;
-  double CumCount = 0;
 
-  n = 0;
-  int sum = 0; 
+  double CumulativeCount = 0;
+  int n = 0;
   for (auto const &key : counts){
       CumulativeCount += (double) key.second/(double)nrolls;
-      //std::cout << key.first << " " << key.second << " " << CumulativeCount << std::endl;
       Length[n] = key.first;
       Frequency[n] = CumulativeCount;
-      sum = sum + (Length[n]*(Frequency[n]-Frequency[n-1]));
       n++;
-      
-      #35 1 0.0001
-      #39 1 0.0002
-      #40 1 0.0003
-      #41 2 0.0005
-      #42 1 0.0006
-
   }
-  mean = sum;
-}*/
+}
 
 static void delete_seq(char *str, size_t seq_len, size_t del_len, size_t pos,int alt_len){
     //instert_seq(char *str, size_t len, char insert_seq[],size_t ins_len, size_t pos){
@@ -568,13 +580,14 @@ void FragArray(int& number,int*& Length, double*& Frequency,const char* filename
   //int LENS = 4096;
   //int* Frag_len = new int[LENS];
   //double* Frag_freq = new double[LENS];
-  int n =0;
+  int n =1;
 
   gzFile gz = Z_NULL;
   char buf[LENS];
   
   gz = gzopen(filename,"r");
   assert(gz!=Z_NULL);
+  Length[0] = 0; Frequency[0] = (float) 0;
   while(gzgets(gz,buf,LENS)){
     Length[n] = atoi(strtok(buf,"\n\t ")); //before it was Frag_len[n]
     Frequency[n] = atof(strtok(NULL,"\n\t "));

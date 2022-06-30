@@ -36,6 +36,8 @@ int BinarySearch_fraglength(double* SearchArray,int low, int high, double key);
 
 void FragArray(int& number,int*& Length, double*& Frequency,const char* filename);
 
+void FragDistArray(int& number,int*& Length, double*& Frequency,int SizeDistType,int seed,int val1, int val2);
+
 void printTime(FILE *fp);
 
 void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total, int chr_idx[], size_t genome_len);

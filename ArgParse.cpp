@@ -64,6 +64,7 @@ typedef struct{
   const char *Briggs;
   int Length;
   const char *LengthFile;
+  const char *LengthDist;
   const char *Poly;
   const char *Chromosomes;
   int rand_val;
@@ -175,6 +176,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->ErrorFlag = NULL;
   mypars->Briggs = NULL; //"0.024,0.36,0.68,0.0097";
   mypars->LengthFile = NULL;
+  mypars->LengthDist = NULL;
   mypars->Chromosomes = NULL;
   mypars->Poly = NULL;
   mypars->rand_val = -1;
@@ -261,6 +263,9 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-lf",*argv)==0 || strcasecmp("--lengthfile",*argv)==0){
       mypars->LengthFile = strdup(*(++argv));
     }
+    else if(strcasecmp("-ld",*argv)==0 || strcasecmp("--lengthdist",*argv)==0){
+      mypars->LengthDist = strdup(*(++argv));
+    }
     else if(strcasecmp("-chr",*argv)==0 || strcasecmp("--chromosomes",*argv)==0){
       mypars->Chromosomes = strdup(*(++argv));
     }
@@ -297,6 +302,7 @@ int main(int argc,char **argv){
     mypars = getpars(argc,argv);
     clock_t t = clock();
     time_t t2 = time(NULL);
+    int Glob_seed = mypars->Glob_seed; 
 
     const char *fastafile = mypars->Reference;
     const char* OutputFormat = mypars->OutFormat;
@@ -332,9 +338,10 @@ int main(int argc,char **argv){
 
     int FixedSize = mypars->Length;
     const char* Sizefile = mypars->LengthFile;
-    int meanlength;
+    const char* SizeDist = mypars->LengthDist;
+    int meanlength;int SizeDistType=-1;int val1; int val2;
 
-    if (Sizefile == NULL){
+    if (FixedSize != -1){
       if (FixedSize == -1){ErrMsg(3.0);}
       else{
         meanlength = FixedSize;
@@ -342,6 +349,7 @@ int main(int argc,char **argv){
     }
 
     if (Sizefile != NULL){
+      fprintf(stderr,"SIZE FILE ARG\n");
       double sum = 0; int n = 1;
       double* Length_tmp; double* Frequency_tmp;
       Length_tmp = new double[LENS];
@@ -360,7 +368,30 @@ int main(int argc,char **argv){
 
       delete[] Frequency_tmp;delete[] Length_tmp;
       meanlength = (int) sum;
+      fprintf(stderr,"MEAN LENGTH %d",meanlength);
+      if (FixedSize != -1){ErrMsg(5.0);}
+    }
 
+    if (SizeDist != NULL){
+      fprintf(stderr,"LENGTH DISTRIBUTION and %s",SizeDist);
+      std::default_random_engine generator(Glob_seed);
+      char* Dist;
+      
+      char* DistParam = strdup(SizeDist);
+      Dist = strtok(DistParam,",");
+      val1 = atoi(strtok (NULL, ","));
+      val2 = atoi(strtok (NULL, ","));
+      fprintf(stderr,"Type %s\t%d\t%d\n",Dist,val1,val2);
+      const int nrolls=10000;
+      
+      if (strcasecmp(Dist,"Uni")==0){SizeDistType=1;std::uniform_int_distribution<int> distribution(val1,val2);meanlength=(int)(0.5*(val1+val2));}
+      if (strcasecmp(Dist,"Norm")==0){SizeDistType=2;std::normal_distribution<double> distribution(val1,val2);meanlength=(int) val1;}
+      if (strcasecmp(Dist,"LogNorm")==0){SizeDistType=3;std::lognormal_distribution<double> distribution(val1,val2);meanlength=(int) exp((val1+((val2*val2)/2)));}
+      if (strcasecmp(Dist,"Pois")==0){SizeDistType=4;std::poisson_distribution<int> distribution(val1);meanlength=(int) val1;}
+      if (strcasecmp(Dist,"Exp")==0){SizeDistType=5;std::exponential_distribution<double> distribution(val1);meanlength=(int) 1/val1;}
+      if (strcasecmp(Dist,"Gam")==0){SizeDistType=6;std::gamma_distribution<double> distribution(val1,val2);meanlength=(int) (val1/val2);}
+
+      fprintf(stderr,"Mean lol %d\n",meanlength);
       if (FixedSize != -1){ErrMsg(5.0);}
     }
 
@@ -370,7 +401,6 @@ int main(int argc,char **argv){
     assert(seq_ref!=NULL);
     
     int chr_total = faidx_nseq(seq_ref);
-    int Glob_seed = mypars->Glob_seed; 
     int threads1 = mypars->threads1;
     int threads2;
     if (mypars->threads2 == -1){threads2 = 1;}
@@ -517,8 +547,8 @@ int main(int argc,char **argv){
     int DeamLength;
     Create_se_threads(seq_ref,threads1,Glob_seed,Thread_specific_Read,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
-                      Param,Briggs_Flag,Sizefile,FixedSize,qualstringoffset,
-                      QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,
+                      Param,Briggs_Flag,Sizefile,FixedSize,SizeDistType,val1,val2,
+                      qualstringoffset,QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,
                       ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType,
                       VCFformat,Variant_flag,VarType);
 
