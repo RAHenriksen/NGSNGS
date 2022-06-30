@@ -94,7 +94,7 @@ void* Sampling_threads(void *arg){
 
   int MacroRandType;
   MacroRandType = struct_obj -> RandMacro; //LLLLLL
-  fprintf(stderr,"RANDOM VALUE v1 %d \n",MacroRandType);
+  //fprintf(stderr,"RANDOM VALUE v1 %d \n",MacroRandType);
   //fprintf(stderr,"RANDOM VALUE2 %d \n",MacroRandType);
   // creating random objects for all distributions.
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
@@ -145,8 +145,7 @@ void* Sampling_threads(void *arg){
     double rand_val3 = myrand((unsigned int) rand_val2); //((double) rand_r(&test)/ RAND_MAX);// 
     rand_start = rand_val3 * (genome_len-300); //genome_len-100000;*/
     double rand_val = mrand_pop(drand_alloc);
-    rand_start = rand_val * (genome_len-300); //genome_len-100000;
-    //fprintf(stderr,"-----------\nrandom start %f \t %zu\n",rand_val,rand_start);
+    rand_start = rand_val * (genome_len-300)+1; //genome_len-100000;
     //fprintf(stderr,"random start2 %zu\n-----------\n",rand_start2);
     // Fragment length creation
     int fraglength;
@@ -512,6 +511,7 @@ void* Sampling_threads(void *arg){
             qual_r1[p] = struct_obj->NtQual_r1[qscore];
 
             if (struct_obj->ErrorFlag == 'T'){
+              fprintf(stderr,"ERROFRFLAG %c\n",struct_obj->ErrorFlag);
               double dtemp3;double dtemp4;
               dtemp3 = mrand_pop(drand_alloc_nt);
               dtemp4 = mrand_pop(drand_alloc_nt);
@@ -654,6 +654,8 @@ void* Sampling_threads(void *arg){
         struct_obj->fqresult_r2->l =0;
       }
       
+      //fprintf(stderr,"Thread %d \tlocal read number %d \t current read %d \t reads %d\n",struct_obj->threadno,localread,current_reads_atom,reads);
+      //fprintf(stderr,"The seq %s \t qual %s \n",seq_r1,qual_r1);
       memset(qual_r1, 0, sizeof qual_r1); 
       memset(qual_r2, 0, sizeof qual_r2);  
       memset(seq_r1, 0, sizeof seq_r1);
@@ -744,9 +746,11 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
   {
     for (int j = 0; j < faidx_nseq(seq_ref); j++){chr_idx_arr[j] = j;}
   }
-
-  if(strcasecmp("bcf",Variant_flag)!=0){  
-    fprintf(stderr,"not bcf flag\n");
+  
+  if(VCFformat != NULL && strcasecmp(Variant_flag,"bcf")==0){
+    genome_data = full_vcf_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm,VCFformat,VarType);
+  }
+  else{
     if (chr_total == faidx_nseq(seq_ref)){
       genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
     }  
@@ -756,11 +760,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
         chr_names[i] = Specific_Chr[i];
       }
     }
-  }
-  else{
-    fprintf(stderr,"BEFORE THE CREATION FULL GENOME DATA WITH VCF \n");
-    genome_data = full_vcf_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm,VCFformat,VarType);
-    fprintf(stderr,"CREATED FULL GENOME DATA WITH VCF \n");
   }
 
   size_t genome_size = strlen(genome_data);;

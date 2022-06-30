@@ -92,7 +92,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-f   | --format: \t\t File format of the simulated output reads.\n");
   fprintf(fp,"\t <fa||fasta>\t\t Nucletide sequence. \n \t <fa.gz||fasta.gz>\t Compressed nucletide sequence. \n \t <fq||fastq>\t\t Nucletide sequence with corresponding quality score. \n \t <fq.gz||fastq.gz>\t Compressed nucletide sequence with corresponding quality score. \n \t <sam||bam||cram>\t\t\t Sequence Alignment Map format.\n");
   fprintf(fp,"-o   | --output: \t\t Prefix of output file name.\n");
-  fprintf(fp,"-e   | --error: \t\t Adding nucleotide subsitutions calculating based on nucleotide qualities.\n");
+  fprintf(fp,"-ne   | --noerror: \t\t Adding nucleotide subsitutions calculating based on nucleotide qualities.\n");
   fprintf(fp,"-t1  | --threads1: \t\t Number of threads to use for sampling sequence reads.\n");
   fprintf(fp,"-t2  | --threads2: \t\t Number of threads to use write down sampled reads, default = 1.\n");
   fprintf(fp,"-s   | --seed: \t\t\t Random seed, default = current calendar time (s).\n");
@@ -238,8 +238,8 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-mf",*argv)==0 || strcasecmp("--mismatch",*argv)==0){
       mypars->SubProfile = strdup(*(++argv));
     }
-    else if(strcasecmp("-e",*argv)==0 || strcasecmp("--error",*argv)==0){
-      mypars->ErrorFlag = "T"; // strdup(*(++argv));
+    else if(strcasecmp("-ne",*argv)==0 || strcasecmp("--noerror",*argv)==0){
+      mypars->ErrorFlag = "F"; // strdup(*(++argv));
     }
     else if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
       mypars->OutFormat = strdup(*(++argv));
@@ -342,7 +342,7 @@ int main(int argc,char **argv){
     }
 
     if (Sizefile != NULL){
-      double sum = 0; int n = 0;
+      double sum = 0; int n = 1;
       double* Length_tmp; double* Frequency_tmp;
       Length_tmp = new double[LENS];
       Frequency_tmp = new double[LENS];
@@ -450,7 +450,7 @@ int main(int argc,char **argv){
     if (mypars->ErrorFlag != NULL){
       ErrorFlag = mypars->ErrorFlag;
     }
-    else{ErrorFlag = "F";}
+    else{ErrorFlag = "T";}
 
     if (strcasecmp("false",QualStringFlag)==0){
       if(strcasecmp("true",Adapt_flag)==0 && mypars->Poly != NULL){WarMsg(2.0);}
@@ -500,27 +500,27 @@ int main(int argc,char **argv){
     }
     
     const char* Variant_flag;
-    const char* VCFformat;
-    const char *VarType;
-    if (mypars->Variant != NULL){
+    const char* VCFformat = mypars->Variant;
+    const char* VarType =mypars->Variant_type;
+    if (VCFformat != NULL){
       Variant_flag = "bcf";
-      VCFformat = mypars->Variant;
-      if(mypars->Variant_type == NULL){
+      if(VarType == NULL){
         VarType = "all";
       }
-      else if(mypars->Variant_type != NULL){
+      else if(VarType != NULL){
         VarType = mypars->Variant_type;
       }
       fprintf(stderr,"VARIANT TYPE %s\n",VarType);
     }
-    
+
     //if(Specific_Chr[0]=='\0'){fprintf(stderr,"HURRA");}
     int DeamLength;
     Create_se_threads(seq_ref,threads1,Glob_seed,Thread_specific_Read,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,qualstringoffset,
                       QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,
-                      ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType,VCFformat,Variant_flag,VarType);
+                      ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType,
+                      VCFformat,Variant_flag,VarType);
 
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);

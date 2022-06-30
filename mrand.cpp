@@ -5,7 +5,7 @@
 
 //((double) rand_r(&seed)/ RAND_MAX);
 mrand_t *mrand_alloc(int type_a,long int seedval){
-  fprintf(stderr,"TYPE A %d\n",type_a);
+  //fprintf(stderr,"TYPE A %d\n",type_a);
   mrand_t *ret = (mrand_t *) malloc(sizeof(mrand_t));
   ret->type = type_a;
 

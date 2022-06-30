@@ -742,7 +742,7 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
     chr_size_cumm[i+1] = genome_size;
   }
 
-  char* genome = (char*) malloc(sizeof(char) * (genome_size+chr_total));
+  char* genome = (char*) malloc(sizeof(char) * (genome_size+chr_total+1));
   genome[0] = 0; //Init to create proper C string before strcat
   //chr_total
   for (int i = 0; i < chr_total; i++){
