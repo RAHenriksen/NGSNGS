@@ -560,6 +560,7 @@ int main(int argc,char **argv){
   // REQUIRED DEALLOCATIONS
   free((char *)mypars->Reference);
   free((char *)mypars->Seq);
+  
   free((char *)mypars->OutFormat);
   free((char *)mypars->OutName);
   free((char *)mypars->LengthFile);
@@ -572,7 +573,6 @@ int main(int argc,char **argv){
   free((char *)mypars->SubProfile);
   free((char *)mypars->Briggs);
   free((char *)mypars->Poly);
-  //free((char *)mypars->ErrorFlag);
-  delete mypars;
 
+  delete mypars;
 }

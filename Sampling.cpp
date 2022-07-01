@@ -862,6 +862,8 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       SAMHeader = sam_hdr_init();
       
       Header_func(fmt_hts,filename1,SAMout,SAMHeader,seq_ref,chr_total,chr_idx_arr,genome_size);
+      free(ref);
+      hts_opt_free((hts_opt *)fmt_hts->specific);
     }
     //fprintf(stderr,"\t-> AFTER OUTPUT FORMAT\n");
 
@@ -915,13 +917,11 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     //fprintf(stderr,"\t-> AFTER POLY\n");
 
     const char *Sub_mat = SubProfile;
-    double* DeamFreqArray = new double[LENS];
+    double* DeamFreqArray;
     int deamcyclelength = 0;
     if (SubProfile != NULL){
-      std::cout << Sub_mat << std::endl;
+      DeamFreqArray = new double[LENS];
       DeamFreqArray = DeamFileArray(DeamFreqArray,SubProfile,deamcyclelength);
-      std::cout << DeamFreqArray[0] << std::endl;
-      fprintf(stderr,"INFERRED READ LENGTH %d \n",deamcyclelength);
     }
     //else{std::cout << "LOLRT " << std::endl;}
     
@@ -1049,9 +1049,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       delete[] Frag_len;
     }
     
-    if(SubProfile != NULL){
-      delete[] DeamFreqArray;
-    }
+    if(SubProfile != NULL){delete[] DeamFreqArray;}
     
     free(genome_data);
     fflush(stderr);
