@@ -76,7 +76,8 @@ int HelpPage(FILE *fp){
   fprintf(fp,"Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 \n\n");
   fprintf(fp,"Usage\n./ngsngs [options] -i <input_reference.fa> -r/-c <Number of reads or depth of coverage> -l/-lf <fixed length or length file> -seq <SE/PE> -f <output format> -o <output name prefix>\n");
   fprintf(fp,"\nExample \n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 2 -s 1 -lf Test_Examples/Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut\n");
-  fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t1 2 -s 1 -l 100 -seq PE -e -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -q2 Test_Examples/Qual_profiles/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut\n");  
+  fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t1 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -q2 Test_Examples/Qual_profiles/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut\n");  
+  fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/DeamSubFile.txt -f fa -o MycoBactFaSEOut\n");    
   fprintf(fp,"\nOptions: \n");
   fprintf(fp,"-h   | --help: \t\t\t Print help page.\n");
   fprintf(fp,"-i   | --input: \t\t Reference file in fasta format (.fa,.fasta) to sample reads.\n");
@@ -372,15 +373,17 @@ int main(int argc,char **argv){
     }
 
     if (SizeDist != NULL){
-      fprintf(stderr,"LENGTH DISTRIBUTION and %s",SizeDist);
+      //fprintf(stderr,"LENGTH DISTRIBUTION and %s",SizeDist);
       std::default_random_engine generator(Glob_seed);
       char* Dist;
       
       char* DistParam = strdup(SizeDist);
       Dist = strtok(DistParam,",");
       val1 = atoi(strtok (NULL, ","));
-      val2 = atoi(strtok (NULL, ","));
-      fprintf(stderr,"Type %s\t%d\t%d\n",Dist,val1,val2);
+      //fprintf(stderr,"strtok %d\n",val1);
+      char* tmp = strtok(NULL, ",");
+      if(tmp == NULL){val2 = 0;}
+      else{val2 = atoi(tmp);}
       const int nrolls=10000;
       
       if (strcasecmp(Dist,"Uni")==0){SizeDistType=1;std::uniform_int_distribution<int> distribution(val1,val2);meanlength=(int)(0.5*(val1+val2));}
@@ -389,9 +392,8 @@ int main(int argc,char **argv){
       if (strcasecmp(Dist,"Pois")==0){SizeDistType=4;std::poisson_distribution<int> distribution(val1);meanlength=(int) val1;}
       if (strcasecmp(Dist,"Exp")==0){SizeDistType=5;std::exponential_distribution<double> distribution(val1);meanlength=(int) 1/val1;}
       if (strcasecmp(Dist,"Gam")==0){SizeDistType=6;std::gamma_distribution<double> distribution(val1,val2);meanlength=(int) (val1/val2);}
-
-      fprintf(stderr,"Mean lol %d\n",meanlength);
       if (FixedSize != -1){ErrMsg(5.0);}
+      free((char *)Dist);
     }
 
     faidx_t *seq_ref = NULL;
@@ -564,7 +566,8 @@ int main(int argc,char **argv){
   free((char *)mypars->OutFormat);
   free((char *)mypars->OutName);
   free((char *)mypars->LengthFile);
-
+  free((char *)mypars->LengthDist);
+  
   // OPTIONAL DEALLOCATIONS
   free((char *)mypars->Adapter1);
   free((char *)mypars->Adapter2);

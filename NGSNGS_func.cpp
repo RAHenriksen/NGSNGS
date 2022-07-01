@@ -280,7 +280,6 @@ void ErrorSub(double randval,char seqchar[], int pos){
 double* DeamFileArray(double* freqval,const char* filename,int &deamcyclelength){
     char buf[LENS];
     int i = 0;
-    fprintf(stderr,"DEAMFILEARRAY FUNCTION \n");
     gzFile gz = Z_NULL;
     gz = gzopen(filename,"r");
     assert(gz!=Z_NULL);
@@ -663,8 +662,9 @@ char* vcf_info(char genome_data[],int chr_sizes,const char* bcf_file,const char 
   //initializing variation sampling 
   bcf1_t *bcf_records = bcf_init();
   if (bcf_records == NULL){fprintf(stderr,"WARNING NO VARIANTS IN VCF FILE"); exit(0);}
-  else{
-    bcf_read(bcf_obj, bcf_head, bcf_records)==0; //ignoring return value (int)
+  else if(bcf_records != NULL && bcf_read(bcf_obj, bcf_head, bcf_records)==0){
+    // else if{bcf_records != NULL && bcf_read(bcf_obj, bcf_head, bcf_records)==0; 
+    //bcf_read(bcf_obj, bcf_head, bcf_records)==0; //ignoring return value (int)
     size_t chr_pos_before;
     size_t chr_pos_after;
     size_t insert_total = 0;

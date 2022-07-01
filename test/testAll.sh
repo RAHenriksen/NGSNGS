@@ -24,7 +24,7 @@ rm MycoBactBamSEOut.bam
 #md5sum -c MycoBactBam.md5 || exit 2;
 
 echo "Testing Paired-end, fixed length, coverage, no sequence errors, adapters, fastq"
-${PRG} -i ${IN} -c 1 -t1 2 -s 1 -l 100 -seq PE -ne -a1 ${A1} -a2 ${A2} -q1 ${Q1} -q2 ${Q2} -f fq -o MycoBactFqPEOut
+${PRG} -i ${IN} -c 1 -t1 1 -s 1 -l 100 -seq PE -ne -a1 ${A1} -a2 ${A2} -q1 ${Q1} -q2 ${Q2} -f fq -o MycoBactFqPEOut
 #md5sum MycoBactFqPEOut_r1.fq > MycoBactFQ.md5
 #md5sum MycoBactFqPEOut_r2.fq >> MycoBactFQ.md5
 md5sum -c MycoBactFQ.md5 || exit 2;

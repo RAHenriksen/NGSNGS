@@ -455,8 +455,8 @@ void* Sampling_threads(void *arg){
             // 16 se reverse strand // 81 first in pair reverse strand
             // we cannot simply copy the adapter sequence, since sequencing error is possible, as such
             // readadapt_err is the extracted sequence after Suberr 
-            sprintf(readadapt_err1, "%*s", strlen(readadapt)-strlen(seq_r1), readadapt+strlen(seq_r1));
-            sprintf(read_rc_sam1, "%.*s", strlen(seq_r1), readadapt);
+            sprintf(readadapt_err1, "%*s", (int)strlen(readadapt) - (int)strlen(seq_r1), readadapt+(int)strlen(seq_r1));
+            sprintf(read_rc_sam1, "%.*s", (int)strlen(seq_r1), readadapt);
             DNA_complement(read_rc_sam1);reverseChar(read_rc_sam1,strlen(read_rc_sam1));
             sprintf(readadapt_rc_sam1, "%s%s", read_rc_sam1,readadapt_err1);
             if (strcasecmp("PE",struct_obj->SeqType)==0){
@@ -469,8 +469,9 @@ void* Sampling_threads(void *arg){
             sprintf(readadapt_rc_sam1, "%s",readadapt); //to ensure all the reads have identifcal names for the sam output
 
             // the mate is reverse
-            sprintf(readadapt_err2, "%*s", strlen(readadapt2)-strlen(seq_r2), readadapt2+strlen(seq_r2));
-            sprintf(read_rc_sam2, "%.*s", strlen(seq_r2), readadapt2); // copy the sequence 2 from the sequence 2 + adapter
+            sprintf(readadapt_err2, "%*s", (int)strlen(readadapt2)-(int)strlen(seq_r2), readadapt2+(int)strlen(seq_r2));
+            sprintf(read_rc_sam2, "%.*s", (int)strlen(seq_r2), readadapt2); // copy the sequence 2 from the sequence 2 + adapter
+            // type cast to int
             DNA_complement(read_rc_sam2);reverseChar(read_rc_sam2,strlen(read_rc_sam1)); // reverse complement sequence 2 
             sprintf(readadapt_rc_sam2, "%s%s", read_rc_sam2,readadapt_err2); // create rev comp sequence 2 + adapter
           }
@@ -876,7 +877,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       FragArray(number,Frag_len,Frag_freq,Sizefile); //Size_dist_sampling //"Size_dist/Size_freq_modern.txt"
       //fprintf(stderr,"\t-> FRAG ARRAY LE\n");
     }
-    else if(SizeDistType!=-1){
+    else if(FixedSize==-1 && SizeDistType!=-1){
       //fprintf(stderr,"\t-> FRAG DIST LENGTH\n");
       Frag_len = new int[LENS];
       Frag_freq = new double[LENS];
@@ -1044,7 +1045,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     }
     
     free(fmt_hts);
-    if(Sizefile!=NULL){
+    if(FixedSize == -1){
       delete[] Frag_freq;
       delete[] Frag_len;
     }
