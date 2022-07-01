@@ -1,7 +1,8 @@
 #modied from htslib makefile
-#g++ NGSNGS_func.cpp atomic_fq.cpp -std=c++11 -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lz -lbz2 -llzma -lcurl
 #FLAGS=-O3 -std=c++11
-FLAGS=-ggdb -std=c++11
+GITVERSION:= $(shell git log -1 --pretty='%h')
+
+FLAGS=-ggdb -std=c++11 -DGITVERSION="\"${GITVERSION}\""
 
 CFLAGS += $(FLAGS)
 CXXFLAGS += $(FLAGS)
@@ -36,7 +37,7 @@ ifdef HTSSRC
 	$(CXX) -MM $(CXXFLAGS)  -I$(HTS_INCDIR) $*.cpp >$*.d
 
 ngsngs: $(OBJ)
-	$(CXX) $(FLAGS)  -o ngsngs *.o $(HTS_LIBDIR) -lz -llzma -lbz2 -lpthread -lcurl -lgsl -lgslcblas 
+	$(CXX) $(FLAGS)  -o ngsngs *.o $(HTS_LIBDIR) -lz -llzma -lbz2 -lpthread -lcurl
 
 else
 %.o: %.c
@@ -48,7 +49,7 @@ else
 	$(CXX) -MM $(CXXFLAGS)  $*.cpp >$*.d
 
 ngsngs: $(OBJ)
-	$(CXX) $(FLAGS)  -o ngsngs *.o -lz -llzma -lbz2 -lpthread -lcurl -lhts -lgsl -lgslcblas
+	$(CXX) $(FLAGS)  -o ngsngs *.o -lz -llzma -lbz2 -lpthread -lcurl -lhts
 
 #qualconvert: $(CXX) $(FLAGS) -o qualconvert ReadQualConverter.cpp -lz -llzma -lbz2 -lpthread -lcurl -lhts -lgsl -lgslcblas
 

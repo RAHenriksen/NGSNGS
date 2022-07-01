@@ -511,7 +511,7 @@ void* Sampling_threads(void *arg){
             qual_r1[p] = struct_obj->NtQual_r1[qscore];
 
             if (struct_obj->ErrorFlag == 'T'){
-              fprintf(stderr,"ERROFRFLAG %c\n",struct_obj->ErrorFlag);
+              //fprintf(stderr,"ERROFRFLAG %c\n",struct_obj->ErrorFlag);
               double dtemp3;double dtemp4;
               dtemp3 = mrand_pop(drand_alloc_nt);
               dtemp4 = mrand_pop(drand_alloc_nt);
@@ -851,13 +851,13 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       }
     }
     else{
-      fprintf(stderr,"Fasta input file name is %s\n",FastaFileName);
+      //fprintf(stderr,"Fasta input file name is %s\n",FastaFileName);
       char *ref =(char*) malloc(10 + strlen(FastaFileName) + 1);
       sprintf(ref, "reference=%s", FastaFileName);
       //char *ref =(char*) malloc(10 + strlen("Test_Examples/Mycobacterium_leprae.fa.gz") + 1);
       //sprintf(ref, "reference=%s", "Test_Examples/Mycobacterium_leprae.fa.gz");
       hts_opt_add((hts_opt **)&fmt_hts->specific,ref);
-      fprintf(stderr,"Writing mode is %s\n",mode);
+      //fprintf(stderr,"Writing mode is %s\n",mode);
       SAMout = sam_open_format(filename1, mode, fmt_hts);
       SAMHeader = sam_hdr_init();
       
@@ -866,22 +866,22 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     //fprintf(stderr,"\t-> AFTER OUTPUT FORMAT\n");
 
     int number; int* Frag_len; double* Frag_freq;
-    fprintf(stderr,"SizeDistType %d \t FixedSize %d\n",SizeDistType,FixedSize);
+    //fprintf(stderr,"SizeDistType %d \t FixedSize %d\n",SizeDistType,FixedSize);
     if(FixedSize==-1 && SizeDistType==-1){
-      fprintf(stderr,"\t-> FRAG DIST FILE\n");
+      //fprintf(stderr,"\t-> FRAG DIST FILE\n");
       Frag_len = new int[LENS];
       Frag_freq = new double[LENS];
       FragArray(number,Frag_len,Frag_freq,Sizefile); //Size_dist_sampling //"Size_dist/Size_freq_modern.txt"
       //fprintf(stderr,"\t-> FRAG ARRAY LE\n");
     }
     else if(SizeDistType!=-1){
-      fprintf(stderr,"\t-> FRAG DIST LENGTH\n");
+      //fprintf(stderr,"\t-> FRAG DIST LENGTH\n");
       Frag_len = new int[LENS];
       Frag_freq = new double[LENS];
       FragDistArray(number,Frag_len,Frag_freq,SizeDistType,seed,val1, val2);
     }
     else if(FixedSize!=-1){number = -1;}
-    fprintf(stderr,"THE NUMBER IS %d\n",number);
+    //fprintf(stderr,"THE NUMBER IS %d\n",number);
     const char *freqfile_r1; //"Qual_profiles/AccFreqL150R1.txt";
     const char *freqfile_r2;
     int outputoffset = qualstringoffset;

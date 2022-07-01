@@ -72,7 +72,6 @@ typedef struct{
   const char *Variant_type;
 }argStruct;
 
-
 int HelpPage(FILE *fp){
   fprintf(fp,"Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 \n\n");
   fprintf(fp,"Usage\n./ngsngs [options] -i <input_reference.fa> -r/-c <Number of reads or depth of coverage> -l/-lf <fixed length or length file> -seq <SE/PE> -f <output format> -o <output name prefix>\n");
@@ -195,7 +194,7 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-v",*argv)==0 || strcasecmp("--variant",*argv)==0){
       mypars->Variant_type = strdup(*(++argv));
       if(mypars->Variant == NULL){ErrMsg(13.0);}
-      else if (strcasecmp("snp",mypars->Variant_type)!=0 && 
+      else if (mypars->Variant_type && strcasecmp("snp",mypars->Variant_type)!=0 && 
       strcasecmp("indel",mypars->Variant_type)!=0 &&
       strcasecmp("all",mypars->Variant_type)!=0){ErrMsg(13.5); exit(0);}      
     }
@@ -349,7 +348,7 @@ int main(int argc,char **argv){
     }
 
     if (Sizefile != NULL){
-      fprintf(stderr,"SIZE FILE ARG\n");
+      //fprintf(stderr,"SIZE FILE ARG\n");
       double sum = 0; int n = 1;
       double* Length_tmp; double* Frequency_tmp;
       Length_tmp = new double[LENS];
@@ -368,7 +367,7 @@ int main(int argc,char **argv){
 
       delete[] Frequency_tmp;delete[] Length_tmp;
       meanlength = (int) sum;
-      fprintf(stderr,"MEAN LENGTH %d",meanlength);
+      //fprintf(stderr,"MEAN LENGTH %d",meanlength);
       if (FixedSize != -1){ErrMsg(5.0);}
     }
 
@@ -422,10 +421,10 @@ int main(int argc,char **argv){
       }
       Thread_specific_Read = static_cast<int>(((readcov*genome_size)/meanlength)/threads1);
     }
-
+    fprintf(stderr,"\n\t-> NGSNGS git version: %s (htslib: %s) build (%s %s)\n",GITVERSION,hts_version(),__DATE__,__TIME__);
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
     fprintf(stderr,"\t-> Seed used: %d\n",Glob_seed);
-    fprintf(stderr,"\t-> Number of threads used for sampling: %d and for writing down: %d\n",threads1,threads2);
+    fprintf(stderr,"\t-> Number of threads used for sampling (-t1): %d and for writing down (-t2): %d\n",threads1,threads2);
     fprintf(stderr,"\t-> Number of simulated reads: %zd or coverage: %f\n",No_reads,readcov);
 
     const char* Adapt_flag;
@@ -433,7 +432,7 @@ int main(int argc,char **argv){
     const char* Adapter_2;
     const char* Polynt;
     if (mypars->Adapter1 != NULL){
-      fprintf(stderr,"\t-> ARGPARSE ADAPTER + POLY\n");
+      //fprintf(stderr,"\t-> ARGPARSE ADAPTER + POLY\n");
       Adapt_flag = "true";
       Adapter_1 = mypars->Adapter1;
       Adapter_2 = mypars->Adapter2;
@@ -443,7 +442,7 @@ int main(int argc,char **argv){
       
     }
     else{
-      fprintf(stderr,"\t-> ARGPARSE ADAPT FLAG+ POLY\n");
+      //fprintf(stderr,"\t-> ARGPARSE ADAPT FLAG+ POLY\n");
       Adapt_flag = "false";
       if (mypars->Poly != NULL){fprintf(stderr,"Poly tail error: Missing adapter sequence, provide adapter sequence (-a1,-a2) as well\n");exit(0);}
       else{Polynt = "F";}
@@ -457,7 +456,7 @@ int main(int argc,char **argv){
     else{QualStringFlag = "true";}
     //fprintf(stderr,"qualstring test %s",QualStringFlag);
     if (strcasecmp("true",QualStringFlag)==0){
-      if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("sam",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0 || strcasecmp("cram",OutputFormat)==0){
+      if(OutputFormat && (strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("sam",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0 || strcasecmp("cram",OutputFormat)==0)){
         if (strcasecmp("PE",Seq_Type)==0 && QualProfile2 == NULL){
           ErrMsg(11.0);
           //fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
@@ -473,8 +472,8 @@ int main(int argc,char **argv){
         exit(0);
       }
     }
-    fprintf(stderr,"\t-> ADAPTER FLAG IS:%s\n",Adapt_flag);
-    fprintf(stderr,"\t-> QUAL STRING FLAG IS:%s\n",QualStringFlag);
+    //fprintf(stderr,"\t-> ADAPTER FLAG IS:%s\n",Adapt_flag);
+    //fprintf(stderr,"\t-> QUAL STRING FLAG IS:%s\n",QualStringFlag);
     
     const char* ErrorFlag;
     if (mypars->ErrorFlag != NULL){
@@ -511,7 +510,7 @@ int main(int argc,char **argv){
     SubProfile = mypars->SubProfile;
     if (SubProfile == NULL){SubFlag = "false";}
     else{SubFlag = "true";}
-    fprintf(stderr,"SUB FLAG IS %s\n",SubFlag);
+    //fprintf(stderr,"SUB FLAG IS %s\n",SubFlag);
     if(SubProfile != NULL && mypars->Briggs != NULL){
       ErrMsg(12.0);
       exit(0);
