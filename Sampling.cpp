@@ -146,13 +146,14 @@ void* Sampling_threads(void *arg){
     rand_start = rand_val3 * (genome_len-300); //genome_len-100000;*/
     double rand_val = mrand_pop(drand_alloc);
     rand_start = rand_val * (genome_len-300)+1; //genome_len-100000;
-    //fprintf(stderr,"random start2 %zu\n-----------\n",rand_start2);
+    double rand_val_len = mrand_pop(drand_alloc);
+    //std::cout << rand_val_len << std::endl;
     // Fragment length creation
     int fraglength;
     if (struct_obj->No_Len_Val != -1){
       // random start and length are not dependent on the same rand val
       //fprintf(stderr,"Legth%f \n",mrand_pop(drand_alloc));
-      int lengthbin = BinarySearch_fraglength(struct_obj->FragFreq,0, struct_obj->No_Len_Val - 1, rand_val);
+      int lengthbin = BinarySearch_fraglength(struct_obj->FragFreq,0, struct_obj->No_Len_Val - 1, rand_val_len);
       fraglength =  struct_obj->FragLen[lengthbin];
       //fprintf(stderr,"rand val %f \t fraglent %d\n",rand_val,fraglength);
     }
