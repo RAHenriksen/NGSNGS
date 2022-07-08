@@ -13,6 +13,7 @@
 #include <htslib/bgzf.h>
 #include <htslib/kstring.h>
 #include <zlib.h>
+#include <htslib/thread_pool.h>
 
 #include <pthread.h>
 
@@ -778,6 +779,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     samFile *SAMout = NULL;
     sam_hdr_t *SAMHeader;
     htsFormat *fmt_hts =(htsFormat*) calloc(1,sizeof(htsFormat));
+    htsThreadPool p = {NULL, 0};
 
     char file1[80];
     char file2[80];
@@ -808,7 +810,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       else{suffix1 = "_r1.fq";suffix2 = "_r2.fq";}
     }
     else if(strcasecmp("fq.gz",OutputFormat)==0){
-      mode = "wb";
+      mode = "w";
       if(strcasecmp("SE",SeqType)==0){suffix1 = ".fq.gz";}
       else{suffix1 = "_r1.fq.gz";suffix2 = "_r2.fq.gz";}
     }
@@ -831,18 +833,20 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
     }
     else{fprintf(stderr,"\t-> Fileformat is currently not supported \n");}
     strcat(file1,suffix1);
+    fprintf(stderr,"\t-> Compression level for file %s and writing mode %s \n",OutputFormat,mode);
 
     fprintf(stderr,"\t-> File output name is %s\n",file1);
     const char* filename1 = file1;
     const char* filename2 = NULL;
 
     if(alnformatflag == 0){
-      //fprintf(stderr,"not bam loop \n");
+      fprintf(stderr,"not bam loop \n");
       int mt_cores = threadwriteno;
       int bgzf_buf = 256;
       
-      bgzf_fp1 = bgzf_open(filename1,mode);
-      bgzf_mt(bgzf_fp1,mt_cores,bgzf_buf);
+      bgzf_fp1 = bgzf_open(filename1,mode); //w
+      fprintf(stderr,"Number of writing cores %d\n",mt_cores);
+      bgzf_mt(bgzf_fp1,mt_cores,bgzf_buf); //
       
       //fprintf(stderr,"\t-> BGZF FILE\n");
       if(strcasecmp("PE",SeqType)==0){
@@ -862,7 +866,16 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, int reads,cons
       //fprintf(stderr,"Writing mode is %s\n",mode);
       SAMout = sam_open_format(filename1, mode, fmt_hts);
       SAMHeader = sam_hdr_init();
-      
+
+      if(threadwriteno>0){
+        if (!(p.pool = hts_tpool_init(threadwriteno))) {
+          fprintf(stderr, "Error creating thread pool\n");
+          exit(0);
+        }
+        hts_set_opt(SAMout, HTS_OPT_THREAD_POOL, &p);
+      }
+      // generate header
+      //hts_set_threads(SAMout, 4);
       Header_func(fmt_hts,filename1,SAMout,SAMHeader,seq_ref,chr_total,chr_idx_arr,genome_size);
       free(ref);
       hts_opt_free((hts_opt *)fmt_hts->specific);

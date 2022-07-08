@@ -628,6 +628,9 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
     int r = sam_hdr_add_line(header, "SQ", "SN", name, "LN", genome_len_buf, NULL);
     if (r < 0) { fprintf(stderr,"sam_hdr_add_line");}
     memset(genome_len_buf,0, sizeof(genome_len_buf));
+    //snprintf(genome_len_buf,1024,"COMMAND ./ngsngs");
+    //int r = sam_hdr_add_line(header, "TEST COMMAND", genome_len_buf, NULL);
+    memset(genome_len_buf,0, sizeof(genome_len_buf));
   }
   // saving the header to the file
   if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile_nam); //outfile

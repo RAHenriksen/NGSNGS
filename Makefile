@@ -2,7 +2,7 @@
 #FLAGS=-O3 -std=c++11
 GITVERSION:= $(shell git log -1 --pretty='%h')
 
-FLAGS=-ggdb -std=c++11 -DGITVERSION="\"${GITVERSION}\""
+FLAGS=-ggdb -std=c++11 -DGITVERSION="\"${GITVERSION}\"" -DBGZF_MT
 
 CFLAGS += $(FLAGS)
 CXXFLAGS += $(FLAGS)

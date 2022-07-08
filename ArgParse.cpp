@@ -73,31 +73,37 @@ typedef struct{
 }argStruct;
 
 int HelpPage(FILE *fp){
-  fprintf(fp,"Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 \n\n");
+  fprintf(fp,"Next Generation Simulator for Next Generator Sequencing Data version 0.5.0 \n\n");
   fprintf(fp,"Usage\n./ngsngs [options] -i <input_reference.fa> -r/-c <Number of reads or depth of coverage> -l/-lf <fixed length or length file> -seq <SE/PE> -f <output format> -o <output name prefix>\n");
   fprintf(fp,"\nExample \n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 2 -s 1 -lf Test_Examples/Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut\n");
   fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t1 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -q2 Test_Examples/Qual_profiles/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut\n");  
   fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/DeamSubFile.txt -f fa -o MycoBactFaSEOut\n");    
-  fprintf(fp,"\nOptions: \n");
-  fprintf(fp,"-h   | --help: \t\t\t Print help page.\n");
+  fprintf(fp,"\n-h   | --help: \t\t\t Print help page.\n");
+  fprintf(fp,"\nRequired: \n\n");
   fprintf(fp,"-i   | --input: \t\t Reference file in fasta format (.fa,.fasta) to sample reads.\n");
-  fprintf(fp,"-bcf: \t\t Variant Calling Format containing SNPs or Indels.\n");
-  fprintf(fp,"-v:  | --variant: \t\t Variant Calling Format containing SNPs or Indels.\n");
-  fprintf(fp,"-chr | --chromosomes: \t\t Specific chromosomes from input reference file.\n");
   fprintf(fp,"-r   | --reads: \t\t Number of reads to simulate, conflicts with -c option.\n");
   fprintf(fp,"-c   | --coverage: \t\t Depth of Coverage to simulate, conflics with -r option.\n");
-  fprintf(fp,"-l   | --length: \t\t Fixed length of simulated fragments, conflicts with -lf option.\n");
-  fprintf(fp,"-lf  | --lengthfile: \t\t CDF of a length distribution, conflicts with -l option.\n");
+  fprintf(fp,"-l   | --length: \t\t Fixed length of simulated fragments, conflicts with -lf & -ld option.\n");
+  fprintf(fp,"-lf  | --lengthfile: \t\t CDF of a length distribution, conflicts with -l & -ld option.\n");
+  fprintf(fp,"-ld  | --lengthdist: \t\t Discrete or continuous probability distributions, conflicts with -l & -lf option.\n");
+  fprintf(fp,"\teg.\t Uni,40,180 || Norm,80,30 || LogNorm,4,1 || Pois,165 || Exp,0.025 || Gam,20,2\n");
   fprintf(fp,"-seq | --sequencing: \t\t Simulate single-end or paired-end reads.\n");
   fprintf(fp,"\t <SE>\t single-end \n \t <PE>\t paired-end.\n");
   fprintf(fp,"-f   | --format: \t\t File format of the simulated output reads.\n");
-  fprintf(fp,"\t <fa||fasta>\t\t Nucletide sequence. \n \t <fa.gz||fasta.gz>\t Compressed nucletide sequence. \n \t <fq||fastq>\t\t Nucletide sequence with corresponding quality score. \n \t <fq.gz||fastq.gz>\t Compressed nucletide sequence with corresponding quality score. \n \t <sam||bam||cram>\t\t\t Sequence Alignment Map format.\n");
+  fprintf(fp,"\t <fa||fasta||fa.gz||fasta.gz>\t\t Nucletide sequence w. different compression levels. \n \t <fq||fastq||fq.gz||fastq.gz>\t\t Nucletide sequence with corresponding quality score w. different compression levels. \n \t <sam||bam||cram>\t\t\t Sequence Alignment Map format w. different compression levels.\n");
   fprintf(fp,"-o   | --output: \t\t Prefix of output file name.\n");
-  fprintf(fp,"-ne   | --noerror: \t\t Adding nucleotide subsitutions calculating based on nucleotide qualities.\n");
-  fprintf(fp,"-t1  | --threads1: \t\t Number of threads to use for sampling sequence reads.\n");
-  fprintf(fp,"-t2  | --threads2: \t\t Number of threads to use write down sampled reads, default = 1.\n");
-  fprintf(fp,"-s   | --seed: \t\t\t Random seed, default = current calendar time (s).\n");
+  fprintf(fp,"\nOptional: \n");
+  fprintf(fp,"\nNucleotide Alterations: \n");
+  fprintf(fp,"-bcf: \t\t\t\t Binary Variant Calling Format (.bcf)\n");
+  fprintf(fp,"-v:  | --variant: \t\t Specific variants to simulate\n");
+  fprintf(fp,"\t eg.\t snp || indel. Default = all\n");
+  fprintf(fp,"-b   | --briggs: \t\t Parameters for the damage patterns using the Briggs model.\n");
+  fprintf(fp,"\t <nv,Lambda,Delta_s,Delta_d> : 0.024,0.36,0.68,0.0097 (from Briggs et al., 2007).\n");
+  fprintf(fp,"\t nv: Nick rate pr site. \n \t Lambda: Geometric distribution parameter for overhang length.\n \t Delta_s: PMD rate in single-strand regions.\n \t Delta_d: PMD rate in double-strand regions.\n");
   fprintf(fp,"-mf  | --mismatch: \t\t\t Nucleotide substitution frequency file.\n");
+  fprintf(fp,"-ne  | --noerror: \t\t Disabling the nucleotide subsitutions based on nucleotide qualities.\n");
+  fprintf(fp,"\nRead Specific: \n");
+  fprintf(fp,"-chr | --chromosomes: \t\t Specific chromosomes from input reference file.\n");
   fprintf(fp,"-a1  | --adapter1: \t\t Adapter sequence to add for simulated reads (SE) or first read pair (PE).\n");
   fprintf(fp,"\t e.g. Illumina TruSeq Adapter 1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG \n\n");
   fprintf(fp,"-a2  | --adapter2: \t\t Adapter sequence to add for second read pair (PE). \n");
@@ -105,9 +111,13 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-p   | --poly: \t\t\t Create Poly(X) tails for reads, containing adapters with lengths below the inferred readcycle length. \n \t e.g -p G or -p A \n");
   fprintf(fp,"-q1  | --quality1: \t\t Read Quality profile for single-end reads (SE) or first read pair (PE).\n");
   fprintf(fp,"-q2  | --quality2: \t\t Read Quality profile for for second read pair (PE).\n");
-  fprintf(fp,"-b   | --briggs: \t\t Parameters for the damage patterns using the Briggs model.\n");
-  fprintf(fp,"\t <nv,Lambda,Delta_s,Delta_d> : 0.024,0.36,0.68,0.0097 (from Briggs et al., 2007).\n");
-  fprintf(fp,"\t nv: Nick rate pr site. \n \t Lambda: Geometric distribution parameter for overhang length.\n \t Delta_s: PMD rate in single-strand regions.\n \t Delta_d: PMD rate in double-strand regions.\n");
+  fprintf(fp,"\nOther: \n");
+  fprintf(fp,"-t1  | --threads1: \t\t Number of sampling threads, default = 1.\n");
+  fprintf(fp,"-t2  | --threads2: \t\t Number of compression threads, default = 0.\n");
+  fprintf(fp,"-s   | --seed: \t\t\t Random seed, default = current calendar time (s).\n");
+  fprintf(fp,"-rand: \t\t\t\t Pseudo-random number generator, OS specific\n");
+  fprintf(fp,"\t e.g. linux || unix -> drand48_r (-rand = 0), not available for MacOS.\n");
+  fprintf(fp,"\t APPLE and MacOS (-rand = 1).\n");
   exit(1);
   return 0;
 }
@@ -205,7 +215,7 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-t2",*argv)==0 || strcasecmp("--threads2",*argv)==0){
       mypars->threads2 = atoi(*(++argv));
-      if (mypars->threads2 < 1){ErrMsg(9.0);}
+      if (mypars->threads2 < 0){ErrMsg(9.0);}
     }
     else if(strcasecmp("-r",*argv)==0 || strcasecmp("--reads",*argv)==0){
       mypars->reads = atoi(*(++argv));

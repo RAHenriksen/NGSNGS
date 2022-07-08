@@ -13,7 +13,6 @@ git clone https://github.com/samtools/htslib.git
 
 cd htslib; make; cd ../NGSNGS; make HTSSRC=../htslib
 
-
 * Use systemwide installation of htslib
 
 git clone https://github.com/RAHenriksen/NGSNGS.git
@@ -26,43 +25,73 @@ cd NGSNGS; make
 Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 
 
 ~~~~bash
-./ngsngs [options] -i <Reference.fa> -r/-c <Number of reads or Depth of coverage> -l/-lf <Fixed length or Length file> -seq <SE/PE> -f <Output format> -o <Prefix output name>
+Next Generation Simulator for Next Generator Sequencing Data version 0.5.0 
 
-Options: 
--i   | --input: 		 Reference file in fasta format (.fa or .fasta) to sample reads.
+Usage
+./ngsngs [options] -i <input_reference.fa> -r/-c <Number of reads or depth of coverage> -l/-lf <fixed length or length file> -seq <SE/PE> -f <output format> -o <output name prefix>
+
+Example 
+./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 2 -s 1 -lf Test_Examples/Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut
+
+./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t1 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -q2 Test_Examples/Qual_profiles/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut
+
+./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/DeamSubFile.txt -f fa -o MycoBactFaSEOut
+
+-h   | --help: 			 Print help page.
+
+Required: 
+
+-i   | --input: 		 Reference file in fasta format (.fa,.fasta) to sample reads.
 -r   | --reads: 		 Number of reads to simulate, conflicts with -c option.
 -c   | --coverage: 		 Depth of Coverage to simulate, conflics with -r option.
--l   | --length: 		 Fixed length of simulated fragments, conflicts with -lf option.
--lf  | --lengthfile: 		 CDF of a length distribution, conflicts with -l option.
+-l   | --length: 		 Fixed length of simulated fragments, conflicts with -lf & -ld option.
+-lf  | --lengthfile: 		 CDF of a length distribution, conflicts with -l & -ld option.
+-ld  | --lengthdist: 		 Discrete or continuous probability distributions, conflicts with -l & -lf option.
+	eg.	 Uni,40,180 || Norm,80,30 || LogNorm,4,1 || Pois,165 || Exp,0.025 || Gam,20,2
 -seq | --sequencing: 		 Simulate single-end or paired-end reads.
-	 <SE>	 single-end. 
+	 <SE>	 single-end 
  	 <PE>	 paired-end.
 -f   | --format: 		 File format of the simulated output reads.
-	 <fa.  || fasta>	 Nucletide sequence. 
- 	 <fa.gz|| fasta.gz>	 Compressed nucletide sequence. 
- 	 <fq   || fastq>	 Nucletide sequence with corresponding quality score. 
- 	 <fq.gz|| fastq.gz>	 Compressed nucletide sequence with corresponding quality score. 
- 	 <sam  || bam>		 Sequence Alignment Map format.
+	 <fa||fasta||fa.gz||fasta.gz>		 Nucletide sequence w. different compression levels. 
+ 	 <fq||fastq||fq.gz||fastq.gz>		 Nucletide sequence with corresponding quality score w. different compression levels. 
+ 	 <sam||bam||cram>			 Sequence Alignment Map format w. different compression levels.
 -o   | --output: 		 Prefix of output file name.
--t1  | --threads1: 		 Number of threads to use for sampling sequence reads, default = 1.
--t2  | --threads2: 		 Number of threads to use write down sampled reads, default = 1.
--s   | --seed: 			 Random seed, default = current calendar time (s).
--a1  | --adapter1: 		 Adapter sequence to add for simulated reads (SE) or first read pair (PE).
-	 e.g. Illumina TruSeq Adapter 1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG 
 
--a2  | --adapter2: 		 Adapter sequence to add for second read pair (PE). 
-	 e.g. Illumina TruSeq Adapter 2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT 
--e   | --error: 		 Adding sequencing errors depending of the nucleotide quality score and the corresponding error rate. 
--p   | --poly: 			 Create Poly(X) tails for reads containing adapters with lengths below the inferred readcycle length. 
- 	 e.g -p G or -p A 
--q1  | --quality1: 		 Read Quality profile for single-end reads (SE) or first read pair (PE).
--q2  | --quality2: 		 Read Quality profile for second read pair (PE).
+Optional: 
+
+Nucleotide Alterations: 
+-bcf: 				 Binary Variant Calling Format (.bcf)
+-v:  | --variant: 		 Specific variants to simulate
+	 eg.	 snp || indel. Default = all
 -b   | --briggs: 		 Parameters for the damage patterns using the Briggs model.
 	 <nv,Lambda,Delta_s,Delta_d> : 0.024,0.36,0.68,0.0097 (from Briggs et al., 2007).
 	 nv: Nick rate pr site. 
  	 Lambda: Geometric distribution parameter for overhang length.
  	 Delta_s: PMD rate in single-strand regions.
- 	 Delta_s: PMD rate in double-strand regions.
+ 	 Delta_d: PMD rate in double-strand regions.
+-mf  | --mismatch: 			 Nucleotide substitution frequency file.
+-ne  | --noerror: 		 Disabling the nucleotide subsitutions based on nucleotide qualities.
+
+Read Specific: 
+-chr | --chromosomes: 		 Specific chromosomes from input reference file.
+-a1  | --adapter1: 		 Adapter sequence to add for simulated reads (SE) or first read pair (PE).
+	 e.g. Illumina TruSeq Adapter 1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG 
+
+-a2  | --adapter2: 		 Adapter sequence to add for second read pair (PE). 
+	 e.g. Illumina TruSeq Adapter 2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT 
+
+-p   | --poly: 			 Create Poly(X) tails for reads, containing adapters with lengths below the inferred readcycle length. 
+ 	 e.g -p G or -p A 
+-q1  | --quality1: 		 Read Quality profile for single-end reads (SE) or first read pair (PE).
+-q2  | --quality2: 		 Read Quality profile for for second read pair (PE).
+
+Other: 
+-t1  | --threads1: 		 Number of sampling threads, default = 1.
+-t2  | --threads2: 		 Number of compression threads, default = 0.
+-s   | --seed: 			 Random seed, default = current calendar time (s).
+-rand: 				 Pseudo-random number generator, OS specific
+	 e.g. linux || unix -> drand48_r (-rand = 0), not available for MacOS.
+	 APPLE and MacOS (-rand = 1).
 ~~~~
 
 ## Output format - FQ, SAM
