@@ -70,9 +70,12 @@ int main(int argc,char**argv){
 
   int verbose[2] = {0,0};
   char *contig = (char*) calloc(2048,1);//maxlength 1024, should be enough
+  char *readname = (char*) calloc(2048,1);//maxlength 1024, should be enough
   while(bgzf_getline(fq_fp,'\n',kstr)>0){
     //    fprintf(stderr,"%s\n",kstr->s);
+    strcpy(readname,kstr->s);
     char *tok = strtok(kstr->s,"_");
+
     int threadid;
     int readid;
     int strand;//assumes zero or one 0/1    
@@ -110,7 +113,7 @@ int main(int argc,char**argv){
     if(strand!=-1) {
       if(kstr->l+posB!=posE+1) {
 	if(verbose[0]++<5)
-	  fprintf(stderr,"Problem with offsets of reads vs end of read?: %lu %d, kstr->l: %lu, this message is printed %d time more\n",kstr->l+posB,posE,kstr->l,5-verbose[0]);
+	  fprintf(stderr,"[%s] Problem with offsets of reads vs end of read?: %lu %d, kstr->l: %lu, this message is printed %d time more\n",readname,kstr->l+posB,posE,kstr->l,5-verbose[0]);
 	strand = -1;
       }
     }
@@ -118,7 +121,7 @@ int main(int argc,char**argv){
     if(strand!=-1){
       if(kstr->l+posB>=md.seq_l||posB>md.seq_l){
 	if(verbose[1]++<5)
-	  fprintf(stderr,"Problem with end of read and length of contig: %lu %d, this message is printed %d time more\n",kstr->l+posB,md.seq_l,5-verbose[1]);
+	  fprintf(stderr,"[%s] Problem with end of read and length of contig: %d_%d and  %lu fai_l: %d, this message is printed %d time more\n",readname,posB,posE,kstr->l+posB,md.seq_l,5-verbose[1]);
 	strand = -1;
       }
 
@@ -160,6 +163,7 @@ int main(int argc,char**argv){
 
   //cleanup
   free(contig);
+  free(readname);
   for(aMap::iterator it=mymap.begin();it!=mymap.end();it++){
     mydata md = it->second;
     free(md.seq);
