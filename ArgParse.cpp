@@ -70,6 +70,7 @@ typedef struct{
   int rand_val;
   const char *Variant;
   const char *Variant_type;
+  const char *CommandRun;
 }argStruct;
 
 int HelpPage(FILE *fp){
@@ -192,69 +193,108 @@ argStruct *getpars(int argc,char ** argv){
   mypars->rand_val = -1;
   mypars->Variant = NULL;
   mypars->Variant_type = NULL;
-
+  mypars->CommandRun = NULL;
+  
+  char Command[1024];
+  const char *first = "./ngsngs ";
+  strcpy(Command,first);
   ++argv;
   while(*argv){
     //fprintf(stderr,"ARGV %s\n",*argv);
     if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->Reference = strdup(*(++argv));
+      strcat(Command,mypars->Reference); strcat(Command," ");
     }
     else if(strcasecmp("-bcf",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->Variant = strdup(*(++argv));
+      strcat(Command,mypars->Variant); strcat(Command," ");
     }
     else if(strcasecmp("-v",*argv)==0 || strcasecmp("--variant",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->Variant_type = strdup(*(++argv));
+      strcat(Command,mypars->Variant); strcat(Command," ");
       if(mypars->Variant == NULL){ErrMsg(13.0);}
       else if (mypars->Variant_type && strcasecmp("snp",mypars->Variant_type)!=0 && 
       strcasecmp("indel",mypars->Variant_type)!=0 &&
       strcasecmp("all",mypars->Variant_type)!=0){ErrMsg(13.5); exit(0);}      
     }
     else if(strcasecmp("-t1",*argv)==0 || strcasecmp("--threads1",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->threads1 = atoi(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
       if (mypars->threads1 < 1){ErrMsg(9.0);}
     }
     else if(strcasecmp("-t2",*argv)==0 || strcasecmp("--threads2",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->threads2 = atoi(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
       if (mypars->threads2 < 0){ErrMsg(9.0);}
     }
     else if(strcasecmp("-r",*argv)==0 || strcasecmp("--reads",*argv)==0){
-      mypars->reads = atoi(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
+      const char* readstr = strdup(*(++argv));
+      sscanf(readstr, "%zu",&mypars->reads);
+      strcat(Command,*argv); strcat(Command," ");
       if (mypars->reads <= 0){ErrMsg(2.4);}
     }
     else if(strcasecmp("-c",*argv)==0 || strcasecmp("--cov",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->coverage = atof(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
       if (mypars->coverage <= 0.0){ErrMsg(2.2);}
     }
     else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->OutName = strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-s",*argv)==0 || strcasecmp("--seed",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->Glob_seed = atoi(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-seq",*argv)==0 || strcasecmp("--sequencing",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->Seq = strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
       if(strcasecmp("SE",mypars->Seq)!=0 && strcasecmp("PE",mypars->Seq)!=0){ErrMsg(6.5);} 
     }
     else if(strcasecmp("-a1",*argv)==0 || strcasecmp("--adapter1",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->Adapter1 = strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-a2",*argv)==0 || strcasecmp("--adapter2",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->Adapter2 = strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-q1",*argv)==0 || strcasecmp("--quality1",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->QualProfile1 = strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-q2",*argv)==0 || strcasecmp("--quality2",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->QualProfile2 = strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-mf",*argv)==0 || strcasecmp("--mismatch",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->SubProfile = strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-ne",*argv)==0 || strcasecmp("--noerror",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->ErrorFlag = "F"; // strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->OutFormat = strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
       if(strcasecmp("fa",mypars->OutFormat)!=0 && 
       strcasecmp("fa.gz",mypars->OutFormat)!=0 &&
       strcasecmp("fq",mypars->OutFormat)!=0 &&
@@ -264,23 +304,35 @@ argStruct *getpars(int argc,char ** argv){
       strcasecmp("cram",mypars->OutFormat)!=0){ErrMsg(7.0);}      
     }
     else if(strcasecmp("-b",*argv)==0 || strcasecmp("--briggs",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->Briggs = strdup(*(++argv)); //double nv, double lambda, double delta_s, double delta -> 0.024,0.36,0.68,0.0097
+      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-l",*argv)==0 || strcasecmp("--length",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->Length = atoi(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
       if (mypars->Length <= 0.0){ErrMsg(3.2);}
     }
     else if(strcasecmp("-lf",*argv)==0 || strcasecmp("--lengthfile",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->LengthFile = strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-ld",*argv)==0 || strcasecmp("--lengthdist",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->LengthDist = strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-chr",*argv)==0 || strcasecmp("--chromosomes",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->Chromosomes = strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-p",*argv)==0 || strcasecmp("--poly",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->Poly = strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
       if(strcasecmp("A",mypars->Poly)!=0 && 
       strcasecmp("G",mypars->Poly)!=0 &&
       strcasecmp("C",mypars->Poly)!=0 &&
@@ -288,12 +340,15 @@ argStruct *getpars(int argc,char ** argv){
       strcasecmp("N",mypars->Poly)!=0){ErrMsg(10.0);}
     }
     else if(strcasecmp("-rand",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
       mypars->rand_val = atoi(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
     }
     else{
       fprintf(stderr,"unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
       exit(0);
     }
+    mypars->CommandRun = Command;
     ++argv;
   }
   return mypars;
@@ -310,6 +365,14 @@ int main(int argc,char **argv){
   }
   else{
     mypars = getpars(argc,argv);
+    const char* version = "0.5.0";
+    static char CommandArray[1024];
+    const char* Command = mypars->CommandRun;
+    fprintf(stderr,"\n\t-> NGSNGS version %s , git commit: %s , (htslib: %s) build (%s %s)\n",version,GITVERSION,hts_version(),__DATE__,__TIME__);
+    //fprintf(stderr,"\t-> Command: %s \n",Command);
+    //fprintf(stderr,"\t-> Command: %s \n",Command);
+    sprintf(CommandArray, "%s", Command);
+    //fprintf(stderr,"\t-> Command 2 : %s and version %s \n",CommandArray,version);
     clock_t t = clock();
     time_t t2 = time(NULL);
     int Glob_seed = mypars->Glob_seed; 
@@ -345,7 +408,7 @@ int main(int argc,char **argv){
         ErrMsg(2.0);
       }
     }
-
+    //fprintf(stderr,"\t-> Command: %s \n",Command);
     int FixedSize = mypars->Length;
     const char* Sizefile = mypars->LengthFile;
     const char* SizeDist = mypars->LengthDist;
@@ -417,11 +480,11 @@ int main(int argc,char **argv){
     if (mypars->threads2 == -1){threads2 = 1;}
     else{threads2 = mypars->threads2;}
     
-    int Thread_specific_Read;
-    if (No_reads != (unsigned long int) -1){
+    size_t Thread_specific_Read;
+    if (No_reads != (size_t) -1){ //(unsigned long int) -1
       if (No_reads == 1 && threads1 > 1){ErrMsg(2.6);}
      
-      Thread_specific_Read = static_cast<int>(No_reads/threads1);
+      Thread_specific_Read = static_cast<size_t>(No_reads/threads1);
       if (readcov != -1){ErrMsg(2.99);}
     }
     else if (readcov != -1){
@@ -431,12 +494,13 @@ int main(int argc,char **argv){
         int chr_len = faidx_seq_len(seq_ref,chr_name);
         genome_size += chr_len;
       }
-      Thread_specific_Read = static_cast<int>(((readcov*genome_size)/meanlength)/threads1);
+      Thread_specific_Read = static_cast<size_t>(((readcov*genome_size)/meanlength)/threads1);
     }
-    fprintf(stderr,"\n\t-> NGSNGS git version: %s (htslib: %s) build (%s %s)\n",GITVERSION,hts_version(),__DATE__,__TIME__);
+    fprintf(stderr,"\t-> Command: %s \n",Command);
+    fprintf(stderr,"\t-> Command 2 : %s \n",CommandArray);
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
     fprintf(stderr,"\t-> Seed used: %d\n",Glob_seed);
-    fprintf(stderr,"\t-> Number of threads used for sampling (-t1): %d and for writing down (-t2): %d\n",threads1,threads2);
+    fprintf(stderr,"\t-> Number of sampling threads used (-t1): %d and number of compression threads (-t2): %d\n",threads1,threads2);
     fprintf(stderr,"\t-> Number of simulated reads: %zd or coverage: %f\n",No_reads,readcov);
 
     const char* Adapt_flag;
@@ -556,13 +620,13 @@ int main(int argc,char **argv){
 
     //if(Specific_Chr[0]=='\0'){fprintf(stderr,"HURRA");}
     int DeamLength;
+
     Create_se_threads(seq_ref,threads1,Glob_seed,Thread_specific_Read,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,SizeDistType,val1,val2,
                       qualstringoffset,QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,
                       ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType,
-                      VCFformat,Variant_flag,VarType);
-
+                      VCFformat,Variant_flag,VarType,CommandArray,version);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));

@@ -609,7 +609,7 @@ void printTime(FILE *fp){
   fprintf (fp, "\t-> %s", asctime (timeinfo) );
 }
 
-void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total,int chr_idx_arr[],size_t genome_len){
+void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total,int chr_idx_arr[],size_t genome_len,char CommandArray[1024],const char* version){
   // Creates a header for the bamfile. The header is initialized before the function is called //
 
   if (header == NULL) { fprintf(stderr, "sam_hdr_init");}
@@ -632,6 +632,8 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
     //int r = sam_hdr_add_line(header, "TEST COMMAND", genome_len_buf, NULL);
     memset(genome_len_buf,0, sizeof(genome_len_buf));
   }
+  // Adding PG tag
+  sam_hdr_add_pg(header,"NGSNGS","VN",version,"CL",CommandArray,NULL);
   // saving the header to the file
   if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile_nam); //outfile
 }

@@ -109,22 +109,16 @@ e.g. in .fq format
 S0 is the forward strand and S1 is the reverse strand
 ~~~~
 ## ERROR PROFILES AND FRAGMENT LENGTH DISTRIBUTIONS
-Both the nucleotide quality profile  and the read length distributions are the cumulative relative frequency distribution.
+Both the nucleotide quality profile and the read length distributions are the cumulative relative frequency distribution.
 
-### GENERATE NUCLEOTIDE QUALITY PROFILES BASED ON ART's PROFILES
+### CONVERSION TO GENERATE NUCLEOTIDE QUALITY PROFILES
+#### QUAL PROFILES
 See more nucleotide quality profiles on https://github.com/scchess/Art. 
 
-~~~~bash
-cd Qual_Profiles
-Rscript Read_filter.R <Input file> <Output file>
-~~~~
-Conversion of Illumina Hiseq 2500 profile for read with lengths of 150 bp.
-~~~~bash
-Rscript Read_filter.R HiSeq2500L150R1filter.txt AccFreqL150R1.txt
-~~~~
+#### MAPDAMAGE LENGTH AND ERROR RATES
 
-### STRUCTURE OF THE NUCLEOTIDE QUALITY PROFILES
-e.g. for Illumina HISEQ 2500 Read length 150, covering all 4 nucleotides and N, giving the CDF distributions a length of 750 as well as 2 lines with Quality information, with a total length of 752. \
+### STRUCTURE
+#### STRUCTURE OF THE NUCLEOTIDE QUALITY PROFILES
 1st line: Information regarding the nucleotide qualities \
 2nd line: Nucleotide quality converted into the probability of the base call being wrong \
 3rd - end: The CDF of the nucleotide quality distribution for a given nulceotide at a given position.  \
@@ -137,22 +131,16 @@ Line5: 2.62498333135585e-07	0.000614246099537268	0.0446979536679942	0.1057435160
 .
 .
 .
-Line750: 1	1	1	1	1	1	1	1
-Line751: 1	1	1	1	1	1	1	1
-Line752: 1	1	1	1	1	1	1	1
+Line750: 1	0	0	0	0	0	0	0
+Line751: 1	1	0	0		0	0	0
+Line752: 1	1	0	0	0	0	0	0
 ~~~~
 Line 3 - 152 -> A nucleotide \ 
 Line 153 - 302 -> T  \
 Line 303 - 452 -> G  \
 Line 453 - 602 -> C  \
 Line 603 -> 752 -> N.
-### GENERATE SIZE DISTRIBUTIONS
-Using the same size distribution as provided in Gargammel
-~~~~bash
-cd Size_dist
-Rscript 
-~~~~
-### STRUCTURE OF THE SIZE DISTRIBUTION
+#### FRAGMENT LENGTH DISTRIBUTIONS
 The CDF of the fragment lengths of Ancient DNA.
 ~~~~bash
 35	0.00540914
@@ -169,25 +157,13 @@ The CDF of the fragment lengths of Ancient DNA.
 190	0.9999406784
 191	1
 ~~~~
+
 ## EXAMPLE OF USAGE
-### Simulate 10000 paired-end reads in .fa format with fixed length
+### Simulate Single-end reads, with deamination and fragment length distribution using several threads in a .bam format
 ~~~~bash
-./ngsngs -i chr22.fa -r 10000 -l 100 -seq PE -f fa -o chr22pe
-~~~~
-### Simulate single-end NGS aDNA reads with PMD, depth of coverage of 3, 2 threads, seed of 1 given a length distribution in .fa
-~~~~bash
-./ngsngs -i chr22.fa -c 3 -t1 2 -s 1 -lf Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -f fa -o chr22se
-~~~~
-### Simulate 10000 paired-end reads with a read length distribution, 2 threads, seed of 1, quality profiles and adapters in .fq format
-~~~~bash
-./ngsngs -i chr22.fa -r 100000 -t1 2 -s 1 -lf Size_dist/Size_dist_sampling.txt -q1 Qual_profiles/AccFreqL150R1.txt -q2 Qual_profiles/AccFreqL150R2.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -seq PE -f fq -o chr22pe
-~~~~
-### Simulate single-end reads with a read length distribution, coverage of 2, 2 threads, seed of 1, quality profiles, adapters, substitution errors and poly G tails in .fq format
-~~~~bash
-./ngsngs -i chr22.fa -c 2 -t1 2 -s 1 -lf Size_dist/Size_dist_sampling.txt -q1 Qual_profiles/AccFreqL150R1.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -seq SE -e T -p G -f fq -o chr22se
-~~~~
-### Simulate 10000 single-end reads with PMD with length distribution using 2 threads, seed of 1, quality profiles in .bam format
-~~~~bash
-./ngsngs -i chr22.fa -r 100000 -t1 2 -s 1 -lf Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -q1 Qual_profiles/AccFreqL150R1.txt -f bam -o chr22se
+../ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 2 -s 1 -lf Test_Examples/Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut
 ~~~~
 
+## MISC
+### ASome analysis requires MD tag
+samtools sort -@ 10 -m 2G MycoBactBamSEOut.bam -o MycoBactBamSEOut_sort.bam; samtools index MycoBactBamSEOut_sort.bam; samtools calmd -@ 10 -e -r -b MycoBactBamSEOut_sort.bam Test_Examples/Mycobacterium_leprae.fa.gz > MycoBactBamSEOut_sort_MD.bam; rm MycoBactBamSEOut_sort.bam.bai;rm MycoBactBamSEOut_sort.bam

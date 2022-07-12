@@ -40,7 +40,7 @@ void FragDistArray(int& number,int*& Length, double*& Frequency,int SizeDistType
 
 void printTime(FILE *fp);
 
-void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total, int chr_idx[], size_t genome_len);
+void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total, int chr_idx[], size_t genome_len,char CommandArray[1024],const char* version);
 
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[]);
 
