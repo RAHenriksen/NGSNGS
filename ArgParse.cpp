@@ -48,7 +48,7 @@
 typedef struct{
   int threads1;
   int threads2;
-  size_t reads;
+  long long int reads;
   double coverage;
   int Glob_seed;
   const char *OutFormat;
@@ -381,7 +381,7 @@ int main(int argc,char **argv){
     const char* OutputFormat = mypars->OutFormat;
     const char* filename = mypars->OutName; //"chr22_out";
     const char* Seq_Type = mypars->Seq;
-    size_t No_reads = mypars->reads;
+    long long int No_reads = mypars->reads;
     double readcov = mypars->coverage;
     int MacroRandType = mypars->rand_val; //extern int
 
@@ -403,7 +403,7 @@ int main(int argc,char **argv){
     if (OutputFormat == NULL){ErrMsg(7.0);}
     if (filename == NULL){ErrMsg(8.0);}
     
-    if (No_reads == (unsigned long int) -1){
+    if (No_reads == (long long int) -1){
       if (readcov == -1.0){
         ErrMsg(2.0);
       }
@@ -480,11 +480,11 @@ int main(int argc,char **argv){
     if (mypars->threads2 == -1){threads2 = 1;}
     else{threads2 = mypars->threads2;}
     
-    size_t Thread_specific_Read;
-    if (No_reads != (size_t) -1){ //(unsigned long int) -1
+    long long int Thread_specific_Read;
+    if (No_reads != (long long int) -1){ //(unsigned long int) -1
       if (No_reads == 1 && threads1 > 1){ErrMsg(2.6);}
      
-      Thread_specific_Read = static_cast<size_t>(No_reads/threads1);
+      Thread_specific_Read = static_cast<long long int>(No_reads/threads1);
       if (readcov != -1){ErrMsg(2.99);}
     }
     else if (readcov != -1){
@@ -494,10 +494,10 @@ int main(int argc,char **argv){
         int chr_len = faidx_seq_len(seq_ref,chr_name);
         genome_size += chr_len;
       }
-      Thread_specific_Read = static_cast<size_t>(((readcov*genome_size)/meanlength)/threads1);
+      Thread_specific_Read = static_cast<long long int>(((readcov*genome_size)/meanlength)/threads1);
     }
-    fprintf(stderr,"\t-> Command: %s \n",Command);
-    fprintf(stderr,"\t-> Command 2 : %s \n",CommandArray);
+    //fprintf(stderr,"\t-> Command: %s \n",Command);
+    //fprintf(stderr,"\t-> Command 2 : %s \n",CommandArray);
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
     fprintf(stderr,"\t-> Seed used: %d\n",Glob_seed);
     fprintf(stderr,"\t-> Number of sampling threads used (-t1): %d and number of compression threads (-t2): %d\n",threads1,threads2);

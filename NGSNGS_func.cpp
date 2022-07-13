@@ -648,8 +648,9 @@ char* vcf_info(char genome_data[],int chr_sizes,const char* bcf_file,const char 
   bcf_obj = bcf_open(bcf_file, "r");
   hts_idx_t *idx = bcf_index_load(bcf_file);
   bcf_head = bcf_hdr_read(bcf_obj);
-  //fprintf(stderr, "File contains %i samples\n",bcf_hdr_nsamples(test_header));
+  fprintf(stderr, "File contains %i samples\n",bcf_hdr_nsamples(bcf_head)); //bcf.nsamples(fp)
   int nseq = 0;
+
   const char **seqnames = NULL;
   seqnames = bcf_hdr_seqnames(bcf_head, &nseq);
 
@@ -664,6 +665,11 @@ char* vcf_info(char genome_data[],int chr_sizes,const char* bcf_file,const char 
     exit(0);
   }
   
+  // Set sample number 
+
+  int indiv = bcf_hdr_set_samples(bcf_head, "HG00096", 0);
+  fprintf(stderr, "File contains %i samples\n",bcf_hdr_nsamples(bcf_head)); //bcf.nsamples(fp)
+
   //initializing variation sampling 
   bcf1_t *bcf_records = bcf_init();
   if (bcf_records == NULL){fprintf(stderr,"WARNING NO VARIANTS IN VCF FILE"); exit(0);}
@@ -683,6 +689,15 @@ char* vcf_info(char genome_data[],int chr_sizes,const char* bcf_file,const char 
       if(strcasecmp(bcf_hdr_id2name(bcf_head, bcf_records->rid),chr_names[0])==0){
         bcf_unpack((bcf1_t*)bcf_records, BCF_UN_ALL);
 
+        int i, j, ngt, nsmpl = bcf_hdr_nsamples(bcf_head);
+        char **dst = NULL;
+        fprintf(stderr,"number of samples %d\n",nsmpl);
+        int32_t *gt_arr = NULL, ngt_arr = 0;
+        //ngt = bcf_get_genotypes(bcf_head, bcf_records, &gt_arr, &ngt_arr);
+        //ngt = bcf_get_format_int32(hdr, rec, "GT", &gt, &ngt_arr);
+        bcf_get_format_string;
+        std::cout << ngt << std::endl;
+        exit(0);
         fprintf(stderr,"INSIDE WhILE IF STATEMENT\n");
         size_t pos = (int) bcf_records->pos + 1;
         std::cout << chr_names[0] << " " << pos << std::endl;
