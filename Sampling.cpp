@@ -128,16 +128,16 @@ void* Sampling_threads(void *arg){
   char readadapt_err1[1024] = {0};
   char readadapt_err2[1024] = {0};
 
-  int reads = struct_obj -> reads;
+  long long int reads = struct_obj -> reads;
 
   size_t rand_start;
 
   char qual_r1[1024] = "\0";
   char qual_r2[1024] = "\0"; // {0};
 
-  int localread = 0;
+  size_t localread = 0;
   int iter = 0;
-  int current_reads_atom = 0;
+  long long int current_reads_atom = 0;
   int readsizelimit;
    
   while (current_reads_atom < reads){
@@ -215,9 +215,10 @@ void* Sampling_threads(void *arg){
     }
     else{
       // then all the same start pos would have the same strand no matter the chromosome?
-      int strand = (int) rand_start%2;//(int) rand_r(&loc_seed)%2;//1;//rand() % 2;
-      //fprintf(stderr,"STRAND %d\n",strand);
-      //fprintf(stderr,"STRAND %d\t%d\t%f\t%d\n",rand_r(&loc_seed),(int) rand_r(&loc_seed)%2,mrand_pop(drand_alloc),rand_start%2);
+      int strand = (int) (rand_start%2);//(int) rand_r(&loc_seed)%2;//1;//rand() % 2;
+      
+      //fprintf(stderr,"STRAND %d \t random start %zu \t random start int %d \t modulo %zu\n",strand,rand_start,(int) rand_start, rand_start%2);
+
       if (struct_obj->SAMout){
         // in bam files the reads are all aligning to the forward strand, but the flags identify read property
         if (strcasecmp("SE",struct_obj->SeqType)==0){
@@ -351,8 +352,8 @@ void* Sampling_threads(void *arg){
         }
 
         if (strcasecmp(struct_obj -> OutputFormat,"fa")==0|| strcasecmp(struct_obj -> OutputFormat,"fa.gz")==0){
-          ksprintf(struct_obj->fqresult_r1,">%s\n%s\n",READ_ID,readadapt);
-          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s\n%s\n",READ_ID,readadapt2);}
+          ksprintf(struct_obj->fqresult_r1,">%s_R1\n%s\n",READ_ID,readadapt);
+          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s_R2\n%s\n",READ_ID,readadapt2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
           for(long unsigned int p = 0;p<strlen(readadapt);p++){
@@ -380,9 +381,9 @@ void* Sampling_threads(void *arg){
             memset(QualPoly,'!', readsizelimit);
             strncpy(PolyChar, readadapt, strlen(readadapt));
             strncpy(QualPoly, qual_r1, strlen(qual_r1));
-            ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,PolyChar,QualPoly);
+            ksprintf(struct_obj->fqresult_r1,"@%s_R1\n%s\n+\n%s\n",READ_ID,PolyChar,QualPoly);
           }
-          else{ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,readadapt,qual_r1);}
+          else{ksprintf(struct_obj->fqresult_r1,"@%s_R1\n%s\n+\n%s\n",READ_ID,readadapt,qual_r1);}
           
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             for(long unsigned int p = 0;p<strlen(readadapt2);p++){
@@ -407,9 +408,9 @@ void* Sampling_threads(void *arg){
               memset(QualPoly,'!', readsizelimit);
               strncpy(PolyChar, readadapt2, strlen(readadapt2));
               strncpy(QualPoly, qual_r2, strlen(qual_r2));
-              ksprintf(struct_obj->fqresult_r2,"@%s\n%s\n+\n%s\n",READ_ID,PolyChar,QualPoly);
+              ksprintf(struct_obj->fqresult_r2,"@%s_R1\n%s\n+\n%s\n",READ_ID,PolyChar,QualPoly);
             }
-            else{ksprintf(struct_obj->fqresult_r2,"@%s\n%s\n+\n%s\n",READ_ID,readadapt2,qual_r2);}
+            else{ksprintf(struct_obj->fqresult_r2,"@%s_R2\n%s\n+\n%s\n",READ_ID,readadapt2,qual_r2);}
           }
         }
         if (struct_obj->SAMout){
@@ -498,8 +499,8 @@ void* Sampling_threads(void *arg){
       }
       else{
         if (strcasecmp(struct_obj -> OutputFormat,"fa")==0|| strcasecmp(struct_obj -> OutputFormat,"fa.gz")==0){
-          ksprintf(struct_obj->fqresult_r1,">%s\n%s\n",READ_ID,seq_r1);
-          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s\n%s\n",READ_ID,seq_r2);}
+          ksprintf(struct_obj->fqresult_r1,">%s_R1\n%s\n",READ_ID,seq_r1);
+          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s_R2\n%s\n",READ_ID,seq_r2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
           //fprintf(stderr,"TEST FQ BC%s\n",qual_r1);
@@ -523,7 +524,7 @@ void* Sampling_threads(void *arg){
             }
           }
           //fprintf(stderr,"TEST FQ AC%s\n",qual_r1);
-          ksprintf(struct_obj->fqresult_r1,"@%s\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
+          ksprintf(struct_obj->fqresult_r1,"@%s_R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             for(int p = 0;p<seqlen;p++){
               double dtemp1;double dtemp2;
@@ -542,7 +543,7 @@ void* Sampling_threads(void *arg){
                 if (dtemp3 < struct_obj->NtErr_r2[qscore]){ErrorSub(dtemp4,seq_r2,p);}
               }
             }
-            ksprintf(struct_obj->fqresult_r2,"@%s\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);}
+            ksprintf(struct_obj->fqresult_r2,"@%s_R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);}
         }
         if (struct_obj->SAMout){
 
@@ -634,14 +635,19 @@ void* Sampling_threads(void *arg){
         if (flag == 16 || flag == 81){reverseChar(qual_r1,strlen(seq_r1));}
         else if (flag == 97){reverseChar(qual_r2,strlen(seq_r2));}  
 
+        char READIDR1[1024];char READIDR2[1024];
+        const char* suffR1 = "_R1";const char* suffR2 = "_R2";
+        strcpy(READIDR1,READ_ID);strcat(READIDR1,suffR1);
         if (strcasecmp("PE",struct_obj->SeqType)==0){
-          bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length,READ_ID,flag,chr_idx,min_beg,mapq,
+          strcpy(READIDR2,READ_ID);strcat(READIDR2,suffR2);
+          bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,flag,chr_idx,min_beg,mapq,
           n_cigar,cigar,chr_idx,max_end,insert,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
-          bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length,READ_ID,flag2,chr_idx,max_end,mapq,
+          bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR2),READIDR2,flag2,chr_idx,max_end,mapq,
           n_cigar,cigar2,chr_idx,min_beg,0-insert,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,qual_r2,l_aux);
         }
         else if (strcasecmp("SE",struct_obj->SeqType)==0){
-          bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length,READ_ID,flag,chr_idx,min_beg,mapq,
+          //fprintf(stderr,"READID v2 %s\n",READIDR1);
+          bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,flag,chr_idx,min_beg,mapq,
           n_cigar,cigar,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
           //const char* MDtag = "\tMD:Z:";
           //bam_aux_update_str(struct_obj->list_of_reads[struct_obj->l-1],"MD",5,"MDtag");
@@ -704,7 +710,7 @@ void* Sampling_threads(void *arg){
   return NULL;
 }
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
+void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, long long int reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
                         const char* Adapter_2,const char* OutputFormat,const char* SeqType,float BriggsParam[4],const char* Briggs_flag,
                         const char* Sizefile,int FixedSize,int SizeDistType, int val1, int val2,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
@@ -713,7 +719,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
                         char CommandArray[1024],const char* version){
   //creating an array with the arguments to create multiple threads;
   //fprintf(stderr,"Random MacIntType %d\n",MacroRandType);
-  fprintf(stderr,"\t-> Command 3 : %s \n",CommandArray);
+  //fprintf(stderr,"\t-> Command 3 : %s \n",CommandArray);
   int nthreads=thread_no;
   pthread_t mythreads[nthreads];
 
@@ -792,30 +798,29 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
 
     const char* suffix1;
     const char* suffix2;
-
     const char *mode;
     int alnformatflag = 0;
     if(strcasecmp("fa",OutputFormat)==0){
       //fprintf(stderr,"\t-> FA SE FILE\n");
       mode = "wu";
       if(strcasecmp("SE",SeqType)==0){suffix1 = ".fa";}
-      else{suffix1 = "_r1.fa";suffix2 = "_r2.fa";}
+      else{suffix1 = "_R1.fa";suffix2 = "_R2.fa";}
     }
     else if(strcasecmp("fa.gz",OutputFormat)==0){
       mode = "wb";
       if(strcasecmp("SE",SeqType)==0){suffix1 = ".fa.gz";}
-      else{suffix1 = "_r1.fa.gz";suffix2 = "_r2.fa.gz";}
+      else{suffix1 = "_R1.fa.gz";suffix2 = "_R2.fa.gz";}
     }
     else if(strcasecmp("fq",OutputFormat)==0){
       //fprintf(stderr,"\t-> FQ SE FILE\n");
       mode = "wu";
       if(strcasecmp("SE",SeqType)==0){suffix1 = ".fq";}
-      else{suffix1 = "_r1.fq";suffix2 = "_r2.fq";}
+      else{suffix1 = "_R1.fq";suffix2 = "_R2.fq";}
     }
     else if(strcasecmp("fq.gz",OutputFormat)==0){
       mode = "w";
       if(strcasecmp("SE",SeqType)==0){suffix1 = ".fq.gz";}
-      else{suffix1 = "_r1.fq.gz";suffix2 = "_r2.fq.gz";}
+      else{suffix1 = "_R1.fq.gz";suffix2 = "_R2.fq.gz";}
     }
     else if(strcasecmp("sam",OutputFormat)==0){
       //fprintf(stderr,"\t-> SAM SE FILE\n");
@@ -836,7 +841,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
     }
     else{fprintf(stderr,"\t-> Fileformat is currently not supported \n");}
     strcat(file1,suffix1);
-    fprintf(stderr,"\t-> Compression level for file %s and writing mode %s \n",OutputFormat,mode);
+    //fprintf(stderr,"\t-> Compression level for file %s and writing mode %s \n",OutputFormat,mode);
 
     fprintf(stderr,"\t-> File output name is %s\n",file1);
     const char* filename1 = file1;
@@ -934,7 +939,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
     else{polynucleotide = 'F';}
     //fprintf(stderr,"\t-> AFTER POLY\n");
 
-    const char *Sub_mat = SubProfile;
     double* DeamFreqArray;
     int deamcyclelength = 0;
     if (SubProfile != NULL){

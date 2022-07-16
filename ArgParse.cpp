@@ -20,6 +20,7 @@
 #include "NGSNGS_func.h"
 #include "Sampling.h"
 #include "mrand.h"
+#include "version.h"
 
 #define LENS 4096
 #define MAXBINS 100
@@ -235,7 +236,7 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-r",*argv)==0 || strcasecmp("--reads",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
       const char* readstr = strdup(*(++argv));
-      sscanf(readstr, "%zu",&mypars->reads);
+      sscanf(readstr, "%llu",&mypars->reads);
       strcat(Command,*argv); strcat(Command," ");
       if (mypars->reads <= 0){ErrMsg(2.4);}
     }
@@ -368,7 +369,7 @@ int main(int argc,char **argv){
     const char* version = "0.5.0";
     static char CommandArray[1024];
     const char* Command = mypars->CommandRun;
-    fprintf(stderr,"\n\t-> NGSNGS version %s , git commit: %s , (htslib: %s) build (%s %s)\n",version,GITVERSION,hts_version(),__DATE__,__TIME__);
+    fprintf(stderr,"\n\t-> NGSNGS version %s , git commit: %s, (htslib: %s) build (%s %s)\n",version,GIT_COMMIT,hts_version(),__DATE__,__TIME__);
     //fprintf(stderr,"\t-> Command: %s \n",Command);
     //fprintf(stderr,"\t-> Command: %s \n",Command);
     sprintf(CommandArray, "%s", Command);
@@ -457,7 +458,6 @@ int main(int argc,char **argv){
       char* tmp = strtok(NULL, ",");
       if(tmp == NULL){val2 = 0;}
       else{val2 = atoi(tmp);}
-      const int nrolls=10000;
       
       if (strcasecmp(Dist,"Uni")==0){SizeDistType=1;std::uniform_int_distribution<int> distribution(val1,val2);meanlength=(int)(0.5*(val1+val2));}
       if (strcasecmp(Dist,"Norm")==0){SizeDistType=2;std::normal_distribution<double> distribution(val1,val2);meanlength=(int) val1;}
@@ -501,7 +501,7 @@ int main(int argc,char **argv){
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
     fprintf(stderr,"\t-> Seed used: %d\n",Glob_seed);
     fprintf(stderr,"\t-> Number of sampling threads used (-t1): %d and number of compression threads (-t2): %d\n",threads1,threads2);
-    fprintf(stderr,"\t-> Number of simulated reads: %zd or coverage: %f\n",No_reads,readcov);
+    fprintf(stderr,"\t-> Number of simulated reads: %lld or coverage: %f\n",No_reads,readcov);
 
     const char* Adapt_flag;
     const char* Adapter_1;

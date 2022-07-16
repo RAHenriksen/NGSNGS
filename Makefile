@@ -1,8 +1,8 @@
 #modied from htslib makefile
 #FLAGS=-O3 -std=c++11
-GITVERSION:= $(shell git log -1 --pretty='%h')
+$(shell echo -e "#include \"version.h\"\n\nchar const *const GIT_COMMIT = \"$$(git describe --always --match 'NOT A TAG')\";" > version.cpp.tmp; if diff -q version.cpp.tmp version.cpp >/dev/null 2>&1; then rm version.cpp.tmp; else mv version.cpp.tmp version.cpp; fi)
 
-FLAGS=-ggdb -std=c++11 -DGITVERSION="\"${GITVERSION}\"" -DBGZF_MT
+FLAGS=-ggdb -std=c++11 -DBGZF_MT
 
 CFLAGS += $(FLAGS)
 CXXFLAGS += $(FLAGS)
