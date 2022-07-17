@@ -84,6 +84,7 @@ struct Parsarg_for_Sampling_thread{
   const char* QualFlag;
 
   char ErrorFlag;
+  const char* Variant_flag;
   char PolyNt;
 
   int RandMacro;
@@ -177,7 +178,6 @@ void* Sampling_threads(void *arg){
     
     int chr_idx = 0;
     while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}
-    //fprintf(stderr,"chromosome index 2 %d\n",chr_idx);
     if (fraglength > readsizelimit){strncpy(seq_r1,struct_obj->genome+rand_start-1,readsizelimit);}   // case 1
     else {strncpy(seq_r1,struct_obj->genome+rand_start-1,fraglength);}  // case 2
     
@@ -328,8 +328,15 @@ void* Sampling_threads(void *arg){
       }
       
       char READ_ID[1024]; int read_id_length;
-      read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%s:%zu-%zu_length:%d", struct_obj->threadno, rand_id,strand,struct_obj->names[chr_idx],
-        rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],fraglength);
+      if (strcasecmp(struct_obj->Variant_flag ,"bcf")==0){
+        //fprintf(stderr,"INSIDE HERE");
+        read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%s:%zu-%zu_length:%d", struct_obj->threadno, rand_id,strand,struct_obj->names[0],
+          rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],fraglength);
+      }
+      else{
+        read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%s:%zu-%zu_length:%d", struct_obj->threadno, rand_id,strand,struct_obj->names[chr_idx],
+          rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],fraglength);
+      }
       
       if(strcasecmp(struct_obj->Adapter_flag,"true")==0){
         strcpy(read, seq_r1);
@@ -716,7 +723,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, long long int 
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName,
                         const char* MisMatchFlag,const char* SubProfile,int MisLength,int RandMacro,const char *VCFformat,const char* Variant_flag,const char *VarType,
-                        char CommandArray[1024],const char* version){
+                        char CommandArray[1024],const char* version,const char* HeaderIndiv){
   //creating an array with the arguments to create multiple threads;
   //fprintf(stderr,"Random MacIntType %d\n",MacroRandType);
   //fprintf(stderr,"\t-> Command 3 : %s \n",CommandArray);
@@ -729,10 +736,13 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, long long int 
   nuc2int['c'] = nuc2int['C'] = nuc2int[3] = 3;
   nuc2int['n'] = nuc2int['N'] = nuc2int[4] = 4; 
 
-  int chr_total;
+  int chr_total = 0;
   char *genome_data;
   if (Specific_Chr[0] != NULL){
-    while (Specific_Chr[chr_total]) {chr_total++;}
+    while (Specific_Chr[chr_total]){
+      std::cout << " lol " << chr_total << std::endl;
+      chr_total++;
+      }
   }
   else{
     chr_total = faidx_nseq(seq_ref);
@@ -750,25 +760,30 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, long long int 
       for (int i = 0; i < chr_total; i++){
         if(strcasecmp(faidx_iseq(seq_ref, j),Specific_Chr[i])==0){
           chr_idx_arr[i] = j;
-          //fprintf(stderr,"index j %d and i %d and value %d\n",j,i,chr_idx_arr[i]);
         }
       } 
     }
   }
   else
   {
-    for (int j = 0; j < faidx_nseq(seq_ref); j++){chr_idx_arr[j] = j;}
+    for (int j = 0; j < faidx_nseq(seq_ref); j++){;chr_idx_arr[j] = j;}
   }
   
   if(VCFformat != NULL && strcasecmp(Variant_flag,"bcf")==0){
-    genome_data = full_vcf_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm,VCFformat,VarType);
+    //const char* HeaderIndiv = "HG00096";
+    genome_data = full_vcf_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm,VCFformat,VarType,HeaderIndiv);
   }
   else{
     if (chr_total == faidx_nseq(seq_ref)){
+      std::cout << chr_total << " " << faidx_nseq(seq_ref) << std::endl;
       genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
     }  
     else{
-      genome_data = partial_genome_create(seq_ref,chr_total,chr_sizes,Specific_Chr,chr_size_cumm);
+      fprintf(stderr,"Generating partial\n");
+      std::cout << chr_total << " " << faidx_nseq(seq_ref) << std::endl;
+      fprintf(stderr,"chr total %d \t specific chr %s\n",chr_total,Specific_Chr[0]);
+      genome_data = partial_genome_create(seq_ref,chr_total-1,chr_sizes,Specific_Chr,chr_size_cumm);
+      fprintf(stderr,"Generating done\n");
       for (int i = 0; i < chr_total; i++){
         chr_names[i] = Specific_Chr[i];
       }
@@ -948,7 +963,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, long long int 
     //else{std::cout << "LOLRT " << std::endl;}
     
     
-    //fprintf(stderr,"\t-> Before threads\n");
+    fprintf(stderr,"\t-> Before threads\n");
     for (int i = 0; i < nthreads; i++){
       struct_for_threads[i].fqresult_r1 =new kstring_t;
       struct_for_threads[i].fqresult_r1 -> l = 0;
@@ -1005,6 +1020,8 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, long long int 
       struct_for_threads[i].QualFlag = QualStringFlag;
       struct_for_threads[i].PolyNt = polynucleotide;
       struct_for_threads[i].ErrorFlag = (char) ErrorFlag[0];
+      struct_for_threads[i].Variant_flag = Variant_flag;
+
 
       //declaring the size of the different arrays
       struct_for_threads[i].size_cumm = (size_t*)malloc(sizeof(size_t) * (struct_for_threads[i].chr_no+1));

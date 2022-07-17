@@ -71,7 +71,9 @@ typedef struct{
   int rand_val;
   const char *Variant;
   const char *Variant_type;
+  const char *VariantFlag;
   const char *CommandRun;
+  const char* HeaderIndiv;
 }argStruct;
 
 int HelpPage(FILE *fp){
@@ -194,8 +196,8 @@ argStruct *getpars(int argc,char ** argv){
   mypars->rand_val = -1;
   mypars->Variant = NULL;
   mypars->Variant_type = NULL;
+  mypars->HeaderIndiv=NULL;
   mypars->CommandRun = NULL;
-  
   char Command[1024];
   const char *first = "./ngsngs ";
   strcpy(Command,first);
@@ -339,6 +341,11 @@ argStruct *getpars(int argc,char ** argv){
       strcasecmp("C",mypars->Poly)!=0 &&
       strcasecmp("T",mypars->Poly)!=0 &&
       strcasecmp("N",mypars->Poly)!=0){ErrMsg(10.0);}
+    }
+    else if(strcasecmp("-indiv",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
+      mypars->HeaderIndiv = strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-rand",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
@@ -594,6 +601,7 @@ int main(int argc,char **argv){
 
     const char* Specific_Chr[1024] = {};
     if (mypars->Chromosomes != NULL){
+      fprintf(stderr,"PARTIAL chromosomes %s\n",mypars->Chromosomes);
       int chr_idx_partial = 0;
       Specific_Chr[chr_idx_partial++] = strtok(strdup(mypars->Chromosomes),"\", \t");
       char *chrtok = NULL;
@@ -601,16 +609,19 @@ int main(int argc,char **argv){
 	      Specific_Chr[chr_idx_partial++] = strdup(chrtok);
 	      assert(chr_idx_partial<MAXBINS);
       }
+      fprintf(stderr,"AFTER WHILE and chr_idx_partial %d\n",chr_idx_partial);
       Specific_Chr[chr_idx_partial++] = "\0";
     }
     
     const char* Variant_flag;
     const char* VCFformat = mypars->Variant;
     const char* VarType =mypars->Variant_type;
+    const char* HeaderIndiv = mypars->HeaderIndiv;
+
     if (VCFformat != NULL){
       Variant_flag = "bcf";
       if(VarType == NULL){
-        VarType = "all";
+        VarType = "snp";
       }
       else if(VarType != NULL){
         VarType = mypars->Variant_type;
@@ -620,13 +631,13 @@ int main(int argc,char **argv){
 
     //if(Specific_Chr[0]=='\0'){fprintf(stderr,"HURRA");}
     int DeamLength;
-
+    //const char* HeaderIndiv = "HG00096";
     Create_se_threads(seq_ref,threads1,Glob_seed,Thread_specific_Read,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,SizeDistType,val1,val2,
                       qualstringoffset,QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,
                       ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType,
-                      VCFformat,Variant_flag,VarType,CommandArray,version);
+                      VCFformat,Variant_flag,VarType,CommandArray,version,HeaderIndiv);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));
@@ -650,6 +661,6 @@ int main(int argc,char **argv){
   free((char *)mypars->SubProfile);
   free((char *)mypars->Briggs);
   free((char *)mypars->Poly);
-
+  free((char *)mypars->HeaderIndiv);
   delete mypars;
 }
