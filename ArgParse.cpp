@@ -25,56 +25,35 @@
 #define LENS 4096
 #define MAXBINS 100
 
-//#if defined(__APPLE__) && defined(__MACH__) 
-//#include "NGSNGS_Random.h"
-//#endif /* __APPLE__ */
-/*
-#ifndef __APPLE__
-  int MacroRandType = 0;
-#endif
-
-#if defined(__APPLE__) || defined(__MACH__) 
-  int MacroRandType = 1;
-#endif
-*/
-
-/*#if defined(__linux__) || defined(__unix__) // all unices not caught above
-  int MacroRandType = 0;
-#elif defined(__APPLE__) || defined(__MACH__)
-  int MacroRandType = 1;
-#else
-#   error "Unknown compiler"
-#endif*/
-
 typedef struct{
-  int threads1;
-  int threads2;
-  long long int reads;
-  double coverage;
-  int Glob_seed;
-  const char *OutFormat;
-  const char *OutName;
-  const char *Reference;
-  const char *Seq;
-  const char *Adapter1;
-  const char *Adapter2;
-  const char *QualProfile1;
-  const char *QualProfile2;
-  const char *SubProfile;
-  const char *ErrorFlag;
-  const char *Briggs;
-  int Length;
-  const char *LengthFile;
-  const char *LengthDist;
-  const char *Poly;
-  const char *Chromosomes;
-  int rand_val;
-  const char *Variant;
-  const char *Variant_type;
-  const char *VariantFlag;
-  const char *CommandRun;
-  const char* HeaderIndiv;
-  const char* NoAlign;
+  int threads1; //sampling threads, used internally by pthread_create
+  int threads2; //compression threads, used external by bgzf_mt and set_hts_options
+  size_t nreads; // Thorfinn made mistake
+  double coverage; // Coverage of breadth, estimated from rlen, flen, genomsize, superfancy
+  int Glob_seed; // local seeds are computed determistly from global. Only one seed needs to be supplied
+  const char *OutFormat; //fq, fq.gz, fa, fa.gz, sam, bam, cram, ultrafancy
+  const char *OutName; //prefix for output, final will be determined by [OutName.OutFormat]
+  const char *Reference; //full filename for reference fasta
+  const char *Seq; // singleend or paired end.
+  const char *Adapter1; //actual adapterseq, R1, not flipped, reversed or completemented
+  const char *Adapter2; //actual adapterseq, R2, not flipped, reversed or completemented
+  const char *QualProfile1;// filename for quality prof, for R1 or SE
+  const char *QualProfile2;// filename for quality prof, for R2 used only in PE
+  const char *SubProfile;// filename for misincorperation, typespecific and position specific
+  const char *ErrorFlag;// should we not add errors?, {T,F}
+  const char *Briggs; // the four briggs parameters
+  int Length; // fragment length when fixed
+  const char *LengthFile; //filename for distribution of frag lengths
+  const char *LengthDist;//name of pdf used for simulating fraglengths (incl parameters)
+  const char *Poly; // should poly be added possible values -p G or -p A
+  const char *Chromosomes; //for subsetting chromosome of interested, -chr chrX
+  int rand_val; //RNG type, drand48 or rand or drand48_r etc
+  const char *Variant; // filename for bcf
+  const char *Variant_type; //-v SNP -v INDEL
+  char *VariantFlag; //bcf
+  char *CommandRun; // actual command run in same order
+  const char* HeaderIndiv; //samplename from VCF/BCF file
+  const char* NoAlign;// This option is cool, but explaining it takes up to much space in comment
 }argStruct;
 
 int HelpPage(FILE *fp){
@@ -176,7 +155,7 @@ argStruct *getpars(int argc,char ** argv){
   argStruct *mypars = new argStruct;
   mypars->threads1 = 1;
   mypars->threads2 = -1;
-  mypars->reads = -1;
+  mypars->nreads = 0;
   mypars->coverage = -1.0;
   mypars->Length = -1;
   mypars->Glob_seed = (int) time(NULL);
@@ -200,8 +179,8 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Variant_type = NULL;
   mypars->HeaderIndiv=NULL;
   mypars->NoAlign=NULL;
-  mypars->CommandRun = NULL;
-  char Command[1024];
+  mypars->CommandRun = (char*) calloc(1024,1);
+  char *Command = mypars->CommandRun;
   const char *first = "./ngsngs ";
   strcpy(Command,first);
   ++argv;
@@ -241,9 +220,9 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-r",*argv)==0 || strcasecmp("--reads",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
       const char* readstr = strdup(*(++argv));
-      sscanf(readstr, "%llu",&mypars->reads);
+      sscanf(readstr, "%lu",&mypars->nreads);
       strcat(Command,*argv); strcat(Command," ");
-      if (mypars->reads <= 0){ErrMsg(2.4);}
+      if (mypars->nreads <= 0){ErrMsg(2.4);}
     }
     else if(strcasecmp("-c",*argv)==0 || strcasecmp("--cov",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
@@ -361,10 +340,10 @@ argStruct *getpars(int argc,char ** argv){
       strcat(Command,*argv); strcat(Command," ");
     }
     else{
-      fprintf(stderr,"unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
-      exit(0);
+      fprintf(stderr,"Unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
+      return NULL;
     }
-    mypars->CommandRun = Command;
+    
     ++argv;
   }
   return mypars;
@@ -381,13 +360,13 @@ int main(int argc,char **argv){
   }
   else{
     mypars = getpars(argc,argv);
-    const char* version = "0.5.0";
-    static char CommandArray[1024];
-    const char* Command = mypars->CommandRun;
-    fprintf(stderr,"\n\t-> NGSNGS version %s , git commit: %s, (htslib: %s) build (%s %s)\n",version,GIT_COMMIT,hts_version(),__DATE__,__TIME__);
-    //fprintf(stderr,"\t-> Command: %s \n",Command);
-    //fprintf(stderr,"\t-> Command: %s \n",Command);
-    sprintf(CommandArray, "%s", Command);
+    if(mypars==NULL)
+      return 1;
+    
+    char* Command = mypars->CommandRun;
+    fprintf(stderr,"\n\t-> ngsngs version: %s (htslib: %s) build(%s %s)\n",NGSNGS_VERSION,hts_version(),__DATE__,__TIME__); 
+    fprintf(stderr,"\t-> Mycommmand: %s\n strlen: %lu\n",Command,strlen(mypars->CommandRun));
+
     //fprintf(stderr,"\t-> Command 2 : %s and version %s \n",CommandArray,version);
     clock_t t = clock();
     time_t t2 = time(NULL);
@@ -397,7 +376,7 @@ int main(int argc,char **argv){
     const char* OutputFormat = mypars->OutFormat;
     const char* filename = mypars->OutName; //"chr22_out";
     const char* Seq_Type = mypars->Seq;
-    long long int No_reads = mypars->reads;
+    //    size No_reads = mypars->nreads;
     double readcov = mypars->coverage;
     int MacroRandType = mypars->rand_val; //extern int
 
@@ -419,16 +398,15 @@ int main(int argc,char **argv){
     if (OutputFormat == NULL){ErrMsg(7.0);}
     if (filename == NULL){ErrMsg(8.0);}
     
-    if (No_reads == (long long int) -1){
-      if (readcov == -1.0){
+    if (mypars->nreads == 0 && readcov== -1.0 )
         ErrMsg(2.0);
-      }
-    }
+
     //fprintf(stderr,"\t-> Command: %s \n",Command);
     int FixedSize = mypars->Length;
     const char* Sizefile = mypars->LengthFile;
     const char* SizeDist = mypars->LengthDist;
-    int meanlength;int SizeDistType=-1;int val1; int val2;
+    double meanlength = 0;// DRAGEON REMEMBEWR TO CHECK meanlength is interpreted as float
+    int SizeDistType=-1;int val1; int val2;
 
     if (FixedSize != -1){
       if (FixedSize == -1){ErrMsg(3.0);}
@@ -436,31 +414,28 @@ int main(int argc,char **argv){
         meanlength = FixedSize;
       } 
     }
-
     if (Sizefile != NULL){
       //fprintf(stderr,"SIZE FILE ARG\n");
-      double sum = 0; int n = 1;
-      double* Length_tmp; double* Frequency_tmp;
-      Length_tmp = new double[LENS];
-      Frequency_tmp = new double[LENS];
+      double sum,n;
+      sum=n=0;
+
       char buf[LENS];
       gzFile gz = Z_NULL;
       gz = gzopen(Sizefile,"r");
       assert(gz!=Z_NULL);
       while(gzgets(gz,buf,LENS)){
-        Length_tmp[n] = atof(strtok(buf,"\n\t "));
-        Frequency_tmp[n] = atof(strtok(NULL,"\n\t "));
-        sum = sum + (Length_tmp[n]*(Frequency_tmp[n]-Frequency_tmp[n-1]));
-        n++;
+        double Length_tmp = atof(strtok(buf,"\n\t "));
+        double Frequency_tmp = atof(strtok(NULL,"\n\t "));
+        sum += Length_tmp*Frequency_tmp;
+        n = n+1;
       }
       gzclose(gz);
-
-      delete[] Frequency_tmp;delete[] Length_tmp;
-      meanlength = (int) sum;
-      //fprintf(stderr,"MEAN LENGTH %d",meanlength);
+      
+      meanlength = sum/n; //mindfuck
       if (FixedSize != -1){ErrMsg(5.0);}
     }
 
+    
     if (SizeDist != NULL){
       //fprintf(stderr,"LENGTH DISTRIBUTION and %s",SizeDist);
       std::default_random_engine generator(Glob_seed);
@@ -474,12 +449,12 @@ int main(int argc,char **argv){
       if(tmp == NULL){val2 = 0;}
       else{val2 = atoi(tmp);}
       
-      if (strcasecmp(Dist,"Uni")==0){SizeDistType=1;std::uniform_int_distribution<int> distribution(val1,val2);meanlength=(int)(0.5*(val1+val2));}
-      if (strcasecmp(Dist,"Norm")==0){SizeDistType=2;std::normal_distribution<double> distribution(val1,val2);meanlength=(int) val1;}
-      if (strcasecmp(Dist,"LogNorm")==0){SizeDistType=3;std::lognormal_distribution<double> distribution(val1,val2);meanlength=(int) exp((val1+((val2*val2)/2)));}
-      if (strcasecmp(Dist,"Pois")==0){SizeDistType=4;std::poisson_distribution<int> distribution(val1);meanlength=(int) val1;}
-      if (strcasecmp(Dist,"Exp")==0){SizeDistType=5;std::exponential_distribution<double> distribution(val1);meanlength=(int) 1/val1;}
-      if (strcasecmp(Dist,"Gam")==0){SizeDistType=6;std::gamma_distribution<double> distribution(val1,val2);meanlength=(int) (val1/val2);}
+      if (strcasecmp(Dist,"Uni")==0){SizeDistType=1;std::uniform_int_distribution<int> distribution(val1,val2);meanlength=(0.5*(val1+val2));}
+      if (strcasecmp(Dist,"Norm")==0){SizeDistType=2;std::normal_distribution<double> distribution(val1,val2);meanlength= val1;}
+      if (strcasecmp(Dist,"LogNorm")==0){SizeDistType=3;std::lognormal_distribution<double> distribution(val1,val2);meanlength= exp((val1+((val2*val2)/2)));}
+      if (strcasecmp(Dist,"Pois")==0){SizeDistType=4;std::poisson_distribution<int> distribution(val1);meanlength= val1;}
+      if (strcasecmp(Dist,"Exp")==0){SizeDistType=5;std::exponential_distribution<double> distribution(val1);meanlength= 1/val1;}
+      if (strcasecmp(Dist,"Gam")==0){SizeDistType=6;std::gamma_distribution<double> distribution(val1,val2);meanlength= (val1/val2);}
       if (FixedSize != -1){ErrMsg(5.0);}
       free((char *)Dist);
     }
@@ -494,29 +469,37 @@ int main(int argc,char **argv){
     int threads2;
     if (mypars->threads2 == -1){threads2 = 1;}
     else{threads2 = mypars->threads2;}
-    
-    long long int Thread_specific_Read;
-    if (No_reads != (long long int) -1){ //(unsigned long int) -1
-      if (No_reads == 1 && threads1 > 1){ErrMsg(2.6);}
-     
-      Thread_specific_Read = static_cast<long long int>(No_reads/threads1);
-      if (readcov != -1){ErrMsg(2.99);}
+
+
+    //first capture the awkward cases where no reads or cov has been defined or both defined
+    if(mypars->nreads == 0 &&readcov ==-1.0){
+      fprintf(stderr,"must suply nreads or cov");exit(0);
     }
-    else if (readcov != -1){
+    if(mypars->nreads > 0 &&readcov !=-1.0){
+      fprintf(stderr,"must not suply nreads and cov");exit(0);
+    }
+    //now compute the number of reads required acroos all threads
+
+    if (readcov != -1){
       size_t genome_size = 0;
+
       for (int i = 0; i < chr_total; i++){
         const char *chr_name = faidx_iseq(seq_ref,i);
         int chr_len = faidx_seq_len(seq_ref,chr_name);
         genome_size += chr_len;
       }
-      Thread_specific_Read = static_cast<long long int>(((readcov*genome_size)/meanlength)/threads1);
+      mypars->nreads =  (readcov*genome_size)/meanlength;
+      fprintf(stderr,"\t-> Number of simulated reads: %zu or coverage: %f\n",mypars->nreads,mypars->coverage);
     }
+
+    size_t nreads_per_thread = mypars->nreads/threads1;
+    
     //fprintf(stderr,"\t-> Command: %s \n",Command);
     //fprintf(stderr,"\t-> Command 2 : %s \n",CommandArray);
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
     fprintf(stderr,"\t-> Seed used: %d\n",Glob_seed);
     fprintf(stderr,"\t-> Number of sampling threads used (-t1): %d and number of compression threads (-t2): %d\n",threads1,threads2);
-    fprintf(stderr,"\t-> Number of simulated reads: %lld or coverage: %f\n",No_reads,readcov);
+    fprintf(stderr,"\t-> Number of simulated reads: %zu or coverage: %f\n",mypars->nreads,mypars->coverage);
 
     const char* Adapt_flag;
     const char* Adapter_1;
@@ -626,15 +609,15 @@ int main(int argc,char **argv){
       Specific_Chr[chr_idx_partial++] = "\0";
     }
     
-    const char* Variant_flag;
+    char* Variant_flag =NULL;
     const char* VCFformat = mypars->Variant;
     const char* VarType =mypars->Variant_type;
     const char* HeaderIndiv = mypars->HeaderIndiv;
 
     if (VCFformat != NULL){
-      Variant_flag = "bcf";
+      Variant_flag = strdup("bcf");
       if(VarType == NULL){
-        VarType = "snp";
+        VarType = strdup("snp");
       }
       else if(VarType != NULL){
         VarType = mypars->Variant_type;
@@ -645,12 +628,12 @@ int main(int argc,char **argv){
     //if(Specific_Chr[0]=='\0'){fprintf(stderr,"HURRA");}
     int DeamLength = 0;
     //const char* HeaderIndiv = "HG00096";
-    Create_se_threads(seq_ref,threads1,Glob_seed,Thread_specific_Read,filename,
+    Create_se_threads(seq_ref,threads1,Glob_seed,nreads_per_thread,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,SizeDistType,val1,val2,
                       qualstringoffset,QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,
                       ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType,
-                      VCFformat,Variant_flag,VarType,CommandArray,version,HeaderIndiv,NoAlign);
+                      VCFformat,Variant_flag,VarType,Command,NGSNGS_VERSION,HeaderIndiv,NoAlign);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));
