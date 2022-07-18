@@ -1,8 +1,21 @@
-#modied from htslib makefile
-#FLAGS=-O3 -std=c++11
-$(shell /bin/echo -e "#include \"version.h\"\n\nchar const *const GIT_COMMIT = \"$$(git describe --always --match 'NOT A TAG')\";" > version.cpp)
+##made by rasmus H 18juli 2022. Its summer!!
+CC  ?= gcc
+CXX ?= g++
 
-FLAGS=-ggdb -std=c++11 -DBGZF_MT
+
+FLAGS=-ggdb -std=c++11
+
+LIBS = -lz -lm -lbz2 -llzma -lpthread -lcurl
+
+## add isins crypto trick, copied from ANGSD makefile, which is based on something from samtools
+CRYPTO_TRY=$(shell echo 'int main(){}'|g++ -x c++ - -lcrypto 2>/dev/null; echo $$?)
+ifeq "$(CRYPTO_TRY)" "0"
+$(info Crypto library is available to link; adding -lcrypto to LIBS)
+LIBS += -lcrypto
+else
+$(info Crypto library is not available to link; will not use -lcrypto)
+endif
+
 
 CFLAGS += $(FLAGS)
 CXXFLAGS += $(FLAGS)
@@ -11,7 +24,17 @@ CSRC = $(wildcard *.c)
 CXXSRC = $(wildcard *.cpp)
 OBJ = $(CSRC:.c=.o) $(CXXSRC:.cpp=.o)
 
-all: ngsngs #qualconvert
+all: ngsngs
+
+PACKAGE_VERSION  = 0.5
+
+ifneq "$(wildcard .git)" ""
+PACKAGE_VERSION := $(shell git describe --always --dirty)
+version.h: $(if $(wildcard version.h),$(if $(findstring "$(PACKAGE_VERSION)",$(shell cat version.h)),,force))
+endif
+
+version.h:
+	echo '#define NGSNGS_VERSION "$(PACKAGE_VERSION)"' > $@
 
 .PHONY: all clean test
 
@@ -36,8 +59,8 @@ ifdef HTSSRC
 	$(CXX) -c  $(CXXFLAGS)  -I$(HTS_INCDIR) $*.cpp
 	$(CXX) -MM $(CXXFLAGS)  -I$(HTS_INCDIR) $*.cpp >$*.d
 
-ngsngs: $(OBJ)
-	$(CXX) $(FLAGS)  -o ngsngs *.o $(HTS_LIBDIR) -lz -llzma -lbz2 -lpthread -lcurl
+ngsngs: version.h $(OBJ)
+	$(CXX) $(FLAGS)  -o ngsngs *.o $(HTS_LIBDIR) $(LIBS)
 
 else
 %.o: %.c
@@ -48,15 +71,13 @@ else
 	$(CXX) -c  $(CXXFLAGS)  $*.cpp
 	$(CXX) -MM $(CXXFLAGS)  $*.cpp >$*.d
 
-ngsngs: $(OBJ)
-	$(CXX) $(FLAGS)  -o ngsngs *.o -lz -llzma -lbz2 -lpthread -lcurl -lhts
-
-#qualconvert: $(CXX) $(FLAGS) -o qualconvert ReadQualConverter.cpp -lz -llzma -lbz2 -lpthread -lcurl -lhts -lgsl -lgslcblas
+ngsngs: version.h $(OBJ)
+	$(CXX) $(FLAGS)  -o ngsngs *.o $(LIBS)
 
 endif
 
 clean:	
-	rm  -f ngsngs *.o *.d
+	rm  -f ngsngs *.o *.d version.h
 
 test:
 	echo "Subprograms is being tested";
