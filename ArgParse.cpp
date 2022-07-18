@@ -21,9 +21,12 @@
 #include "Sampling.h"
 #include "mrand.h"
 #include "version.h"
-
+#include <signal.h>
 #define LENS 4096
 #define MAXBINS 100
+
+int VERBOSE = 1;
+int SIG_COND = 1;
 
 typedef struct{
   int threads1; //sampling threads, used internally by pthread_create
@@ -349,6 +352,33 @@ argStruct *getpars(int argc,char ** argv){
   return mypars;
 }
 
+
+int really_kill =3;
+
+void handler(int s) {
+  if(VERBOSE)
+    fprintf(stderr,"\n\t-> Caught SIGNAL: Will try to exit nicely (no more threads are created.\n\t\t\t  We will wait for the current threads to finish)\n");
+  
+  if(--really_kill!=3)
+    fprintf(stderr,"\n\t-> If you really want ngsngs to exit uncleanly ctrl+c: %d more times\n",really_kill+1);
+  fflush(stderr);
+  if(!really_kill)
+    exit(0);
+  VERBOSE=0;
+  SIG_COND=0;
+  //  pthread_mutex_unlock(&mUpPile_mutex);
+}
+
+void catchkill(){
+  struct sigaction sa;
+  sigemptyset (&sa.sa_mask);
+  sa.sa_flags = 0;
+  sa.sa_handler = handler;
+  sigaction(SIGPIPE, &sa, 0);
+  sigaction(SIGINT, &sa, 0);  
+}
+
+
 // ------------------------------ //
 
 int main(int argc,char **argv){
@@ -359,6 +389,7 @@ int main(int argc,char **argv){
     return 0;
   }
   else{
+    catchkill();
     mypars = getpars(argc,argv);
     if(mypars==NULL)
       return 1;

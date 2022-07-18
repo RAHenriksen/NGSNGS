@@ -138,8 +138,9 @@ void* Sampling_threads(void *arg){
   int iter = 0;
   long long int current_reads_atom = 0;
   int readsizelimit;
-   
-  while (current_reads_atom < reads){
+
+  extern int SIG_COND;
+  while (current_reads_atom < reads &&SIG_COND) {
     double rand_val = mrand_pop(drand_alloc);
     rand_start = rand_val * (genome_len-300)+1; //genome_len-100000;
     double rand_val_len = mrand_pop(drand_alloc);
