@@ -85,6 +85,7 @@ struct Parsarg_for_Sampling_thread{
 
   char ErrorFlag;
   const char* Variant_flag;
+  char NoAlign;
   char PolyNt;
 
   int RandMacro;
@@ -202,6 +203,12 @@ void* Sampling_threads(void *arg){
 
     size_t n_cigar;const uint32_t *cigar;const uint32_t *cigar2; uint16_t flag; uint16_t flag2;
     uint32_t cigar_bitstring = bam_cigar_gen(seqlen, BAM_CMATCH);
+
+    // for unaligned 
+    size_t n_cigar_unmap=1;const uint32_t *cigar_unmap;
+    uint32_t cigar_bitstring_unmap = bam_cigar_gen(seqlen, BAM_FUNMAP);
+    uint32_t cigar_arr_unmap[] = {cigar_bitstring_unmap};
+    cigar_unmap = cigar_arr_unmap;
 
     if ((int )(pch-seq_r1+1) == 1 || (int)(pch2-seq_r1+1)  == seqlen){
       memset(seq_r1, 0, sizeof seq_r1);memset(seq_r2, 0, sizeof seq_r2);}
@@ -468,7 +475,11 @@ void* Sampling_threads(void *arg){
             sprintf(readadapt_err1, "%*s", (int)strlen(readadapt) - (int)strlen(seq_r1), readadapt+(int)strlen(seq_r1));
             sprintf(read_rc_sam1, "%.*s", (int)strlen(seq_r1), readadapt);
             DNA_complement(read_rc_sam1);reverseChar(read_rc_sam1,strlen(read_rc_sam1));
-            sprintf(readadapt_rc_sam1, "%s%s", read_rc_sam1,readadapt_err1);
+            //fprintf(stderr,"string before \t\t %s \n",readadapt_rc_sam1);
+            sprintf(readadapt_rc_sam1, "%s", read_rc_sam1);
+            fprintf(stderr,"string after \t\t %s \n",readadapt_rc_sam1);
+            strcat(readadapt_rc_sam1, readadapt_err1);
+            fprintf(stderr,"string after II \t %s \n ----------------- \n",readadapt_rc_sam1);
             if (strcasecmp("PE",struct_obj->SeqType)==0){
               // the mate to flag 81 will be the second in pair on the forward strand - just to esnrue identical names
               sprintf(readadapt_rc_sam2, "%s",readadapt2);
@@ -647,15 +658,29 @@ void* Sampling_threads(void *arg){
         strcpy(READIDR1,READ_ID);strcat(READIDR1,suffR1);
         if (strcasecmp("PE",struct_obj->SeqType)==0){
           strcpy(READIDR2,READ_ID);strcat(READIDR2,suffR2);
-          bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,flag,chr_idx,min_beg,mapq,
-          n_cigar,cigar,chr_idx,max_end,insert,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
-          bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR2),READIDR2,flag2,chr_idx,max_end,mapq,
-          n_cigar,cigar2,chr_idx,min_beg,0-insert,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,qual_r2,l_aux);
+          if (struct_obj->NoAlign == 'T'){
+            bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,0,-1,-1,
+            255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,NULL,0);
+            bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR2),READIDR2,0,-1,-1,
+            255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,NULL,0);
+          }
+          else{
+            bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,flag,chr_idx,min_beg,mapq,
+            n_cigar,cigar,chr_idx,max_end,insert,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
+            bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR2),READIDR2,flag2,chr_idx,max_end,mapq,
+            n_cigar,cigar2,chr_idx,min_beg,0-insert,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,qual_r2,l_aux);
+          }
         }
         else if (strcasecmp("SE",struct_obj->SeqType)==0){
           //fprintf(stderr,"READID v2 %s\n",READIDR1);
-          bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,flag,chr_idx,min_beg,mapq,
-          n_cigar,cigar,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
+          if (struct_obj->NoAlign == 'T'){
+            bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,0,-1,-1,
+            255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,NULL,0);
+          }
+          else{
+            bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,flag,chr_idx,min_beg,mapq,
+            n_cigar,cigar,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
+          }
           //const char* MDtag = "\tMD:Z:";
           //bam_aux_update_str(struct_obj->list_of_reads[struct_obj->l-1],"MD",5,"MDtag");
         }
@@ -723,7 +748,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, long long int 
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName,
                         const char* MisMatchFlag,const char* SubProfile,int MisLength,int RandMacro,const char *VCFformat,const char* Variant_flag,const char *VarType,
-                        char CommandArray[1024],const char* version,const char* HeaderIndiv){
+                        char CommandArray[1024],const char* version,const char* HeaderIndiv,const char* NoAlign){
   //creating an array with the arguments to create multiple threads;
   //fprintf(stderr,"Random MacIntType %d\n",MacroRandType);
   //fprintf(stderr,"\t-> Command 3 : %s \n",CommandArray);
@@ -775,7 +800,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, long long int 
   }
   else{
     if (chr_total == faidx_nseq(seq_ref)){
-      std::cout << chr_total << " " << faidx_nseq(seq_ref) << std::endl;
       genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
     }  
     else{
@@ -1020,6 +1044,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, long long int 
       struct_for_threads[i].QualFlag = QualStringFlag;
       struct_for_threads[i].PolyNt = polynucleotide;
       struct_for_threads[i].ErrorFlag = (char) ErrorFlag[0];
+      struct_for_threads[i].NoAlign = (char) NoAlign[0];
       struct_for_threads[i].Variant_flag = Variant_flag;
 
 

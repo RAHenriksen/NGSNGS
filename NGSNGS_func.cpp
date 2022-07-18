@@ -120,7 +120,7 @@ void RandDistLength(int seed,double distval1, double distval2,int DistType,int& 
   }
 }
 
-static void delete_seq(char *str, size_t seq_len, size_t del_len, size_t pos,int alt_len){
+void delete_seq(char *str, int seq_len, int del_len, size_t pos,int alt_len){
     //instert_seq(char *str, size_t len, char insert_seq[],size_t ins_len, size_t pos){
     for (int i = alt_len; i < del_len; i++)
     {
@@ -134,7 +134,7 @@ static void delete_seq(char *str, size_t seq_len, size_t del_len, size_t pos,int
     }
 }
 
-static void delete_seq_ins(char *str, size_t seq_len, size_t del_len, size_t pos){
+void delete_seq_ins(char *str, int seq_len, int del_len, size_t pos){
     // after insertion it deleted the reference allele, e.g. REF A -> ALT AGGGGGG, which creates a 6 bp insertion
     for (int i = 0; i < del_len; i++)
     {
@@ -143,7 +143,7 @@ static void delete_seq_ins(char *str, size_t seq_len, size_t del_len, size_t pos
     }
 }
 
-static void instert_seq(char *str, size_t len, char insert_seq[],size_t ins_len, size_t pos){
+void instert_seq(char *str, int len, char insert_seq[],int ins_len, size_t pos){
     for (int i = 0; i < ins_len; i++)
     {
         memmove(&str[pos+1], &str[pos], len - pos + 1);
@@ -151,7 +151,7 @@ static void instert_seq(char *str, size_t len, char insert_seq[],size_t ins_len,
         len++;
     }
     //the insertion doesn't overlap so i remove the nucleotide which the insertion replace
-    delete_seq_ins(str, strlen(str),1,pos+ins_len);
+    delete_seq_ins(str, (int) strlen(str),1,pos+ins_len);
 }
 
 void DNA_CAPITAL(char seq[]){
@@ -705,6 +705,13 @@ char* HaploGenome(char* genome,char genome_data1[],char genome_data2[],int chr_s
         
         fprintf(stderr,"alelle values %d\t %d\n",bcf_gt_allele(gt_arr[0]),bcf_gt_allele(gt_arr[1]));
 
+        char* haplotype1 = bcf_records->d.allele[bcf_gt_allele(gt_arr[0])];
+        char* haplotype2 = bcf_records->d.allele[bcf_gt_allele(gt_arr[1])];
+        size_t pos = (int) bcf_records->pos + 1;
+        fprintf(stderr,"before alterations %c%c%c\t%c%c%c\n",genome_data1[pos-1],genome_data1[pos],genome_data1[pos+1],genome_data2[pos-1],genome_data2[pos],genome_data2[pos+1]);
+        genome_data1[pos-1] = *haplotype1;
+        genome_data2[pos-1] = *haplotype2;
+        fprintf(stderr,"after alterations %c%c%c\t%c%c%c\n",genome_data1[pos-1],genome_data1[pos],genome_data1[pos+1],genome_data2[pos-1],genome_data2[pos],genome_data2[pos+1]);
         /*for (i=0; i<nsmpl; i++){
           fprintf(stderr,"THE SAMPLE INDEX IS %d\n",i);
           int32_t *ptr = gt_arr + i*max_ploidy;
