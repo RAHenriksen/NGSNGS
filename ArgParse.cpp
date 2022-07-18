@@ -74,6 +74,7 @@ typedef struct{
   const char *VariantFlag;
   const char *CommandRun;
   const char* HeaderIndiv;
+  const char* NoAlign;
 }argStruct;
 
 int HelpPage(FILE *fp){
@@ -122,6 +123,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-rand: \t\t\t\t Pseudo-random number generator, OS specific\n");
   fprintf(fp,"\t e.g. linux || unix -> drand48_r (-rand = 0), not available for MacOS.\n");
   fprintf(fp,"\t APPLE and MacOS (-rand = 1).\n");
+  //NoAlign //Indiv
   exit(1);
   return 0;
 }
@@ -197,6 +199,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Variant = NULL;
   mypars->Variant_type = NULL;
   mypars->HeaderIndiv=NULL;
+  mypars->NoAlign=NULL;
   mypars->CommandRun = NULL;
   char Command[1024];
   const char *first = "./ngsngs ";
@@ -292,6 +295,11 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-ne",*argv)==0 || strcasecmp("--noerror",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
       mypars->ErrorFlag = "F"; // strdup(*(++argv));
+      strcat(Command,*argv); strcat(Command," ");
+    }
+    else if(strcasecmp("-na",*argv)==0 || strcasecmp("--noalign",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
+      mypars->NoAlign = "T"; // strdup(*(++argv));
       strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
@@ -557,12 +565,17 @@ int main(int argc,char **argv){
     }
     //fprintf(stderr,"\t-> ADAPTER FLAG IS:%s\n",Adapt_flag);
     //fprintf(stderr,"\t-> QUAL STRING FLAG IS:%s\n",QualStringFlag);
-    
     const char* ErrorFlag;
     if (mypars->ErrorFlag != NULL){
       ErrorFlag = mypars->ErrorFlag;
     }
     else{ErrorFlag = "T";}
+    
+    const char* NoAlign;
+    if (mypars->NoAlign != NULL){
+      NoAlign = mypars->NoAlign;
+    }
+    else{NoAlign = "F";}
 
     if (strcasecmp("false",QualStringFlag)==0){
       if(strcasecmp("true",Adapt_flag)==0 && mypars->Poly != NULL){WarMsg(2.0);}
@@ -630,14 +643,14 @@ int main(int argc,char **argv){
     }
 
     //if(Specific_Chr[0]=='\0'){fprintf(stderr,"HURRA");}
-    int DeamLength;
+    int DeamLength = 0;
     //const char* HeaderIndiv = "HG00096";
     Create_se_threads(seq_ref,threads1,Glob_seed,Thread_specific_Read,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,SizeDistType,val1,val2,
                       qualstringoffset,QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,
                       ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType,
-                      VCFformat,Variant_flag,VarType,CommandArray,version,HeaderIndiv);
+                      VCFformat,Variant_flag,VarType,CommandArray,version,HeaderIndiv,NoAlign);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));

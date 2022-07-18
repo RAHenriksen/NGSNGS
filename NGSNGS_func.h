@@ -2,13 +2,13 @@
 #define NGSNGSFUNC_H
 #include "mrand.h"
 
-/*
-static void delete_seq(char *str, size_t seq_len, size_t del_len, size_t pos,int alt_len);
 
-static void delete_seq_ins(char *str, size_t seq_len, size_t del_len, size_t pos);
+void delete_seq(char *str, int seq_len, int del_len, size_t pos,int alt_len);
 
-static void instert_seq(char *str, size_t len, char insert_seq[],size_t ins_len, size_t pos);
-*/
+void delete_seq_ins(char *str, int seq_len, int del_len, size_t pos);
+
+void instert_seq(char *str, int len, char insert_seq[],int ins_len, size_t pos);
+
 void DNA_CAPITAL(char seq[]);
 
 void DNA_complement(char seq[]);
