@@ -82,3 +82,6 @@ clean:
 test:
 	echo "Subprograms is being tested";
 	cd test; sh testAll.sh;
+
+force:
+	
