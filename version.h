@@ -1,4 +1,1 @@
-#ifndef VERSION_H
-#define VERSION_H
-extern char const *const GIT_COMMIT;
-#endif
+#define NGSNGS_VERSION "a3935cf-dirty"
