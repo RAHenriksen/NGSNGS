@@ -32,6 +32,7 @@
 #define MAXBINS 100
 
 void FragDistArray(int& number,int*& Length, double*& Frequency,int SizeDistType,int seed,int val1, int val2){
+  // Generate a similar structure as length distribution file, with fragment length and frequency using length distributions
   std::default_random_engine generator(seed);
   const int nrolls=10000;
   int p[nrolls]={};
@@ -63,61 +64,30 @@ void FragDistArray(int& number,int*& Length, double*& Frequency,int SizeDistType
   number = n;
 }
 
-void RandDistLength(int seed,double distval1, double distval2,int DistType,int& mean, int*& Length, double*& Frequency){
-  std::default_random_engine generator(seed);
-  const int nrolls=10000;
-  int p[nrolls]={};
+void FragArray(int& number,int*& Length, double*& Frequency,const char* filename){
+  //int LENS = 4096;
+  //int* Frag_len = new int[LENS];
+  //double* Frag_freq = new double[LENS];
+  int n =1;
 
-  //uniform
-  if(DistType==1){
-    std::uniform_int_distribution<int> distribution(distval1,distval2);
-    for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}
-    mean = (int) (0.5*(distval1+distval2));
+  gzFile gz = Z_NULL;
+  char buf[LENS];
+  
+  gz = gzopen(filename,"r");
+  assert(gz!=Z_NULL);
+  Length[0] = 0; Frequency[0] = (float) 0;
+  while(gzgets(gz,buf,LENS)){
+    Length[n] = atoi(strtok(buf,"\n\t ")); //before it was Frag_len[n]
+    Frequency[n] = atof(strtok(NULL,"\n\t "));
+    n++;
   }
-  //normal based
-  else if(DistType==2){
-    std::normal_distribution<double> distribution(distval1,distval2);
-    for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}
-    mean = (int) distval1;
-  }
-  else if(DistType==3){
-    //lognormal(4,1)
-    std::lognormal_distribution<double> distribution(distval1,distval2);
-    for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}
-    double param = (distval1+((distval2*distval2)/2));
-    mean = (int) exp(param);
-  }
-  //rate based
-  else if(DistType==4){
-    std::poisson_distribution<int> distribution(distval1);
-    for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}
-    mean = (int) distval1;
-  }
-  else if(DistType==5){
-    std::exponential_distribution<double> distribution(distval1);
-    for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}
-    mean = (int) 1/distval1;
-  }
-  else if(DistType==6){
-    std::gamma_distribution<double> distribution(distval1,distval2);
-    for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}
-    mean = (int) (distval1/distval2);
-  }
+  gzclose(gz); 
 
-  int len = sizeof(p)/sizeof(p[0]);
-  sort(p,p+len,std::less<int>());
-
-  std::map<int,int> counts;
-  for (int i =0; i<nrolls;i++){counts[p[i]]++;}
-
-  double CumulativeCount = 0;
-  int n = 0;
-  for (auto const &key : counts){
-      CumulativeCount += (double) key.second/(double)nrolls;
-      Length[n] = key.first;
-      Frequency[n] = CumulativeCount;
-      n++;
-  }
+  number = n;
+  //Length = Frag_len;
+  //Frequency = Frag_freq;
+  //delete[] Frag_len;
+  //delete[] Frag_freq;
 }
 
 void delete_seq(char *str, int seq_len, int del_len, size_t pos,int alt_len){
@@ -210,30 +180,6 @@ void DNA_complement(char seq[]){
   }
 }
 
-double uniform(){
-    /*
-     U(0,1): AS 183: Appl. Stat. 31:188-190
-     Wichmann BA & Hill ID.  1982.  An efficient and portable
-     pseudo-random number generator.  Appl. Stat. 31:188-190
-     x, y, z are any numbers in the range 1-30000.  Integer operation up
-     to 30323 required.
-     
-     Suggested to me by Ziheng Yang who also provided me with
-     the source code used here.  I use it because it is both fast and portable.
-     */
-    static int x_rndu=11, y_rndu=23,z_rndu=137;
-    double r;
-    
-    x_rndu = 171*(x_rndu%177) -  2*(x_rndu/177);
-    y_rndu = 172*(y_rndu%176) - 35*(y_rndu/176);
-    z_rndu = 170*(z_rndu%178) - 63*(z_rndu/178);
-    if (x_rndu<0) x_rndu+=30269;
-    if (y_rndu<0) y_rndu+=30307;
-    if (z_rndu<0) z_rndu+=30323;
-    r = x_rndu/30269.0 + y_rndu/30307.0 + z_rndu/30323.0;
-    return (r-(int)r);
-}
-
 void reverseChar(char* str,int length) {
     std::reverse(str, str + length);
 }
@@ -254,6 +200,7 @@ void InsertChar(char* array,std::string ins,int index){
 }
 
 void ErrorSub(double randval,char seqchar[], int pos){
+  // Generates nucleotide substitutions
   //fprintf(stderr,"SUBERROR\n"); X, W, Z, Y
   if (seqchar[pos] == 'A' || seqchar[pos] == 'a'){
     if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'C';} //X 
@@ -277,7 +224,7 @@ void ErrorSub(double randval,char seqchar[], int pos){
   }
 }
 
-double* DeamFileArray(double* freqval,const char* filename,int &deamcyclelength){
+double* MisMatchFileArray(double* freqval,const char* filename,int &mismatchcyclelength){
     char buf[LENS];
     int i = 0;
     gzFile gz = Z_NULL;
@@ -291,11 +238,11 @@ double* DeamFileArray(double* freqval,const char* filename,int &deamcyclelength)
         i++;
     }
     gzclose(gz);
-    deamcyclelength = i/8;
+    mismatchcyclelength = i/8;
   return freqval;
 }
 
-void Deam_File(char seq[],mrand_t *mr,double* freqval,int LEN){
+void MisMatchFile(char seq[],mrand_t *mr,double* freqval,int LEN){
   char ntdeam[4] = {'A', 'T', 'G', 'C'};//{'R', 'Q', 'S', 'U'};//{'X', 'Y', 'Z', 'W'}; //{'A', 'T', 'G', 'C'};
   double dtemp1;
   // 5' moving downwards from the 1 postion in the sequence 
@@ -371,185 +318,6 @@ void Deam_File(char seq[],mrand_t *mr,double* freqval,int LEN){
   }
 }
 
-int Random_geometric_k(unsigned int  seed, const double p)
-{
-  double u = ((double) rand_r(&seed)/ RAND_MAX); // this between 0 and 1
-  int k;
-
-  if (p == 1){k = 1;}
-  else if(p == 0){k=0;}
-  else{k = log (u) / log (1 - p);}
-
-  return floor(k);
-}
-
-double myrand(unsigned int persistent){
-  return ((double) rand_r(&persistent)/ RAND_MAX);
-}
-
-int myrandgenmodulo(unsigned int seed, int modulo){
-  return ((double) (rand_r(&seed)%modulo)+1);
-}
-
-void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, unsigned int seed,mrand_t *mr){
-
-    double dtemp1;double dtemp2;
-    dtemp1 = mrand_pop(mr); dtemp2 = mrand_pop(mr);
-    int l = 0;
-    int r = L-1;
-    //fprintf(stderr,"----------------------\n");
-    //fprintf(stderr,"THE SEED IS %u and l : %d and r : %d\n",&seed,l,r);
-    while (l+r > L-2){
-      l = 0;
-      r = 0;
-      double u_l = dtemp1; // myrand((unsigned int) (seed)); //((double) rand_r(&seed)/ RAND_MAX);//uniform(); // between 0 and 1
-      double u_r = dtemp2; // myrand((unsigned int) (seed+1)); //((double) rand_r(&seed)/ RAND_MAX);//uniform(); //between 0 and 1
-      //fprintf(stderr,"uniform %f \t %f \n",u_l,u_r);
-      dtemp1 = mrand_pop(mr); dtemp2 = mrand_pop(mr);
-
-      if (u_l > 0.5){
-        l = Random_geometric_k((int) ((dtemp1*30000)+1),lambda); //Random_geometric_k(23424,lambda);//distribution1(generator1);
-      }
-      if (u_r > 0.5){
-        r = Random_geometric_k((int) ((dtemp2*30000)+1),lambda); //Random_geometric_k(seed,lambda); //distribution1(generator2); //(int) ((rand_r(&seed)%30000)+1)
-      }
-    }
-    //fprintf(stderr,"R and L values %d \t %d\n",r,l);
-    for (int i = 0; i<l; i++){
-      // l means left overhang (ss)
-      //fprintf(stderr,"FIRST FOR LOOP \n");
-      if (reffrag[i] == 'C' || reffrag[i] == 'c' ){
-        dtemp1 = mrand_pop(mr);//drand48_r(&buffer, &dtemp1);
-        double u = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);//uniform();
-        //fprintf(stderr,"Double u C 1 %f\n",u);
-        if (u < delta_s){
-          frag[i] = 'T'; //T
-        }else{
-          frag[i] = 'C'; //C
-        }
-      }else{
-        frag[i] = reffrag[i];
-      }
-    }
-    for (int i = 0; i < r; i++){
-      // r means right overhan (ss)
-      //fprintf(stderr,"SECOND FOR LOOP \n");
-      if (reffrag[L-i-1] == 'G' || reffrag[L-i-1] == 'g'){
-        dtemp2 = mrand_pop(mr);//drand48_r(&buffer, &dtemp2);
-        double u = dtemp2;//((double) rand_r(&seed)/ RAND_MAX);//uniform();
-        //fprintf(stderr,"Double u G 1 %f\n",u);
-        if (u < delta_s){
-          frag[L-i-1] = 'A'; //A
-        }
-        else{
-          frag[L-i-1] = 'G'; //G
-        }
-      }else{
-        frag[L-i-1] = reffrag[L-i-1];
-      }
-    }
-    dtemp1 = mrand_pop(mr);//drand48_r(&buffer, &dtemp1);
-    double u_nick = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);//uniform();
-    //fprintf(stderr,"Double u_nick %f\n",u_nick);
-    double d = nv/((L-l-r-1)*nv+1-nv);
-    int p_nick = l;
-    double cumd = d;
-    while ((u_nick > cumd) && (p_nick < L-r-1)){
-        cumd += d;
-        p_nick +=1;
-    }
-    for (int i = l; i < L-r; i++){
-      // The double strand part, the left and right hand overhang are probably cut, so only the midlle part of our DNA fragments (ds)
-      //fprintf(stderr,"THIRD FOR LOOP \n");
-        if ((reffrag[i] == 'C' || reffrag[i] == 'c') && i<=p_nick){
-          dtemp1 = mrand_pop(mr);//drand48_r(&buffer, &dtemp1);
-          double u = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);//uniform();
-          //fprintf(stderr,"Double u C 2 %f\n",u);
-          if (u < delta){
-            frag[i] = 'T'; //T
-          }
-          else{
-            frag[i] = 'C'; //C
-          }
-        }
-        else if ((reffrag[i] == 'G' || reffrag[i] == 'g') && i>p_nick){
-          dtemp2 = mrand_pop(mr);//drand48_r(&buffer, &dtemp2);
-          double u = dtemp2; //((double) rand_r(&seed)/ RAND_MAX);//uniform();
-          //fprintf(stderr,"Double u G 2 %f\n",u);
-          if (u < delta){
-            frag[i] = 'A'; //A
-          }else{
-            frag[i] = 'G'; //G
-          }
-        }else{
-            frag[i] = reffrag[i];
-        }
-    }
-}
-
-const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos,int outputoffset){
-
-  //const char* nt_qual[8] = {"#", "\'", "0", "7" ,"<", "B", "F","I"}; // 35,39,48,55,66,70,73 //then withouth & in nt_qual[0]
-  //const char* nt_qual[8] = {"#", "\'", "0", "7" ,"<", "B", "F","I"};//{"#", "\'", "0", "7" ,"<", "B", "F","I"};
-
-  char nt_qual[8] = {(char) (2+outputoffset),
-                     (char) (6+outputoffset),
-                     (char) (15+outputoffset),
-                     (char) (22+outputoffset),
-                     (char) (27+outputoffset),
-                     (char) (33+outputoffset),
-                     (char) (37+outputoffset),
-                     (char) (40+outputoffset)};
-  //const char* nt_qual[8] = (const char*) nt_qual_int[9];
-  int offset = ((nt_offset+read_pos)*8);
-  //printf("offset %d \n", offset);
-  const char* nt_out;
-  if (a <= err[offset]){
-    nt_out = &nt_qual[0];
-  }
-  else if (err[offset] < a && a <= err[offset+1]){
-    nt_out = &nt_qual[1];
-    }
-  else if (err[offset+1] < a && a <= err[offset+2]){
-    nt_out = &nt_qual[2];
-  }
-  else if (err[offset+2] < a && a <= err[offset+3]){
-    nt_out = &nt_qual[3];
-  }
-  else if (err[offset+3] < a && a<= err[offset+4]){
-    nt_out = &nt_qual[4];
-  }
-  else if (err[offset+4] < a && a<= err[offset+5]){
-    nt_out = &nt_qual[5];
-  }
-  else if (err[offset+5] < a && a<= err[offset+6]){
-    nt_out = &nt_qual[6];
-  }
-  else if (err[offset+6] < a && a <= err[offset+7]){
-    nt_out = &nt_qual[7];
-  }
-  return nt_out;
-}
-
-double* Qual_array(double* freqval,const char* filename){
-  int length = 6000;
-  char buf[length];
-  gzFile gz = Z_NULL;
-  gz = gzopen(filename,"r");
-  assert(gz!=Z_NULL);
-  int i = 0;
-  while(gzgets(gz,buf,length)){
-    double val1;double val2;double val3;double val4;double val5;double val6;double val7;double val8;
-    sscanf(buf,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",&val1,&val2,&val3,&val4,&val5,&val6,&val7,&val8);
-    //std::cout << "iter " << i << std::endl;// " " << buf << std::endl;
-    freqval[i*8] = val1; freqval[i*8+1] = val2; freqval[i*8+2] = val3; freqval[i*8+3] = val4;
-    freqval[i*8+4] = val5; freqval[i*8+5] = val6; freqval[i*8+6] = val7; freqval[i*8+7] = val8;
-    i++;
-  }
-  gzclose(gz);
-  return freqval;
-}
-
 int BinarySearch_fraglength(double* SearchArray,int low, int high, double key){
     //fprintf(stderr,"first element %lf\n",SearchArray[low]);
     int ans = 0; 
@@ -573,40 +341,6 @@ int BinarySearch_fraglength(double* SearchArray,int low, int high, double key){
     }
  
     return ans+1;
-}
-
-void FragArray(int& number,int*& Length, double*& Frequency,const char* filename){
-  //int LENS = 4096;
-  //int* Frag_len = new int[LENS];
-  //double* Frag_freq = new double[LENS];
-  int n =1;
-
-  gzFile gz = Z_NULL;
-  char buf[LENS];
-  
-  gz = gzopen(filename,"r");
-  assert(gz!=Z_NULL);
-  Length[0] = 0; Frequency[0] = (float) 0;
-  while(gzgets(gz,buf,LENS)){
-    Length[n] = atoi(strtok(buf,"\n\t ")); //before it was Frag_len[n]
-    Frequency[n] = atof(strtok(NULL,"\n\t "));
-    n++;
-  }
-  gzclose(gz); 
-
-  number = n;
-  //Length = Frag_len;
-  //Frequency = Frag_freq;
-  //delete[] Frag_len;
-  //delete[] Frag_freq;
-}
-
-void printTime(FILE *fp){
-  time_t rawtime;
-  struct tm * timeinfo; 
-  time ( &rawtime );
-  timeinfo = localtime ( &rawtime );
-  fprintf (fp, "\t-> %s", asctime (timeinfo) );
 }
 
 void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total,int chr_idx_arr[],size_t genome_len,char CommandArray[1024],const char* version){

@@ -2,6 +2,9 @@
 #define NGSNGSFUNC_H
 #include "mrand.h"
 
+void FragDistArray(int& number,int*& Length, double*& Frequency,int SizeDistType,int seed,int val1, int val2);
+
+void FragArray(int& number,int*& Length, double*& Frequency,const char* filename);
 
 void delete_seq(char *str, int seq_len, int del_len, size_t pos,int alt_len);
 
@@ -15,33 +18,21 @@ void DNA_complement(char seq[]);
 
 void reverseChar(char* str,int length);
 
-int Random_geometric_k(unsigned int  seed,const double p);
+void deletechar(char* str,int seq_len, size_t index_to_remove,int del_len);
 
-double myrand(unsigned int persistent);
+void InsertChar(char* array,std::string ins,int index);
 
-int myrandgenmodulo(unsigned int seed, int modulo);
+void ErrorSub(double randval,char seqchar[], int pos);
 
-double uniform();
+double* MisMatchFileArray(double* freqval,const char* filename,int &mismatchcyclelength);
 
-void SimBriggsModel(char* reffrag, char* frag, int L, double nv, double lambda, double delta_s, double delta, unsigned int seed,mrand_t *mr);
-
-double* DeamFileArray(double* freqval,const char* filename,int &deamcyclelength);
-
-void Deam_File(char seq[],mrand_t *mr,double* freqval,int LEN);
-
-const char* Error_lookup(double a,double err[6000],int nt_offset, int read_pos,int outputoffset);
-
-double* Qual_array(double* freqval,const char* filename);
+void MisMatchFile(char seq[],mrand_t *mr,double* freqval,int LEN);
 
 int BinarySearch_fraglength(double* SearchArray,int low, int high, double key);
 
-void FragArray(int& number,int*& Length, double*& Frequency,const char* filename);
-
-void FragDistArray(int& number,int*& Length, double*& Frequency,int SizeDistType,int seed,int val1, int val2);
-
-void printTime(FILE *fp);
-
 void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total, int chr_idx[], size_t genome_len,char CommandArray[1024],const char* version);
+
+char* HaploGenome(char* genome,char genome_data[],char genome_data2[],int chr_sizes,const char* bcf_file,const char *chr_names[],const char* VarType,FILE *VarInfoFile,const char* HeaderIndiv);
 
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[]);
 
@@ -49,7 +40,6 @@ char* partial_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const
 
 char* full_vcf_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[],const char* bcf_file,const char* VarType,const char* HeaderIndiv);
 
-char* HaploGenome(char* genome,char genome_data[],char genome_data2[],int chr_sizes,const char* bcf_file,const char *chr_names[],const char* VarType,FILE *VarInfoFile,const char* HeaderIndiv);
 
 typedef struct{
     int n;
@@ -67,11 +57,7 @@ void ransampl_free( ransampl_ws *ws );
 
 ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb,int ntcharoffset,const char *freqfile,unsigned long &readcycle);
 
-void deletechar(char* str,int seq_len, size_t index_to_remove,int del_len);
 
-void InsertChar(char* array,std::string ins,int index);
-
-void ErrorSub(double randval,char seqchar[], int pos);
 
 
 #endif /* NGSNGSFUNC_H */
