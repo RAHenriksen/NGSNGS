@@ -22,7 +22,9 @@
 #include <pthread.h>
 
 #include "NGSNGS_func.h"
+#include "NtSubModels.h"
 #include "mrand.h"
+#include "RandSampling.h"
 
 //#if defined(__APPLE__) && defined(__MACH__) 
 //#include "NGSNGS_Random.h"
@@ -37,7 +39,7 @@ void FragDistArray(int& number,int*& Length, double*& Frequency,int SizeDistType
   const int nrolls=10000;
   int p[nrolls]={};
   
-  if (SizeDistType==1){std::uniform_int_distribution<int> distribution(val1,val2);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
+  if (SizeDistType==1){std::uniform_int_distribution<int> distribution(val1,val2);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}} //if(number > 30){p[i] = number;}}
   else if (SizeDistType==2){std::normal_distribution<double> distribution(val1,val2);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
   else if (SizeDistType==3){std::lognormal_distribution<double> distribution(val1,val2);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
   else if (SizeDistType==4){std::poisson_distribution<int> distribution(val1);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
@@ -197,150 +199,6 @@ void InsertChar(char* array,std::string ins,int index){
   std::string s(array);
   s.insert(index,ins);  
   strcpy(array, s.c_str());    
-}
-
-void ErrorSub(double randval,char seqchar[], int pos){
-  // Generates nucleotide substitutions
-  //fprintf(stderr,"SUBERROR\n"); X, W, Z, Y
-  if (seqchar[pos] == 'A' || seqchar[pos] == 'a'){
-    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'C';} //X 
-    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos] = 'G';} //T
-    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'T';} //C
-  }
-  else if (seqchar[pos] == 'C'|| seqchar[pos] == 'c'){ //'Z'
-    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'G';} //Z
-    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos]  = 'T';} //G
-    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'A';} //G
-  }
-  else if (seqchar[pos] == 'G'|| seqchar[pos] == 'g'){
-    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'T';} //A
-    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos]  = 'A';} //T
-    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'C';} //C
-  }
-  else if (seqchar[pos] == 'T'|| seqchar[pos] == 't'){
-    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'A';} //G
-    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos]  = 'C';} //A
-    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'G';} //C
-  }
-}
-
-double* MisMatchFileArray(double* freqval,const char* filename,int &mismatchcyclelength){
-    char buf[LENS];
-    int i = 0;
-    gzFile gz = Z_NULL;
-    gz = gzopen(filename,"r");
-    assert(gz!=Z_NULL);
-    while(gzgets(gz,buf,LENS)){
-        double val1;double val2;double val3;double val4;
-        sscanf(buf,"%lf\t%lf\t%lf\t%lf\n",&val1,&val2,&val3,&val4);
-        //std::cout << "iter " << i << std::endl;// " " << buf << std::endl;
-        freqval[i*4] = val1; freqval[i*4+1] = val2; freqval[i*4+2] = val3; freqval[i*4+3] = val4;
-        i++;
-    }
-    gzclose(gz);
-    mismatchcyclelength = i/8;
-  return freqval;
-}
-
-void MisMatchFile(char seq[],mrand_t *mr,double* freqval,int LEN){
-  char ntdeam[4] = {'A', 'T', 'G', 'C'};//{'R', 'Q', 'S', 'U'};//{'X', 'Y', 'Z', 'W'}; //{'A', 'T', 'G', 'C'};
-  double dtemp1;
-  // 5' moving downwards from the 1 postion in the sequence 
-  int Astart = 0;
-  int Tstart = LEN*4; //4*15
-  int Gstart = LEN*8; //15*8
-  int Cstart = LEN*12; //15*12
-
-  // moving upstream from the last position
-  int Aend3 = LEN*20;
-  int Tend3 = LEN*24; //4*15
-  int Gend3 = LEN*28; //15*8
-  int Cend3 = LEN*32; //15*12
-
-  int seqlen = strlen(seq);
-  //5'
-  for (int row_idx = 0; row_idx < LEN;row_idx++){
-    dtemp1 = mrand_pop(mr);//0.99;// mrand_pop(mr);
-    //fprintf(stderr,"RANDOM VALUE %lf\n",dtemp1);
-    if (seq[row_idx] == 'A' || seq[row_idx] == 'a'){
-      if (dtemp1 <= freqval[Astart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}
-      else if (freqval[Astart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Astart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
-      else if (freqval[Astart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Astart+(row_idx*4)+2]){seq[row_idx] = ntdeam[2];}
-      else if (freqval[Astart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Astart+(row_idx*4)+3]){seq[row_idx] = ntdeam[3];}
-    }
-    else if (seq[row_idx] == 'T' || seq[row_idx] == 't'){
-      if (dtemp1 <= freqval[Tstart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}
-      else if (freqval[Tstart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Tstart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
-      else if (freqval[Tstart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Tstart+(row_idx*4)+2]){seq[row_idx] = ntdeam[2];}
-      else if (freqval[Tstart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Tstart+(row_idx*4)+3]){seq[row_idx] = ntdeam[3];}
-    }
-    else if (seq[row_idx] == 'G' || seq[row_idx] == 'g'){
-      if (dtemp1 <= freqval[Gstart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}
-      else if (freqval[Gstart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Gstart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
-      else if (freqval[Gstart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Gstart+(row_idx*4)+2]){seq[row_idx] = ntdeam[2];}
-      else if (freqval[Gstart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Gstart+(row_idx*4)+3]){seq[row_idx] = ntdeam[3];}
-    }
-    else if (seq[row_idx] == 'C' || seq[row_idx] == 'c'){
-      //fprintf(stderr,"FREQ VAL INDEX %d\n",Cstart+(row_idx));
-      if (dtemp1 <= freqval[Cstart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}
-      else if (freqval[Cstart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Cstart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
-      else if (freqval[Cstart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Cstart+(row_idx*4)+2]){seq[row_idx] = ntdeam[2];}
-      else if (freqval[Cstart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Cstart+(row_idx*4)+3]){seq[row_idx] = ntdeam[3];}
-    }
-  }
-  //3'
-  for (int row_idx = 0; row_idx < LEN;row_idx++){
-    int row_idx_3p = seqlen-(LEN-row_idx);
-    if (seq[row_idx_3p] == 'A' || seq[row_idx_3p] == 'a'){
-      if (dtemp1 <= freqval[Aend3-((row_idx)*4)-4]){seq[row_idx_3p] = ntdeam[0];}
-      else if (freqval[Aend3-((row_idx)*4)-4] < dtemp1 && dtemp1 <= freqval[Aend3-((row_idx)*4)-3]){seq[row_idx_3p] = ntdeam[1];}
-      else if (freqval[Aend3-((row_idx)*4)-3] < dtemp1 && dtemp1 <= freqval[Aend3-((row_idx)*4)-2]){seq[row_idx_3p] = ntdeam[2];}
-      else if (freqval[Aend3-((row_idx)*4)-2] < dtemp1 && dtemp1 <= freqval[Aend3-((row_idx)*4)-1]){seq[row_idx_3p] = ntdeam[3];}
-    }
-    else if (seq[row_idx_3p] == 'T' || seq[row_idx_3p] == 't'){
-      if (dtemp1 <= freqval[Tend3-((row_idx)*4)-4]){seq[row_idx_3p] = ntdeam[0];}
-      else if (freqval[Tend3-((row_idx)*4)-4] < dtemp1 && dtemp1 <= freqval[Tend3-((row_idx)*4)-3]){seq[row_idx_3p] = ntdeam[1];}
-      else if (freqval[Tend3-((row_idx)*4)-3] < dtemp1 && dtemp1 <= freqval[Tend3-((row_idx)*4)-2]){seq[row_idx_3p] = ntdeam[2];}
-      else if (freqval[Tend3-((row_idx)*4)-2] < dtemp1 && dtemp1 <= freqval[Tend3-((row_idx)*4)-1]){seq[row_idx_3p] = ntdeam[3];}
-    }
-    else if (seq[row_idx_3p] == 'G' || seq[row_idx_3p] == 'g'){
-      if (dtemp1 <= freqval[Gend3-((row_idx)*4)-4]){seq[row_idx_3p] = ntdeam[0];}
-      else if (freqval[Gend3-((row_idx)*4)-4] < dtemp1 && dtemp1 <= freqval[Gend3-((row_idx)*4)-3]){seq[row_idx_3p] = ntdeam[1];}
-      else if (freqval[Gend3-((row_idx)*4)-3] < dtemp1 && dtemp1 <= freqval[Gend3-((row_idx)*4)-2]){seq[row_idx_3p] = ntdeam[2];}
-      else if (freqval[Gend3-((row_idx)*4)-2] < dtemp1 && dtemp1 <= freqval[Gend3-((row_idx)*4)-1]){seq[row_idx_3p] = ntdeam[3];}
-    }
-    else if (seq[row_idx_3p] == 'C' || seq[row_idx_3p] == 'c'){
-      if (dtemp1 <= freqval[Cend3-((row_idx)*4)-4]){seq[row_idx_3p] = ntdeam[0];}
-      else if (freqval[Cend3-((row_idx)*4)-4] < dtemp1 && dtemp1 <= freqval[Cend3-((row_idx)*4)-3]){seq[row_idx_3p] = ntdeam[1];}
-      else if (freqval[Cend3-((row_idx)*4)-3] < dtemp1 && dtemp1 <= freqval[Cend3-((row_idx)*4)-2]){seq[row_idx_3p] = ntdeam[2];}
-      else if (freqval[Cend3-((row_idx)*4)-2] < dtemp1 && dtemp1 <= freqval[Cend3-((row_idx)*4)-1]){seq[row_idx_3p] = ntdeam[3];}
-    }
-  }
-}
-
-int BinarySearch_fraglength(double* SearchArray,int low, int high, double key){
-    //fprintf(stderr,"first element %lf\n",SearchArray[low]);
-    int ans = 0; 
-    while (low <= high) {
-        int mid = low + (high - low + 1) / 2;
-        //fprintf(stderr,"test %lf\n",SearchArray[mid]);
-        double midVal = SearchArray[mid];
- 
-        if (midVal < key) {
-            ans = mid;
-            low = mid + 1;
-        }
-        else if (midVal > key) {
-
-            high = mid - 1;
-        }
-        else if (midVal == key) {
- 
-            high = mid - 1;
-        }
-    }
- 
-    return ans+1;
 }
 
 void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total,int chr_idx_arr[],size_t genome_len,char CommandArray[1024],const char* version){
@@ -609,103 +467,6 @@ char* full_vcf_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],cons
   fprintf(stderr,"DONE WITH DATA FOR LOOP \n");
   fclose(VarInfoFile);
   return genome;
-}
-
-//! Allocate workspace for random-number sampling.
-ransampl_ws* ransampl_alloc( int n )
-{
-    ransampl_ws *ws;
-    if ( !(ws = (ransampl_ws*) malloc( sizeof(ransampl_ws) )) ||
-         !(ws->alias = (int*) malloc( n*sizeof(int) )) ||
-         !(ws->prob = (double*) malloc( n*sizeof(double) )) ) {
-        fprintf( stderr, "ransampl: workspace allocation failed\n" );
-        exit(ENOMEM); // ENOMEM
-    }
-    ws->n = n;
-    return ws;
-}
-
-//! Initialize workspace by precompute alias tables from given probabilities.
-void ransampl_set( ransampl_ws *ws, const double* p )
-{
-    const int n = ws->n;
-    int i, a, g;
-
-    // Local workspace:
-    double *P;
-    int *S, *L;
-    if ( !(P = (double*) malloc( n*sizeof(double) ) ) ||
-         !(S = (int*) malloc( n*sizeof(int) ) ) ||
-         !(L = (int*) malloc( n*sizeof(int) ) ) ) {
-        fprintf( stderr, "ransampl: temporary allocation failed\n" );
-        exit(ENOMEM);
-    }
-
-    // Normalise given probabilities:
-    double sum=0;
-    for ( i=0; i<n; ++i ) {
-        if( p[i]<0 ) {
-            fprintf( stderr, "ransampl: invalid probability p[%i]<0\n", i );
-            exit(EINVAL);
-        }
-        sum += p[i];
-    }
-    if ( !sum ) {
-        fprintf( stderr, "ransampl: no nonzero probability\n" );
-        exit(EINVAL);
-    }
-    for ( i=0; i<n; ++i )
-        P[i] = p[i] * n / sum;
-
-    // Set separate index lists for small and large probabilities:
-    int nS = 0, nL = 0;
-    for ( i=n-1; i>=0; --i ) {
-        // at variance from Schwarz, we revert the index order
-        if ( P[i]<1 )
-            S[nS++] = i;
-        else
-            L[nL++] = i;
-    }
-
-    // Work through index lists
-    while ( nS && nL ) {
-        a = S[--nS]; // Schwarz's l
-        g = L[--nL]; // Schwarz's g
-        ws->prob[a] = P[a];
-        ws->alias[a] = g;
-        P[g] = P[g] + P[a] - 1;
-        if ( P[g] < 1 )
-            S[nS++] = g;
-        else
-            L[nL++] = g;
-    }
-
-    while ( nL )
-        ws->prob[ L[--nL] ] = 1;
-
-    while ( nS )
-        // can only happen through numeric instability
-        ws->prob[ S[--nS] ] = 1;
-
-    // Cleanup:
-    free( P );
-    free( S );
-    free( L );
-}
-
-int ransampl_draw2( ransampl_ws *ws,double r1, double r2)
-{   
-    //fprintf(stderr,"%lf\t%lf\n",r1,r2);
-    const int i = (int) (ws->n * r1);
-    return r2 < ws->prob[i] ? i : ws->alias[i];
-}
-
-//! Free the random-number sampling workspace.
-void ransampl_free( ransampl_ws *ws )
-{
-    free( ws->alias );
-    free( ws->prob );
-    free( ws );
 }
 
 ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const char *freqfile,unsigned long &readcycle){
