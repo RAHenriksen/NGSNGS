@@ -29,7 +29,7 @@ all: ngsngs
 PACKAGE_VERSION  = 0.5
 
 ifneq "$(wildcard .git)" ""
-PACKAGE_VERSION := $(shell git describe --always --dirty)
+PACKAGE_VERSION := $(shell git describe --always)
 version.h: $(if $(wildcard version.h),$(if $(findstring "$(PACKAGE_VERSION)",$(shell cat version.h)),,force))
 endif
 
