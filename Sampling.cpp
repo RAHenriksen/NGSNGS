@@ -17,9 +17,11 @@
 
 #include <pthread.h>
 
-#include "NGSNGS_func.h"
 #include "mrand.h"
 #include "Briggs.h"
+#include "NtSubModels.h"
+#include "NGSNGS_func.h"
+#include "RandSampling.h"
 
 #define LENS 4096
 #define MAXBINS 100
@@ -57,6 +59,7 @@ struct Parsarg_for_Sampling_thread{
 
   int threadseed;
   size_t reads;
+  size_t BufferLength;
   
   BGZF *bgzf_fp1;
   BGZF *bgzf_fp2;
@@ -128,7 +131,8 @@ void* Sampling_threads(void *arg){
   char readadapt_err1[1024] = {0};
   char readadapt_err2[1024] = {0};
 
-  long long int reads = struct_obj -> reads;
+  size_t reads = struct_obj -> reads;
+  size_t BufferLength = struct_obj -> BufferLength;
 
   size_t rand_start;
 
@@ -137,7 +141,7 @@ void* Sampling_threads(void *arg){
 
   size_t localread = 0;
   int iter = 0;
-  long long int current_reads_atom = 0;
+  size_t current_reads_atom = 0;
   int readsizelimit;
 
   extern int SIG_COND;
@@ -610,7 +614,7 @@ void* Sampling_threads(void *arg){
         }
       }
       if (struct_obj->bgzf_fp1){
-        if (struct_obj->fqresult_r1->l > 30000000){
+        if (struct_obj->fqresult_r1->l > BufferLength){
           pthread_mutex_lock(&Fq_write_mutex);
           assert(bgzf_write(struct_obj->bgzf_fp1,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l)!=0);
           if (strcasecmp("PE",struct_obj->SeqType)==0){assert(bgzf_write(struct_obj->bgzf_fp2,struct_obj->fqresult_r2->s,struct_obj->fqresult_r2->l)!=0);}
@@ -743,13 +747,13 @@ void* Sampling_threads(void *arg){
   pthread_exit(NULL);
 }
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, long long int reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
+void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
                         const char* Adapter_2,const char* OutputFormat,const char* SeqType,float BriggsParam[4],const char* Briggs_flag,
                         const char* Sizefile,int FixedSize,int SizeDistType, int val1, int val2,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName,
                         const char* MisMatchFlag,const char* SubProfile,int MisLength,int RandMacro,const char *VCFformat,char* Variant_flag,const char *VarType,
-                        char CommandArray[1024],const char* version,const char* HeaderIndiv,const char* NoAlign){
+                        char CommandArray[1024],const char* version,const char* HeaderIndiv,const char* NoAlign,size_t BufferLength){
   //creating an array with the arguments to create multiple threads;
   //fprintf(stderr,"Random MacIntType %d\n",MacroRandType);
   //fprintf(stderr,"\t-> Command 3 : %s \n",CommandArray);
@@ -1021,6 +1025,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, long long int 
       struct_for_threads[i].MisLength = (int) mismatchcyclelength;
       struct_for_threads[i].readcycle = (int) readcyclelength;
       struct_for_threads[i].reads = reads;
+      struct_for_threads[i].BufferLength = BufferLength;
 
       struct_for_threads[i].bgzf_fp1 = bgzf_fp1;
       struct_for_threads[i].bgzf_fp2 = bgzf_fp2;
