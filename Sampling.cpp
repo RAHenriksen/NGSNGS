@@ -19,6 +19,7 @@
 
 #include "NGSNGS_func.h"
 #include "mrand.h"
+#include "Briggs.h"
 
 #define LENS 4096
 #define MAXBINS 100
@@ -196,7 +197,7 @@ void* Sampling_threads(void *arg){
 
     // for unaligned 
     size_t n_cigar_unmap=1;const uint32_t *cigar_unmap;
-    uint32_t cigar_bitstring_unmap = bam_cigar_gen(seqlen, BAM_FUNMAP);
+    uint32_t cigar_bitstring_unmap = bam_cigar_gen(seqlen, BAM_CSOFT_CLIP);
     uint32_t cigar_arr_unmap[] = {cigar_bitstring_unmap};
     cigar_unmap = cigar_arr_unmap;
 
@@ -260,9 +261,9 @@ void* Sampling_threads(void *arg){
 
         // Similar if we use deamination file
         if(strcasecmp("true",struct_obj->SubFlag)==0){
-          Deam_File(seq_r1,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
+          MisMatchFile(seq_r1,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
-            Deam_File(seq_r2,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
+            MisMatchFile(seq_r2,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
           }
         }
 
@@ -315,10 +316,10 @@ void* Sampling_threads(void *arg){
         if(strcasecmp("true",struct_obj->SubFlag)==0){
           //fprintf(stderr,"mismatch matrix %f \t %f \t %f \t %f \t %f \t %f \n",struct_obj->MisMatch[0],struct_obj->MisMatch[10],struct_obj->MisMatch[14],struct_obj->MisMatch[15],struct_obj->MisMatch[30],struct_obj->MisMatch[45]);
           //fprintf(stderr,"SEQUENCE %s\n",seq_r1);
-          Deam_File(seq_r1,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
+          MisMatchFile(seq_r1,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
           // IS THIS THE WAY TO DO IT?
           if (strcasecmp("PE",struct_obj->SeqType)==0){
-            Deam_File(seq_r2,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
+            MisMatchFile(seq_r2,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
           }
           //fprintf(stderr,"SEQUENCE %s\n",seq_r1);
         }
@@ -328,7 +329,7 @@ void* Sampling_threads(void *arg){
     
       char *dummydummy = struct_obj->names[chr_idx];
       if (struct_obj->Variant_flag!=NULL && strcasecmp(struct_obj->Variant_flag ,"bcf")==0)
-	dummydummy = struct_obj->names[0];
+	    dummydummy = struct_obj->names[0];
       
       read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%s:%zu-%zu_length:%d", struct_obj->threadno, rand_id,strand,dummydummy,
 			       rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],fraglength);
@@ -466,9 +467,9 @@ void* Sampling_threads(void *arg){
             DNA_complement(read_rc_sam1);reverseChar(read_rc_sam1,strlen(read_rc_sam1));
             //fprintf(stderr,"string before \t\t %s \n",readadapt_rc_sam1);
             sprintf(readadapt_rc_sam1, "%s", read_rc_sam1);
-            fprintf(stderr,"string after \t\t %s \n",readadapt_rc_sam1);
+            //fprintf(stderr,"string after \t\t %s \n",readadapt_rc_sam1);
             strcat(readadapt_rc_sam1, readadapt_err1);
-            fprintf(stderr,"string after II \t %s \n ----------------- \n",readadapt_rc_sam1);
+            //fprintf(stderr,"string after II \t %s \n ----------------- \n",readadapt_rc_sam1);
             if (strcasecmp("PE",struct_obj->SeqType)==0){
               // the mate to flag 81 will be the second in pair on the forward strand - just to esnrue identical names
               sprintf(readadapt_rc_sam2, "%s",readadapt2);
@@ -483,7 +484,14 @@ void* Sampling_threads(void *arg){
             sprintf(read_rc_sam2, "%.*s", (int)strlen(seq_r2), readadapt2); // copy the sequence 2 from the sequence 2 + adapter
             // type cast to int
             DNA_complement(read_rc_sam2);reverseChar(read_rc_sam2,strlen(read_rc_sam1)); // reverse complement sequence 2 
-            sprintf(readadapt_rc_sam2, "%s%s", read_rc_sam2,readadapt_err2); // create rev comp sequence 2 + adapter
+            
+            //fprintf(stderr,"string before \t\t %s \n",readadapt_rc_sam2);
+            sprintf(readadapt_rc_sam2, "%s", read_rc_sam2);
+            //fprintf(stderr,"string after I \t\t %s \n",readadapt_rc_sam2);
+            strcat(readadapt_rc_sam2, readadapt_err2);
+            //fprintf(stderr,"string after II\t\t %s \n",readadapt_rc_sam2);
+            //sprintf(readadapt_rc_sam2, "%s%s", read_rc_sam2,readadapt_err2); // create rev comp sequence 2 + adapter
+
           }
 
           if (struct_obj->PolyNt != 'F'){
@@ -648,9 +656,9 @@ void* Sampling_threads(void *arg){
         if (strcasecmp("PE",struct_obj->SeqType)==0){
           strcpy(READIDR2,READ_ID);strcat(READIDR2,suffR2);
           if (struct_obj->NoAlign == 'T'){
-            bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,0,-1,-1,
+            bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,4,-1,-1,
             255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,NULL,0);
-            bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR2),READIDR2,0,-1,-1,
+            bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR2),READIDR2,4,-1,-1,
             255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,NULL,0);
           }
           else{
@@ -663,7 +671,7 @@ void* Sampling_threads(void *arg){
         else if (strcasecmp("SE",struct_obj->SeqType)==0){
           //fprintf(stderr,"READID v2 %s\n",READIDR1);
           if (struct_obj->NoAlign == 'T'){
-            bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,0,-1,-1,
+            bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,4,-1,-1,
             255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,NULL,0);
           }
           else{
@@ -673,11 +681,15 @@ void* Sampling_threads(void *arg){
           //const char* MDtag = "\tMD:Z:";
           //bam_aux_update_str(struct_obj->list_of_reads[struct_obj->l-1],"MD",5,"MDtag");
         }
-        
+
+        int assert_int = 0;
+        if(strcasecmp("cram",struct_obj->OutputFormat)==0){assert_int = 1;}
+
         if (struct_obj->l < struct_obj->m){   
           pthread_mutex_lock(&Fq_write_mutex);
           for (int k = 0; k < struct_obj->l; k++){
-            assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) != 1);
+            //fprintf(stderr,"INSIDE FOR LOOP WITH ASSERTION\n");
+            assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) != assert_int);
           }
           pthread_mutex_unlock(&Fq_write_mutex);
           struct_obj->l = 0;
@@ -967,11 +979,11 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, long long int 
     else{polynucleotide = 'F';}
     //fprintf(stderr,"\t-> AFTER POLY\n");
 
-    double* DeamFreqArray;
-    int deamcyclelength = 0;
+    double* MisMatchFreqArray;
+    int mismatchcyclelength = 0;
     if (SubProfile != NULL){
-      DeamFreqArray = new double[LENS];
-      DeamFreqArray = DeamFileArray(DeamFreqArray,SubProfile,deamcyclelength);
+      MisMatchFreqArray = new double[LENS];
+      MisMatchFreqArray = MisMatchFileArray(MisMatchFreqArray,SubProfile,mismatchcyclelength);
     }
 
     for (int i = 0; i < nthreads; i++){
@@ -1004,9 +1016,9 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, long long int 
       struct_for_threads[i].NtErr_r1 = ErrArray_r1;
       struct_for_threads[i].NtErr_r2 = ErrArray_r2;
 
-      struct_for_threads[i].MisMatch = DeamFreqArray;
+      struct_for_threads[i].MisMatch = MisMatchFreqArray;
       struct_for_threads[i].SubFlag = MisMatchFlag;
-      struct_for_threads[i].MisLength = (int) deamcyclelength;
+      struct_for_threads[i].MisLength = (int) mismatchcyclelength;
       struct_for_threads[i].readcycle = (int) readcyclelength;
       struct_for_threads[i].reads = reads;
 
@@ -1099,7 +1111,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, long long int 
       delete[] Frag_len;
     }
     
-    if(SubProfile != NULL){delete[] DeamFreqArray;}
+    if(SubProfile != NULL){delete[] MisMatchFreqArray;}
     
     free(genome_data);
     fflush(stderr);
