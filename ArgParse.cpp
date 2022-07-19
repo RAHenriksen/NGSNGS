@@ -20,7 +20,10 @@
 #include "NGSNGS_func.h"
 #include "Sampling.h"
 #include "mrand.h"
+#include "Briggs.h"
+#include "NtSubModels.h"
 #include "version.h"
+
 #include <signal.h>
 #define LENS 4096
 #define MAXBINS 100
@@ -57,6 +60,7 @@ typedef struct{
   char *CommandRun; // actual command run in same order
   const char* HeaderIndiv; //samplename from VCF/BCF file
   const char* NoAlign;// This option is cool, but explaining it takes up to much space in comment
+  size_t KstrBuf; // Buffer size for kstring length
 }argStruct;
 
 int HelpPage(FILE *fp){
@@ -182,6 +186,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Variant_type = NULL;
   mypars->HeaderIndiv=NULL;
   mypars->NoAlign=NULL;
+  mypars->KstrBuf=30000000;
   mypars->CommandRun = (char*) calloc(1024,1);
   char *Command = mypars->CommandRun;
   const char *first = "./ngsngs ";
@@ -226,6 +231,12 @@ argStruct *getpars(int argc,char ** argv){
       sscanf(readstr, "%lu",&mypars->nreads);
       strcat(Command,*argv); strcat(Command," ");
       if (mypars->nreads <= 0){ErrMsg(2.4);}
+    }
+    else if(strcasecmp("-bl",*argv)==0 || strcasecmp("--bufferlength",*argv)==0){
+      strcat(Command,*argv); strcat(Command," ");
+      const char* readstr = strdup(*(++argv));
+      sscanf(readstr, "%lu",&mypars->KstrBuf);
+      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-c",*argv)==0 || strcasecmp("--cov",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
@@ -522,9 +533,11 @@ int main(int argc,char **argv){
       mypars->nreads =  (readcov*genome_size)/meanlength;
       fprintf(stderr,"\t-> Number of simulated reads: %zu or coverage: %f\n",mypars->nreads,mypars->coverage);
     }
-
+  
     size_t nreads_per_thread = mypars->nreads/threads1;
     
+    size_t BufferLength = mypars->KstrBuf;
+
     //fprintf(stderr,"\t-> Command: %s \n",Command);
     //fprintf(stderr,"\t-> Command 2 : %s \n",CommandArray);
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
@@ -664,7 +677,7 @@ int main(int argc,char **argv){
                       Param,Briggs_Flag,Sizefile,FixedSize,SizeDistType,val1,val2,
                       qualstringoffset,QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,
                       ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType,
-                      VCFformat,Variant_flag,VarType,Command,NGSNGS_VERSION,HeaderIndiv,NoAlign);
+                      VCFformat,Variant_flag,VarType,Command,NGSNGS_VERSION,HeaderIndiv,NoAlign,BufferLength);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));
