@@ -4,6 +4,7 @@
 #include <random>
 #include <iostream>
 #include <cstdlib>
+#include <climits>
 
 typedef struct{
   int type;
@@ -13,6 +14,7 @@ typedef struct{
   std::random_device rd;
   std::default_random_engine eng;
   std::uniform_real_distribution<float> distr;
+  std::uniform_int_distribution<> distrInt;
   unsigned int rand_r_seed;
   unsigned short xsubi[3];
 }mrand_t;
