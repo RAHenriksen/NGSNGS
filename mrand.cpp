@@ -3,27 +3,30 @@
 #include <iostream>
 #include "mrand.h"
 
-//((double) rand_r(&seed)/ RAND_MAX);
 mrand_t *mrand_alloc(int type_a,long int seedval){
-  //fprintf(stderr,"TYPE A %d\n",type_a);
   mrand_t *ret = (mrand_t *) malloc(sizeof(mrand_t));
   ret->type = type_a;
 
+#ifdef __APPLE__
   if(ret->type==0){
-    //fprintf(stderr,"In linux if -> drand48_data\n");
-    #if defined(__linux__) || defined(__unix__)
-    srand48_r(seedval,(struct drand48_data *) &ret->buf0);
-    #endif
-    //i need to somehow print the value
+    fprintf(stderr,"\t-> Problem with drand48 reentrant, will default to erand48\n");
+    ret->type = 3;
   }
+#else
+  if(ret->type==0)
+    srand48_r(seedval,(struct drand48_data *) &ret->buf0);
+#endif
   if(ret->type==1){
-    //fprintf(stderr,"In Apple loop if ->  APPLE LOOP\n");
     ret->eng = std::default_random_engine(seedval);
     ret->distr = std::uniform_real_distribution<float>(0, 1);
   }
-  if(ret->type==2){
-    //fprintf(stderr,"rand_r loop\n");
+  if(ret->type==2)
     ret->rand_r_seed = (unsigned int) seedval;
+  if(ret->type==3){
+    ret->rand_r_seed = (unsigned int) seedval;
+    ret->xsubi[2] = ret->rand_r_seed >> 16;
+    ret->xsubi[1] = ret->rand_r_seed & 0xffffl;
+    ret->xsubi[0] = 0x330e;
   }
   return ret;
 }
@@ -41,6 +44,9 @@ double mrand_pop(mrand_t *mr){
   else if(mr->type==2){
     res = (double) rand_r(&mr->rand_r_seed)/RAND_MAX;
   }
+  else if(mr->type==3){
+    res = erand48(mr->xsubi);
+  }
   else{
     fprintf(stderr,"Random parameter %d is not supported\n",mr->type);
     exit(0);
@@ -51,22 +57,20 @@ double mrand_pop(mrand_t *mr){
 
 #ifdef __WITH_MAIN__
 
-int main(){
+int main(int argc,char **argv){
   mrand_t *myrand;
-  myrand = mrand_alloc(0,10);
-  for(int i=0;i<10;i++)
-    fprintf(stderr,"%d) : %f\n",i,mrand_pop(myrand));
-  fprintf(stderr,"----------------\n");
-  myrand = mrand_alloc(1,10);
-  for(int i=0;i<10;i++)
-    fprintf(stderr,"%d) : %f\n",i,mrand_pop(myrand));
-  fprintf(stderr,"----------------\n");
-  myrand = mrand_alloc(2,10);
-  unsigned int seed = 10;
-  for(int i=0;i<10;i++){
-    //fprintf(stderr,"Rand %f \n",(double) rand_r(&seed)/RAND_MAX);
-    fprintf(stderr,"%d) : %f\n",i,mrand_pop(myrand));
+  int type =0;
+  int seed =1;
+  int nitems =10;
+  if(argc==4){
+    type = atoi(argv[1]);
+    seed = atoi(argv[2]);
+    nitems = atoi(argv[3]);
   }
+  fprintf(stderr,"type: %d seed: %d nitems: %d\n",type,seed,nitems);
+  myrand = mrand_alloc(type,seed);
+  for(int i=0;i<nitems;i++)
+    fprintf(stdout,"%d) : %f\n",i,mrand_pop(myrand));
   return 0;
 }
 
