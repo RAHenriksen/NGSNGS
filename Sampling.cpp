@@ -800,7 +800,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
   }
   
   if(VCFformat != NULL && strcasecmp(Variant_flag,"bcf")==0){
-    //const char* HeaderIndiv = "HG00096";
+    //const char* HeaderIndiv = "HG00097";
     genome_data = full_vcf_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm,VCFformat,VarType,HeaderIndiv);
   }
   else{

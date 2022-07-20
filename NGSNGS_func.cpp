@@ -245,7 +245,7 @@ char* HaploGenome(char* genome,char genome_data1[],char genome_data2[],int chr_s
 
   const char **seqnames = NULL;
   seqnames = bcf_hdr_seqnames(bcf_head, &nseq);
-  //bcf_hdr_id2name(bcf_head, 0)
+
   // check if the headers match
   int chr_exit = 0;
   for (int vcf_i = 0; vcf_i < nseq; vcf_i++){
@@ -259,15 +259,24 @@ char* HaploGenome(char* genome,char genome_data1[],char genome_data2[],int chr_s
   
   // Set sample number 
   //const char* HeaderIndiv = "HG00096";
-  int indiv = bcf_hdr_set_samples(bcf_head, "HG00099", 0);
-  fprintf(stderr, "File contains after %i samples %d\n",bcf_hdr_nsamples(bcf_head),indiv); //bcf.nsamples(fp)
-
+  
+  //bcf_hdr_t *bcf_head2 =bcf_hdr_subset(const bcf_hdr_t *h0, int n, char *const* samples, int *imap);
+  
+  //int indiv = bcf_hdr_set_samples(bcf_head, "HG00099", 0);
+  //fprintf(stderr, "File contains after %i samples %d\n",bcf_hdr_nsamples(bcf_head),indiv); //bcf.nsamples(fp)
+  //bcf_hdr_parse_sample_line(bcf_head,htxt)
   //initializing variation sampling 
   bcf1_t *bcf_records = bcf_init();
   if (bcf_records == NULL){fprintf(stderr,"WARNING NO VARIANTS IN VCF FILE"); exit(0);}
   else if(bcf_records != NULL && bcf_read(bcf_obj, bcf_head, bcf_records)==0){
     // else if{bcf_records != NULL && bcf_read(bcf_obj, bcf_head, bcf_records)==0; 
     //bcf_read(bcf_obj, bcf_head, bcf_records)==0; //ignoring return value (int)
+    
+    /*kstring_t shared,indiv = bcf_records->indiv;
+    std::cout << shared << std::endl;
+    fprintf(stderr,"test %s \n",indiv.s);
+    exit(0);*/
+
     size_t chr_pos_before;
     size_t chr_pos_after;
     size_t insert_total = 0;
@@ -283,93 +292,74 @@ char* HaploGenome(char* genome,char genome_data1[],char genome_data2[],int chr_s
 
         //https://github.com/samtools/htslib/blob/226c1a813bc5d0582f7e0b0bdb4b3ea9e3ee4ce4/htslib/vcf.h#L1019
         int nsamples = bcf_hdr_nsamples(bcf_head);
-        //char **dst = NULL;
-        fprintf(stderr,"number of samples %d\n",nsamples);
+
+        //fprintf(stderr,"number of samples %d\n",nsamples);
 
         // gt data for each call
         int32_t ngt_arr = 0;     
         int32_t *gt_arr = NULL;
         int ngt = bcf_get_genotypes(bcf_head, bcf_records, &gt_arr, &ngt_arr);
         int max_ploidy = ngt/nsamples;
-        
-        // 0 -> ref 1 -> one of the alternative
-        // homo ref bcf_gt_allele(gt_arr[0])==0 // homo alt  bcf_gt_allele(gt_arr[0])==1  // hetero? bcf_gt_allele(gt_arr[0]) != bcf_gt_allele(gt_arr[1]) 
-        
-        fprintf(stderr,"alelle values %d\t %d\n",bcf_gt_allele(gt_arr[0]),bcf_gt_allele(gt_arr[1]));
 
-        char* haplotype1 = bcf_records->d.allele[bcf_gt_allele(gt_arr[0])];
-        char* haplotype2 = bcf_records->d.allele[bcf_gt_allele(gt_arr[1])];
-        size_t pos = (int) bcf_records->pos + 1;
-        fprintf(stderr,"before alterations %c%c%c\t%c%c%c\n",genome_data1[pos-1],genome_data1[pos],genome_data1[pos+1],genome_data2[pos-1],genome_data2[pos],genome_data2[pos+1]);
-        genome_data1[pos-1] = *haplotype1;
-        genome_data2[pos-1] = *haplotype2;
-        fprintf(stderr,"after alterations %c%c%c\t%c%c%c\n",genome_data1[pos-1],genome_data1[pos],genome_data1[pos+1],genome_data2[pos-1],genome_data2[pos],genome_data2[pos+1]);
-        /*for (i=0; i<nsmpl; i++){
-          fprintf(stderr,"THE SAMPLE INDEX IS %d\n",i);
-          int32_t *ptr = gt_arr + i*max_ploidy;
-          for (j=0; j<max_ploidy; j++){
-            fprintf(stderr,"THE PLOIDY INDEX IS %d\n",j);
-            int allele_index = bcf_gt_allele(ptr[j]);
-            std::cout << " lol " << allele_index << std::endl;
-            int is_phased = bcf_gt_is_phased(ptr[j]);
-            std::cout << "phased "<< is_phased << std::endl;
-          }
-        }*/
+        for (int i =0; i<nsamples; i++){
+          char* haplotype1;char* haplotype2;
+          //iterates through all samples
+          // fprintf(stderr,"--------\nTHE SAMPLE INDEX IS %d and sample name is %s\n",i,bcf_head->samples[i]);
+          // match the names in the header with the input indivduals
+          if(strcasecmp(bcf_head->samples[i],HeaderIndiv)==0){
+            // fprintf(stderr,"--------\nTHE SAMPLE INDEX IS %d and sample name is %s and input %s\n",i,bcf_head->samples[i],HeaderIndiv);
+            int32_t *ptr = gt_arr + i*max_ploidy;
+            int haplotype1_int; int haplotype2_int; 
+            //for (int j=0; j<max_ploidy; j++){fprintf(stderr,"the ploidy index is %d \t alelle values %d\n",j,bcf_gt_allele(ptr[j]));}
+            haplotype1_int = bcf_gt_allele(ptr[0]); haplotype2_int = bcf_gt_allele(ptr[1]);
 
-        exit(0);
-
-        /*int32_t *gt_arr = NULL;
-        int ngt_arr = 0;
-        int *gt     = NULL;
-        ngt = bcf_get_genotypes(bcf_head, bcf_records, &gt_arr, &ngt_arr);
-        //ngt = bcf_get_format_int32(bcf_head, bcf_records, "GT", &gt_arr, &ngt_arr);
-        fprintf(stderr,"ngt %d\n",ngt);
-        
-        fprintf(stderr,"The ploidy is %d \t allele value 1 %d \t 2 %d\n",max_ploidy,bcf_gt_allele(gt_arr[0]),bcf_gt_allele(gt_arr[1]));
-        int32_t *ptr = gt_arr + 1*max_ploidy;
-        std::cout << bcf_gt_allele(ptr[1]);
-        //fprintf(stderr,"INSIDE WhILE IF STATEMENT\n");
-        size_t pos = (int) bcf_records->pos + 1;
-        int n_allele = (int) bcf_records->n_allele;
-        char* haplotype1 = bcf_records->d.allele[bcf_gt_allele(gt_arr[0])];
-        char* haplotype2 = bcf_records->d.allele[bcf_gt_allele(gt_arr[1])];
-        fprintf(stderr,"SNP\t%s\t%zu\tallele 1 %s\tallele 2 %s\tn_allele %d\n",chr_names[0],pos,haplotype1,haplotype2,n_allele);
-
-        char seqbefore[1024];
-        char seqafter[1024];
-        char seq_indel[1024];
-
-        int hapl1_size = strlen(haplotype1);
-        int hapl2_size = strlen(haplotype2);
-        size_t new_pos = pos;
-        //fprintf(stderr,"SNP\t%s\t%zu\t%s\t%zu\t%s\n",chr_names[0],pos,haplotype1,new_pos,haplotype2);
-
-        if(haplotype1[0] != '<'){
-          //fprintf(stderr,"INSIDE NOT CNV STATEMENT\n");
-          if (strcasecmp(VarType,"snp")==0||strcasecmp(VarType,"all")==0){
-            //fprintf(stderr,"SNP\t%s\t%zu\t%s\t%zu\t%s\n",chr_names[0],pos,haplotype1,new_pos,haplotype2);
-            if(hapl1_size == 1){
-              //fprintf(VarInfoFile,"SNP\t%s\t%zu\t%s\t%zu\t%s\n",chr_names[0],pos,haplotype1,new_pos,haplotype2);
-              //fprintf(stderr,"before alterations %c \t %c\n",genome_data1[new_pos-1], genome_data2[new_pos-1]);
-              genome_data1[new_pos-1] = *haplotype1;
-              genome_data2[new_pos-1] = *haplotype2;
-              //fprintf(stderr,"after alterations %c \t %c\n",genome_data1[new_pos-1], genome_data2[new_pos-1]);
+            //Extract actual allele chars;
+            if(haplotype1_int == 0 && haplotype2_int == 0){
+              //homozygous for reference
+              //fprintf(stderr,"homozygous for reference\n");
+              haplotype1 = bcf_records->d.allele[bcf_gt_allele(gt_arr[0])];
+              haplotype2 = bcf_records->d.allele[bcf_gt_allele(gt_arr[0])];
             }
+            else if(haplotype1_int == 1 && haplotype2_int == 1){
+              //homozygous for alternative
+              //fprintf(stderr,"homozygous for alternative\n");
+              haplotype1 = bcf_records->d.allele[bcf_gt_allele(gt_arr[1])];
+              haplotype2 = bcf_records->d.allele[bcf_gt_allele(gt_arr[1])];
+            }
+            else if(haplotype1_int != haplotype2_int){
+              //heterozygous
+              //fprintf(stderr,"heterozygous\n");
+              haplotype1 = bcf_records->d.allele[bcf_gt_allele(gt_arr[0])];
+              haplotype2 = bcf_records->d.allele[bcf_gt_allele(gt_arr[1])];
+            }
+
+            size_t pos = (int) bcf_records->pos;
+            //fprintf(stderr,"Position %zu \t The haplotypes values are %d \t %d and characters are %c \t %c \n",pos,haplotype1_int,haplotype2_int,*haplotype1,*haplotype2);
+            //Current SNP location
+            //fprintf(stderr,"before alterations %c%c%c\t%c%c%c\n",genome_data1[pos-1],genome_data1[pos],genome_data1[pos+1],genome_data2[pos-1],genome_data2[pos],genome_data2[pos+1]);
+            genome_data1[pos] = *haplotype1;genome_data2[pos] = *haplotype2;
+            //fprintf(stderr,"after alterations %c%c%c\t%c%c%c\n",genome_data1[pos-1],genome_data1[pos],genome_data1[pos+1],genome_data2[pos-1],genome_data2[pos],genome_data2[pos+1]);
+            
           }
-        }*/
+        }
       }
       else{
         fprintf(stderr,"Reference chromosome %s has no variations in vcf file at chromosomes %s\n",chr_names[0],bcf_hdr_id2name(bcf_head, bcf_records->rid));
       }
     }
   }
-
+  //valgrind ./ngsngs -i ../vcfdata/chr14.fa -r 10000000 -t1 4 -l 100 -seq SE -f fq -ne -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -bcf ../vcfdata/chr14_indiv_3.bcf -v snp -indiv HG00099 -o Chr14_HG00099
   bcf_hdr_destroy(bcf_head);
   bcf_destroy(bcf_records); 
   bcf_close(bcf_obj);
-  sprintf(genome+strlen(genome),"%s%s",genome_data1,genome_data2); 
-  fprintf(stderr,"Haplotype 1 example %c%c%c\n", genome_data1[19000016], genome_data1[19000017], genome_data1[19000018]);
-  fprintf(stderr,"Haplotype 1 example %c%c%c\n", genome_data2[19000016], genome_data2[19000017], genome_data2[19000018]);
+  //fprintf(stderr,"Genome 1    example %c%c%c%c%c\n",genome[19000014],genome[19000015],genome[19000016], genome[19000017], genome[19000018]);
+  sprintf(genome+strlen(genome_data1),"%s",genome_data1);
+  strcat(genome,genome_data2);
+  /*fprintf(stderr,"Haplotype 1 example %c%c%c%c%c\n",genome_data1[19000014],genome_data1[19000015],genome_data1[19000016], genome_data1[19000017], genome_data1[19000018]);
+  fprintf(stderr,"Haplotype 2 example %c%c%c%c%c\n",genome_data2[19000014],genome_data2[19000015],genome_data2[19000016], genome_data2[19000017], genome_data2[19000018]);
+  fprintf(stderr,"Genome II   example %c%c%c%c%c\n",genome[19000014],genome[19000015],genome[19000016], genome[19000017], genome[19000018]);
+  fprintf(stderr,"Genome III  example %c%c%c%c%c\n",genome[19000014+107349540],genome[19000015+107349540],genome[19000016+107349540], genome[19000017+107349540], genome[19000018+107349540]);*/
+
   return genome;
 }
 
@@ -464,7 +454,9 @@ char* full_vcf_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],cons
     free((char*)Chr_hapl1); //Free works on const pointers, so we have to cast into a const char pointer
     free((char*)Chr_hapl2); //Free works on const pointers, so we have to cast into a const char pointer
   }
-  fprintf(stderr,"DONE WITH DATA FOR LOOP \n");
+  /*fprintf(stderr,"Genome IIII example %c%c%c%c%c\n",genome[19000014],genome[19000015],genome[19000016], genome[19000017], genome[19000018]);
+  fprintf(stderr,"Genome IV   example %c%c%c%c%c\n",genome[19000014+107349540],genome[19000015+107349540],genome[19000016+107349540], genome[19000017+107349540], genome[19000018+107349540]);
+  fprintf(stderr,"DONE WITH DATA FOR LOOP \n");*/
   fclose(VarInfoFile);
   return genome;
 }
