@@ -70,7 +70,7 @@ int main(int argc,char **argv){
   fprintf(stderr,"type: %d seed: %d nitems: %d\n",type,seed,nitems);
   myrand = mrand_alloc(type,seed);
   for(int i=0;i<nitems;i++)
-    fprintf(stdout,"%d) : %f\n",i,mrand_pop(myrand));
+    fprintf(stdout,"%f\n",i,mrand_pop(myrand));
   return 0;
 }
 
