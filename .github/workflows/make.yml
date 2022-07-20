@@ -2,9 +2,9 @@ name: make-test
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master,tskdev ]
   pull_request:
-    branches: [ master ]
+    branches: [ master,tskdev ]
 
 jobs:
   build:
