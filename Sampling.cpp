@@ -27,7 +27,7 @@
 #define MAXBINS 100
 unsigned char nuc2int[255];
 
-pthread_mutex_t Fq_write_mutex;
+pthread_mutex_t Fq_write_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int MacroRandType = 0;
 
@@ -617,7 +617,9 @@ void* Sampling_threads(void *arg){
         if (struct_obj->fqresult_r1->l > BufferLength){
           pthread_mutex_lock(&Fq_write_mutex);
           assert(bgzf_write(struct_obj->bgzf_fp1,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l)!=0);
-          if (strcasecmp("PE",struct_obj->SeqType)==0){assert(bgzf_write(struct_obj->bgzf_fp2,struct_obj->fqresult_r2->s,struct_obj->fqresult_r2->l)!=0);}
+          if (strcasecmp("PE",struct_obj->SeqType)==0){
+	    assert(bgzf_write(struct_obj->bgzf_fp2,struct_obj->fqresult_r2->s,struct_obj->fqresult_r2->l)!=0);
+	  }
           pthread_mutex_unlock(&Fq_write_mutex);
           struct_obj->fqresult_r1->l =0;
           struct_obj->fqresult_r2->l =0;
@@ -689,7 +691,7 @@ void* Sampling_threads(void *arg){
         int assert_int = 0;
         if(strcasecmp("cram",struct_obj->OutputFormat)==0){assert_int = 1;}
 
-        if (struct_obj->l < struct_obj->m){   
+        if (struct_obj->l < struct_obj->m){
           pthread_mutex_lock(&Fq_write_mutex);
           for (int k = 0; k < struct_obj->l; k++){
             //fprintf(stderr,"INSIDE FOR LOOP WITH ASSERTION\n");
