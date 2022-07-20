@@ -32,8 +32,6 @@ pthread_mutex_t Fq_write_mutex = PTHREAD_MUTEX_INITIALIZER;
 int MacroRandType = 0;
 
 struct Parsarg_for_Sampling_thread{
-  kstring_t *fqresult_r1;
-  kstring_t *fqresult_r2;
   char *genome;
   int *chr_idx_array;
   int chr_no;
@@ -99,7 +97,12 @@ struct Parsarg_for_Sampling_thread{
   This is the main thread function. It works well
 */
 
-void* Sampling_threads(void *arg){
+void* Sampling_threads(void *arg) {
+  //defining thread local variables
+  kstring_t fqresult_r1,fqresult_r2;
+  fqresult_r1.s=fqresult_r2.s = NULL;
+  fqresult_r1.l=fqresult_r2.l = fqresult_r1.m =fqresult_r2.m = 0;
+    
   //casting my struct as arguments for the thread creation
   Parsarg_for_Sampling_thread *struct_obj = (Parsarg_for_Sampling_thread*) arg;
 
@@ -360,8 +363,8 @@ void* Sampling_threads(void *arg){
         }
 
         if (strcasecmp(struct_obj -> OutputFormat,"fa")==0|| strcasecmp(struct_obj -> OutputFormat,"fa.gz")==0){
-          ksprintf(struct_obj->fqresult_r1,">%s_R1\n%s\n",READ_ID,readadapt);
-          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s_R2\n%s\n",READ_ID,readadapt2);}
+          ksprintf(&fqresult_r1,">%s_R1\n%s\n",READ_ID,readadapt);
+          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(&fqresult_r2,">%s_R2\n%s\n",READ_ID,readadapt2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
           for(long unsigned int p = 0;p<strlen(readadapt);p++){
@@ -389,9 +392,9 @@ void* Sampling_threads(void *arg){
             memset(QualPoly,'!', readsizelimit);
             strncpy(PolyChar, readadapt, strlen(readadapt));
             strncpy(QualPoly, qual_r1, strlen(qual_r1));
-            ksprintf(struct_obj->fqresult_r1,"@%s_R1\n%s\n+\n%s\n",READ_ID,PolyChar,QualPoly);
+            ksprintf(&fqresult_r1,"@%s_R1\n%s\n+\n%s\n",READ_ID,PolyChar,QualPoly);
           }
-          else{ksprintf(struct_obj->fqresult_r1,"@%s_R1\n%s\n+\n%s\n",READ_ID,readadapt,qual_r1);}
+          else{ksprintf(&fqresult_r1,"@%s_R1\n%s\n+\n%s\n",READ_ID,readadapt,qual_r1);}
           
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             for(long unsigned int p = 0;p<strlen(readadapt2);p++){
@@ -416,9 +419,9 @@ void* Sampling_threads(void *arg){
               memset(QualPoly,'!', readsizelimit);
               strncpy(PolyChar, readadapt2, strlen(readadapt2));
               strncpy(QualPoly, qual_r2, strlen(qual_r2));
-              ksprintf(struct_obj->fqresult_r2,"@%s_R1\n%s\n+\n%s\n",READ_ID,PolyChar,QualPoly);
+              ksprintf(&fqresult_r2,"@%s_R1\n%s\n+\n%s\n",READ_ID,PolyChar,QualPoly);
             }
-            else{ksprintf(struct_obj->fqresult_r2,"@%s_R2\n%s\n+\n%s\n",READ_ID,readadapt2,qual_r2);}
+            else{ksprintf(&fqresult_r2,"@%s_R2\n%s\n+\n%s\n",READ_ID,readadapt2,qual_r2);}
           }
         }
         if (struct_obj->SAMout){
@@ -502,24 +505,24 @@ void* Sampling_threads(void *arg){
             char PolyChar[1024] = "\0";
             memset(PolyChar,struct_obj->PolyNt, readsizelimit);
             strncpy(PolyChar, readadapt_rc_sam1, strlen(readadapt_rc_sam1));
-            ksprintf(struct_obj->fqresult_r1,"%s",PolyChar);
+            ksprintf(&fqresult_r1,"%s",PolyChar);
             if (strcasecmp("PE",struct_obj->SeqType)==0){
               char PolyChar[1024] = "\0";
               memset(PolyChar,struct_obj->PolyNt, readsizelimit);
               strncpy(PolyChar, readadapt_rc_sam2, strlen(readadapt_rc_sam2));
-              ksprintf(struct_obj->fqresult_r2,"%s",PolyChar);
+              ksprintf(&fqresult_r2,"%s",PolyChar);
             } 
           }
           else{
-            ksprintf(struct_obj->fqresult_r1,"%s",readadapt_rc_sam1);
-            if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,"%s",readadapt_rc_sam2);} 
+            ksprintf(&fqresult_r1,"%s",readadapt_rc_sam1);
+            if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(&fqresult_r2,"%s",readadapt_rc_sam2);} 
           }     
         }
       }
       else{
         if (strcasecmp(struct_obj -> OutputFormat,"fa")==0|| strcasecmp(struct_obj -> OutputFormat,"fa.gz")==0){
-          ksprintf(struct_obj->fqresult_r1,">%s_R1\n%s\n",READ_ID,seq_r1);
-          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s_R2\n%s\n",READ_ID,seq_r2);}
+          ksprintf(&fqresult_r1,">%s_R1\n%s\n",READ_ID,seq_r1);
+          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(&fqresult_r2,">%s_R2\n%s\n",READ_ID,seq_r2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
           //fprintf(stderr,"TEST FQ BC%s\n",qual_r1);
@@ -543,7 +546,7 @@ void* Sampling_threads(void *arg){
             }
           }
           //fprintf(stderr,"TEST FQ AC%s\n",qual_r1);
-          ksprintf(struct_obj->fqresult_r1,"@%s_R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
+          ksprintf(&fqresult_r1,"@%s_R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             for(int p = 0;p<seqlen;p++){
               double dtemp1;double dtemp2;
@@ -562,7 +565,7 @@ void* Sampling_threads(void *arg){
                 if (dtemp3 < struct_obj->NtErr_r2[qscore]){ErrorSub(dtemp4,seq_r2,p);}
               }
             }
-            ksprintf(struct_obj->fqresult_r2,"@%s_R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);}
+            ksprintf(&fqresult_r2,"@%s_R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);}
         }
         if (struct_obj->SAMout){
 
@@ -608,32 +611,32 @@ void* Sampling_threads(void *arg){
           //fprintf(stderr,"AFTER SEQ ERR \n%s \n",seq_r1);
           if (flag == 16 || flag == 81){DNA_complement(seq_r1);reverseChar(seq_r1,strlen(seq_r1));}
           else if (flag == 97){DNA_complement(seq_r2);reverseChar(seq_r2,strlen(seq_r2));}  
-          ksprintf(struct_obj->fqresult_r1,"%s",seq_r1);
+          ksprintf(&fqresult_r1,"%s",seq_r1);
           //fprintf(stderr,"SAVE OUTPUT \n%s \n",seq_r1);
-          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,"%s",seq_r2);}
+          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(&fqresult_r2,"%s",seq_r2);}
         }
       }
       if (struct_obj->bgzf_fp1){
-        if (struct_obj->fqresult_r1->l > BufferLength){
+        if (fqresult_r1.l > BufferLength){
           pthread_mutex_lock(&Fq_write_mutex);
-          assert(bgzf_write(struct_obj->bgzf_fp1,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l)!=0);
+          assert(bgzf_write(struct_obj->bgzf_fp1,fqresult_r1.s,fqresult_r1.l)!=0);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
-	    assert(bgzf_write(struct_obj->bgzf_fp2,struct_obj->fqresult_r2->s,struct_obj->fqresult_r2->l)!=0);
+	    assert(bgzf_write(struct_obj->bgzf_fp2,fqresult_r2.s,fqresult_r2.l)!=0);
 	  }
           pthread_mutex_unlock(&Fq_write_mutex);
-          struct_obj->fqresult_r1->l =0;
-          struct_obj->fqresult_r2->l =0;
+          fqresult_r1.l =0;
+          fqresult_r2.l =0;
         }
       }
       if (struct_obj->SAMout){
         if(strcasecmp(struct_obj->Adapter_flag,"true")==0){
           n_cigar = 2;
-          uint32_t cigar_bit_soft = bam_cigar_gen(strlen(struct_obj->fqresult_r1->s)-seqlen, BAM_CSOFT_CLIP);
+          uint32_t cigar_bit_soft = bam_cigar_gen(strlen(fqresult_r1.s)-seqlen, BAM_CSOFT_CLIP);
           uint32_t cigar_arr[] = {cigar_bitstring,cigar_bit_soft};
           cigar = cigar_arr;
 
           if (strcasecmp("PE",struct_obj->SeqType)==0){
-            uint32_t cigar_bit_soft2 = bam_cigar_gen(strlen(struct_obj->fqresult_r2->s)-seqlen, BAM_CSOFT_CLIP);
+            uint32_t cigar_bit_soft2 = bam_cigar_gen(strlen(fqresult_r2.s)-seqlen, BAM_CSOFT_CLIP);
             uint32_t cigar_arr2[] = {cigar_bitstring,cigar_bit_soft2};
             cigar2 = cigar_arr2;
           }
@@ -663,26 +666,26 @@ void* Sampling_threads(void *arg){
           strcpy(READIDR2,READ_ID);strcat(READIDR2,suffR2);
           if (struct_obj->NoAlign == 'T'){
             bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,4,-1,-1,
-            255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,NULL,0);
+            255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(fqresult_r1.s),fqresult_r1.s,NULL,0);
             bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR2),READIDR2,4,-1,-1,
-            255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,NULL,0);
+            255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(fqresult_r2.s),fqresult_r2.s,NULL,0);
           }
           else{
             bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,flag,chr_idx,min_beg,mapq,
-            n_cigar,cigar,chr_idx,max_end,insert,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
+            n_cigar,cigar,chr_idx,max_end,insert,strlen(fqresult_r1.s),fqresult_r1.s,qual_r1,l_aux);
             bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR2),READIDR2,flag2,chr_idx,max_end,mapq,
-            n_cigar,cigar2,chr_idx,min_beg,0-insert,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,qual_r2,l_aux);
+            n_cigar,cigar2,chr_idx,min_beg,0-insert,strlen(fqresult_r2.s),fqresult_r2.s,qual_r2,l_aux);
           }
         }
         else if (strcasecmp("SE",struct_obj->SeqType)==0){
           //fprintf(stderr,"READID v2 %s\n",READIDR1);
           if (struct_obj->NoAlign == 'T'){
             bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,4,-1,-1,
-            255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,NULL,0);
+            255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(fqresult_r1.s),fqresult_r1.s,NULL,0);
           }
           else{
             bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,flag,chr_idx,min_beg,mapq,
-            n_cigar,cigar,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
+            n_cigar,cigar,-1,-1,0,strlen(fqresult_r1.s),fqresult_r1.s,qual_r1,l_aux);
           }
           //const char* MDtag = "\tMD:Z:";
           //bam_aux_update_str(struct_obj->list_of_reads[struct_obj->l-1],"MD",5,"MDtag");
@@ -700,8 +703,8 @@ void* Sampling_threads(void *arg){
           pthread_mutex_unlock(&Fq_write_mutex);
           struct_obj->l = 0;
         }
-        struct_obj->fqresult_r1->l =0;
-        struct_obj->fqresult_r2->l =0;
+        fqresult_r1.l =0;
+        fqresult_r2.l =0;
       }
       
       //fprintf(stderr,"Thread %d \tlocal read number %d \t current read %d \t reads %d\n",struct_obj->threadno,localread,current_reads_atom,reads);
@@ -724,13 +727,13 @@ void* Sampling_threads(void *arg){
     }
   }
   if (struct_obj->bgzf_fp1){
-    if (struct_obj->fqresult_r1->l > 0){
+    if (fqresult_r1.l > 0){
       pthread_mutex_lock(&Fq_write_mutex);
-      assert(bgzf_write(struct_obj->bgzf_fp1,struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l)!=0);
-      if (strcasecmp("PE",struct_obj->SeqType)==0){assert(bgzf_write(struct_obj->bgzf_fp2,struct_obj->fqresult_r2->s,struct_obj->fqresult_r2->l)!=0);}
+      assert(bgzf_write(struct_obj->bgzf_fp1,fqresult_r1.s,fqresult_r1.l)!=0);
+      if (strcasecmp("PE",struct_obj->SeqType)==0){assert(bgzf_write(struct_obj->bgzf_fp2,fqresult_r2.s,fqresult_r2.l)!=0);}
       pthread_mutex_unlock(&Fq_write_mutex);
-      struct_obj->fqresult_r1->l =0;
-      struct_obj->fqresult_r2->l =0;
+      fqresult_r1.l =0;
+      fqresult_r2.l =0;
     } 
   }
 
@@ -745,7 +748,8 @@ void* Sampling_threads(void *arg){
   free(drand_alloc_briggs);
   
   fprintf(stderr,"\t-> Number of reads generated by thread %d is %zu \n",struct_obj->threadno,localread);
-
+  free(fqresult_r1.s);
+  free(fqresult_r2.s);
   pthread_exit(NULL);
 }
 
@@ -993,16 +997,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
     }
 
     for (int i = 0; i < nthreads; i++){
-      struct_for_threads[i].fqresult_r1 =new kstring_t;
-      struct_for_threads[i].fqresult_r1 -> l = 0;
-      struct_for_threads[i].fqresult_r1 -> m = 0;
-      struct_for_threads[i].fqresult_r1 -> s = NULL;
-
-      struct_for_threads[i].fqresult_r2 =new kstring_t;
-      struct_for_threads[i].fqresult_r2 -> l = 0;
-      struct_for_threads[i].fqresult_r2 -> m = 0;
-      struct_for_threads[i].fqresult_r2 -> s = NULL;
-
       struct_for_threads[i].threadno = i;
       struct_for_threads[i].genome = genome_data;
       struct_for_threads[i].chr_idx_array = chr_idx_arr;
@@ -1083,14 +1077,8 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
       sam_close(SAMout);
     } 
     
-    for(int i=0;i<nthreads;i++){
-      free(struct_for_threads[i].fqresult_r1 -> s);
+    for(int i=0;i<nthreads;i++)
       free(struct_for_threads[i].list_of_reads);
-      delete struct_for_threads[i].fqresult_r1;
-
-      free(struct_for_threads[i].fqresult_r2 -> s);
-      delete struct_for_threads[i].fqresult_r2;      
-    }
     
     if(strcasecmp("true",QualStringFlag)==0){
       for(int b=0;b<5;b++){
