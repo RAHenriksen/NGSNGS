@@ -366,16 +366,21 @@ char* HaploGenome(char* genome,char genome_data1[],char genome_data2[],int chr_s
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[]){
   size_t genome_size = 0;
   chr_size_cumm[0] = 0;
+  std::string Nstr = std::string(300, 'N');
+  std::cout << Nstr << std::endl;
+  const char* Ndata =  Nstr.c_str();
+  std::cout << Ndata << std::endl;
+  std::cout << strlen(Ndata) << std::endl;
   for (int i = 0; i < chr_total; i++){
     const char *chr_name = faidx_iseq(seq_ref,i);
     int chr_len = faidx_seq_len(seq_ref,chr_name);
     chr_sizes[i] = chr_len;
     chr_names[i] = chr_name;
-    genome_size += chr_len;
+    genome_size += chr_len;// + strlen(Ndata);
     chr_size_cumm[i+1] = genome_size;
   }
-
-  char* genome = (char*) malloc(sizeof(char) * (genome_size+chr_total+1));
+  
+  char* genome = (char*) malloc(sizeof(char) * (genome_size+chr_total+1));//(strlen(Ndata)*chr_total)
   genome[0] = 0; //Init to create proper C string before strcat
   //chr_total
   for (int i = 0; i < chr_total; i++){
@@ -384,7 +389,9 @@ char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const ch
     //sprintf(&genome[strlen(genome)],data);
     //strcat(genome,data);  //Both gives conditional jump or move error
     if (data != NULL){
-      sprintf(genome+strlen(genome),"%s",data); 
+      //std::cout << strlen(genome) << std::endl;
+      sprintf(genome+strlen(genome),"%s",data);
+      //strcat(genome,Ndata);
     }
     // several of the build in functions allocates memory without freeing it again.
     free((char*)data); //Free works on const pointers, so we have to cast into a const char pointer

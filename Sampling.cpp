@@ -189,11 +189,13 @@ void* Sampling_threads(void *arg){
       else {strncpy(seq_r2,struct_obj->genome+rand_start-1,fraglength);}  // case 2
     }
 
+    //fprintf(stderr,"Chrindx %d \t chromosome name %s \t chromosome length %zu \t cumulative length %zu \t start pos %zu \n",chr_idx,struct_obj->names[chr_idx],struct_obj->size_cumm[chr_idx+1]-struct_obj->size_cumm[chr_idx],struct_obj->size_cumm[chr_idx+1],rand_start);
+
     //removes reads with NNN
     char * pch;
     char * pch2;
-    pch = strchr(seq_r1,'N');
-    pch2 = strrchr(seq_r1,'N');
+    pch = strchr(seq_r1,'N'); //first encounter with N
+    pch2 = strrchr(seq_r1,'N'); //last encounter with N
 
     int seqlen = strlen(seq_r1);
     size_t n_cigar;const uint32_t *cigar;const uint32_t *cigar2; uint16_t flag; uint16_t flag2;
@@ -207,12 +209,10 @@ void* Sampling_threads(void *arg){
 
     if ((int )(pch-seq_r1+1) == 1 || (int)(pch2-seq_r1+1)  == seqlen){
       memset(seq_r1, 0, sizeof seq_r1);memset(seq_r2, 0, sizeof seq_r2);}
-    else if ((rand_start-struct_obj->size_cumm[chr_idx+1])<fraglength){ //(rand_start-struct_obj->size_cumm[chr_idx])<fraglength
-      // perhaps readsizelimit or seqlen
-      /*fprintf(stderr,"------------------------\n");
-      std::cout << "RANDOM START LOOP" << std::endl;
-      std::cout << seq_r1 << std::endl;
-      fprintf(stderr,"random_start %zu and chromosome index %d with chromosome size %zu and new size %zu\n",rand_start,chr_idx,struct_obj->size_cumm[chr_idx],struct_obj->size_cumm[chr_idx+1]);*/
+    else if ((rand_start-struct_obj->size_cumm[chr_idx+1])<fraglength){
+      memset(seq_r1, 0, sizeof seq_r1);memset(seq_r2, 0, sizeof seq_r2);
+    }
+    else if (rand_start+fraglength>struct_obj->size_cumm[chr_idx+1]){
       memset(seq_r1, 0, sizeof seq_r1);memset(seq_r2, 0, sizeof seq_r2);
     }
     else{
