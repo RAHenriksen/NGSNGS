@@ -25,4 +25,5 @@ typedef struct{
 //type=3 is the funky erand, the most recent member of the family.
 mrand_t *mrand_alloc(int type_a, long int seedval);
 double mrand_pop(mrand_t *mr);
+long mrand_pop_long(mrand_t *mr);
 #endif
