@@ -32,31 +32,6 @@
 #define LENS 4096
 #define MAXBINS 100
 
-int BinarySearch_fraglengthold(double* SearchArray,int low, int high, double key){
-    //fprintf(stderr,"first element %lf\n",SearchArray[low]);
-    int ans = 0; 
-    while (low <= high) {
-        int mid = low + (high - low + 1) / 2;
-        //fprintf(stderr,"test %lf\n",SearchArray[mid]);
-        double midVal = SearchArray[mid];
- 
-        if (midVal < key) {
-            ans = mid;
-            low = mid + 1;
-        }
-        else if (midVal > key) {
-
-            high = mid - 1;
-        }
-        else if (midVal == key) {
- 
-            high = mid - 1;
-        }
-    }
- 
-    return ans+1;
-}
-
 //! Allocate workspace for random-number sampling.
 ransampl_ws* ransampl_alloc( int n )
 {

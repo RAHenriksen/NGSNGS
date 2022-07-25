@@ -4,8 +4,6 @@
 #include "NGSNGS_func.h"
 #include "mrand.h"
 
-int BinarySearch_fraglengthold(double* SearchArray,int low, int high, double key);
-
 typedef struct{
     int n;
     int* alias;

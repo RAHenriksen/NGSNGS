@@ -2,12 +2,74 @@
 #define SAMPLING_H
 #define LENS 4096
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
-                        const char* Adapter_2,const char* OutputFormat,const char* SeqType,float BriggsParam[4],const char* Briggs_Flag,
-                        const char* Sizefile,int SizeRandType,double val1,double val2,
-                        int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int threadwriteno,
-                        const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName,
-                        const char* SubFlag,const char* SubProfile,int MisLength,int RandMacro,const char *VCFformat, char* Variant_flag,const char *VarType,
-                        char CommandArray[1024],const char* version,const char* HeaderIndiv,const char* NoAlign,size_t BufferLength);
+struct Parsarg_for_Sampling_thread{
+  kstring_t *fqresult_r1;
+  kstring_t *fqresult_r2;
+  char *genome;
+  int *chr_idx_array;
+  int chr_no;
+  int threadno;
+  size_t *size_cumm;
+  char **names;
+
+  int* FragLen;
+  double* FragFreq;
+  int No_Len_Val;
+  double distparam1;
+  double distparam2;
+  int LengthType;
+
+  char *NtQual_r1;
+  char *NtQual_r2;
+  ransampl_ws ***QualDist_r1;
+  ransampl_ws ***QualDist_r2;
+
+  double* MisMatch;
+  const char* SubFlag;
+  int MisLength;
+
+  double *NtErr_r1;
+  double *NtErr_r2;
+
+  int threadseed;
+  size_t reads;
+  size_t BufferLength;
+  
+  BGZF *bgzf_fp1;
+  BGZF *bgzf_fp2;
+
+  samFile *SAMout;
+  sam_hdr_t *SAMHeader;
+  bam1_t **list_of_reads;
+  int l;
+  int m;
+
+  const char* Adapter_flag;
+  const char* Adapter_1;
+  const char* Adapter_2;
+
+  const char* Briggs_flag;
+  float *BriggsParam;
+  
+  const char* SizeFile;
+  const char* SizeFileFlag;
+  int FixedSize;
+
+  int readcycle;
+  
+  const char* OutputFormat;
+  const char* SeqType;
+  const char* QualFlag;
+
+  char ErrorFlag;
+  char* Variant_flag;
+  char NoAlign;
+  char PolyNt;
+
+  int RandMacro;
+};
+
+void* Sampling_threads(void *arg);
+
 
 #endif
