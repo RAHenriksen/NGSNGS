@@ -80,48 +80,37 @@ void* Sampling_threads(void *arg){
   int readsizelimit;
 
   extern int SIG_COND;
+
+  double distpar1 = struct_obj->distparam1; double distpar2 = struct_obj->distparam2; int LengthType = struct_obj->LengthType;
+  std::default_random_engine RndGen(loc_seed);
+  sim_fragment *sf;
+  if (LengthType==0){sf = sim_fragment_alloc(LengthType,struct_obj->FixedSize,distpar2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,MacroRandType,loc_seed,RndGen);}
+  else{sf = sim_fragment_alloc(LengthType,distpar1,distpar2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,MacroRandType,loc_seed,RndGen);}
+
   while (current_reads_atom < reads &&SIG_COND) {
     double rand_val = mrand_pop(drand_alloc);
     rand_start = rand_val * (genome_len-300)+1; //genome_len-100000;
     double rand_val_len = mrand_pop(drand_alloc);
     //std::cout << rand_val_len << std::endl;
     // Fragment length creation
-    int fraglength;
-    if (struct_obj->No_Len_Val != -1){
-      // random start and length are not dependent on the same rand val
-      //fprintf(stderr,"Legth%f \n",mrand_pop(drand_alloc));
-      int lengthbin = BinarySearch_fraglength(struct_obj->FragFreq,0, struct_obj->No_Len_Val - 1, rand_val_len);
-      fraglength =  struct_obj->FragLen[lengthbin];
-      //fprintf(stderr,"rand val %f \t fraglent %d\n",rand_val,fraglength);
-    }
-    else{
-      //fprintf(stderr,"FIXED LENGTH \n");
-      fraglength = struct_obj->FixedSize;
-    } 
-    if(strcasecmp("false",struct_obj->QualFlag)==0){
-      readsizelimit = fraglength;
-    }
-    else{
-      readsizelimit = struct_obj->readcycle;
-    }
+    int fraglength = getFragmentLength(sf);
+    //fprintf(stderr,"fragment length %d\n",fraglength);
+
+    if(strcasecmp("false",struct_obj->QualFlag)==0){readsizelimit = fraglength;}
+    else{readsizelimit = struct_obj->readcycle;}
     //we need a new random value here otherwise the random ID would be the same for 
     //based on the fragment lengths
     double rand_val_id = mrand_pop(drand_alloc);
-    //int rand_id = (rand_val * fraglength-1); //100
     int rand_id = (rand_val_id * fraglength-1); //100
-    //fprintf(stderr,"Random val %f \t id %d\n",rand_val_id,rand_id);
     
     int chr_idx = 0;
     while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}
-    if (fraglength > readsizelimit){strncpy(seq_r1,struct_obj->genome+rand_start-1,readsizelimit);}   // case 1
-    else {strncpy(seq_r1,struct_obj->genome+rand_start-1,fraglength);}  // case 2
-    
+    if (fraglength > readsizelimit){strncpy(seq_r1,struct_obj->genome+rand_start-1,readsizelimit);}
+    else {strncpy(seq_r1,struct_obj->genome+rand_start-1,fraglength);}
+    //fprintf(stderr,"SEQUENCE %s \n",seq_r1);
     if(strcasecmp("PE",struct_obj->SeqType)==0){
-      if (fraglength > readsizelimit){
-
-        strncpy(seq_r2,struct_obj->genome+rand_start+fraglength-1-readsizelimit,readsizelimit);
-        } // case 1
-      else {strncpy(seq_r2,struct_obj->genome+rand_start-1,fraglength);}  // case 2
+      if (fraglength > readsizelimit){strncpy(seq_r2,struct_obj->genome+rand_start+fraglength-1-readsizelimit,readsizelimit);}
+      else {strncpy(seq_r2,struct_obj->genome+rand_start-1,fraglength);}
     }
 
     //fprintf(stderr,"Chrindx %d \t chromosome name %s \t chromosome length %zu \t cumulative length %zu \t start pos %zu \n",chr_idx,struct_obj->names[chr_idx],struct_obj->size_cumm[chr_idx+1]-struct_obj->size_cumm[chr_idx],struct_obj->size_cumm[chr_idx+1],rand_start);

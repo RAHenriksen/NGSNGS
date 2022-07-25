@@ -24,11 +24,15 @@
 #include "RandSampling.h"
 #include "getFragmentLength.h"
 #include "Sampling.h"
+
+#define LENS 4096
+#define MAXBINS 100
+
 unsigned char nuc2intThread[255];
 
 void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
                         const char* Adapter_2,const char* OutputFormat,const char* SeqType,float BriggsParam[4],const char* Briggs_flag,
-                        const char* Sizefile,int FixedSize,int SizeDistType, int val1, int val2,
+                        const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName,
                         const char* MisMatchFlag,const char* SubProfile,int MisLength,int RandMacro,const char *VCFformat,char* Variant_flag,const char *VarType,
@@ -213,23 +217,14 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
     }
     //fprintf(stderr,"\t-> AFTER OUTPUT FORMAT\n");
 
-    int number; int* Frag_len; double* Frag_freq;
-    //fprintf(stderr,"SizeDistType %d \t FixedSize %d\n",SizeDistType,FixedSize);
-    if(FixedSize==-1 && SizeDistType==-1){
-      //fprintf(stderr,"\t-> FRAG DIST FILE\n");
-      Frag_len = new int[LENS];
-      Frag_freq = new double[LENS];
-      FragArray(number,Frag_len,Frag_freq,Sizefile); //Size_dist_sampling //"Size_dist/Size_freq_modern.txt"
-      //fprintf(stderr,"\t-> FRAG ARRAY LE\n");
+    //generate file array before creating the threads
+    int no_elem;double* Frag_freq;int* Frag_len;
+    if(SizeDistType==1){
+        Frag_len = new int[LENS];Frag_freq = new double[LENS];
+        ReadLengthFile(no_elem,Frag_len,Frag_freq,Sizefile);
     }
-    else if(FixedSize==-1 && SizeDistType!=-1){
-      //fprintf(stderr,"\t-> FRAG DIST LENGTH\n");
-      Frag_len = new int[LENS];
-      Frag_freq = new double[LENS];
-      FragDistArray(number,Frag_len,Frag_freq,SizeDistType,seed,val1, val2);
-    }
-    else if(FixedSize!=-1){number = -1;}
-    //fprintf(stderr,"THE NUMBER IS %d\n",number);
+    else{no_elem = -1;}
+    
     const char *freqfile_r1; //"Qual_profiles/AccFreqL150R1.txt";
     const char *freqfile_r2;
     int outputoffset = qualstringoffset;
@@ -289,8 +284,11 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
 
       struct_for_threads[i].FragLen = Frag_len;
       struct_for_threads[i].FragFreq = Frag_freq;
-      struct_for_threads[i].No_Len_Val = number;
+      struct_for_threads[i].No_Len_Val = no_elem;
       struct_for_threads[i].FixedSize = FixedSize;
+      struct_for_threads[i].distparam1 = val1;
+      struct_for_threads[i].distparam2 = val2;
+      struct_for_threads[i].LengthType = SizeDistType;
 
       struct_for_threads[i].NtQual_r1 = nt_qual_r1;
       struct_for_threads[i].NtQual_r2 = nt_qual_r2;
@@ -390,7 +388,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
     }
     
     free(fmt_hts);
-    if(FixedSize == -1){
+    if(SizeDistType==1){
       delete[] Frag_freq;
       delete[] Frag_len;
     }
