@@ -366,11 +366,11 @@ char* HaploGenome(char* genome,char genome_data1[],char genome_data2[],int chr_s
 char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[]){
   size_t genome_size = 0;
   chr_size_cumm[0] = 0;
-  std::string Nstr = std::string(300, 'N');
+  /*std::string Nstr = std::string(300, 'N');
   std::cout << Nstr << std::endl;
   const char* Ndata =  Nstr.c_str();
   std::cout << Ndata << std::endl;
-  std::cout << strlen(Ndata) << std::endl;
+  std::cout << strlen(Ndata) << std::endl;*/
   for (int i = 0; i < chr_total; i++){
     const char *chr_name = faidx_iseq(seq_ref,i);
     int chr_len = faidx_seq_len(seq_ref,chr_name);

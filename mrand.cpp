@@ -77,3 +77,4 @@ int main(int argc,char **argv){
 #endif
 
 //g++ mrand.cpp -std=c++11 -lm -lz -D__WITH_MAIN__ -o Rand
+//./Rand 1 1 10

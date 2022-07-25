@@ -32,7 +32,7 @@
 #define LENS 4096
 #define MAXBINS 100
 
-int BinarySearch_fraglength(double* SearchArray,int low, int high, double key){
+int BinarySearch_fraglengthold(double* SearchArray,int low, int high, double key){
     //fprintf(stderr,"first element %lf\n",SearchArray[low]);
     int ans = 0; 
     while (low <= high) {
