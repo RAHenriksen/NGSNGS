@@ -30,24 +30,24 @@ void ErrorSub(double randval,char seqchar[], int pos){
   // Generates nucleotide substitutions
   //fprintf(stderr,"SUBERROR\n"); X, W, Z, Y
   if (seqchar[pos] == 'A' || seqchar[pos] == 'a'){
-    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'C';} //X 
-    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos] = 'G';} //T
-    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'T';} //C
+    if (0 < randval && randval <= 1.0/3.0){seqchar[pos] = 'C';} //X 
+    else if (1.0/3.0 < randval && randval <= 2.0/3.0){seqchar[pos] = 'G';} //T
+    else if (2.0/3.0 < randval && randval <= 1){seqchar[pos]  = 'T';} //C
   }
   else if (seqchar[pos] == 'C'|| seqchar[pos] == 'c'){ //'Z'
-    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'G';} //Z
-    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos]  = 'T';} //G
-    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'A';} //G
+    if (0 < randval && randval <= 1.0/3.0){seqchar[pos] = 'G';} //Z
+    else if (1.0/3.0 < randval && randval <= 2.0/3.0){seqchar[pos]  = 'T';} //G
+    else if (2.0/3.0 < randval && randval <= 1){seqchar[pos]  = 'A';} //G
   }
   else if (seqchar[pos] == 'G'|| seqchar[pos] == 'g'){
-    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'T';} //A
-    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos]  = 'A';} //T
-    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'C';} //C
+    if (0 < randval && randval <= 1.0/3.0){seqchar[pos] = 'T';} //A
+    else if (1.0/3.0 < randval && randval <= 2.0/3.0){seqchar[pos]  = 'A';} //T
+    else if (2.0/3.0 < randval && randval <= 1){seqchar[pos]  = 'C';} //C
   }
   else if (seqchar[pos] == 'T'|| seqchar[pos] == 't'){
-    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'A';} //G
-    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos]  = 'C';} //A
-    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'G';} //C
+    if (0 < randval && randval <= 1.0/3.0){seqchar[pos] = 'A';} //G
+    else if (1.0/3.0 < randval && randval <= 2.0/3.0){seqchar[pos]  = 'C';} //A
+    else if (2.0/3.0 < randval && randval <= 1){seqchar[pos]  = 'G';} //C
   }
 }
 
