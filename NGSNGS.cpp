@@ -23,6 +23,7 @@
 #include "Briggs.h"
 #include "NtSubModels.h"
 #include "version.h"
+#include "ThreadGeneration.h"
 
 #include <signal.h>
 #define LENS 4096
@@ -87,7 +88,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\nNucleotide Alterations: \n");
   fprintf(fp,"-bcf: \t\t\t\t Binary Variant Calling Format (.bcf)\n");
   fprintf(fp,"-v:  | --variant: \t\t Specific variants to simulate\n");
-  fprintf(fp,"\t eg.\t snp || indel. Default = all\n");
+  fprintf(fp,"\t eg.\t snp || indel. Default = all\n");
   fprintf(fp,"-b   | --briggs: \t\t Parameters for the damage patterns using the Briggs model.\n");
   fprintf(fp,"\t <nv,Lambda,Delta_s,Delta_d> : 0.024,0.36,0.68,0.0097 (from Briggs et al., 2007).\n");
   fprintf(fp,"\t nv: Nick rate pr site. \n \t Lambda: Geometric distribution parameter for overhang length.\n \t Delta_s: PMD rate in single-strand regions.\n \t Delta_d: PMD rate in double-strand regions.\n");
@@ -407,7 +408,7 @@ int main(int argc,char **argv){
     
     char* Command = mypars->CommandRun;
     fprintf(stderr,"\n\t-> ngsngs version: %s (htslib: %s) build(%s %s)\n",NGSNGS_VERSION,hts_version(),__DATE__,__TIME__); 
-    fprintf(stderr,"\t-> Mycommmand: %s\n",Command);
+    fprintf(stderr,"\t-> Mycommmand: %s\n strlen: %lu\n",Command,strlen(mypars->CommandRun));
 
     //fprintf(stderr,"\t-> Command 2 : %s and version %s \n",CommandArray,version);
     clock_t t = clock();
@@ -444,17 +445,23 @@ int main(int argc,char **argv){
         ErrMsg(2.0);
 
     //fprintf(stderr,"\t-> Command: %s \n",Command);
+    int FixedSize = mypars->Length;
     const char* Sizefile = mypars->LengthFile;
     const char* SizeDist = mypars->LengthDist;
     double meanlength = 0;// DRAGEON REMEMBEWR TO CHECK meanlength is interpreted as float
+    int SizeDistType=-1;int val1; int val2;
 
-    int SizeRandType;
-    double val1; double val2;
-    if (mypars->Length != -1){fprintf(stderr,"HELLO\n");
-      SizeRandType = 0;val1=meanlength=mypars->Length;}
+    if (FixedSize != -1){
+      if (FixedSize == -1){ErrMsg(3.0);}
+      else{
+        meanlength = FixedSize;
+      } 
+    }
     if (Sizefile != NULL){
+      //fprintf(stderr,"SIZE FILE ARG\n");
       double sum,n;
       sum=n=0;
+
       char buf[LENS];
       gzFile gz = Z_NULL;
       gz = gzopen(Sizefile,"r");
@@ -465,26 +472,33 @@ int main(int argc,char **argv){
         sum += Length_tmp*Frequency_tmp;
         n = n+1;
       }
-      gzclose(gz);      
+      gzclose(gz);
+      
       meanlength = sum/n; //mindfuck
-      SizeRandType=1;
+      if (FixedSize != -1){ErrMsg(5.0);}
     }
 
+    
     if (SizeDist != NULL){
+      //fprintf(stderr,"LENGTH DISTRIBUTION and %s",SizeDist);
+      std::default_random_engine generator(Glob_seed);
       char* Dist;
+      
       char* DistParam = strdup(SizeDist);
       Dist = strtok(DistParam,",");
-      val1 = atof(strtok (NULL, ","));
+      val1 = atoi(strtok (NULL, ","));
+      //fprintf(stderr,"strtok %d\n",val1);
       char* tmp = strtok(NULL, ",");
       if(tmp == NULL){val2 = 0;}
-      else{val2 = atof(tmp);}
+      else{val2 = atoi(tmp);}
       
-      if (strcasecmp(Dist,"Uni")==0){SizeRandType=2;meanlength=(0.5*(val1+val2));}
-      if (strcasecmp(Dist,"Norm")==0){SizeRandType=3;meanlength= val1;}
-      if (strcasecmp(Dist,"LogNorm")==0){SizeRandType=4;meanlength= exp((val1+((val2*val2)/2)));}
-      if (strcasecmp(Dist,"Pois")==0){SizeRandType=5;meanlength= val1;}
-      if (strcasecmp(Dist,"Exp")==0){SizeRandType=6;meanlength= 1/val1;}
-      if (strcasecmp(Dist,"Gam")==0){SizeRandType=7;meanlength= (val1/val2);}
+      if (strcasecmp(Dist,"Uni")==0){SizeDistType=1;std::uniform_int_distribution<int> distribution(val1,val2);meanlength=(0.5*(val1+val2));}
+      if (strcasecmp(Dist,"Norm")==0){SizeDistType=2;std::normal_distribution<double> distribution(val1,val2);meanlength= val1;}
+      if (strcasecmp(Dist,"LogNorm")==0){SizeDistType=3;std::lognormal_distribution<double> distribution(val1,val2);meanlength= exp((val1+((val2*val2)/2)));}
+      if (strcasecmp(Dist,"Pois")==0){SizeDistType=4;std::poisson_distribution<int> distribution(val1);meanlength= val1;}
+      if (strcasecmp(Dist,"Exp")==0){SizeDistType=5;std::exponential_distribution<double> distribution(val1);meanlength= 1/val1;}
+      if (strcasecmp(Dist,"Gam")==0){SizeDistType=6;std::gamma_distribution<double> distribution(val1,val2);meanlength= (val1/val2);}
+      if (FixedSize != -1){ErrMsg(5.0);}
       free((char *)Dist);
     }
 
@@ -661,7 +675,7 @@ int main(int argc,char **argv){
     //const char* HeaderIndiv = "HG00096";
     Create_se_threads(seq_ref,threads1,Glob_seed,nreads_per_thread,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
-                      Param,Briggs_Flag,Sizefile,SizeRandType,val1,val2,
+                      Param,Briggs_Flag,Sizefile,FixedSize,SizeDistType,val1,val2,
                       qualstringoffset,QualProfile1,QualProfile2,threads2,QualStringFlag,Polynt,
                       ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType,
                       VCFformat,Variant_flag,VarType,Command,NGSNGS_VERSION,HeaderIndiv,NoAlign,BufferLength);
