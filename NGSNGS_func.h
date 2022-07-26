@@ -19,6 +19,8 @@ void DNA_complement(char seq[]);
 
 void reverseChar(char* str,int length);
 
+void ReversComplement(char seq[]);
+
 void deletechar(char* str,int seq_len, size_t index_to_remove,int del_len);
 
 void InsertChar(char* array,std::string ins,int index);
@@ -34,8 +36,6 @@ char* partial_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const
 char* full_vcf_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[],const char* bcf_file,const char* VarType,const char* HeaderIndiv);
 
 ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb,int ntcharoffset,const char *freqfile,unsigned long &readcycle);
-
-
 
 
 #endif /* NGSNGSFUNC_H */

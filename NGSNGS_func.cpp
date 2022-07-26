@@ -186,6 +186,33 @@ void reverseChar(char* str,int length) {
     std::reverse(str, str + length);
 }
 
+void ReversComplement(char seq[]){
+  // generates the reverse complementary sequence from an input sequence
+  unsigned char nuc2int[255];
+  nuc2int['a'] = nuc2int['A'] = nuc2int[0] = 0;
+  nuc2int['t'] = nuc2int['T'] = nuc2int[1] = 1;
+  nuc2int['g'] = nuc2int['G'] = nuc2int[2] = 2;
+  nuc2int['c'] = nuc2int['C'] = nuc2int[3] = 3;
+  nuc2int['n'] = nuc2int['N'] = nuc2int[4] = 4;
+
+  char ntdeam[4] = {'T', 'A', 'C', 'G'};
+  char seq_intermediate[1024] = {0};
+  strcpy(seq_intermediate,seq);
+
+  //Complementing sequence
+  for(int i=0;i<strlen(seq);i++){
+    seq_intermediate[i] = ntdeam[nuc2int[seq_intermediate[i]]];
+  }
+
+  //reverse complement
+  for(int i=strlen(seq)-1;i>-1;i--){
+    seq[strlen(seq)-i-1] = seq_intermediate[i];
+  }
+
+  //just to ensure no issues arise in case of not clearing out the intermediate sequence
+  memset(seq_intermediate, 0, sizeof seq_intermediate);
+}
+
 void deletechar(char* array,int seq_len, size_t index_to_remove, int del_len){
   /*memmove(&array[index_to_remove],
         &array[index_to_remove + 5],
