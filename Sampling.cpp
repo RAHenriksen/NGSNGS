@@ -152,22 +152,21 @@ void* Sampling_threads(void *arg){
           else{flag = 16;
             //fprintf(stderr,"--------------\nFLAG IS %d\n ORIG\n%s \n",flag,seq_r1);
             // Simulate reads from the negative strand but change the orientation to 5' to 3' fragment
-            DNA_complement(seq_r1);
-            reverseChar(seq_r1,strlen(seq_r1));
+            ReversComplement(seq_r1);
+            //CTGGAATAACCTCGTCGCTACCGCTGATGCGTTCACCGATGGTTGGCTGTACGTTGTGGATTTCGCCCGAATCAGCTCCTAGGGATATCTGACTAGCGTC
+            //GACGCTAGTCAGATATCCCTAGGAGCTGATTCGGGCGAAATCCACAACGTACAGCCAACCATCGGTGAACGCATCAGCGGTAGCGACGAGGTTATTCCAG
             //fprintf(stderr,"FIRST REV COMP\n%s \n",seq_r1);
           }
         }
         if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 0){
           flag = 97;  //Paired, mate reverse, first
           flag2 = 145; // Paired, reverse strand, second
-          DNA_complement(seq_r2);
-          reverseChar(seq_r2,strlen(seq_r2));
+          ReversComplement(seq_r2);
         }
         else if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 1){
           flag = 81; // Paired, reverse strand, first
           flag2 = 161; // Paired, mate reverse, second
-          DNA_complement(seq_r1);
-          reverseChar(seq_r1,strlen(seq_r1));
+          ReversComplement(seq_r2);
         }
 
         // To add deamination we need the fragments to emulate both forward and reverse strand with the real orientation (hence the reverse complement earlier)
@@ -194,35 +193,12 @@ void* Sampling_threads(void *arg){
             MisMatchFile(seq_r2,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
           }
         }
-
-        //I chose not to add sequencing errors here, since we need the adapter to be added first.
-
-        // HERE WE USE SEQUENCING ERRORS TO CREATE SUBSTITUTIONS.
-        // ADD SEQUENCING ERROR HERE IN ORDER TO GET CORRECT ORIENATION OF THE ADDED NUCLEOTIDE SUBSTITUTIONS
-
-        // Due to real life empirical sam files and its specifications we need all single-end data to be from the positive strand, as such we need to 
-        // change the orientation and sequence for the reads from the reverse strand back to the forward strand.
-        
-        /*if (flag == 16 || flag == 81){
-          fprintf(stderr,"INSIDE DNA COMPLEMENT LOOP\n------------------\n");
-          DNA_complement(seq_r1);reverseChar(seq_r1);}
-        else if (flag == 97){DNA_complement(seq_r2);reverseChar(seq_r2);}*/  
       }
       else{
         // in fasta and fastq the sequences need to be on forward or reverse strand, i.e we need reverse complementary        
-        if (strcasecmp("SE",struct_obj->SeqType)==0 && strand == 1){
-          DNA_complement(seq_r1);
-          reverseChar(seq_r1,strlen(seq_r1));
-        }
-
-        if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 0){
-          DNA_complement(seq_r2);
-          reverseChar(seq_r2,strlen(seq_r2));
-        }
-        else if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 1){
-          DNA_complement(seq_r1);
-          reverseChar(seq_r1,strlen(seq_r1));
-        }
+        if (strcasecmp("SE",struct_obj->SeqType)==0 && strand == 1){ReversComplement(seq_r1);}
+        if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 0){ReversComplement(seq_r2);}
+        else if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 1){ReversComplement(seq_r1);}
 
         // Adding PMD after strand is selected, as to not influence the symmetry of the PMD
         if(strcasecmp(struct_obj->Briggs_flag,"true")==0){
@@ -284,8 +260,8 @@ void* Sampling_threads(void *arg){
         }
 
         if (strcasecmp(struct_obj -> OutputFormat,"fa")==0|| strcasecmp(struct_obj -> OutputFormat,"fa.gz")==0){
-          ksprintf(struct_obj->fqresult_r1,">%s_R1\n%s\n",READ_ID,readadapt);
-          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s_R2\n%s\n",READ_ID,readadapt2);}
+          ksprintf(struct_obj->fqresult_r1,">%s R1\n%s\n",READ_ID,readadapt);
+          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s R2\n%s\n",READ_ID,readadapt2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
           for(long unsigned int p = 0;p<strlen(readadapt);p++){
@@ -313,9 +289,9 @@ void* Sampling_threads(void *arg){
             memset(QualPoly,'!', readsizelimit);
             strncpy(PolyChar, readadapt, strlen(readadapt));
             strncpy(QualPoly, qual_r1, strlen(qual_r1));
-            ksprintf(struct_obj->fqresult_r1,"@%s_R1\n%s\n+\n%s\n",READ_ID,PolyChar,QualPoly);
+            ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s\n+\n%s\n",READ_ID,PolyChar,QualPoly);
           }
-          else{ksprintf(struct_obj->fqresult_r1,"@%s_R1\n%s\n+\n%s\n",READ_ID,readadapt,qual_r1);}
+          else{ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s\n+\n%s\n",READ_ID,readadapt,qual_r1);}
           
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             for(long unsigned int p = 0;p<strlen(readadapt2);p++){
@@ -340,9 +316,9 @@ void* Sampling_threads(void *arg){
               memset(QualPoly,'!', readsizelimit);
               strncpy(PolyChar, readadapt2, strlen(readadapt2));
               strncpy(QualPoly, qual_r2, strlen(qual_r2));
-              ksprintf(struct_obj->fqresult_r2,"@%s_R1\n%s\n+\n%s\n",READ_ID,PolyChar,QualPoly);
+              ksprintf(struct_obj->fqresult_r2,"@%s R1\n%s\n+\n%s\n",READ_ID,PolyChar,QualPoly);
             }
-            else{ksprintf(struct_obj->fqresult_r2,"@%s_R2\n%s\n+\n%s\n",READ_ID,readadapt2,qual_r2);}
+            else{ksprintf(struct_obj->fqresult_r2,"@%s R2\n%s\n+\n%s\n",READ_ID,readadapt2,qual_r2);}
           }
         }
         if (struct_obj->SAMout){
@@ -392,7 +368,7 @@ void* Sampling_threads(void *arg){
             // readadapt_err is the extracted sequence after Suberr 
             sprintf(readadapt_err1, "%*s", (int)strlen(readadapt) - (int)strlen(seq_r1), readadapt+(int)strlen(seq_r1));
             sprintf(read_rc_sam1, "%.*s", (int)strlen(seq_r1), readadapt);
-            DNA_complement(read_rc_sam1);reverseChar(read_rc_sam1,strlen(read_rc_sam1));
+            ReversComplement(read_rc_sam1);
             //fprintf(stderr,"string before \t\t %s \n",readadapt_rc_sam1);
             sprintf(readadapt_rc_sam1, "%s", read_rc_sam1);
             //fprintf(stderr,"string after \t\t %s \n",readadapt_rc_sam1);
@@ -411,8 +387,7 @@ void* Sampling_threads(void *arg){
             sprintf(readadapt_err2, "%*s", (int)strlen(readadapt2)-(int)strlen(seq_r2), readadapt2+(int)strlen(seq_r2));
             sprintf(read_rc_sam2, "%.*s", (int)strlen(seq_r2), readadapt2); // copy the sequence 2 from the sequence 2 + adapter
             // type cast to int
-            DNA_complement(read_rc_sam2);reverseChar(read_rc_sam2,strlen(read_rc_sam1)); // reverse complement sequence 2 
-            
+            ReversComplement(read_rc_sam2);            
             //fprintf(stderr,"string before \t\t %s \n",readadapt_rc_sam2);
             sprintf(readadapt_rc_sam2, "%s", read_rc_sam2);
             //fprintf(stderr,"string after I \t\t %s \n",readadapt_rc_sam2);
@@ -442,7 +417,7 @@ void* Sampling_threads(void *arg){
       }
       else{
         if (strcasecmp(struct_obj -> OutputFormat,"fa")==0|| strcasecmp(struct_obj -> OutputFormat,"fa.gz")==0){
-          ksprintf(struct_obj->fqresult_r1,">%s_R1\n%s\n",READ_ID,seq_r1);
+          ksprintf(struct_obj->fqresult_r1,">%s R1\n%s\n",READ_ID,seq_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s_R2\n%s\n",READ_ID,seq_r2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
@@ -467,7 +442,7 @@ void* Sampling_threads(void *arg){
             }
           }
           //fprintf(stderr,"TEST FQ AC%s\n",qual_r1);
-          ksprintf(struct_obj->fqresult_r1,"@%s_R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
+          ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             for(int p = 0;p<seqlen;p++){
               double dtemp1;double dtemp2;
@@ -530,8 +505,8 @@ void* Sampling_threads(void *arg){
             }
           }
           //fprintf(stderr,"AFTER SEQ ERR \n%s \n",seq_r1);
-          if (flag == 16 || flag == 81){DNA_complement(seq_r1);reverseChar(seq_r1,strlen(seq_r1));}
-          else if (flag == 97){DNA_complement(seq_r2);reverseChar(seq_r2,strlen(seq_r2));}  
+          if (flag == 16 || flag == 81){ReversComplement(seq_r1);}
+          else if (flag == 97){ReversComplement(seq_r2);}  
           ksprintf(struct_obj->fqresult_r1,"%s",seq_r1);
           //fprintf(stderr,"SAVE OUTPUT \n%s \n",seq_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,"%s",seq_r2);}

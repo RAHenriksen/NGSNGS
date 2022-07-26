@@ -59,9 +59,6 @@ void catchkill(){
   sigaction(SIGINT, &sa, 0);  
 }
 
-
-// ------------------------------ //
-
 int main(int argc,char **argv){
   //fprintf(stderr,"PRINT TYPE %d\n",MacroRandType);
   argStruct *mypars = NULL;
@@ -97,7 +94,8 @@ int main(int argc,char **argv){
       // Unix
         MacroRandType = 0;
       #elif defined(__APPLE__) || defined(__MACH__)
-        MacroRandType = 1;
+        MacroRandType = 3;
+        //when 0 it will have problems with drand48 reentrant, will default to erand48 (MacroRandType 3)
       #else
       #   error "Unknown compiler"
       #endif
@@ -114,7 +112,7 @@ int main(int argc,char **argv){
     int FixedSize = mypars->Length;
     const char* Sizefile = mypars->LengthFile;
     const char* SizeDist = mypars->LengthDist;
-    double meanlength = 0;// DRAGEON REMEMBEWR TO CHECK meanlength is interpreted as float
+    double meanlength = 0;
     int SizeDistType=-1;double val1 = 0; double val2  = 0;
 
     if (FixedSize != 0){
@@ -141,20 +139,16 @@ int main(int argc,char **argv){
       }
       gzclose(gz);
       
-      meanlength = sum/n; //mindfuck
+      meanlength = sum/n;
       if (FixedSize <0){fprintf(stderr,"FIXED SIZE %d",FixedSize);ErrMsg(5.0);}
       SizeDistType=1;
     }
     if (SizeDist != NULL){
-      fprintf(stderr,"LENGTH DISTRIBUTION and %s",SizeDist);
       char* Dist;
       char* DistParam = strdup(SizeDist);
       Dist = strtok(DistParam,",");
       val1 = atof(strtok (NULL, ","));
-      std::cout << val1 << std::endl;
-      fprintf(stderr,"strtok %f \n",val1);
       char* tmp = strtok(NULL, ",");
-      std::cout << "VALUE 2 LOL " << val2 << std::endl;
       if(tmp == NULL){val2 = 0;}
       else{val2 = atof(tmp);}
       
@@ -202,8 +196,6 @@ int main(int argc,char **argv){
     
     size_t BufferLength = mypars->KstrBuf;
 
-    //fprintf(stderr,"\t-> Command: %s \n",Command);
-    //fprintf(stderr,"\t-> Command 2 : %s \n",CommandArray);
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
     fprintf(stderr,"\t-> Seed used: %d\n",Glob_seed);
     fprintf(stderr,"\t-> Number of sampling threads used (-t): %d and number of compression threads (-t2): %d\n",SamplThreads,CompressThreads);
@@ -226,7 +218,7 @@ int main(int argc,char **argv){
     else{
       //fprintf(stderr,"\t-> ARGPARSE ADAPT FLAG+ POLY\n");
       Adapt_flag = "false";
-      if (mypars->Poly != NULL){fprintf(stderr,"Poly tail error: Missing adapter sequence, provide adapter sequence (-a1,-a2) as well\n");exit(0);}
+      if (mypars->Poly != NULL){ErrMsg(14.0);exit(0);}
       else{Polynt = "F";}
     }
     // QUALITY PROFILES
@@ -337,7 +329,7 @@ int main(int argc,char **argv){
     int DeamLength = 0;
     //const char* HeaderIndiv = "HG00096";
     fprintf(stderr,"LENGTH TYPE %d\n",SizeDistType);
-    Create_se_threads(seq_ref,SamplThreads,Glob_seed,nreads_per_thread,filename,
+    ThreadInitialization(seq_ref,SamplThreads,Glob_seed,nreads_per_thread,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,SizeDistType,val1,val2,
                       qualstringoffset,QualProfile1,QualProfile2,CompressThreads,QualStringFlag,Polynt,

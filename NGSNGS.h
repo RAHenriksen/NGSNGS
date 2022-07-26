@@ -38,31 +38,48 @@ argStruct *getpars(int argc,char ** argv){
   argStruct *mypars = new argStruct;
   mypars->SamplThreads = 1;
   mypars->CompressThreads = 1;
+
+  // generating strings for which the simulated reads will be contained
   mypars->nreads = 0;
   mypars->coverage = 0.0;
-  mypars->Length = 0;
-  mypars->Glob_seed = (int) time(NULL);
+  mypars->KstrBuf=30000000;
+
+  // The output format, output files, and structural elements for SAM outputs
   mypars->OutFormat = NULL; //"fa";
   mypars->OutName = NULL; //"output";
-  mypars->Seq = NULL; // "SE";
-  mypars->Reference = NULL;
-  mypars->Adapter1 = NULL;
-  mypars->Adapter2 = NULL;
-  mypars->QualProfile1 = NULL;
-  mypars->QualProfile2 = NULL;
-  mypars->SubProfile = NULL;
-  mypars->ErrorFlag = NULL;
-  mypars->Briggs = NULL; //"0.024,0.36,0.68,0.0097";
-  mypars->LengthFile = NULL;
-  mypars->LengthDist = NULL;
-  mypars->Chromosomes = NULL;
-  mypars->Poly = NULL;
-  mypars->rand_val = -1;
-  mypars->Variant = NULL;
-  mypars->Variant_type = NULL;
   mypars->HeaderIndiv=NULL;
   mypars->NoAlign=NULL;
-  mypars->KstrBuf=30000000;
+
+  // Thread generation and sampling specific information
+  mypars->Chromosomes = NULL;
+  mypars->Reference = NULL;
+  mypars->Seq = NULL; // "SE";
+  mypars->Glob_seed = (int) time(NULL);
+  mypars->rand_val = -1;
+
+  // Sequence alteration models
+  // 1) nucleotide quality score and sequencing errors,  
+  mypars->QualProfile1 = NULL;
+  mypars->QualProfile2 = NULL;
+  mypars->ErrorFlag = NULL;
+  // 2) briggs model
+  mypars->Briggs = NULL; //"0.024,0.36,0.68,0.0097";
+  // 3) misincorporation matrix
+  mypars->SubProfile = NULL;
+  // 4) Bcf file and variation incorporation
+  mypars->Variant = NULL;
+  mypars->Variant_type = NULL;
+
+  // Fragment lengths 
+  mypars->Length = 0;
+  mypars->LengthFile = NULL;
+  mypars->LengthDist = NULL;
+
+  // Additional information for sequence reads
+  mypars->Adapter1 = NULL;
+  mypars->Adapter2 = NULL;
+  mypars->Poly = NULL;
+
   mypars->CommandRun = (char*) calloc(1024,1);
   char *Command = mypars->CommandRun;
   const char *first = "./ngsngs ";
@@ -163,12 +180,12 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-ne",*argv)==0 || strcasecmp("--noerror",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
-      mypars->ErrorFlag = "F"; // strdup(*(++argv));
+      mypars->ErrorFlag = "F";
       strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-na",*argv)==0 || strcasecmp("--noalign",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
-      mypars->NoAlign = "T"; // strdup(*(++argv));
+      mypars->NoAlign = "T";
       strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
@@ -236,6 +253,7 @@ argStruct *getpars(int argc,char ** argv){
     
     ++argv;
   }
+  //free(mypars->CommandRun)
   return mypars;
 }
 

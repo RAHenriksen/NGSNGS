@@ -28,9 +28,7 @@
 #define LENS 4096
 #define MAXBINS 100
 
-unsigned char nuc2intThread[255];
-
-void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
+void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
                         const char* Adapter_2,const char* OutputFormat,const char* SeqType,float BriggsParam[4],const char* Briggs_flag,
                         const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
@@ -43,19 +41,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
   int nthreads=thread_no;
   pthread_t mythreads[nthreads];
 
-  nuc2intThread['a'] = nuc2intThread['A'] = nuc2intThread[0] = 0;
-  nuc2intThread['t'] = nuc2intThread['T'] = nuc2intThread[1] = 1;
-  nuc2intThread['g'] = nuc2intThread['G'] = nuc2intThread[2] = 2;
-  nuc2intThread['c'] = nuc2intThread['C'] = nuc2intThread[3] = 3;
-  nuc2intThread['n'] = nuc2intThread['N'] = nuc2intThread[4] = 4; 
-
   int chr_total = 0;
   char *genome_data;
   if (Specific_Chr[0] != NULL){
-    while (Specific_Chr[chr_total]){
-      std::cout << " lol " << chr_total << std::endl;
-      chr_total++;
-      }
+    while (Specific_Chr[chr_total]){chr_total++;}
   }
   else{
     chr_total = faidx_nseq(seq_ref);
@@ -65,8 +54,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
   int chr_sizes[chr_total];
   int chr_idx_arr[chr_total];
   size_t chr_size_cumm[chr_total+1];
-  /*fprintf(stderr,"Chromosome count %d\n",chr_total);
-  fprintf(stderr,"DONE WITH LOOP\n");*/
   
   if (chr_total < faidx_nseq(seq_ref)){
     for (int j = 0; j < faidx_nseq(seq_ref); j++){
@@ -104,7 +91,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
 
   size_t genome_size = strlen(genome_data);;
   if (genome_data != NULL){
-    fprintf(stderr,"\t-> Creating the large concatenated contig, with size of %lu bp\n",genome_size);
+    fprintf(stderr,"\t-> Completed the generation of the contigous sequence, with size of %lu bp\n",genome_size);
   
     Parsarg_for_Sampling_thread struct_for_threads[nthreads];
 
@@ -168,7 +155,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
     }
     else{fprintf(stderr,"\t-> Fileformat is currently not supported \n");}
     strcat(file1,suffix1);
-    //fprintf(stderr,"\t-> Compression level for file %s and writing mode %s \n",OutputFormat,mode);
 
     fprintf(stderr,"\t-> File output name is %s\n",file1);
     const char* filename1 = file1;
@@ -192,13 +178,12 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
       }
     }
     else{
-      //fprintf(stderr,"Fasta input file name is %s\n",FastaFileName);
-      char *ref =(char*) malloc(10 + strlen(FastaFileName) + 1);
+      //strlen(".fastq.gz") = longest suffix for fasta file + 2 in case of Null string terminators
+      char *ref =(char*) malloc(strlen(".fasta.gz") + strlen(FastaFileName) + 2);
       sprintf(ref, "reference=%s", FastaFileName);
-      //char *ref =(char*) malloc(10 + strlen("Test_Examples/Mycobacterium_leprae.fa.gz") + 1);
-      //sprintf(ref, "reference=%s", "Test_Examples/Mycobacterium_leprae.fa.gz");
+      
+      // Save reference file name for header creation of the sam output
       hts_opt_add((hts_opt **)&fmt_hts->specific,ref);
-      //fprintf(stderr,"Writing mode is %s\n",mode);
       SAMout = sam_open_format(filename1, mode, fmt_hts);
       SAMHeader = sam_hdr_init();
 
@@ -210,12 +195,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
         hts_set_opt(SAMout, HTS_OPT_THREAD_POOL, &p);
       }
       // generate header
-      //hts_set_threads(SAMout, 4);
       Header_func(fmt_hts,filename1,SAMout,SAMHeader,seq_ref,chr_total,chr_idx_arr,genome_size,CommandArray,version);
       free(ref);
       hts_opt_free((hts_opt *)fmt_hts->specific);
     }
-    //fprintf(stderr,"\t-> AFTER OUTPUT FORMAT\n");
 
     //generate file array before creating the threads
     int no_elem;double* Frag_freq;int* Frag_len;
@@ -252,11 +235,13 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
     
     int maxsize = 20;
     char polynucleotide;
-    //fprintf(stderr,"\t-> BEFORE POLY\n");
+
+    //std::string Polystr = std::string(1000, (char) Polynt[0]);
+    //fprintf(stderr,"AGAGAGA%s\n",(const char*) Polystr.substr(0, 8).c_str());
     if (Polynt != NULL && strlen(Polynt) == 1){polynucleotide = (char) Polynt[0];}
     else{polynucleotide = 'F';}
-    //fprintf(stderr,"\t-> AFTER POLY\n");
 
+    //generating mismatch matrix to parse for each string
     double* MisMatchFreqArray;
     int mismatchcyclelength = 0;
     if (SubProfile != NULL){
@@ -265,6 +250,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
     }
 
     for (int i = 0; i < nthreads; i++){
+      // generating strings for which the simulated reads will be contained
       struct_for_threads[i].fqresult_r1 =new kstring_t;
       struct_for_threads[i].fqresult_r1 -> l = 0;
       struct_for_threads[i].fqresult_r1 -> m = 0;
@@ -275,6 +261,18 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
       struct_for_threads[i].fqresult_r2 -> m = 0;
       struct_for_threads[i].fqresult_r2 -> s = NULL;
 
+      // The output format, output files, and structural elements for SAM outputs
+      struct_for_threads[i].OutputFormat = OutputFormat;
+      struct_for_threads[i].bgzf_fp1 = bgzf_fp1;
+      struct_for_threads[i].bgzf_fp2 = bgzf_fp2;
+      struct_for_threads[i].SAMout = SAMout;
+      struct_for_threads[i].SAMHeader = SAMHeader;
+      struct_for_threads[i].l = 0;
+      struct_for_threads[i].m = maxsize;
+      struct_for_threads[i].list_of_reads = (bam1_t**) malloc(sizeof(bam1_t)*maxsize); // need to free this space
+      for(int j=0; j<maxsize;j++){struct_for_threads[i].list_of_reads[j]=bam_init1();} // but also destroy the bam_init1 objects    
+
+      // Thread generation and sampling specific information
       struct_for_threads[i].threadno = i;
       struct_for_threads[i].genome = genome_data;
       struct_for_threads[i].chr_idx_array = chr_idx_arr;
@@ -282,6 +280,31 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
       struct_for_threads[i].threadseed = seed;
       struct_for_threads[i].RandMacro = RandMacro;
 
+      // Sequence alteration models
+      // 1) nucleotide quality score and sequencing errors,  
+      struct_for_threads[i].QualFlag = QualStringFlag;
+      struct_for_threads[i].ErrorFlag = (char) ErrorFlag[0];
+      struct_for_threads[i].NtQual_r1 = nt_qual_r1;
+      struct_for_threads[i].NtQual_r2 = nt_qual_r2;
+      struct_for_threads[i].QualDist_r1 = QualDist;
+      struct_for_threads[i].QualDist_r2 = QualDist2;
+      struct_for_threads[i].NtErr_r1 = ErrArray_r1;
+      struct_for_threads[i].NtErr_r2 = ErrArray_r2;
+      struct_for_threads[i].readcycle = (int) readcyclelength;
+
+      // 2) briggs model
+      struct_for_threads[i].MisMatch = MisMatchFreqArray;
+      struct_for_threads[i].SubFlag = MisMatchFlag;
+      struct_for_threads[i].MisLength = (int) mismatchcyclelength;
+
+      // 3) misincorporation matrix
+      struct_for_threads[i].Briggs_flag = Briggs_flag;
+      struct_for_threads[i].BriggsParam = BriggsParam;
+
+      // 4) Bcf file and variation incorporation
+      struct_for_threads[i].Variant_flag = Variant_flag;
+      
+      // Fragment lengths 
       struct_for_threads[i].FragLen = Frag_len;
       struct_for_threads[i].FragFreq = Frag_freq;
       struct_for_threads[i].No_Len_Val = no_elem;
@@ -290,45 +313,19 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
       struct_for_threads[i].distparam2 = val2;
       struct_for_threads[i].LengthType = SizeDistType;
 
-      struct_for_threads[i].NtQual_r1 = nt_qual_r1;
-      struct_for_threads[i].NtQual_r2 = nt_qual_r2;
-      struct_for_threads[i].QualDist_r1 = QualDist;
-      struct_for_threads[i].QualDist_r2 = QualDist2;
-      struct_for_threads[i].NtErr_r1 = ErrArray_r1;
-      struct_for_threads[i].NtErr_r2 = ErrArray_r2;
-
-      struct_for_threads[i].MisMatch = MisMatchFreqArray;
-      struct_for_threads[i].SubFlag = MisMatchFlag;
-      struct_for_threads[i].MisLength = (int) mismatchcyclelength;
-      struct_for_threads[i].readcycle = (int) readcyclelength;
+      // Sequence output specific
       struct_for_threads[i].reads = reads;
       struct_for_threads[i].BufferLength = BufferLength;
 
-      struct_for_threads[i].bgzf_fp1 = bgzf_fp1;
-      struct_for_threads[i].bgzf_fp2 = bgzf_fp2;
-      struct_for_threads[i].SAMout = SAMout;
-      struct_for_threads[i].SAMHeader = SAMHeader;
-      struct_for_threads[i].l = 0;
-      struct_for_threads[i].m = maxsize;
-      struct_for_threads[i].list_of_reads = (bam1_t**) malloc(sizeof(bam1_t)*maxsize); // need to free this space
-
-      for(int j=0; j<maxsize;j++){struct_for_threads[i].list_of_reads[j]=bam_init1();} // but also destroy the bam_init1 objects    
-
+      // Additional information for sequence reads
       struct_for_threads[i].Adapter_flag = Adapt_flag;
       struct_for_threads[i].Adapter_1 = Adapter_1;
       struct_for_threads[i].Adapter_2 = Adapter_2;
-      struct_for_threads[i].Briggs_flag = Briggs_flag;
-      struct_for_threads[i].BriggsParam = BriggsParam;
-      struct_for_threads[i].OutputFormat = OutputFormat;
       struct_for_threads[i].SeqType = SeqType;
-      struct_for_threads[i].QualFlag = QualStringFlag;
       struct_for_threads[i].PolyNt = polynucleotide;
-      struct_for_threads[i].ErrorFlag = (char) ErrorFlag[0];
       struct_for_threads[i].NoAlign = (char) NoAlign[0];
-      struct_for_threads[i].Variant_flag = Variant_flag;
 
-
-      //declaring the size of the different arrays
+      //declaring the size of the different sampling arrays
       struct_for_threads[i].size_cumm = (size_t*)malloc(sizeof(size_t) * (struct_for_threads[i].chr_no+1));
       struct_for_threads[i].size_cumm[0] = 0;
       memcpy(struct_for_threads[i].size_cumm, chr_size_cumm, sizeof(chr_size_cumm));
@@ -368,20 +365,20 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
     }
     
     if(strcasecmp("true",QualStringFlag)==0){
-      for(int b=0;b<5;b++){
+      for(int base=0;base<5;base++){
         for(int pos = 0 ; pos< (int) readcyclelength;pos++){
-          ransampl_free(QualDist[b][pos]);
+          ransampl_free(QualDist[base][pos]);
         }
-        delete[] QualDist[b];
+        delete[] QualDist[base];
       }
       delete[] QualDist;
 
       if(strcasecmp("PE",SeqType)==0){
-        for(int b=0;b<5;b++){
+        for(int base=0;base<5;base++){
           for(int pos = 0 ; pos< (int) readcyclelength;pos++){
-            ransampl_free(QualDist2[b][pos]);
+            ransampl_free(QualDist2[base][pos]);
           }
-          delete[] QualDist2[b];
+          delete[] QualDist2[base];
         }
         delete[] QualDist2;
       }
@@ -395,6 +392,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
     
     if(SubProfile != NULL){delete[] MisMatchFreqArray;}
     
+    //CHECK IF FRAG_FREG,FRAG_LEN,QUALDIST SHOULDN'T BE DELETED NO MATTER WHAT? OR HAS THE RELEVANS CHANGED SINCE WE RESTRUCTURED THE CODE
     free(genome_data);
     fflush(stderr);
   }
