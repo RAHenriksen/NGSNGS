@@ -134,6 +134,7 @@ int*& FragArray,int RandType,unsigned int Thread_Seed,std::default_random_engine
     // Par1, 0.01
     std::exponential_distribution<double> distribution(par1);
     fp->ExpDist = distribution;
+    fprintf(stderr,"Done with Dist \n");
   }
   else if(fp->type == 7){
     fprintf(stderr,"GAMMA \n");
@@ -143,6 +144,7 @@ int*& FragArray,int RandType,unsigned int Thread_Seed,std::default_random_engine
   }
   return fp;
 }
+
 
 #ifdef __WITH_MAIN__
 
