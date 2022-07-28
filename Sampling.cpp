@@ -186,8 +186,13 @@ void* Sampling_threads(void *arg){
     uint32_t cigar_arr_unmap[] = {cigar_bitstring_unmap};
     cigar_unmap = cigar_arr_unmap;
     // Flags and cigar string for reads depending on adapters
-    uint32_t cigar_bit_soft;size_t n_cigar = 1;const uint32_t *cigar = 0;const uint32_t *cigar2 = 0; 
+    //prepare cigarstrings for 10 cigar operations
+    uint32_t cigar[10];
     uint32_t cigar_bit_match = bam_cigar_gen(seqlen, BAM_CMATCH);
+    uint32_t cigar_bit_soft;
+    size_t n_cigar = 1;
+
+    
     
     if (struct_obj->SAMout){
       // By keeping the alignment information all reads will have matches in their cigar string     
@@ -197,34 +202,42 @@ void* Sampling_threads(void *arg){
           // flag 0 is for SE so that would be same adapter (-a1) as provided for PE for flag 97
           if(readsizelimit>=SeqAdapt1_len){cigar_bit_soft = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);}
           else{cigar_bit_soft = bam_cigar_gen(readsizelimit-seqlen, BAM_CSOFT_CLIP);}
-          uint32_t cigar_arr[] = {cigar_bit_match,cigar_bit_soft}; cigar = cigar_arr;
+	  //          uint32_t cigar_arr[] = {cigar_bit_match,cigar_bit_soft}; cigar = cigar_arr;
+	  cigar[0] = cigar_bit_match;
+	  cigar[1] = cigar_bit_soft;
         }
         else if(flag == 16 || flag == 81){ //strand == 1 for read 1
           // flag 16 is for SE so that would be same adapter (-a1) as provided for PE for flag 81
           if(readsizelimit>=SeqAdapt1_len){cigar_bit_soft = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);} //fprintf(stderr,"limit %d\t%dM%dS\n",readsizelimit,seqlen,Adapter1_len);
           else{cigar_bit_soft = bam_cigar_gen(readsizelimit-seqlen, BAM_CSOFT_CLIP);}
-          uint32_t cigar_arr[] = {cigar_bit_soft,cigar_bit_match}; cigar = cigar_arr;
+	  //          uint32_t cigar_arr[] = {cigar_bit_soft,cigar_bit_match}; cigar = cigar_arr;
+	  cigar[0] = cigar_bit_match;
+	  cigar[1] = cigar_bit_soft;
           //ReversComplement(Adapter_1);
         }
         else if(flag2 == 161){ //strand == 0 for read 2
           if(readsizelimit>=SeqAdapt2_len){cigar_bit_soft = bam_cigar_gen(Adapter2_len, BAM_CSOFT_CLIP);}
           else{cigar_bit_soft = bam_cigar_gen(readsizelimit-seqlen, BAM_CSOFT_CLIP);}
-          uint32_t cigar_arr[] = {cigar_bit_match,cigar_bit_soft};
-          cigar = cigar_arr;
+	  //          uint32_t cigar_arr[] = {cigar_bit_match,cigar_bit_soft};
+	  cigar[0] = cigar_bit_match;
+	  cigar[1] = cigar_bit_soft;
+          
         }
         else if(flag2 == 145){ //strand == 1 for read 2
           if(readsizelimit>=SeqAdapt2_len){cigar_bit_soft = bam_cigar_gen(Adapter2_len, BAM_CSOFT_CLIP);}
           else{cigar_bit_soft = bam_cigar_gen(readsizelimit-seqlen, BAM_CSOFT_CLIP);}
-          uint32_t cigar_arr[] = {cigar_bit_soft,cigar_bit_match};
-          cigar = cigar_arr;
+	  //          uint32_t cigar_arr[] = {cigar_bit_soft,cigar_bit_match};
+          //cigar = cigar_arr;
+	  cigar[1] = cigar_bit_match;
+	  cigar[0] = cigar_bit_soft;
           //ReversComplement(Adapter_2);
         }
       }
       else{
         n_cigar = 1;
-        uint32_t cigar_arr[] = {cigar_bit_match};
-        cigar = cigar_arr;
-        cigar2 = cigar_arr;
+        //uint32_t cigar_arr[] = {cigar_bit_match};
+        cigar[0] = cigar_bit_match;
+	//        cigar2 = cigar_arr;
       }
     }
 
@@ -499,15 +512,14 @@ void* Sampling_threads(void *arg){
             bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR1),READIDR1,flag,chr_idx,min_beg,mapq,
             n_cigar,cigar,chr_idx,max_end,insert,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
             bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR2),READIDR2,flag2,chr_idx,max_end,mapq,
-            n_cigar,cigar2,chr_idx,min_beg,0-insert,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,qual_r2,l_aux);
+            n_cigar,cigar,chr_idx,min_beg,0-insert,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,qual_r2,l_aux);
           }
         }
-        int assert_int = 0;
-        if(strcasecmp("cram",struct_obj->OutputFormat)==0){assert_int = 1;}
+
         if (struct_obj->LengthData < struct_obj->MaximumLength){   
           pthread_mutex_lock(&Fq_write_mutex);
           for (int k = 0; k < struct_obj->LengthData; k++){
-            assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) != assert_int); //>=0?
+            assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) >=0 );
           }
           pthread_mutex_unlock(&Fq_write_mutex);
           struct_obj->LengthData = 0;

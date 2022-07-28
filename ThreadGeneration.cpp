@@ -340,7 +340,6 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
     pthread_attr_init(&attr);
     if(nthreads==1){
       Sampling_threads(struct_for_threads);
-      fprintf(stderr,"after sampling thereadsad\n");
     }else{
       for (int i = 0; i < nthreads; i++){
 	pthread_create(&mythreads[i],&attr,Sampling_threads,&struct_for_threads[i]);
