@@ -338,15 +338,18 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
     
     pthread_attr_t attr;
     pthread_attr_init(&attr);
-    
-    for (int i = 0; i < nthreads; i++){
-      pthread_create(&mythreads[i],&attr,Sampling_threads,&struct_for_threads[i]);
-    }
-    
-    for (int i = 0; i < nthreads; i++){  
-      pthread_join(mythreads[i],NULL);
-    }
-        
+    if(nthreads==1){
+      Sampling_threads(struct_for_threads);
+      fprintf(stderr,"after sampling thereadsad\n");
+    }else{
+      for (int i = 0; i < nthreads; i++){
+	pthread_create(&mythreads[i],&attr,Sampling_threads,&struct_for_threads[i]);
+      }
+      
+      for (int i = 0; i < nthreads; i++){  
+	pthread_join(mythreads[i],NULL);
+      }
+    } 
     if(alnformatflag == 0){
       bgzf_close(bgzf_fp1);
       if(strcasecmp("PE",SeqType)==0){bgzf_close(bgzf_fp2);}
@@ -410,3 +413,4 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
   }
   return NULL;
 }
+
