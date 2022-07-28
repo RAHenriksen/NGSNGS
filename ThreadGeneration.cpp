@@ -199,6 +199,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       Header_func(fmt_hts,filename1,SAMout,SAMHeader,seq_ref,chr_total,chr_idx_arr,genome_size,CommandArray,version);
       free(ref);
       hts_opt_free((hts_opt *)fmt_hts->specific);
+      
     }
 
     //generate file array before creating the threads
@@ -353,6 +354,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
     else{
       sam_hdr_destroy(SAMHeader);
       sam_close(SAMout);
+      if (p.pool) hts_tpool_destroy(p.pool);
     } 
     
     for(int i=0;i<nthreads;i++){

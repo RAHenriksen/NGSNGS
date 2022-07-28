@@ -90,7 +90,8 @@ int*& FragArray,int RandType,unsigned int Thread_Seed,std::default_random_engine
   fp->rand_alloc= mrand_alloc(RandType,Thread_Seed);
   fp->type = type;
   fp->Gen =generator;
-  
+  //free(fp->rand_alloc); //OBS IM NOT SURE IF THIS IS GOOD! WE USE THE RAND_ALLOC FURTHER
+
   if(fp->type == 0){
     //fprintf(stderr,"FIXED TYPE \n");
     // ./FragLen 0 80 100 100000 &> ../CodeTest/FixedLength80.txt

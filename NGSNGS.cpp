@@ -189,7 +189,6 @@ int main(int argc,char **argv){
         genome_size += chr_len;
       }
       mypars->nreads =  (readcov*genome_size)/meanlength;
-      fprintf(stderr,"\t-> Number of simulated reads: %zu or coverage: %f\n",mypars->nreads,mypars->coverage);
     }
   
     size_t nreads_per_thread = mypars->nreads/SamplThreads;
@@ -328,7 +327,7 @@ int main(int argc,char **argv){
     //if(Specific_Chr[0]=='\0'){fprintf(stderr,"HURRA");}
     int DeamLength = 0;
     //const char* HeaderIndiv = "HG00096";
-    fprintf(stderr,"LENGTH TYPE %d\n",SizeDistType);
+    //fprintf(stderr,"LENGTH TYPE %d\n",SizeDistType);
     ThreadInitialization(seq_ref,SamplThreads,Glob_seed,nreads_per_thread,filename,
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,SizeDistType,val1,val2,
@@ -351,10 +350,10 @@ int main(int argc,char **argv){
   free((char *)mypars->LengthDist);
   
   free((char*)mypars->CommandRun);
+  //free((char*)mypars->Chromosomes);
 
   // OPTIONAL DEALLOCATIONS
   free((char *)mypars->Variant);
-  free((char *)mypars->Variant_type);
   free((char *)mypars->Variant_type);
   free((char *)mypars->HeaderIndiv);
   free((char *)mypars->Adapter1);

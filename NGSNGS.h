@@ -84,6 +84,9 @@ argStruct *getpars(int argc,char ** argv){
   char *Command = mypars->CommandRun;
   const char *first = "./ngsngs ";
   strcpy(Command,first);
+
+  const char* readstr;
+  const char* bufstr;
   ++argv;
   while(*argv){
     //fprintf(stderr,"ARGV %s\n",*argv);
@@ -120,15 +123,16 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-r",*argv)==0 || strcasecmp("--reads",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
-      const char* readstr = strdup(*(++argv));
+      readstr = strdup(*(++argv));
       sscanf(readstr, "%lu",&mypars->nreads);
       strcat(Command,*argv); strcat(Command," ");
+      free((char*)readstr);
       if (mypars->nreads <= 0){ErrMsg(2.4);}
     }
     else if(strcasecmp("-bl",*argv)==0 || strcasecmp("--bufferlength",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
-      const char* readstr = strdup(*(++argv));
-      sscanf(readstr, "%lu",&mypars->KstrBuf);
+      bufstr = strdup(*(++argv));
+      sscanf(bufstr, "%lu",&mypars->KstrBuf);
       strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-c",*argv)==0 || strcasecmp("--cov",*argv)==0){
@@ -253,6 +257,7 @@ argStruct *getpars(int argc,char ** argv){
     
     ++argv;
   }
+  //free((char*)bufstr);
   //free(mypars->CommandRun)
   return mypars;
 }

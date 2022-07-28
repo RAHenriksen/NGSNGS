@@ -95,19 +95,20 @@ void* Sampling_threads(void *arg){
 
   while (current_reads_atom < reads &&SIG_COND){
 
+    // Fragment length generator
+    int fraglength = getFragmentLength(sf);
+
     // Selecting genomic start position across the generated contiguous contigs for which to extract 
     double rand_val = mrand_pop(drand_alloc);
     rand_start = rand_val * (genome_len-300)+1; //genome_len-100000;
-
     int chr_idx = 0;
-    // identify which contig to sample from
-    while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}//OBS
+    if(struct_obj->chr_no>1){
+      // identify which contig to sample from
+      while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}//OBS MEMORY LEAK
+      // Upper fragment length cap for those reads originating in close proximity to contig end position.
+      if ((rand_start+fraglength)>struct_obj->size_cumm[chr_idx+1]){fraglength = struct_obj->size_cumm[chr_idx+1]-rand_start;} //OBS
+    }
 
-    // Fragment length creation
-    int fraglength = getFragmentLength(sf);
-
-    // Upper fragment length cap for those reads originating in close proximity to contig end position.
-    if ((rand_start+fraglength)>struct_obj->size_cumm[chr_idx+1]){fraglength = struct_obj->size_cumm[chr_idx+1]-rand_start;} //OBS
     //fprintf(stderr,"FRAGMENT LENGTH %d\n",fraglength);
     // Determing upper bound and its affect on readsize limit based on the fragment length¨
 
@@ -158,24 +159,26 @@ void* Sampling_threads(void *arg){
     
     int Adapter1_len = 0;int Adapter2_len = 0;int SeqAdapt1_len = 0;int SeqAdapt2_len = 0;
     if(strcasecmp(struct_obj->Adapter_flag,"true")==0){
-      fprintf(stderr,"FLAG 1 %d \t FLAG 2 %d\n",flag,flag2);
+      //fprintf(stderr,"FLAG 1 %d \t FLAG 2 %d\n",flag,flag2);
       // Copy adapters to object immediately
-      fprintf(stderr,"ADAPTER 1 v2 %s\n",struct_obj->Adapter_1);
-      memcpy(Adapter_1, struct_obj->Adapter_1, sizeof(Adapter_1));//memcpy
-      fprintf(stderr,"ADAPTER 1 v1 %s\n",Adapter_1);
+      //fprintf(stderr,"ADAPTER 1 v2 %s\n",struct_obj->Adapter_1);
+      strncpy(Adapter_1, struct_obj->Adapter_1, sizeof(Adapter_1));//strncpy or memcpy
+      
+      //fprintf(stderr,"ADAPTER 1 v1 %s\n",Adapter_1);
+
       Adapter1_len = strlen(Adapter_1);
       SeqAdapt1_len = seqlen+strlen(Adapter_1);
-      fprintf(stderr,"SEQUENCE length %d \t Adapter length %d \t Sequence+adapter %d\t readlimit %d\n",seqlen,Adapter1_len,SeqAdapt1_len,readsizelimit);
+      //fprintf(stderr,"SEQUENCE length %d \t Adapter length %d \t Sequence+adapter %d\t readlimit %d\n",seqlen,Adapter1_len,SeqAdapt1_len,readsizelimit);
       if (strcasecmp("PE",struct_obj->SeqType)==0){
-        memcpy(Adapter_2, struct_obj->Adapter_2, sizeof(Adapter_2)); //strncpy
+        strncpy(Adapter_2, struct_obj->Adapter_2, sizeof(Adapter_2)); //strncpy or memcpy
         Adapter2_len = strlen(Adapter_2);
         SeqAdapt2_len = seqlen+strlen(Adapter_2);
-        fprintf(stderr,"SEQUENCE length %d \t Adapter length %d \t Sequence+adapter %d\t readlimit %d\n",seqlen,Adapter2_len,SeqAdapt2_len,readsizelimit);
+        //fprintf(stderr,"SEQUENCE length %d \t Adapter length %d \t Sequence+adapter %d\t readlimit %d\n",seqlen,Adapter2_len,SeqAdapt2_len,readsizelimit);
       }
       
       if (struct_obj->PolyNt != 'F'){Adapter1_len = readsizelimit - seqlen; Adapter2_len = readsizelimit - seqlen;} //for monophosphate the soft clip needs to be extended in length
     }
-
+    //Uni,40,180 || Norm,80,30 || LogNorm,4,1 || Pois,165 || Exp,0.025 || Gam,20,2
     // Generate CIGAR string for potential sam output with or without adapter
     //unaligned reads
     size_t n_cigar_unmap=1;const uint32_t *cigar_unmap;
@@ -305,8 +308,7 @@ void* Sampling_threads(void *arg){
               if (dtemp3 < struct_obj->NtErr_r1[qscore]){ErrorSub(dtemp4,readadapt,p);}
             }
           }
-          fprintf(stderr,"QUALITY STRING \n%s\n",qual_r1);
-          std::cout << struct_obj->PolyNt <<std::endl;
+          //fprintf(stderr,"QUALITY STRING \n%s\nAND POLYNT %c\n",qual_r1,struct_obj->PolyNt);
           //std::cout << strcasecmp(struct_obj->PolyNt,"F")<<std::endl;
           
           if (struct_obj->PolyNt != 'F'){
@@ -523,6 +525,8 @@ void* Sampling_threads(void *arg){
       
       memset(readadapt, 0, sizeof readadapt);
       memset(readadapt2, 0, sizeof readadapt2);
+
+      // didnt work memset(Adapter_1, 0, sizeof Adapter_1);memset(Adapter_2, 0, sizeof Adapter_2);
             
       chr_idx = 0;
       iter++;
@@ -540,13 +544,14 @@ void* Sampling_threads(void *arg){
       struct_obj->fqresult_r2->l =0;
     } 
   }
-  
+
   free(struct_obj->size_cumm);
   free(struct_obj->names);
   for(int j=0; j<struct_obj->MaximumLength;j++){bam_destroy1(struct_obj->list_of_reads[j]);}
   
-  //delete sf;
-
+  free(sf->rand_alloc);
+  delete sf;
+  
   free(drand_alloc);
   free(drand_alloc_nt);
   free(drand_alloc_nt_adapt);
