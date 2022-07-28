@@ -39,7 +39,8 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
   //fprintf(stderr,"Random MacIntType %d\n",MacroRandType);
   //fprintf(stderr,"\t-> Command 3 : %s \n",CommandArray);
   int nthreads=thread_no;
-  pthread_t mythreads[nthreads];
+  
+  pthread_t *mythreads = new pthread_t[nthreads]; //pthread_t mythreads[nthreads];
 
   int chr_total = 0;
   char *genome_data;
@@ -50,10 +51,10 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
     chr_total = faidx_nseq(seq_ref);
   }
 
-  const char *chr_names[chr_total];
-  int chr_sizes[chr_total];
-  int chr_idx_arr[chr_total];
-  size_t chr_size_cumm[chr_total+1];
+  const char **chr_names = new const char*[chr_total]; //const char *chr_names[chr_total];
+  int *chr_sizes = new int[chr_total]; //int chr_sizes[chr_total];
+  int *chr_idx_arr= new int[chr_total]; //int chr_idx_arr[chr_total];
+  size_t *chr_size_cumm = new size_t[chr_total+1]; //size_t chr_size_cumm[chr_total+1];
   
   if (chr_total < faidx_nseq(seq_ref)){
     for (int j = 0; j < faidx_nseq(seq_ref); j++){
@@ -93,14 +94,14 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
   if (genome_data != NULL){
     fprintf(stderr,"\t-> Completed the generation of the contigous sequence, with size of %lu bp\n",genome_size);
   
-    Parsarg_for_Sampling_thread struct_for_threads[nthreads];
+    Parsarg_for_Sampling_thread *struct_for_threads = new Parsarg_for_Sampling_thread[nthreads]; //Parsarg_for_Sampling_thread struct_for_threads[nthreads];
 
     // declare files and headers
     BGZF *bgzf_fp1 = NULL;
     BGZF *bgzf_fp2 = NULL;
 
     samFile *SAMout = NULL;
-    sam_hdr_t *SAMHeader;
+    sam_hdr_t *SAMHeader = NULL;
     htsFormat *fmt_hts =(htsFormat*) calloc(1,sizeof(htsFormat));
     htsThreadPool p = {NULL, 0};
 
@@ -110,9 +111,9 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
     strcpy(file1,fileprefix);
     strcpy(file2,fileprefix);
 
-    const char* suffix1;
-    const char* suffix2;
-    const char *mode;
+    const char* suffix1 = NULL;
+    const char* suffix2 = NULL;
+    const char* mode = NULL;
     int alnformatflag = 0;
     if(strcasecmp("fa",OutputFormat)==0){
       //fprintf(stderr,"\t-> FA SE FILE\n");
@@ -213,9 +214,9 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
     int outputoffset = qualstringoffset;
     unsigned long readcyclelength;
     //fprintf(stderr,"\t-> FRAG ARRAY LE\n");
-    ransampl_ws ***QualDist;
+    ransampl_ws ***QualDist = NULL;
     char nt_qual_r1[1024];
-    ransampl_ws ***QualDist2;
+    ransampl_ws ***QualDist2 = NULL;
     char nt_qual_r2[1024];
     //fprintf(stderr,"\t-> QUAL POINTER POINTER POINTER\n");
     double ErrArray_r1[1024];
@@ -242,10 +243,9 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
     else{polynucleotide = 'F';}
 
     //generating mismatch matrix to parse for each string
-    double* MisMatchFreqArray;
+    double* MisMatchFreqArray = new double[LENS]; //moved new up here
     int mismatchcyclelength = 0;
     if (SubProfile != NULL){
-      MisMatchFreqArray = new double[LENS];
       MisMatchFreqArray = MisMatchFileArray(MisMatchFreqArray,SubProfile,mismatchcyclelength);
     }
 
@@ -267,8 +267,8 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       struct_for_threads[i].bgzf_fp2 = bgzf_fp2;
       struct_for_threads[i].SAMout = SAMout;
       struct_for_threads[i].SAMHeader = SAMHeader;
-      struct_for_threads[i].l = 0;
-      struct_for_threads[i].m = maxsize;
+      struct_for_threads[i].LengthData = 0;
+      struct_for_threads[i].MaximumLength = maxsize;
       struct_for_threads[i].list_of_reads = (bam1_t**) malloc(sizeof(bam1_t)*maxsize); // need to free this space
       for(int j=0; j<maxsize;j++){struct_for_threads[i].list_of_reads[j]=bam_init1();} // but also destroy the bam_init1 objects    
 
@@ -328,11 +328,11 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       //declaring the size of the different sampling arrays
       struct_for_threads[i].size_cumm = (size_t*)malloc(sizeof(size_t) * (struct_for_threads[i].chr_no+1));
       struct_for_threads[i].size_cumm[0] = 0;
-      memcpy(struct_for_threads[i].size_cumm, chr_size_cumm, sizeof(chr_size_cumm));
+      memcpy(struct_for_threads[i].size_cumm, chr_size_cumm, sizeof(&chr_size_cumm)); //memcpy(struct_for_threads[i].size_cumm, chr_size_cumm, sizeof(chr_size_cumm));
       
       struct_for_threads[i].names = (char**)malloc(sizeof(char*) * struct_for_threads[i].chr_no+1);
       struct_for_threads[i].names[0] = 0;
-      memcpy(struct_for_threads[i].names, chr_names, sizeof(chr_names));
+      memcpy(struct_for_threads[i].names, chr_names, sizeof(&chr_names)); //memcpy(struct_for_threads[i].names, chr_names, sizeof(chr_names));
     }
     
     pthread_attr_t attr;
@@ -364,6 +364,8 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       delete struct_for_threads[i].fqresult_r2;      
     }
     
+    delete[] mythreads; //pthread_t *mythreads = new pthread_t[nthreads]; 
+
     if(strcasecmp("true",QualStringFlag)==0){
       for(int base=0;base<5;base++){
         for(int pos = 0 ; pos< (int) readcyclelength;pos++){
@@ -389,8 +391,16 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       delete[] Frag_freq;
       delete[] Frag_len;
     }
+
+    // free allocated memory for chromosome info    
+    delete[] chr_names; //const char **chr_names = new const char*[chr_total];
+    delete[] chr_sizes; //int *chr_sizes = new int[chr_total]; //int chr_sizes[chr_total];
+    delete[] chr_idx_arr; //int *chr_idx_arr= new int[chr_total]; //int chr_idx_arr[chr_total];
+    delete[] chr_size_cumm; //size_t *chr_size_cumm = new size_t[chr_total+1]; //size_t chr_size_cumm[chr_total+1];
     
-    if(SubProfile != NULL){delete[] MisMatchFreqArray;}
+    delete[] struct_for_threads; //Parsarg_for_Sampling_thread *struct_for_threads = new Parsarg_for_Sampling_thread[nthreads];
+
+    delete[] MisMatchFreqArray; //if(SubProfile != NULL){delete[] MisMatchFreqArray;}
     
     //CHECK IF FRAG_FREG,FRAG_LEN,QUALDIST SHOULDN'T BE DELETED NO MATTER WHAT? OR HAS THE RELEVANS CHANGED SINCE WE RESTRUCTURED THE CODE
     free(genome_data);

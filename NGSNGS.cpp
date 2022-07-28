@@ -74,7 +74,7 @@ int main(int argc,char **argv){
     
     char* Command = mypars->CommandRun;
     fprintf(stderr,"\n\t-> ngsngs version: %s (htslib: %s) build(%s %s)\n",NGSNGS_VERSION,hts_version(),__DATE__,__TIME__); 
-    fprintf(stderr,"\t-> Mycommmand: %s\n strlen: %lu\n",Command,strlen(mypars->CommandRun));
+    fprintf(stderr,"\t-> Mycommmand: %s\n",Command);
 
     //fprintf(stderr,"\t-> Command 2 : %s and version %s \n",CommandArray,version);
     clock_t t = clock();
@@ -202,8 +202,8 @@ int main(int argc,char **argv){
     fprintf(stderr,"\t-> Number of simulated reads: %zu or coverage: %f\n",mypars->nreads,mypars->coverage);
 
     const char* Adapt_flag;
-    const char* Adapter_1;
-    const char* Adapter_2;
+    const char* Adapter_1 = NULL;
+    const char* Adapter_2 = NULL;
     const char* Polynt;
     if (mypars->Adapter1 != NULL){
       //fprintf(stderr,"\t-> ARGPARSE ADAPTER + POLY\n");
@@ -342,15 +342,21 @@ int main(int argc,char **argv){
 
   // MEMORY DEALLOCATION OF STRDUP FROM INPUT PARAMETERS
   // REQUIRED DEALLOCATIONS
-  free((char *)mypars->Reference);
-  free((char *)mypars->Seq);
+  free((char *)mypars->Reference); //-i
+  free((char *)mypars->Seq); //
   
   free((char *)mypars->OutFormat);
   free((char *)mypars->OutName);
   free((char *)mypars->LengthFile);
   free((char *)mypars->LengthDist);
   
+  free((char*)mypars->CommandRun);
+
   // OPTIONAL DEALLOCATIONS
+  free((char *)mypars->Variant);
+  free((char *)mypars->Variant_type);
+  free((char *)mypars->Variant_type);
+  free((char *)mypars->HeaderIndiv);
   free((char *)mypars->Adapter1);
   free((char *)mypars->Adapter2);
   free((char *)mypars->QualProfile1);

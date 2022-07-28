@@ -41,8 +41,8 @@ struct Parsarg_for_Sampling_thread{
   samFile *SAMout;
   sam_hdr_t *SAMHeader;
   bam1_t **list_of_reads;
-  int l;
-  int m;
+  int LengthData;
+  int MaximumLength;
 
   const char* Adapter_flag;
   const char* Adapter_1;

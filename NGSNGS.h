@@ -100,7 +100,7 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-v",*argv)==0 || strcasecmp("--variant",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
       mypars->Variant_type = strdup(*(++argv));
-      strcat(Command,mypars->Variant); strcat(Command," ");
+      strcat(Command,mypars->Variant_type); strcat(Command," ");
       if(mypars->Variant == NULL){ErrMsg(13.0);}
       else if (mypars->Variant_type && strcasecmp("snp",mypars->Variant_type)!=0 && 
       strcasecmp("indel",mypars->Variant_type)!=0 &&
@@ -241,7 +241,7 @@ argStruct *getpars(int argc,char ** argv){
       mypars->HeaderIndiv = strdup(*(++argv));
       strcat(Command,*argv); strcat(Command," ");
     }
-    else if(strcasecmp("-rand",*argv)==0){
+    else if(strcasecmp("-rng",*argv)==0 || strcasecmp("--rand",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
       mypars->rand_val = atoi(*(++argv));
       strcat(Command,*argv); strcat(Command," ");
@@ -257,10 +257,11 @@ argStruct *getpars(int argc,char ** argv){
   return mypars;
 }
 
-
 void handler(int s);
 
 void catchkill();
 
-
 #endif
+
+// -ll | --lengthlimit
+// -fl | --fraglength -> So fragment length in regads to PE and then the current -l, -lf, -ld would be read lengths

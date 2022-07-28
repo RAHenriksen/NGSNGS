@@ -154,34 +154,6 @@ void DNA_CAPITAL(char seq[]){
   }
 }
 
-void DNA_complement(char seq[]){
-  while (*seq) {
-    switch(*seq) {
-      case 'A':
-      case 'a':
-        *seq = 'T';
-        break;
-      case 'G':
-      case 'g':
-        *seq = 'C';
-        break;
-      case 'C':
-      case 'c':
-        *seq = 'G';
-        break;
-      case 'T':
-      case 't':
-        *seq = 'A';
-        break;
-      case 'N':
-      case 'n':
-        *seq = 'N';
-        break;  
-    }
-    ++seq;
-  }
-}
-
 void reverseChar(char* str,int length) {
     std::reverse(str, str + length);
 }
@@ -198,17 +170,19 @@ void ReversComplement(char seq[]){
   char ntdeam[4] = {'T', 'A', 'C', 'G'};
   char seq_intermediate[1024] = {0};
   strcpy(seq_intermediate,seq);
-
+  //fprintf(stderr,"SEQUENCE \t\t%s\n",seq_intermediate);
+  int seqlen = strlen(seq);
   //Complementing sequence
-  for(int i=0;i<strlen(seq);i++){
-    seq_intermediate[i] = ntdeam[nuc2int[seq_intermediate[i]]];
+  for(int i=0;i<seqlen;i++){
+    seq_intermediate[i] = ntdeam[nuc2int[(unsigned char) seq_intermediate[i]]]; //warning: array subscript has type 'char' [-Wchar-subscripts]
   }
+  //fprintf(stderr,"COMP SEQUENCE \t\t%s\n",seq_intermediate);
 
   //reverse complement
-  for(int i=strlen(seq)-1;i>-1;i--){
-    seq[strlen(seq)-i-1] = seq_intermediate[i];
+  for(int i=seqlen-1;i>-1;i--){
+    seq[seqlen-i-1] = seq_intermediate[i];
   }
-
+  //fprintf(stderr,"REVERSE COMP SEQUENCE \t%s\n",seq);
   //just to ensure no issues arise in case of not clearing out the intermediate sequence
   memset(seq_intermediate, 0, sizeof seq_intermediate);
 }
@@ -304,14 +278,17 @@ char* HaploGenome(char* genome,char genome_data1[],char genome_data2[],int chr_s
     fprintf(stderr,"test %s \n",indiv.s);
     exit(0);*/
 
+    /*
+    For indels, which has previously been removed and not yet incorporated and improved
     size_t chr_pos_before;
     size_t chr_pos_after;
     size_t insert_total = 0;
     size_t del_total = 0;
-      
+    size_t old_pos = 0;
+    */
+
     hts_itr_t *itr = bcf_itr_querys(idx, bcf_head,chr_names[0]);
     int record_indiv;
-    size_t old_pos = 0;
     while ((record_indiv = bcf_itr_next(bcf_obj, itr, bcf_records)) == 0){
       //fprintf(stderr,"WHILE LOOP\n");
       if(strcasecmp(bcf_hdr_id2name(bcf_head, bcf_records->rid),chr_names[0])==0){
@@ -328,8 +305,9 @@ char* HaploGenome(char* genome,char genome_data1[],char genome_data2[],int chr_s
         int ngt = bcf_get_genotypes(bcf_head, bcf_records, &gt_arr, &ngt_arr);
         int max_ploidy = ngt/nsamples;
 
+        
         for (int i =0; i<nsamples; i++){
-          char* haplotype1;char* haplotype2;
+          char* haplotype1 = NULL;char* haplotype2 = NULL;//char haplotype1[1024] = {0};char haplotype2[1024] = {0}; //
           //iterates through all samples
           // fprintf(stderr,"--------\nTHE SAMPLE INDEX IS %d and sample name is %s\n",i,bcf_head->samples[i]);
           // match the names in the header with the input indivduals

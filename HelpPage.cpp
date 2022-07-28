@@ -53,7 +53,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-t  | --threads: \t\t Number of sampling threads, default = 1.\n");
   fprintf(fp,"-t2  | --threads2: \t\t Number of compression threads, default = 0.\n");
   fprintf(fp,"-s   | --seed: \t\t\t Random seed, default = current calendar time (s).\n");
-  fprintf(fp,"-rand: \t\t\t\t Pseudo-random number generator, OS specific\n");
+  fprintf(fp,"-rng | --rand: \t\t\t\t Pseudo-random number generator, OS specific\n");
   fprintf(fp,"\t e.g. linux || unix -> drand48_r (-rand = 0), not available for MacOS.\n");
   fprintf(fp,"\t APPLE and MacOS (-rand = 1).\n");
   exit(1);
