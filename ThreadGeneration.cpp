@@ -97,8 +97,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
     Parsarg_for_Sampling_thread *struct_for_threads = new Parsarg_for_Sampling_thread[nthreads]; //Parsarg_for_Sampling_thread struct_for_threads[nthreads];
 
     // declare files and headers
-    BGZF *bgzf_fp1 = NULL;
-    BGZF *bgzf_fp2 = NULL;
+    BGZF **bgzf_fp = (BGZF **) calloc(2,sizeof(BGZF *));
 
     samFile *SAMout = NULL;
     sam_hdr_t *SAMHeader = NULL;
@@ -166,16 +165,15 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       int mt_cores = threadwriteno;
       int bgzf_buf = 256;
       
-      bgzf_fp1 = bgzf_open(filename1,mode); //w
-      //fprintf(stderr,"Number of writing cores %d\n",mt_cores);
-      bgzf_mt(bgzf_fp1,mt_cores,bgzf_buf); //
+      bgzf_fp[0] = bgzf_open(filename1,mode); //w
+      bgzf_mt(bgzf_fp[0],mt_cores,bgzf_buf); //
       
       //fprintf(stderr,"\t-> BGZF FILE\n");
       if(strcasecmp("PE",SeqType)==0){
         strcat(file2,suffix2);
         filename2 = file2;
-        bgzf_fp2 = bgzf_open(filename2,mode);
-        bgzf_mt(bgzf_fp2,mt_cores,bgzf_buf);
+        bgzf_fp[1] = bgzf_open(filename2,mode);
+        bgzf_mt(bgzf_fp[1],mt_cores,bgzf_buf);
       }
     }
     else{
@@ -264,8 +262,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
 
       // The output format, output files, and structural elements for SAM outputs
       struct_for_threads[i].OutputFormat = OutputFormat;
-      struct_for_threads[i].bgzf_fp1 = bgzf_fp1;
-      struct_for_threads[i].bgzf_fp2 = bgzf_fp2;
+      struct_for_threads[i].bgzf_fp = bgzf_fp;
       struct_for_threads[i].SAMout = SAMout;
       struct_for_threads[i].SAMHeader = SAMHeader;
       struct_for_threads[i].LengthData = 0;
@@ -275,6 +272,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
 
       // Thread generation and sampling specific information
       struct_for_threads[i].threadno = i;
+      struct_for_threads[i].totalThreads = nthreads;
       struct_for_threads[i].genome = genome_data;
       struct_for_threads[i].chr_idx_array = chr_idx_arr;
       struct_for_threads[i].chr_no = chr_total;
@@ -348,16 +346,19 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       for (int i = 0; i < nthreads; i++){  
 	pthread_join(mythreads[i],NULL);
       }
-    } 
-    if(alnformatflag == 0){
-      bgzf_close(bgzf_fp1);
-      if(strcasecmp("PE",SeqType)==0){bgzf_close(bgzf_fp2);}
     }
-    else{
+    if(bgzf_fp[0]!=NULL)
+      bgzf_close(bgzf_fp[0]);
+     if(bgzf_fp[1]!=NULL)
+      bgzf_close(bgzf_fp[1]);
+    
+     if(SAMHeader)
       sam_hdr_destroy(SAMHeader);
-      sam_close(SAMout);
-      if (p.pool) hts_tpool_destroy(p.pool);
-    } 
+     if(SAMout)
+       sam_close(SAMout);
+     if (p.pool)
+       hts_tpool_destroy(p.pool);
+
     
     for(int i=0;i<nthreads;i++){
       free(struct_for_threads[i].fqresult_r1 -> s);

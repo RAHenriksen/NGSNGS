@@ -9,6 +9,7 @@ struct Parsarg_for_Sampling_thread{
   int *chr_idx_array;
   int chr_no;
   int threadno;
+  int totalThreads; //<- this contains the total number of threads. This is shared among all threads
   size_t *size_cumm;
   char **names;
 
@@ -35,8 +36,7 @@ struct Parsarg_for_Sampling_thread{
   size_t reads;
   size_t BufferLength;
   
-  BGZF *bgzf_fp1;
-  BGZF *bgzf_fp2;
+  BGZF **bgzf_fp;
 
   samFile *SAMout;
   sam_hdr_t *SAMHeader;
