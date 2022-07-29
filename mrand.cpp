@@ -1,6 +1,3 @@
-#include <stdlib.h>
-#include <random>
-#include <iostream>
 #include "mrand.h"
 
 mrand_t *mrand_alloc(int type_a,long int seedval){
