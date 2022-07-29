@@ -175,6 +175,9 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
         bgzf_fp[1] = bgzf_open(filename2,mode);
         bgzf_mt(bgzf_fp[1],mt_cores,bgzf_buf);
       }
+
+      //BGZF **bgzf_fp = (BGZF **) calloc(2,sizeof(BGZF *));
+      //free(bgzf_fp[0]);
     }
     else{
       //strlen(".fastq.gz") = longest suffix for fasta file + 2 in case of Null string terminators
@@ -197,7 +200,6 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       Header_func(fmt_hts,filename1,SAMout,SAMHeader,seq_ref,chr_total,chr_idx_arr,genome_size,CommandArray,version);
       free(ref);
       hts_opt_free((hts_opt *)fmt_hts->specific);
-      
     }
 
     //generate file array before creating the threads
@@ -340,25 +342,25 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       Sampling_threads(struct_for_threads);
     }else{
       for (int i = 0; i < nthreads; i++){
-	pthread_create(&mythreads[i],&attr,Sampling_threads,&struct_for_threads[i]);
+	    pthread_create(&mythreads[i],&attr,Sampling_threads,&struct_for_threads[i]);
       }
       
       for (int i = 0; i < nthreads; i++){  
-	pthread_join(mythreads[i],NULL);
+	    pthread_join(mythreads[i],NULL);
       }
     }
     if(bgzf_fp[0]!=NULL)
       bgzf_close(bgzf_fp[0]);
      if(bgzf_fp[1]!=NULL)
       bgzf_close(bgzf_fp[1]);
-    
+     free(bgzf_fp); //free the calloc
+     
      if(SAMHeader)
       sam_hdr_destroy(SAMHeader);
      if(SAMout)
        sam_close(SAMout);
      if (p.pool)
        hts_tpool_destroy(p.pool);
-
     
     for(int i=0;i<nthreads;i++){
       free(struct_for_threads[i].fqresult_r1 -> s);
