@@ -1,24 +1,4 @@
-#include <cstdio>
-#include <cstring>
-#include <cstdlib>
-#include <ctime>
-#include <cassert>
-#include <cstdint>
-#include <cmath>
-#include <string>
-#include <vector>
-#include <iostream>
-#include <htslib/faidx.h>
-#include <htslib/sam.h>
-#include <htslib/vcf.h>
-#include <htslib/bgzf.h>
-#include <htslib/kstring.h>
 #include <zlib.h>
-#include <errno.h>
-#include <random>
-#include <map>
-#include <math.h>
-
 #include "NGSNGS_func.h"
 #include "NtSubModels.h"
 #include "mrand.h"

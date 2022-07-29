@@ -1,5 +1,7 @@
 #ifndef NGSNGSFUNC_H
 #define NGSNGSFUNC_H
+#include <htslib/faidx.h>
+#include <htslib/sam.h>
 #include "mrand.h"
 #include "RandSampling.h"
 

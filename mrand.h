@@ -2,8 +2,6 @@
 #define MRAND_H
 
 #include <random>
-#include <iostream>
-#include <cstdlib>
 
 typedef struct{
   int type;
