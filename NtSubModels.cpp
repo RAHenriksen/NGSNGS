@@ -1,4 +1,5 @@
 #include <zlib.h>
+#include <cassert>
 #include "NGSNGS_func.h"
 #include "NtSubModels.h"
 #include "mrand.h"
