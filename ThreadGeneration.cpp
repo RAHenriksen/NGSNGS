@@ -15,6 +15,7 @@
 #include "RandSampling.h"
 #include "getFragmentLength.h"
 #include "Sampling.h"
+#include "sample_qscores.h"
 
 #define LENS 4096
 #define MAXBINS 100
@@ -205,7 +206,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
     const char *freqfile_r1; //"Qual_profiles/AccFreqL150R1.txt";
     const char *freqfile_r2;
     int outputoffset = qualstringoffset;
-    unsigned long readcyclelength;
+    int readcyclelength;
     //fprintf(stderr,"\t-> FRAG ARRAY LE\n");
     ransampl_ws ***QualDist = NULL;
     char nt_qual_r1[1024];
