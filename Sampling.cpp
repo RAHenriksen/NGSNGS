@@ -32,20 +32,16 @@ unsigned char nuc2int[255];
 
 pthread_mutex_t write_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int MacroRandType = 0;
-
 void* Sampling_threads(void *arg){
   //casting my struct as arguments for the thread creation
   Parsarg_for_Sampling_thread *struct_obj = (Parsarg_for_Sampling_thread*) arg;
 
-  int MacroRandType;
-  MacroRandType = struct_obj -> RandMacro;
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
   size_t genome_len = strlen(struct_obj->genome);
-  mrand_t *drand_alloc = mrand_alloc(MacroRandType,loc_seed);
-  mrand_t *drand_alloc_nt = mrand_alloc(MacroRandType,loc_seed);
-  mrand_t *drand_alloc_nt_adapt = mrand_alloc(MacroRandType,loc_seed);
-  mrand_t *drand_alloc_briggs = mrand_alloc(MacroRandType,loc_seed);
+  mrand_t *drand_alloc = mrand_alloc(struct_obj->rng_type,loc_seed);
+  mrand_t *drand_alloc_nt = mrand_alloc(struct_obj->rng_type,loc_seed);
+  mrand_t *drand_alloc_nt_adapt = mrand_alloc(struct_obj->rng_type,loc_seed);
+  mrand_t *drand_alloc_briggs = mrand_alloc(struct_obj->rng_type,loc_seed);
    
   // sequence reads, original, modified, with adapters, pe
   char seq_r1[1024] = {0};
@@ -87,15 +83,20 @@ void* Sampling_threads(void *arg){
 
   extern int SIG_COND;
 
-  double distpar1 = struct_obj->distparam1; double distpar2 = struct_obj->distparam2; int LengthType = struct_obj->LengthType;
+  double distpar1 = struct_obj->distparam1;
+  double distpar2 = struct_obj->distparam2;
+  int LengthType = struct_obj->LengthType;
+
   std::default_random_engine RndGen(loc_seed);
   sim_fragment *sf;
-  if (LengthType==0){sf = sim_fragment_alloc(LengthType,struct_obj->FixedSize,distpar2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,MacroRandType,loc_seed,RndGen);}
-  else{sf = sim_fragment_alloc(LengthType,distpar1,distpar2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,MacroRandType,loc_seed,RndGen);}
+  if (LengthType==0)
+    sf = sim_fragment_alloc(LengthType,struct_obj->FixedSize,distpar2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,struct_obj->rng_type,loc_seed,RndGen);
+  else
+    sf = sim_fragment_alloc(LengthType,distpar1,distpar2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,struct_obj->rng_type,loc_seed,RndGen);
 
   while (current_reads_atom < reads &&SIG_COND){
 
-    // Fragment length generator
+    // Fragment length generator 2000 
     int fraglength = getFragmentLength(sf);
 
     // Selecting genomic start position across the generated contiguous contigs for which to extract 
@@ -119,128 +120,80 @@ void* Sampling_threads(void *arg){
     //Generating random ID unique for each read output
     double rand_val_id = mrand_pop(drand_alloc);
     int rand_id = (rand_val_id * fraglength-1); //100
-    //fprintf(stderr,"RANDOM ID%d\n",rand_id);
+
     // extract the DNA sequence from the respective contig and start position when considering potential read size limitation given the read quality profile
-    if (fraglength > readsizelimit){strncpy(seq_r1,struct_obj->genome+rand_start-1,readsizelimit);}
-    else {strncpy(seq_r1,struct_obj->genome+rand_start-1,fraglength);}
+    if (fraglength > readsizelimit)
+      strncpy(seq_r1,struct_obj->genome+rand_start-1,readsizelimit);
+    else
+      strncpy(seq_r1,struct_obj->genome+rand_start-1,fraglength);
+
     if(strcasecmp("PE",struct_obj->SeqType)==0){
-      if (fraglength > readsizelimit){strncpy(seq_r2,struct_obj->genome+rand_start+fraglength-1-readsizelimit,readsizelimit);}
-      else {strncpy(seq_r2,struct_obj->genome+rand_start-1,fraglength);}
+      if (fraglength > readsizelimit)
+	strncpy(seq_r2,struct_obj->genome+rand_start+fraglength-1-readsizelimit,readsizelimit);
+      else
+	strncpy(seq_r2,struct_obj->genome+rand_start-1,fraglength);
     }
     
     //Selecting strand, 0-> forward strand (+) 5'->3', 1 -> reverse strand (-) 3'->5'
     int strand = mrand_pop(drand_alloc)>0.5?0:1; //int strand = (int) (rand_start%2);
-    //fprintf(stderr,"STRAND ID%d\n",strand);
-
-    //Remove reads which starts and end with 'N', which could be an indication of origin in telomeric or centromeric region 
-    char * pch;
-    char * pch2;
-    pch = strchr(seq_r1,'N'); //first encounter with N
-    pch2 = strrchr(seq_r1,'N'); //last encounter with N
-  
+    
+    //Remove reads which are all N? In this code we remove both pairs if both reads are all N
+    int skipread = 1;
+    for(int i=0;skipread&&i<strlen(seq_r1);i++)
+      if(seq_r1[i]!='N')
+	skipread = 0;
+    for(int i=0;seq_r2 && skipread && i<strlen(seq_r2);i++)
+      if(seq_r2[i]!='N')
+	skipread = 0;
+    
     // generating sam output information
     int seqlen = strlen(seq_r1);
-    int flag = 0; int flag2 = 0;
-
-    // Potential flags affecting the read orientation and potentially the generated CIGAR string:
-    // Single end -> 0: forward strand  16: reverse strand
-    // Paired end -> 97: Paired, First in pair, Mate reverse   + 145: Paired, Second in pair, Reverse strand
-    //            -> 81: Paired, First in pair, Reverse strand + 161: Paired, Second in pair, Mate reverse
+    int flags[2] = {-1,-1}; //flag[0] is for read1, flag[1] is for read2
     
     // Immediately generating the proper orientation and corresponding flag for potential bam output
+    
     if (strcasecmp("SE",struct_obj->SeqType)==0){
-      if (strand == 0){flag = 0;}
-      else if (strand == 1){flag = 16;ReversComplement(seq_r1);}
+      if (strand == 0)
+	flags[0] = 0;
+      else if (strand == 1){
+	flags[0] = 16;
+	ReversComplement(seq_r1);
+      }
     }
     else if (strcasecmp("PE",struct_obj->SeqType)==0){
-      if (strand == 0){flag = 97;flag2 = 145;ReversComplement(seq_r2);}
-      else if (strand == 1){flag = 81;flag2 = 161;ReversComplement(seq_r1);}
+      if (strand == 0){
+	flags[0] = 97;
+	flags[1] = 145;
+	ReversComplement(seq_r2);
+      }else if (strand == 1){
+	  flags[0] = 81;
+	  flags[1] = 161;
+	  ReversComplement(seq_r1);
+	}
     }
     
-    int Adapter1_len = 0;int Adapter2_len = 0;int SeqAdapt1_len = 0;int SeqAdapt2_len = 0;
-    if(strcasecmp(struct_obj->Adapter_flag,"true")==0){
-      //fprintf(stderr,"FLAG 1 %d \t FLAG 2 %d\n",flag,flag2);
-      // Copy adapters to object immediately
-      //fprintf(stderr,"ADAPTER 1 v2 %s\n",struct_obj->Adapter_1);
-      strncpy(Adapter_1, struct_obj->Adapter_1, sizeof(Adapter_1));//strncpy or memcpy
-      
-      //fprintf(stderr,"ADAPTER 1 v1 %s\n",Adapter_1);
+    
+    int Adapter1_len = 0;
+    int Adapter2_len = 0;
+    int SeqAdapt1_len = 0;
+    int SeqAdapt2_len = 0;
 
+    if(strcasecmp(struct_obj->Adapter_flag,"true")==0) {
+      strncpy(Adapter_1, struct_obj->Adapter_1, sizeof(Adapter_1));//strncpy or memcpy
       Adapter1_len = strlen(Adapter_1);
       SeqAdapt1_len = seqlen+Adapter1_len;
-      //fprintf(stderr,"SEQUENCE length %d \t Adapter length %d \t Sequence+adapter %d\t readlimit %d\n",seqlen,Adapter1_len,SeqAdapt1_len,readsizelimit);
       if (strcasecmp("PE",struct_obj->SeqType)==0){
         strncpy(Adapter_2, struct_obj->Adapter_2, sizeof(Adapter_2)); //strncpy or memcpy
         Adapter2_len = strlen(Adapter_2);
         SeqAdapt2_len = seqlen+Adapter2_len;
-        //fprintf(stderr,"SEQUENCE length %d \t Adapter length %d \t Sequence+adapter %d\t readlimit %d\n",seqlen,Adapter2_len,SeqAdapt2_len,readsizelimit);
       }
-      
-      if (struct_obj->PolyNt != 'F'){Adapter1_len = readsizelimit - seqlen; Adapter2_len = readsizelimit - seqlen;} //for monophosphate the soft clip needs to be extended in length
+      //for monophosphate the soft clip needs to be extended in length
+      if (struct_obj->PolyNt != 'F')
+	Adapter1_len = readsizelimit - seqlen; Adapter2_len = readsizelimit - seqlen; 
     }
     //Uni,40,180 || Norm,80,30 || LogNorm,4,1 || Pois,165 || Exp,0.025 || Gam,20,2
-    // Generate CIGAR string for potential sam output with or without adapter
-    //unaligned reads
-    size_t n_cigar_unmap=1;const uint32_t *cigar_unmap;
-    uint32_t cigar_bitstring_unmap = bam_cigar_gen(seqlen, BAM_CSOFT_CLIP);
-    uint32_t cigar_arr_unmap[] = {cigar_bitstring_unmap};
-    cigar_unmap = cigar_arr_unmap;
-    // Flags and cigar string for reads depending on adapters
-    //prepare cigarstrings for 10 cigar operations
-    uint32_t cigar[10];
-    uint32_t cigar_bit_match = bam_cigar_gen(seqlen, BAM_CMATCH);
-    uint32_t cigar_bit_soft;
-    size_t n_cigar = 1;
-
-    
-    
-    if (struct_obj->SAMout){
-      // By keeping the alignment information all reads will have matches in their cigar string     
-      if(strcasecmp(struct_obj->Adapter_flag,"true")==0){
-        n_cigar = 2;
-        if(flag == 0 || flag == 97){ //strand == 0 for read 1
-          // flag 0 is for SE so that would be same adapter (-a1) as provided for PE for flag 97
-          if(readsizelimit>=SeqAdapt1_len){cigar_bit_soft = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);}
-          else{cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt1_len, BAM_CSOFT_CLIP);}
-	        //          uint32_t cigar_arr[] = {cigar_bit_match,cigar_bit_soft}; cigar = cigar_arr;
-      cigar[0] = cigar_bit_match;
-      cigar[1] = cigar_bit_soft;
-        }
-        else if(flag == 16 || flag == 81){ //strand == 1 for read 1
-          // flag 16 is for SE so that would be same adapter (-a1) as provided for PE for flag 81
-          if(readsizelimit>=SeqAdapt1_len){cigar_bit_soft = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);} //fprintf(stderr,"limit %d\t%dM%dS\n",readsizelimit,seqlen,Adapter1_len);
-          else{cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt1_len, BAM_CSOFT_CLIP);}
-	  //          uint32_t cigar_arr[] = {cigar_bit_soft,cigar_bit_match}; cigar = cigar_arr;
-      cigar[1] = cigar_bit_match;
-      cigar[0] = cigar_bit_soft;
-          //ReversComplement(Adapter_1);
-        }
-        else if(flag2 == 161){ //strand == 0 for read 2
-          if(readsizelimit>=SeqAdapt2_len){cigar_bit_soft = bam_cigar_gen(Adapter2_len, BAM_CSOFT_CLIP);}
-          else{cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt2_len, BAM_CSOFT_CLIP);}
-	  //          uint32_t cigar_arr[] = {cigar_bit_match,cigar_bit_soft};
-      cigar[0] = cigar_bit_match;
-      cigar[1] = cigar_bit_soft;  
-        }
-        else if(flag2 == 145){ //strand == 1 for read 2
-          if(readsizelimit>=SeqAdapt2_len){cigar_bit_soft = bam_cigar_gen(Adapter2_len, BAM_CSOFT_CLIP);}
-          else{cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt2_len, BAM_CSOFT_CLIP);}
-	  //          uint32_t cigar_arr[] = {cigar_bit_soft,cigar_bit_match};
-          //cigar = cigar_arr;
-      cigar[1] = cigar_bit_match;
-      cigar[0] = cigar_bit_soft;
-          //ReversComplement(Adapter_2);
-        }
-      }
-      else{
-        n_cigar = 1;
-        //uint32_t cigar_arr[] = {cigar_bit_match};
-        cigar[0] = cigar_bit_match;
-	//        cigar2 = cigar_arr;
-      }
-    }
-
-    // NB! -> All my files then its simply the original adapter within the fastq files, as such i will keep it as original and only change for the bam
+ 
+        // NB! -> All my files then its simply the original adapter within the fastq files, as such i will keep it as original and only change for the bam
     // Generating proper Adapter orientation for both fastq with potential adapters
     //if(flag == 16 || flag == 81){ReversComplement(Adapter_1);}
     //else if(flag2 == 145){ReversComplement(Adapter_2);}
@@ -250,9 +203,7 @@ void* Sampling_threads(void *arg){
 
     //remove those whose first and last base is 'N'
     
-    if ((int )(pch-seq_r1+1) == 1 || (int)(pch2-seq_r1+1)  == seqlen){
-      memset(seq_r1, 0, sizeof seq_r1);memset(seq_r2, 0, sizeof seq_r2);}
-    else{
+    {
       //Nucleotide alteration models only on the sequence itself which holds for fa,fq,sam
       if(strcasecmp(struct_obj->Briggs_flag,"true")==0){
         SimBriggsModel(seq_r1, seq_r1_mod, strlen(seq_r1),struct_obj->BriggsParam[0],
@@ -287,20 +238,23 @@ void* Sampling_threads(void *arg){
       // Adding adapters before adding sequencing errors.
       if(strcasecmp(struct_obj->Adapter_flag,"true")==0){
         // Because i have reverse complemented the correct sequences and adapters depending on the strand origin (or flags), i know all adapters will be in 3' end
-        strcpy(read,seq_r1);strcat(read,Adapter_1); strcpy(read2,seq_r2);strcat(read2,Adapter_2);
+        strcpy(read,seq_r1);
+	strcat(read,Adapter_1);
+
+	strcpy(read2,seq_r2);
+	strcat(read2,Adapter_2);
 
         //saving both fasta and adapter to fasta format
         if (strcasecmp(struct_obj -> OutputFormat,"fa")==0|| strcasecmp(struct_obj -> OutputFormat,"fa.gz")==0){
           ksprintf(struct_obj->fqresult_r1,">%s R1\n%s%s\n",READ_ID,seq_r1,Adapter_1);
-          if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s R2\n%s%s\n",READ_ID,seq_r2,Adapter_2);}
-        }
+          if (strcasecmp("PE",struct_obj->SeqType)==0)
+	    ksprintf(struct_obj->fqresult_r2,">%s R2\n%s%s\n",READ_ID,seq_r2,Adapter_2);
+	}
         else{
           // Fastq and Sam needs quality score for both read and adapter, but the length cannot exceed the readcycle length inferred from read profile
           strncpy(readadapt, read, readsizelimit);
-          //fprintf(stderr,"ADAPTER %s \n PART %.5s %.5s AND ITS LENGTH %d\n",readadapt,readadapt,&readadapt[strlen(seq_r1)],strlen(readadapt));
-          //fprintf(stderr,"ADAPTER %s \n PART %.*s\n",readadapt,10,readadapt+2);
-          //exit(0);
-          if (strcasecmp("PE",struct_obj->SeqType)==0){strncpy(readadapt2, read2, readsizelimit);}
+	  if (strcasecmp("PE",struct_obj->SeqType)==0)
+	    strncpy(readadapt2, read2, readsizelimit);
           
           // Since the adapters don't have to be the same length, it is necessary to seperate Read 1 from Read 2 when generating quality string
 
@@ -320,24 +274,18 @@ void* Sampling_threads(void *arg){
               if (dtemp3 < struct_obj->NtErr_r1[qscore]){ErrorSub(dtemp4,readadapt,p);}
             }
           }
-          //fprintf(stderr,"QUALITY STRING \n%s\nAND POLYNT %c\n",qual_r1,struct_obj->PolyNt);
-          //std::cout << strcasecmp(struct_obj->PolyNt,"F")<<std::endl;
-          
+	  
           if (struct_obj->PolyNt != 'F'){
             MonoLen = readsizelimit - strlen(readadapt);
-            //fprintf(stderr,"MONOPHOSPHATE IS %c AND LENGHT IS %d and MONOPHOSPHATE REGION IS %s\n",MonoPhosphateSeq[0],MonoLen,MonoPhosphateSeq.substr(1,MonoLen).c_str());
-            //fprintf(stderr,"SEQUENCE \n%s\n SequenceAdapt \n%s\n and Mono\n%s%s\n",seq_r1,readadapt,readadapt,MonoPhosphateSeq.substr(1,MonoLen).c_str());
-            if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
+	    if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
               ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s%s\n+\n%s%s\n",READ_ID,readadapt,MonoPhosphateSeq.substr(1,MonoLen).c_str(),qual_r1,MonoPhosphateQual.substr(1,MonoLen).c_str());
             }
             else if (struct_obj->SAMout){
-              /*std::cout << "INSIDE SAM ELSE IF" << std::endl;
-              std::cout << readadapt << " " << strlen(Adapter_1) << " " << seqlen<< std::endl;
-              std::cout << readadapt << std::endl;
-              fprintf(stderr,"MONOLENGTH IS %d \t SEQUENCE LENGTH %d\t%s\n",MonoLen,strlen(readadapt),MonoPhosphateSeq.substr(1,MonoLen).c_str());*/
-              if(flag == 0 || flag == 97){ksprintf(struct_obj->fqresult_r1,"%s%s",readadapt,MonoPhosphateSeq.substr(1,MonoLen).c_str());}
+	      if(flags[0] == 0 || flags[0] == 97)
+		ksprintf(struct_obj->fqresult_r1,"%s%s",readadapt,MonoPhosphateSeq.substr(1,MonoLen).c_str());
+
               // CIGAR STRING YSXM, Y=ADAPTERLENGTH, X=SEQUENCE LENGTH, The sequence is equal to reference but adapter is reverse complementary
-              else if(flag == 16 || flag == 81){     
+              else if(flags[0] == 16 || flags[0] == 81){     
                 //change orientation back to reference genome
                 ReversComplement(readadapt);
                 //adding monophosphate
@@ -346,10 +294,13 @@ void* Sampling_threads(void *arg){
             }
           }
           else{
-            if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s\n+\n%s\n",READ_ID,readadapt,qual_r1);}
+            if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
+	      ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s\n+\n%s\n",READ_ID,readadapt,qual_r1);
+	    }
             else if (struct_obj->SAMout){
-              if(flag == 0 || flag == 97){ksprintf(struct_obj->fqresult_r1,"%s",readadapt);}
-              else if(flag == 16 || flag == 81){
+              if(flags[0] == 0 || flags[0] == 97)
+		ksprintf(struct_obj->fqresult_r1,"%s",readadapt);
+              else if(flags[0] == 16 || flags[0] == 81){
                 ReversComplement(readadapt);
                 ksprintf(struct_obj->fqresult_r1,"%.*s%.*s",seqlen,readadapt+Adapter1_len,Adapter1_len,readadapt);}
             }
@@ -379,8 +330,9 @@ void* Sampling_threads(void *arg){
                 ksprintf(struct_obj->fqresult_r2,"@%s R2\n%s%s\n+\n%s%s\n",READ_ID,readadapt2,MonoPhosphateSeq.substr(1,MonoLen).c_str(),qual_r2,MonoPhosphateQual.substr(1,MonoLen).c_str());
               }
               else if (struct_obj->SAMout){
-                if(flag2 == 161){ksprintf(struct_obj->fqresult_r2,"%s%s",readadapt2,MonoPhosphateSeq.substr(1,MonoLen).c_str());}
-                else if(flag2 == 145){
+                if(flags[1] == 161)
+		  ksprintf(struct_obj->fqresult_r2,"%s%s",readadapt2,MonoPhosphateSeq.substr(1,MonoLen).c_str());
+		else if(flags[1] == 145){
                   ReversComplement(readadapt2);
                   ksprintf(struct_obj->fqresult_r2,"%.*s%.*s%s",seqlen,readadapt2+Adapter2_len,Adapter2_len,readadapt2,MonoPhosphateSeq.substr(1,MonoLen).c_str());
                 }
@@ -391,11 +343,10 @@ void* Sampling_threads(void *arg){
                 ksprintf(struct_obj->fqresult_r2,"@%s R2\n%s\n+\n%s\n",READ_ID,readadapt2,qual_r2);
               }
               else if (struct_obj->SAMout){
-                if(flag2 == 161){ksprintf(struct_obj->fqresult_r2,"%s",readadapt2);}
-                else if(flag2 == 145){
-                  //before it's 5' sequence (reverse strand) '3 + 5'adapter'3
+                if(flags[1] == 161)
+		  ksprintf(struct_obj->fqresult_r2,"%s",readadapt2);
+                else if(flags[1] == 145){
                   ReversComplement(readadapt2);
-                  //after it's 5' sequence (forward strand (reference strand)) '3 + 5' adapter '3 (reverse complementary)
                   ksprintf(struct_obj->fqresult_r2,"%.*s%.*s",seqlen,readadapt2+Adapter2_len,Adapter2_len,readadapt2);
                 }
               }
@@ -432,9 +383,13 @@ void* Sampling_threads(void *arg){
             ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
           }
           else if (struct_obj->SAMout){
-            if (flag == 0 || flag == 97){ksprintf(struct_obj->fqresult_r1,"%s",seq_r1);}
-            else if (flag == 16 || flag == 81){ReversComplement(seq_r1);ksprintf(struct_obj->fqresult_r1,"%s",seq_r1);}
-          }
+            if (flags[0] == 0 || flags[0] == 97)
+	      ksprintf(struct_obj->fqresult_r1,"%s",seq_r1);
+            else if (flags[0] == 16 || flags[0] == 81){
+	      ReversComplement(seq_r1);
+	      ksprintf(struct_obj->fqresult_r1,"%s",seq_r1);
+	    }
+	  }
 
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             for(int p = 0;p<seqlen;p++){
@@ -456,8 +411,11 @@ void* Sampling_threads(void *arg){
               ksprintf(struct_obj->fqresult_r2,"@%s R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);
             }
             else if (struct_obj->SAMout){
-              if (flag2 == 161){ksprintf(struct_obj->fqresult_r2,"%s",seq_r2);}
-              else if (flag2 == 145){ReversComplement(seq_r2);ksprintf(struct_obj->fqresult_r2,"%s",seq_r2);}
+              if (flags[1] == 161)
+		ksprintf(struct_obj->fqresult_r2,"%s",seq_r2);
+              else if (flags[1] == 145){
+		ReversComplement(seq_r2);ksprintf(struct_obj->fqresult_r2,"%s",seq_r2);
+	      }
             }
           }
         }
@@ -473,6 +431,66 @@ void* Sampling_threads(void *arg){
         }
       }
       else if (struct_obj->SAMout){
+	// Generate CI§GAR string for potential sam output with or without adapter
+	//unaligned reads
+	size_t n_cigar_unmap=1;const uint32_t *cigar_unmap;
+	uint32_t cigar_bitstring_unmap = bam_cigar_gen(seqlen, BAM_CSOFT_CLIP);
+	uint32_t cigar_arr_unmap[] = {cigar_bitstring_unmap};
+	cigar_unmap = cigar_arr_unmap;
+	// Flags and cigar string for reads depending on adapters
+	//prepare cigarstrings for 10 cigar operations
+	uint32_t cigs[2][10];//cigs[0] is read1 cigs[1] is read2
+	uint32_t cigar_bit_match = bam_cigar_gen(seqlen, BAM_CMATCH);
+	uint32_t cigar_bit_soft;
+	size_t n_cigar = 1;
+
+	// By keeping the alignment information all reads will have matches in their cigar string     
+	if(strcasecmp(struct_obj->Adapter_flag,"true")==0) {
+	  n_cigar = 2;
+	  if(flags[0] == 0 || flags[0] == 97) { //strand == 0 for read 1
+	    // flag 0 is for SE so that would be same adapter (-a1) as provided for PE for flag 97
+	    if(readsizelimit>=SeqAdapt1_len)
+	    cigar_bit_soft = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);
+	    else
+	      cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt1_len, BAM_CSOFT_CLIP);
+	    //          uint32_t cigar_arr[] = {cigar_bit_match,cigar_bit_soft}; cigar = cigar_arr;
+	    cigs[0][0] = cigar_bit_match;
+	    cigs[0][1] = cigar_bit_soft;
+        }
+	  else if(flags[0] == 16 || flags[0] == 81){ //strand == 1 for read 1
+	    // flag 16 is for SE so that would be same adapter (-a1) as provided for PE for flag 81
+	    if(readsizelimit>=SeqAdapt1_len){cigar_bit_soft = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);} //fprintf(stderr,"limit %d\t%dM%dS\n",readsizelimit,seqlen,Adapter1_len);
+	    else{cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt1_len, BAM_CSOFT_CLIP);}
+	    //          uint32_t cigar_arr[] = {cigar_bit_soft,cigar_bit_match}; cigar = cigar_arr;
+	    cigs[0][1] = cigar_bit_match;
+	    cigs[0][0] = cigar_bit_soft;
+          //ReversComplement(Adapter_1);
+	  }
+	  else if(flags[1] == 161){ //strand == 0 for read 2
+	    if(readsizelimit>=SeqAdapt2_len)
+	      cigar_bit_soft = bam_cigar_gen(Adapter2_len, BAM_CSOFT_CLIP);
+	    else
+	      cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt2_len, BAM_CSOFT_CLIP);
+
+	    cigs[0][0] = cigar_bit_match;
+	    cigs[0][1] = cigar_bit_soft;  
+        }
+	  else if(flags[1] == 145){ //strand == 1 for read 2
+	    if(readsizelimit>=SeqAdapt2_len)
+	      cigar_bit_soft = bam_cigar_gen(Adapter2_len, BAM_CSOFT_CLIP);
+	    else
+	      cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt2_len, BAM_CSOFT_CLIP);
+	    
+	    cigs[0][1] = cigar_bit_match;
+	    cigs[0][0] = cigar_bit_soft;
+	  }
+	}
+	else{
+	  n_cigar = 1;
+	  //uint32_t cigar_arr[] = {cigar_bit_match};
+	  cigs[0][0] = cigar_bit_match;
+	  //        cigar2 = cigar_arr;
+	}
         //generating id, position and the remaining sam field information
         size_t l_aux = 2; uint8_t mapq = 60;
         hts_pos_t min_beg, max_end, insert; //max_end, insert;
@@ -481,10 +499,13 @@ void* Sampling_threads(void *arg){
         insert = max_end - min_beg + 1;
 
         // Change the orientation of quality string similar to changing read orientation
-        if (flag == 16 || flag == 81){reverseChar(qual_r1,strlen(seq_r1));}
-        else if (flag2 == 145){reverseChar(qual_r2,strlen(seq_r2));}  
+        if (flags[0] == 16 || flags[0] == 81)
+	  reverseChar(qual_r1,strlen(seq_r1));
+        else if (flags[1] == 145)
+	  reverseChar(qual_r2,strlen(seq_r2));
         
-        char READIDR1[1024];char READIDR2[1024];
+        char READIDR1[1024];
+	char READIDR2[1024];
         const char* suffR1 = " R1";const char* suffR2 = " R2";
         strcpy(READIDR1,READ_ID);strcat(READIDR1,suffR1);
 
@@ -495,12 +516,14 @@ void* Sampling_threads(void *arg){
             255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,NULL,0);
           }
           else{ //saving 'alignment' information
-            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR1),READIDR1,flag,chr_idx,min_beg,mapq,
-            n_cigar,cigar,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
+
+            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR1),READIDR1,flags[0],chr_idx,min_beg,mapq,
+            n_cigar,cigs[0],-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
           }
           //const char* MDtag = "\tMD:Z:"; //bam_aux_update_str(struct_obj->list_of_reads[struct_obj->LengthData-1],"MD",5,"MDtag");
         }
         else if (strcasecmp("PE",struct_obj->SeqType)==0){
+	  fprintf(stderr,"writing\n");
           strcpy(READIDR2,READ_ID);strcat(READIDR2,suffR2);
           if (struct_obj->NoAlign == 'T'){
             bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR1),READIDR1,4,-1,-1,
@@ -509,10 +532,12 @@ void* Sampling_threads(void *arg){
             255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,NULL,0);
           }
           else{
-            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR1),READIDR1,flag,chr_idx,min_beg,mapq,
-            n_cigar,cigar,chr_idx,max_end,insert,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
-            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR2),READIDR2,flag2,chr_idx,max_end,mapq,
-            n_cigar,cigar,chr_idx,min_beg,0-insert,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,qual_r2,l_aux);
+	    
+            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR1),READIDR1,flags[0],chr_idx,min_beg,mapq,
+            n_cigar,cigs[0],chr_idx,max_end,insert,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
+	    
+            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR2),READIDR2,flags[1],chr_idx,max_end,mapq,
+            n_cigar,cigs[1],chr_idx,min_beg,0-insert,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,qual_r2,l_aux);
           }
         }
 

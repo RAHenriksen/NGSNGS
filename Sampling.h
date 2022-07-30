@@ -66,7 +66,7 @@ struct Parsarg_for_Sampling_thread{
   char NoAlign;
   char PolyNt;
 
-  int RandMacro;
+  int rng_type;
 };
 
 void* Sampling_threads(void *arg);

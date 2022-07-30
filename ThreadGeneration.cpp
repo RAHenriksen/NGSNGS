@@ -271,7 +271,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       struct_for_threads[i].chr_idx_array = chr_idx_arr;
       struct_for_threads[i].chr_no = chr_total;
       struct_for_threads[i].threadseed = seed;
-      struct_for_threads[i].RandMacro = RandMacro;
+      struct_for_threads[i].rng_type = RandMacro;
 
       // Sequence alteration models
       // 1) nucleotide quality score and sequencing errors,  
