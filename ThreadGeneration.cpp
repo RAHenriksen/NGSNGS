@@ -1,12 +1,3 @@
-#include <cstdio>
-#include <cstring>
-#include <cstdlib>
-#include <ctime>
-#include <cassert>
-#include <cstdint>
-#include <iostream>
-#include <math.h>
-
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
 #include <htslib/vcf.h>
@@ -80,7 +71,8 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
     }  
     else{
       fprintf(stderr,"Generating partial\n");
-      std::cout << chr_total << " " << faidx_nseq(seq_ref) << std::endl;
+      fprintf(stderr,"chr_total: %d, nseq: %d\n",chr_total,faidx_nseq(seq_ref));
+      //      std::cout << chr_total << " " << faidx_nseq(seq_ref) << std::endl;
       fprintf(stderr,"chr total %d \t specific chr %s\n",chr_total,Specific_Chr[0]);
       genome_data = partial_genome_create(seq_ref,chr_total-1,chr_sizes,Specific_Chr,chr_size_cumm);
       fprintf(stderr,"Generating done\n");
@@ -185,7 +177,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       sprintf(ref, "reference=%s", FastaFileName);
       
       // Save reference file name for header creation of the sam output
-      hts_opt_add((hts_opt **)&fmt_hts->specific,ref);
+      //  hts_opt_add((hts_opt **)&fmt_hts->specific,ref);
       SAMout = sam_open_format(filename1, mode, fmt_hts);
       SAMHeader = sam_hdr_init();
 
@@ -199,7 +191,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       // generate header
       Header_func(fmt_hts,filename1,SAMout,SAMHeader,seq_ref,chr_total,chr_idx_arr,genome_size,CommandArray,version);
       free(ref);
-      hts_opt_free((hts_opt *)fmt_hts->specific);
+      // hts_opt_free((hts_opt *)fmt_hts->specific);
     }
 
     //generate file array before creating the threads
@@ -338,6 +330,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
     
     pthread_attr_t attr;
     pthread_attr_init(&attr);
+    fprintf(stderr,"\t nthreads: %d\n",nthreads);
     if(nthreads==1){
       Sampling_threads(struct_for_threads);
     }else{
