@@ -2,6 +2,9 @@
 #define MRAND_H
 
 #include <random>
+#include <iostream>
+#include <cstdlib>
+#include <climits>
 
 typedef struct{
   int type;
@@ -11,6 +14,7 @@ typedef struct{
   std::random_device rd;
   std::default_random_engine eng;
   std::uniform_real_distribution<float> distr;
+  std::uniform_int_distribution<> distrInt;
   unsigned int rand_r_seed;
   unsigned short xsubi[3];
 }mrand_t;
@@ -21,4 +25,5 @@ typedef struct{
 //type=3 is the funky erand, the most recent member of the family.
 mrand_t *mrand_alloc(int type_a, long int seedval);
 double mrand_pop(mrand_t *mr);
+long mrand_pop_long(mrand_t *mr);
 #endif

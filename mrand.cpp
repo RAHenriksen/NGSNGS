@@ -1,3 +1,7 @@
+#include <stdlib.h>
+#include <random>
+#include <iostream>
+#include <climits>
 #include "mrand.h"
 
 mrand_t *mrand_alloc(int type_a,long int seedval){
@@ -16,6 +20,7 @@ mrand_t *mrand_alloc(int type_a,long int seedval){
   if(ret->type==1){
     ret->eng = std::default_random_engine(seedval);
     ret->distr = std::uniform_real_distribution<float>(0, 1);
+    ret->distrInt = std::uniform_int_distribution<>(0,INT_MAX);
   }
   if(ret->type==2)
     ret->rand_r_seed = (unsigned int) seedval;
@@ -50,6 +55,28 @@ double mrand_pop(mrand_t *mr){
   }
   return res;
 }
+long mrand_pop_long(mrand_t *mr){
+  long res;
+  if(mr->type==0){
+    #if defined(__linux__) || defined(__unix__)
+    lrand48_r((struct drand48_data*)&mr->buf0,&res);
+    #endif
+  }
+  else if(mr->type==1){
+    res =  mr->distrInt(mr->eng);
+  }
+  else if(mr->type==2){
+    res = rand_r(&mr->rand_r_seed) ;
+  }
+  else if(mr->type==3){
+    res = jrand48(mr->xsubi);
+  }
+  else{
+    fprintf(stderr,"Random parameter %d is not supported\n",mr->type);
+    exit(0);
+  }
+  return res;
+}
 
 
 #ifdef __WITH_MAIN__
@@ -74,4 +101,3 @@ int main(int argc,char **argv){
 #endif
 
 //g++ mrand.cpp -std=c++11 -lm -lz -D__WITH_MAIN__ -o Rand
-//./Rand 1 1 10
