@@ -88,14 +88,13 @@ int main(int argc,char **argv){
     const char* Seq_Type = mypars->Seq;
     //    size No_reads = mypars->nreads;
     double readcov = mypars->coverage;
-    int MacroRandType = mypars->rand_val; //extern int
 
-    if (MacroRandType == -1){
+    if (mypars->rng_type == -1){
       #if defined(__linux__) || defined(__unix__) // all unices not caught above
       // Unix
         MacroRandType = 0;
       #elif defined(__APPLE__) || defined(__MACH__)
-        MacroRandType = 3;
+        mypars->rng_type = 3;
         //when 0 it will have problems with drand48 reentrant, will default to erand48 (MacroRandType 3)
       #else
       #   error "Unknown compiler"
@@ -333,7 +332,7 @@ int main(int argc,char **argv){
                       Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
                       Param,Briggs_Flag,Sizefile,FixedSize,SizeDistType,val1,val2,
                       qualstringoffset,QualProfile1,QualProfile2,CompressThreads,QualStringFlag,Polynt,
-                      ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,MacroRandType,
+                      ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,mypars->rng_type,
                       VCFformat,Variant_flag,VarType,Command,NGSNGS_VERSION,HeaderIndiv,NoAlign,BufferLength);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);

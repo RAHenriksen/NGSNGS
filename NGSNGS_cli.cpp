@@ -21,7 +21,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Reference = NULL;
   mypars->Seq = NULL; // "SE";
   mypars->Glob_seed = (int) time(NULL);
-  mypars->rand_val = -1;
+  mypars->rng_type = -1;
 
   // Sequence alteration models
   // 1) nucleotide quality score and sequencing errors,  
@@ -213,7 +213,7 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-rng",*argv)==0 || strcasecmp("--rand",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
-      mypars->rand_val = atoi(*(++argv));
+      mypars->rng_type = atoi(*(++argv));
       strcat(Command,*argv); strcat(Command," ");
     }
     else{

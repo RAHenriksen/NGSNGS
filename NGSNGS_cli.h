@@ -27,7 +27,7 @@ typedef struct{
   const char *LengthDist;//name of pdf used for simulating fraglengths (incl parameters)
   const char *Poly; // should poly be added possible values -p G or -p A
   const char *Chromosomes; //for subsetting chromosome of interested, -chr chrX
-  int rand_val; //RNG type, drand48 or rand or drand48_r etc
+  int rng_type; //RNG type, drand48 or rand or drand48_r etc
   const char *Variant; // filename for bcf
   const char *Variant_type; //-v SNP -v INDEL
   char *VariantFlag; //bcf
