@@ -26,6 +26,7 @@
 #include "ThreadGeneration.h"
 #include "HelpPage.h"
 #include "NGSNGS.h"
+#include "NGSNGS_cli.h"
 
 #include <signal.h>
 #define LENS 4096

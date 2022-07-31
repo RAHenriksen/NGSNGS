@@ -92,7 +92,7 @@ void* Sampling_threads(void *arg){
   if (LengthType==0)
     sf = sim_fragment_alloc(LengthType,struct_obj->FixedSize,distpar2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,struct_obj->rng_type,loc_seed,RndGen);
   else
-    sf = sim_fragment_alloc(LengthType,distpar1,distpar2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,struct_obj->rng_type,loc_seed,RndGen);
+    sf = sim_fragment_alloc(LengthType,distpar1             ,distpar2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,struct_obj->rng_type,loc_seed,RndGen);
 
   while (current_reads_atom < reads &&SIG_COND){
 
