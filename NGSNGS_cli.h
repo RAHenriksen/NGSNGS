@@ -4,6 +4,8 @@
 #include <ctime>
 #include <cstring>
 #include "HelpPage.h"
+enum outputformat_e {unknownT, faT, fagzT, fqT, fqgzT, samT, bamT,cramT };
+enum seqtype_e {unknownTT, SE,PE};
 
 typedef struct{
   int SamplThreads; //sampling threads, used internally by pthread_create
@@ -11,10 +13,10 @@ typedef struct{
   size_t nreads; // Thorfinn made mistake
   double coverage; // Coverage of breadth, estimated from rlen, flen, genomsize, superfancy
   int Glob_seed; // local seeds are computed determistly from global. Only one seed needs to be supplied
-  const char *OutFormat; //fq, fq.gz, fa, fa.gz, sam, bam, cram, ultrafancy
+  outputformat_e OutFormat ; //fq, fq.gz, fa, fa.gz, sam, bam, cram, ultrafancy
   const char *OutName; //prefix for output, final will be determined by [OutName.OutFormat]
   const char *Reference; //full filename for reference fasta
-  const char *Seq; // singleend or paired end.
+  seqtype_e seq_type; // singleend or paired end.
   const char *Adapter1; //actual adapterseq, R1, not flipped, reversed or completemented
   const char *Adapter2; //actual adapterseq, R2, not flipped, reversed or completemented
   const char *QualProfile1;// filename for quality prof, for R1 or SE

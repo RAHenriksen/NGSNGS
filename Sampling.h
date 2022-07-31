@@ -1,6 +1,7 @@
 #ifndef SAMPLING_H
 #define SAMPLING_H
 #define LENS 4096
+#include "NGSNGS_cli.h"
 
 struct Parsarg_for_Sampling_thread{
   kstring_t *fqresult_r1;
@@ -57,8 +58,8 @@ struct Parsarg_for_Sampling_thread{
 
   int readcycle;
   
-  const char* OutputFormat;
-  const char* SeqType;
+  outputformat_e OutputFormat;
+  seqtype_e SeqType;
   const char* QualFlag;
 
   char ErrorFlag;

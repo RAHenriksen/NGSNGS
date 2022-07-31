@@ -11,7 +11,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->KstrBuf=30000000;
 
   // The output format, output files, and structural elements for SAM outputs
-  mypars->OutFormat = NULL; //"fa";
+  mypars->OutFormat = unknownT;
   mypars->OutName = NULL; //"output";
   mypars->HeaderIndiv=NULL;
   mypars->NoAlign=NULL;
@@ -19,7 +19,7 @@ argStruct *getpars(int argc,char ** argv){
   // Thread generation and sampling specific information
   mypars->Chromosomes = NULL;
   mypars->Reference = NULL;
-  mypars->Seq = NULL; // "SE";
+  mypars->seq_type = unknownTT;
   mypars->Glob_seed = (int) time(NULL);
   mypars->rng_type = -1;
 
@@ -119,9 +119,15 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-seq",*argv)==0 || strcasecmp("--sequencing",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
-      mypars->Seq = strdup(*(++argv));
+      char * tok = *(++argv);
       strcat(Command,*argv); strcat(Command," ");
-      if(strcasecmp("SE",mypars->Seq)!=0 && strcasecmp("PE",mypars->Seq)!=0){ErrMsg(6.5);} 
+      
+      if(strcasecmp("SE",tok)==0)
+	mypars->seq_type = SE;
+      else if(strcasecmp("PE",tok)==0)
+	mypars->seq_type = PE;
+      if(mypars->seq_type==unknownTT)
+	ErrMsg(6.5);
     }
     else if(strcasecmp("-a1",*argv)==0 || strcasecmp("--adapter1",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
@@ -160,15 +166,25 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
-      mypars->OutFormat = strdup(*(++argv));
+      ++argv;
       strcat(Command,*argv); strcat(Command," ");
-      if(strcasecmp("fa",mypars->OutFormat)!=0 && 
-      strcasecmp("fa.gz",mypars->OutFormat)!=0 &&
-      strcasecmp("fq",mypars->OutFormat)!=0 &&
-      strcasecmp("fq.gz",mypars->OutFormat)!=0 &&
-      strcasecmp("sam",mypars->OutFormat)!=0 &&
-      strcasecmp("bam",mypars->OutFormat)!=0 &&
-      strcasecmp("cram",mypars->OutFormat)!=0){ErrMsg(7.0);}      
+      char *tok = *argv;
+      if(strcasecmp("fa",tok)==0)
+	mypars->OutFormat = faT;
+      if(strcasecmp("fa.gz",tok)==0)
+	mypars->OutFormat = fagzT;
+      if(strcasecmp("fq",tok)==0)
+	mypars->OutFormat = fqT;
+      if(strcasecmp("fq.gz",tok)==0)
+	mypars->OutFormat = fqgzT;
+      if(strcasecmp("sam",tok)==0)
+	mypars->OutFormat = samT;
+      if(strcasecmp("bam",tok)==0)
+	mypars->OutFormat = bamT;
+      if(strcasecmp("cram",tok)==0)
+	mypars->OutFormat = cramT;
+      if(mypars->OutFormat==unknownT)
+	ErrMsg(7.0);
     }
     else if(strcasecmp("-b",*argv)==0 || strcasecmp("--briggs",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");

@@ -83,10 +83,8 @@ int main(int argc,char **argv){
     int Glob_seed = mypars->Glob_seed; 
 
     const char *fastafile = mypars->Reference;
-    const char* OutputFormat = mypars->OutFormat;
+    //const char* OutputFormat = mypars->OutFormat;
     const char* filename = mypars->OutName; //"chr22_out";
-    const char* Seq_Type = mypars->Seq;
-    //    size No_reads = mypars->nreads;
     double readcov = mypars->coverage;
 
     if (mypars->rng_type == -1){
@@ -104,8 +102,6 @@ int main(int argc,char **argv){
     
     
     if (fastafile == NULL){ErrMsg(1.0);}
-    if (Seq_Type == NULL){ErrMsg(6.0);}
-    if (OutputFormat == NULL){ErrMsg(7.0);}
     if (filename == NULL){ErrMsg(8.0);}
     
     //fprintf(stderr,"\t-> Command: %s \n",Command);
@@ -228,9 +224,11 @@ int main(int argc,char **argv){
     if (QualProfile1 == NULL){QualStringFlag = "false";}
     else{QualStringFlag = "true";}
     //fprintf(stderr,"qualstring test %s",QualStringFlag);
+    outputformat_e OutputFormat = mypars->OutFormat;
     if (strcasecmp("true",QualStringFlag)==0){
-      if(OutputFormat && (strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("sam",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0 || strcasecmp("cram",OutputFormat)==0)){
-        if (strcasecmp("PE",Seq_Type)==0 && QualProfile2 == NULL){
+      
+      if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
+        if (mypars->seq_type == PE && QualProfile2 == NULL){
           ErrMsg(11.0);
           //fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
           exit(0);
@@ -239,7 +237,7 @@ int main(int argc,char **argv){
     }
     else
     {
-      if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0){
+      if(OutputFormat== fqT ||OutputFormat==fqgzT){
         ErrMsg(11.0);
         //fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
         exit(0);
@@ -264,11 +262,13 @@ int main(int argc,char **argv){
       if(mypars->ErrorFlag != NULL){WarMsg(3.0);}
     }
     if (strcasecmp("true",QualStringFlag)==0){
-      if(strcasecmp("fa",OutputFormat)==0 || strcasecmp("fa.gz",OutputFormat)==0){WarMsg(4.0);}
+      if(OutputFormat== faT|| fagzT==OutputFormat)
+	WarMsg(4.0);
     }
 
     int qualstringoffset = 0;
-    if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0){qualstringoffset = 33;}
+    if(fqT==OutputFormat|| fqgzT==OutputFormat)
+      qualstringoffset = 33;
     
     const char* Briggs_Flag;
     float Param[4];
@@ -324,12 +324,9 @@ int main(int argc,char **argv){
       fprintf(stderr,"VARIANT TYPE %s\n",VarType);
     }
 
-    //if(Specific_Chr[0]=='\0'){fprintf(stderr,"HURRA");}
     int DeamLength = 0;
-    //const char* HeaderIndiv = "HG00096";
-    //fprintf(stderr,"LENGTH TYPE %d\n",SizeDistType);
     ThreadInitialization(seq_ref,SamplThreads,Glob_seed,nreads_per_thread,filename,
-                      Adapt_flag,Adapter_1,Adapter_2,OutputFormat,Seq_Type,
+                      Adapt_flag,Adapter_1,Adapter_2,mypars->OutFormat,mypars->seq_type,
                       Param,Briggs_Flag,Sizefile,FixedSize,SizeDistType,val1,val2,
                       qualstringoffset,QualProfile1,QualProfile2,CompressThreads,QualStringFlag,Polynt,
                       ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,mypars->rng_type,
@@ -342,9 +339,6 @@ int main(int argc,char **argv){
   // MEMORY DEALLOCATION OF STRDUP FROM INPUT PARAMETERS
   // REQUIRED DEALLOCATIONS
   free((char *)mypars->Reference); //-i
-  free((char *)mypars->Seq); //
-  
-  free((char *)mypars->OutFormat);
   free((char *)mypars->OutName);
   free((char *)mypars->LengthFile);
   free((char *)mypars->LengthDist);

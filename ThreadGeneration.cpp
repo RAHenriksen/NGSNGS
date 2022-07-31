@@ -16,12 +16,13 @@
 #include "getFragmentLength.h"
 #include "Sampling.h"
 #include "sample_qscores.h"
+#include "NGSNGS_cli.h"
 
 #define LENS 4096
 #define MAXBINS 100
 
 void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
-                        const char* Adapter_2,const char* OutputFormat,const char* SeqType,float BriggsParam[4],const char* Briggs_flag,
+                        const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],const char* Briggs_flag,
                         const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName,
@@ -107,46 +108,65 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
     const char* suffix2 = NULL;
     const char* mode = NULL;
     int alnformatflag = 0;
-    if(strcasecmp("fa",OutputFormat)==0){
-      //fprintf(stderr,"\t-> FA SE FILE\n");
+    switch(OutputFormat){
+    case faT:
       mode = "wu";
-      if(strcasecmp("SE",SeqType)==0){suffix1 = ".fa";}
-      else{suffix1 = "_R1.fa";suffix2 = "_R2.fa";}
-    }
-    else if(strcasecmp("fa.gz",OutputFormat)==0){
+      if(SE==SeqType)
+	suffix1 = ".fa";
+      else{
+	suffix1 = "_R1.fa";
+	suffix2 = "_R2.fa";
+      }
+      break;
+    case fagzT:
       mode = "wb";
-      if(strcasecmp("SE",SeqType)==0){suffix1 = ".fa.gz";}
-      else{suffix1 = "_R1.fa.gz";suffix2 = "_R2.fa.gz";}
-    }
-    else if(strcasecmp("fq",OutputFormat)==0){
-      //fprintf(stderr,"\t-> FQ SE FILE\n");
+      if(SE== SeqType)
+	suffix1 = ".fa.gz";
+      else{
+	suffix1 = "_R1.fa.gz";
+	suffix2 = "_R2.fa.gz";
+      }
+      break;
+    case fqT:
       mode = "wu";
-      if(strcasecmp("SE",SeqType)==0){suffix1 = ".fq";}
-      else{suffix1 = "_R1.fq";suffix2 = "_R2.fq";}
-    }
-    else if(strcasecmp("fq.gz",OutputFormat)==0){
+      if(SE ==SeqType)
+	suffix1 = ".fq";
+      else{
+	suffix1 = "_R1.fq";
+	suffix2 = "_R2.fq";
+      }
+      break;
+    case fqgzT:
       mode = "w";
-      if(strcasecmp("SE",SeqType)==0){suffix1 = ".fq.gz";}
-      else{suffix1 = "_R1.fq.gz";suffix2 = "_R2.fq.gz";}
-    }
-    else if(strcasecmp("sam",OutputFormat)==0){
-      //fprintf(stderr,"\t-> SAM SE FILE\n");
+      if(SE==SeqType)
+	suffix1 = ".fq.gz";
+      else{
+	suffix1 = "_R1.fq.gz";
+	suffix2 = "_R2.fq.gz";
+      }
+      break;
+
+    case samT:
       mode = "ws";
       suffix1 = ".sam";
       alnformatflag++;
-    }
-    else if(strcasecmp("bam",OutputFormat)==0){
-      //fprintf(stderr,"\t-> BAM SE FILE\n");
+      break;
+
+    case bamT:
       mode = "wb";//"wc";
       suffix1 = ".bam"; //".cram";
       alnformatflag++;
-    }
-    else if(strcasecmp("cram",OutputFormat)==0){
+      break;
+    case cramT:
       mode = "wc";
       suffix1 = ".cram";
       alnformatflag++;
+      break;
+    default:
+      fprintf(stderr,"\t-> Fileformat is currently not supported \n");
+      break;
     }
-    else{fprintf(stderr,"\t-> Fileformat is currently not supported \n");}
+     
     strcat(file1,suffix1);
 
     fprintf(stderr,"\t-> File output name is %s\n",file1);
@@ -161,16 +181,12 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       bgzf_fp[0] = bgzf_open(filename1,mode); //w
       bgzf_mt(bgzf_fp[0],mt_cores,bgzf_buf); //
       
-      //fprintf(stderr,"\t-> BGZF FILE\n");
-      if(strcasecmp("PE",SeqType)==0){
+      if(PE==SeqType){
         strcat(file2,suffix2);
         filename2 = file2;
         bgzf_fp[1] = bgzf_open(filename2,mode);
         bgzf_mt(bgzf_fp[1],mt_cores,bgzf_buf);
       }
-
-      //BGZF **bgzf_fp = (BGZF **) calloc(2,sizeof(BGZF *));
-      //free(bgzf_fp[0]);
     }
     else{
       //strlen(".fastq.gz") = longest suffix for fasta file + 2 in case of Null string terminators
@@ -220,7 +236,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       freqfile_r1 = QualProfile1;
       QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1,readcyclelength);
       //fprintf(stderr,"\t-> CREATING QUALDIST\n");
-      if(strcasecmp("PE",SeqType)==0){
+      if(PE==SeqType){
         //fprintf(stderr,"\t-> PE LOOP\n");
         freqfile_r2 = QualProfile2;
         QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2,readcyclelength);
@@ -376,7 +392,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       }
       delete[] QualDist;
 
-      if(strcasecmp("PE",SeqType)==0){
+      if(PE==SeqType){
         for(int base=0;base<5;base++){
           for(int pos = 0 ; pos< (int) readcyclelength;pos++){
             ransampl_free(QualDist2[base][pos]);
