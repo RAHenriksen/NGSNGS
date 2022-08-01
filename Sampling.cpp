@@ -166,14 +166,14 @@ void* Sampling_threads(void *arg){
         flags[0] = 97;
         flags[1] = 145;
         ReversComplement(seq_r2);
-        fprintf(stderr,"STRAND %d AND FLAGS %d  %d \n",strand,flags[0],flags[1]);        
+        //fprintf(stderr,"STRAND %d AND FLAGS %d  %d \n",strand,flags[0],flags[1]);        
       }
       else if (strand == 1){
-        fprintf(stderr,"STRAND %d\n",strand);
+        //fprintf(stderr,"STRAND %d\n",strand);
         flags[0] = 81;
         flags[1] = 161;
         ReversComplement(seq_r1);
-        fprintf(stderr,"STRAND %d AND FLAGS %d  %d \n",strand,flags[0],flags[1]);        
+        //fprintf(stderr,"STRAND %d AND FLAGS %d  %d \n",strand,flags[0],flags[1]);        
       }
     }
     
@@ -189,14 +189,14 @@ void* Sampling_threads(void *arg){
       if (PE==struct_obj->SeqType){
         strncpy(Adapter_2, struct_obj->Adapter_2, sizeof(Adapter_2)); //strncpy or memcpy
         Adapter2_len = strlen(Adapter_2);
-        fprintf(stderr,"FIRST ADAPTER 2 LENGTH %d\n",Adapter2_len);
+        //fprintf(stderr,"FIRST ADAPTER 2 LENGTH %d\n",Adapter2_len);
         SeqAdapt2_len = seqlen+Adapter2_len;
       }
       //for monophosphate the soft clip needs to be extended in length
       if (struct_obj->PolyNt != 'F'){
 	      Adapter1_len = readsizelimit - seqlen; 
         Adapter2_len = readsizelimit - seqlen; 
-        fprintf(stderr,"FIRST ADAPTER 2 LENGTH WITH POLY %d\n",Adapter2_len);
+        //fprintf(stderr,"FIRST ADAPTER 2 LENGTH WITH POLY %d\n",Adapter2_len);
       }
     }
 
@@ -372,60 +372,78 @@ void* Sampling_threads(void *arg){
     else if (struct_obj->SAMout){
       // Generate CI§GAR string for potential sam output with or without adapter
       //unaligned reads
-      size_t n_cigar_unmap=1;const uint32_t *cigar_unmap;
-      uint32_t cigar_bitstring_unmap = bam_cigar_gen(seqlen, BAM_CSOFT_CLIP);
-      uint32_t cigar_arr_unmap[] = {cigar_bitstring_unmap};
-      cigar_unmap = cigar_arr_unmap;
+      
+      //Adapter1_len = strlen(Adapter_1);
+      //SeqAdapt1_len = seqlen+Adapter1_len;
+      uint32_t cigsunmap[2][10];
+      size_t n_cigar_unmap=1;
+      uint32_t cigar_bit_match_unmap  = bam_cigar_gen(seqlen, BAM_CSOFT_CLIP);
+
       // Flags and cigar string for reads depending on adapters
       //prepare cigarstrings for 10 cigar operations
       uint32_t cigs[2][10];//cigs[0] is read1 cigs[1] is read2
       uint32_t cigar_bit_match = bam_cigar_gen(seqlen, BAM_CMATCH);
       uint32_t cigar_bit_soft;
-      uint32_t cigar_bit_soft2;
       size_t n_cigar;
 
       // By keeping the alignment information all reads will have matches in their cigar string     
-      if(strcasecmp(struct_obj->Adapter_flag,"true")==0) {
-        fprintf(stderr,"ADAPTER FLAGS \n");
+      if(strcasecmp(struct_obj->Adapter_flag,"true")==0){
+        //fprintf(stderr,"ADAPTER FLAGS \n");
         n_cigar = 2;
-        fprintf(stderr,"Adapter Length %d\t%d\n",Adapter1_len,Adapter2_len);
+        //fprintf(stderr,"Adapter Length %d\t%d\n",Adapter1_len,Adapter2_len);
         if(flags[0] == 0 || flags[0] == 97){
-          fprintf(stderr,"Flag printf 1 %d & %d and strand %d\n",flags[0],flags[1],strand);
+          //fprintf(stderr,"Flag printf 1 %d & %d and strand %d\n",flags[0],flags[1],strand);
           //strand == 0 for read 1
           // flag 0 is for SE so that would be same adapter (-a1) as provided for PE for flag 97
-          if(readsizelimit>=SeqAdapt1_len)
+          if(readsizelimit>=SeqAdapt1_len){
             cigar_bit_soft = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);
-          else
+            cigsunmap[0][0] = bam_cigar_gen(SeqAdapt1_len, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
+          }
+          else{
             cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt1_len, BAM_CSOFT_CLIP);
+            cigsunmap[0][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
+          }
           //          uint32_t cigar_arr[] = {cigar_bit_match,cigar_bit_soft}; cigar = cigar_arr;
           cigs[0][0] = cigar_bit_match;
           cigs[0][1] = cigar_bit_soft;
           if(flags[1] == 145){ //strand == 1 for read 2
-            fprintf(stderr,"Flags printf 4 %d & %d and strand %d\n",flags[0],flags[1],strand);
-            fprintf(stderr,"FLAGS 145\n");
-            if(readsizelimit>=SeqAdapt2_len)
+            //fprintf(stderr,"Flags printf 4 %d & %d and strand %d\n",flags[0],flags[1],strand);
+            //fprintf(stderr,"FLAGS 145\n");
+            if(readsizelimit>=SeqAdapt2_len){
               cigs[1][0] = bam_cigar_gen(Adapter2_len, BAM_CSOFT_CLIP);
-            else
+              cigsunmap[1][0] = bam_cigar_gen(SeqAdapt2_len, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
+            }
+            else{
               cigs[1][0] = bam_cigar_gen(readsizelimit-SeqAdapt2_len, BAM_CSOFT_CLIP);
-            
+              cigsunmap[1][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
+            }
             cigs[1][1] = cigar_bit_match;
           }
         }
         else if(flags[0] == 16 || flags[0] == 81){ //strand == 1 for read 1
-          fprintf(stderr,"Flag printf 2 %d & %d and strand %d\n",flags[0],flags[1],strand);
+          //fprintf(stderr,"Flag printf 2 %d & %d and strand %d\n",flags[0],flags[1],strand);
           // flag 16 is for SE so that would be same adapter (-a1) as provided for PE for flag 81
-          if(readsizelimit>=SeqAdapt1_len){cigar_bit_soft = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);} //fprintf(stderr,"limit %d\t%dM%dS\n",readsizelimit,seqlen,Adapter1_len);
-          else{cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt1_len, BAM_CSOFT_CLIP);}
-          //          uint32_t cigar_arr[] = {cigar_bit_soft,cigar_bit_match}; cigar = cigar_arr;
+          if(readsizelimit>=SeqAdapt1_len){
+            cigar_bit_soft = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);
+            cigsunmap[0][0] = bam_cigar_gen(SeqAdapt1_len, BAM_CSOFT_CLIP);
+          }
+          else{
+            cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt1_len, BAM_CSOFT_CLIP);
+            cigsunmap[0][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP);
+          }
           cigs[0][1] = cigar_bit_match;
           cigs[0][0] = cigar_bit_soft;
               //ReversComplement(Adapter_1);
           if(flags[1] == 161){ //strand == 0 for read 2
-            fprintf(stderr,"Flag printf 3 %d & %d and strand %d\n",flags[0],flags[1],strand);
-            if(readsizelimit>=SeqAdapt2_len)
+            //fprintf(stderr,"Flag printf 3 %d & %d and strand %d\n",flags[0],flags[1],strand);
+            if(readsizelimit>=SeqAdapt2_len){
               cigar_bit_soft = bam_cigar_gen(Adapter2_len, BAM_CSOFT_CLIP);
-            else
+              cigsunmap[1][0] = bam_cigar_gen(SeqAdapt2_len, BAM_CSOFT_CLIP);
+            }
+            else{
               cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt2_len, BAM_CSOFT_CLIP);
+              cigsunmap[1][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP);
+            }
 
             cigs[1][0] = cigar_bit_match;
             cigs[1][1] = cigar_bit_soft;  
@@ -437,6 +455,9 @@ void* Sampling_threads(void *arg){
         //uint32_t cigar_arr[] = {cigar_bit_match};
         cigs[0][0] = cigar_bit_match;
         cigs[1][0] = cigar_bit_match;
+        cigsunmap[0][0] = cigar_bit_match_unmap; // read 1 - no align
+        cigsunmap[1][0] = cigar_bit_match_unmap; // read 2 - no align
+        
       }
         //generating id, position and the remaining sam field information
       size_t l_aux = 2; uint8_t mapq = 60;
@@ -460,7 +481,7 @@ void* Sampling_threads(void *arg){
         //Utlizing the sam format as a sequence container
         if (struct_obj->NoAlign == 'T'){
           bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR1),READIDR1,4,-1,-1,
-          255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,NULL,0);
+          255,n_cigar_unmap,cigsunmap[0],-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,NULL,0);
         }
         else{ //saving 'alignment' information
           bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR1),READIDR1,flags[0],chr_idx,min_beg,mapq,
@@ -472,9 +493,9 @@ void* Sampling_threads(void *arg){
         strcpy(READIDR2,READ_ID);strcat(READIDR2,suffR2);
         if (struct_obj->NoAlign == 'T'){
           bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR1),READIDR1,4,-1,-1,
-          255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,NULL,0);
+          255,n_cigar_unmap,cigsunmap[0],-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,NULL,0);
           bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR2),READIDR2,4,-1,-1,
-          255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,NULL,0);
+          255,n_cigar_unmap,cigsunmap[1],-1,-1,0,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,NULL,0);
         }
         else{
           bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR1),READIDR1,flags[0],chr_idx,min_beg,mapq,

@@ -205,6 +205,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
         }
         hts_set_opt(SAMout, HTS_OPT_THREAD_POOL, &p);
       }
+      hts_set_opt(SAMout, CRAM_OPT_REFERENCE, FastaFileName);
       // generate header
       Header_func(fmt_hts,filename1,SAMout,SAMHeader,seq_ref,chr_total,chr_idx_arr,genome_size,CommandArray,version);
       free(ref);

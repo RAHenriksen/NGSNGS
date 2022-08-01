@@ -11,6 +11,7 @@
 #include <iostream>
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
+#include <htslib/cram.h>
 #include <htslib/vcf.h>
 #include <htslib/bgzf.h>
 #include <htslib/kstring.h>
@@ -204,12 +205,13 @@ void InsertChar(char* array,std::string ins,int index){
 
 void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total,int chr_idx_arr[],size_t genome_len,char CommandArray[1024],const char* version){
   // Creates a header for the bamfile. The header is initialized before the function is called //
-
+  char *fn_ref = 0;
   if (header == NULL) { fprintf(stderr, "sam_hdr_init");}
-    
+  
   // Creating header information
   
   char genome_len_buf[1024];
+  //sam_hdr_add_line(header, "HD", "VN",version, "SO", "unsorted", NULL);
   for(int i=0;i<chr_total;i++){
     const char *name = faidx_iseq(seq_ref,chr_idx_arr[i]);
     //fprintf(stderr,"chromosomes added to bam header %d\n",chr_idx_arr[i]);
@@ -220,10 +222,13 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
     // reference part of the header, int r variable ensures the header is added
     int r = sam_hdr_add_line(header, "SQ", "SN", name, "LN", genome_len_buf, NULL);
     if (r < 0) { fprintf(stderr,"sam_hdr_add_line");}
+   
+    //cram_set_option(fmt_hts, CRAM_OPT_DECODE_MD, 1);
+    //int r = sam_hdr_add_line(header, "SQ", "SN", "NZ_CP029543.1", "LN", genome_len_buf,"M5", "0b2443d4c092a093964e0ffdae92bf3a",NULL); //"UR", "Test_Examples/Mycobacterium_leprae.fa.gz"
+    //if (r < 0) {fprintf(stderr,"sam_hdr_add_line");}
     memset(genome_len_buf,0, sizeof(genome_len_buf));
     //snprintf(genome_len_buf,1024,"COMMAND ./ngsngs");
-    //int r = sam_hdr_add_line(header, "TEST COMMAND", genome_len_buf, NULL);
-    memset(genome_len_buf,0, sizeof(genome_len_buf));
+    //memset(genome_len_buf,0, sizeof(genome_len_buf));
   }
   // Adding PG tag
   sam_hdr_add_pg(header,"NGSNGS","VN",version,"CL",CommandArray,NULL);
