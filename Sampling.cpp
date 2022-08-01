@@ -25,6 +25,7 @@
 #include "getFragmentLength.h"
 #include "ThreadGeneration.h"
 #include "Sampling.h"
+#include "sample_qscores.h"
 
 #define LENS 4096
 #define MAXBINS 100
@@ -42,7 +43,10 @@ void* Sampling_threads(void *arg){
   mrand_t *drand_alloc_nt = mrand_alloc(struct_obj->rng_type,loc_seed);
   mrand_t *drand_alloc_nt_adapt = mrand_alloc(struct_obj->rng_type,loc_seed);
   mrand_t *drand_alloc_briggs = mrand_alloc(struct_obj->rng_type,loc_seed);
-   
+  
+  //if(fqT==struct_obj->OutputFormat|| fqgzT==struct_obj->OutputFormat)
+  //  qualstringoffset = 33;
+  
   // sequence reads, original, modified, with adapters, pe
   char seq_r1[1024] = {0};
   char seq_r1_mod[1024] = {0};
@@ -253,24 +257,8 @@ void* Sampling_threads(void *arg){
           strncpy(readadapt2, read2, readsizelimit);
           
         // Since the adapters don't have to be the same length, it is necessary to seperate Read 1 from Read 2 when generating quality string
+        sample_qscores(readadapt,qual_r1,strlen(readadapt),struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt_adapt,struct_obj->ErrorFlag);
 
-        // Generate quality score for first reads
-        for(long unsigned int p = 0;p<strlen(readadapt);p++){
-          double dtemp1;double dtemp2;
-          dtemp1 = mrand_pop(drand_alloc_nt_adapt);
-          dtemp2 = mrand_pop(drand_alloc_nt_adapt);
-          int base = readadapt[p];
-          int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
-          qual_r1[p] = struct_obj->NtQual_r1[qscore];
-          // third nucleotide alteration model -> adding sequencing errors, to both sequence and adapter
-          if (struct_obj->ErrorFlag == 'T'){
-            double dtemp3;double dtemp4;
-            dtemp3 = mrand_pop(drand_alloc_nt_adapt);
-            dtemp4 = mrand_pop(drand_alloc_nt_adapt);
-            if (dtemp3 < struct_obj->NtErr_r1[qscore]){ErrorSub(dtemp4,readadapt,p);}
-          }
-        }
-	  
         if (struct_obj->PolyNt != 'F'){
           MonoLen = readsizelimit - strlen(readadapt);
 	        if (struct_obj->OutputFormat==fqT ||struct_obj->OutputFormat==fqgzT)
@@ -302,23 +290,9 @@ void* Sampling_threads(void *arg){
 
         // Adding sequencing errors for second read
         if (PE==struct_obj->SeqType){
-          for(long unsigned int p = 0;p<strlen(readadapt2);p++){
-            double dtemp1;double dtemp2;
-            dtemp1 = mrand_pop(drand_alloc_nt_adapt);
-            dtemp2 = mrand_pop(drand_alloc_nt_adapt);
+          //generate nucleotide quality score
+          sample_qscores(readadapt2,qual_r2,strlen(readadapt2),struct_obj->QualDist_r2,struct_obj->NtQual_r2,drand_alloc_nt_adapt,struct_obj->ErrorFlag);
 
-            int base = readadapt2[p];
-            int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],dtemp1,dtemp2);
-            qual_r2[p] = struct_obj->NtQual_r2[qscore];
-            // third nucleotide alteration model -> adding sequencing errors, to both sequence and adapter
-            if (struct_obj->ErrorFlag == 'T'){
-              double dtemp3;double dtemp4;
-              dtemp3 = mrand_pop(drand_alloc_nt_adapt);
-              dtemp4 = mrand_pop(drand_alloc_nt_adapt);
-              if (dtemp3 < struct_obj->NtErr_r2[qscore])
-                ErrorSub(dtemp4,readadapt2,p);
-            }
-          }
           if (struct_obj->PolyNt != 'F'){
             MonoLen = readsizelimit - strlen(readadapt2);
             if (struct_obj->OutputFormat==fqT ||struct_obj->OutputFormat==fqgzT)
@@ -356,23 +330,8 @@ void* Sampling_threads(void *arg){
           ksprintf(struct_obj->fqresult_r2,">%s R2\n%s\n",READ_ID,seq_r2);
       }
       else{
-        for(int p = 0;p<seqlen;p++){
-          double dtemp1;double dtemp2;
-          dtemp1 = mrand_pop(drand_alloc_nt);
-          dtemp2 = mrand_pop(drand_alloc_nt);
+        sample_qscores(seq_r1,qual_r1,seqlen,struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt,struct_obj->ErrorFlag);
 
-          int base = seq_r1[p];
-          int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
-          qual_r1[p] = struct_obj->NtQual_r1[qscore];
-
-          if (struct_obj->ErrorFlag == 'T'){
-            //fprintf(stderr,"ERROFRFLAG %c\n",struct_obj->ErrorFlag);
-            double dtemp3;double dtemp4;
-            dtemp3 = mrand_pop(drand_alloc_nt);
-            dtemp4 = mrand_pop(drand_alloc_nt);
-            if (dtemp3 < struct_obj->NtErr_r1[qscore]){ErrorSub(dtemp4,seq_r1,p);}
-          }
-        }
         if (struct_obj->OutputFormat==fqT ||struct_obj->OutputFormat==fqgzT)
           ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
         else if (struct_obj->SAMout){
@@ -385,21 +344,8 @@ void* Sampling_threads(void *arg){
 	      }
 
         if (PE==struct_obj->SeqType){
-          for(int p = 0;p<seqlen;p++){
-            double dtemp1;double dtemp2;
-            dtemp1 = mrand_pop(drand_alloc_nt);
-            dtemp2 = mrand_pop(drand_alloc_nt);
+          sample_qscores(seq_r2,qual_r2,seqlen,struct_obj->QualDist_r2,struct_obj->NtQual_r2,drand_alloc_nt,struct_obj->ErrorFlag);
 
-            int base = seq_r2[p];
-            int qscore = ransampl_draw2(struct_obj->QualDist_r2[nuc2int[base]][p],dtemp1,dtemp2);
-            qual_r2[p] = struct_obj->NtQual_r2[qscore];
-            if (struct_obj->ErrorFlag == 'T'){
-              double dtemp3;double dtemp4;
-              dtemp3 = mrand_pop(drand_alloc_nt);
-              dtemp4 = mrand_pop(drand_alloc_nt);
-              if (dtemp3 < struct_obj->NtErr_r2[qscore]){ErrorSub(dtemp4,seq_r2,p);}
-            }
-          }
           if (struct_obj->OutputFormat==fqT ||struct_obj->OutputFormat==fqgzT)
             ksprintf(struct_obj->fqresult_r2,"@%s R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);
           else if (struct_obj->SAMout){

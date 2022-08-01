@@ -27,14 +27,14 @@ argStruct *getpars(int argc,char ** argv){
   // 1) nucleotide quality score and sequencing errors,  
   mypars->QualProfile1 = NULL;
   mypars->QualProfile2 = NULL;
-  mypars->ErrorFlag = NULL;
+  mypars->ErrorFlag = 1;
   // 2) briggs model
   mypars->Briggs = NULL; //"0.024,0.36,0.68,0.0097";
   // 3) misincorporation matrix
   mypars->SubProfile = NULL;
   // 4) Bcf file and variation incorporation
   mypars->Variant = NULL;
-  mypars->Variant_type = NULL;
+  mypars->Variant_type = NULL; // enum variant_e {unknownTTT,snp,indel,all}; unknownTTT
 
   // Fragment lengths 
   mypars->Length = 0;
@@ -123,11 +123,11 @@ argStruct *getpars(int argc,char ** argv){
       strcat(Command,*argv); strcat(Command," ");
       
       if(strcasecmp("SE",tok)==0)
-	mypars->seq_type = SE;
+	      mypars->seq_type = SE;
       else if(strcasecmp("PE",tok)==0)
-	mypars->seq_type = PE;
+	      mypars->seq_type = PE;
       if(mypars->seq_type==unknownTT)
-	ErrMsg(6.5);
+	      ErrMsg(6.5);
     }
     else if(strcasecmp("-a1",*argv)==0 || strcasecmp("--adapter1",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
@@ -156,7 +156,7 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-ne",*argv)==0 || strcasecmp("--noerror",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
-      mypars->ErrorFlag = "F";
+      mypars->ErrorFlag = 0;//"F";
       strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-na",*argv)==0 || strcasecmp("--noalign",*argv)==0){

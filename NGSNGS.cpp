@@ -88,9 +88,8 @@ int main(int argc,char **argv){
     double readcov = mypars->coverage;
 
     if (mypars->rng_type == -1){
-      #if defined(__linux__) || defined(__unix__) // all unices not caught above
-      // Unix
-        MacroRandType = 0;
+      #if defined(__linux__) || defined(__unix__)
+        mypars->rng_type = 0;
       #elif defined(__APPLE__) || defined(__MACH__)
         mypars->rng_type = 3;
         //when 0 it will have problems with drand48 reentrant, will default to erand48 (MacroRandType 3)
@@ -99,7 +98,6 @@ int main(int argc,char **argv){
       #endif
     }
     //fprintf(stderr,"RANDOM VALUE %d \n",MacroRandType);
-    
     
     if (fastafile == NULL){ErrMsg(1.0);}
     if (filename == NULL){ErrMsg(8.0);}
@@ -226,7 +224,6 @@ int main(int argc,char **argv){
     //fprintf(stderr,"qualstring test %s",QualStringFlag);
     outputformat_e OutputFormat = mypars->OutFormat;
     if (strcasecmp("true",QualStringFlag)==0){
-      
       if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
         if (mypars->seq_type == PE && QualProfile2 == NULL){
           ErrMsg(11.0);
@@ -245,11 +242,6 @@ int main(int argc,char **argv){
     }
     //fprintf(stderr,"\t-> ADAPTER FLAG IS:%s\n",Adapt_flag);
     //fprintf(stderr,"\t-> QUAL STRING FLAG IS:%s\n",QualStringFlag);
-    const char* ErrorFlag;
-    if (mypars->ErrorFlag != NULL){
-      ErrorFlag = mypars->ErrorFlag;
-    }
-    else{ErrorFlag = "T";}
     
     const char* NoAlign;
     if (mypars->NoAlign != NULL){
@@ -259,7 +251,7 @@ int main(int argc,char **argv){
 
     if (strcasecmp("false",QualStringFlag)==0){
       if(strcasecmp("true",Adapt_flag)==0 && mypars->Poly != NULL){WarMsg(2.0);}
-      if(mypars->ErrorFlag != NULL){WarMsg(3.0);}
+      //if(mypars->ErrorFlag == NULL){WarMsg(3.0);}
     }
     if (strcasecmp("true",QualStringFlag)==0){
       if(OutputFormat== faT|| fagzT==OutputFormat)
@@ -329,7 +321,7 @@ int main(int argc,char **argv){
                       Adapt_flag,Adapter_1,Adapter_2,mypars->OutFormat,mypars->seq_type,
                       Param,Briggs_Flag,Sizefile,FixedSize,SizeDistType,val1,val2,
                       qualstringoffset,QualProfile1,QualProfile2,CompressThreads,QualStringFlag,Polynt,
-                      ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,mypars->rng_type,
+                      mypars->ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,mypars->rng_type,
                       VCFformat,Variant_flag,VarType,Command,NGSNGS_VERSION,HeaderIndiv,NoAlign,BufferLength);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);

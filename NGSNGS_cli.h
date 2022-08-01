@@ -6,6 +6,9 @@
 #include "HelpPage.h"
 enum outputformat_e {unknownT, faT, fagzT, fqT, fqgzT, samT, bamT,cramT };
 enum seqtype_e {unknownTT, SE,PE};
+enum variant_e {unknownTTT,snp,indel,all};
+enum dist_e {unknownDist,Uni,Norm,LogNorm,Pois,Exp,Gam};
+enum poly_nt {unknownNt,A,G,C,T,N};
 
 typedef struct{
   int SamplThreads; //sampling threads, used internally by pthread_create
@@ -22,7 +25,7 @@ typedef struct{
   const char *QualProfile1;// filename for quality prof, for R1 or SE
   const char *QualProfile2;// filename for quality prof, for R2 used only in PE
   const char *SubProfile;// filename for misincorperation, typespecific and position specific
-  const char *ErrorFlag;// should we not add errors?, {T,F}
+  int ErrorFlag;// should we not add errors?, {T,F}
   const char *Briggs; // the four briggs parameters
   int Length; // fragment length when fixed
   const char *LengthFile; //filename for distribution of frag lengths

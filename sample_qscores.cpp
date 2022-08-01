@@ -1,8 +1,9 @@
 #include <zlib.h>
 #include <cstring>
 #include <cassert>
-#include <zlib.h>
 #include "sample_qscores.h"
+#include "RandSampling.h"
+#include "mrand.h"
 
 #define LENS 10000
 #define MAXBINS 100
@@ -89,13 +90,16 @@ void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *N
     
     char inbase = bases[i];// <- is this ACGT,or 01234
     int qscore = ransampl_draw2(ws[nuc2int[inbase]][i],dtemp1,dtemp2);
-    qscores[i] = NtQuals[qscore]+33;
-      if (simError){
+    qscores[i] = NtQuals[qscore]; //why did you have +33
+    if (simError){
+      fprintf(stderr,"INSIDE ERROR LOOP");
       if ( mrand_pop(mr) < phred2Prob(qscore)){
-	int outbase;
-	int inbase = nuc2int[bases[i]];
-	while ((outbase=((int)floor(4*mrand_pop(mr)))) == inbase);
-	bases[i] = int2nuc[outbase];
+        int outbase;
+        int inbase = nuc2int[bases[i]];
+        std::cout << bases[i] << std::endl;
+        while ((outbase=((int)floor(4*mrand_pop(mr)))) == inbase);
+          bases[i] = int2nuc[outbase];
+        std::cout << bases[i] << std::endl;
       }
     }
   }
@@ -114,10 +118,15 @@ int main(int argc, char **argv){
   char qscores[30];
   memset(bases,'\0',30);
   memset(qscores,'\0',30);
-  for(int i=0;i<30;i++)
+
+  for(int i=0;i<30;i++){
     bases[i] = int2nuc[(int)floor(drand48()*4)];
-  sample_qscores(bases,qscores,30,ws,ntquals,mr,1);
+    std::cout << " i " << i << " bases " << bases[i] << std::endl;
+  }
+  sample_qscores(bases,qscores,30,ws,ntquals,mr,0);
   fprintf(stderr,"@readname\n%s\n+\n%s\n",bases,qscores);
   return 0;
 }
 #endif
+
+//g++ sample_qscores.cpp RandSampling.o mrand.o -std=c++11 -lm -lz -D__WITH_MAIN__ -o Scores

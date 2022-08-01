@@ -25,14 +25,14 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
                         const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],const char* Briggs_flag,
                         const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
-                        const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName,
+                        const char* QualStringFlag,const char* Polynt,int ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName,
                         const char* MisMatchFlag,const char* SubProfile,int MisLength,int RandMacro,const char *VCFformat,char* Variant_flag,const char *VarType,
                         char CommandArray[1024],const char* version,const char* HeaderIndiv,const char* NoAlign,size_t BufferLength){
   //creating an array with the arguments to create multiple threads;
   //fprintf(stderr,"Random MacIntType %d\n",MacroRandType);
   //fprintf(stderr,"\t-> Command 3 : %s \n",CommandArray);
   int nthreads=thread_no;
-  
+  std::cout << "ERROROR FLAG " << ErrorFlag << std::endl;
   pthread_t *mythreads = new pthread_t[nthreads]; //pthread_t mythreads[nthreads];
 
   int chr_total = 0;
@@ -293,7 +293,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       // Sequence alteration models
       // 1) nucleotide quality score and sequencing errors,  
       struct_for_threads[i].QualFlag = QualStringFlag;
-      struct_for_threads[i].ErrorFlag = (char) ErrorFlag[0];
+      struct_for_threads[i].ErrorFlag = ErrorFlag;
       struct_for_threads[i].NtQual_r1 = nt_qual_r1;
       struct_for_threads[i].NtQual_r2 = nt_qual_r2;
       struct_for_threads[i].QualDist_r1 = QualDist;
