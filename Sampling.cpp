@@ -95,9 +95,11 @@ void* Sampling_threads(void *arg){
     sf = sim_fragment_alloc(LengthType,struct_obj->FixedSize,distpar2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,struct_obj->rng_type,loc_seed,RndGen);
   else
     sf = sim_fragment_alloc(LengthType,distpar1,distpar2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,struct_obj->rng_type,loc_seed,RndGen);
-
+  
+  size_t moduloread = reads/10;
   while (current_reads_atom < reads &&SIG_COND){
-    fprintf(stderr," --------------------- READ %d ------------------- \n",current_reads_atom);
+    if (current_reads_atom > 1 && current_reads_atom%moduloread == 0)
+      fprintf(stderr,"\t-> Produced %zu reads with a current total of %zu\n",moduloread,current_reads_atom);
     // Fragment length generator 2000 
     int fraglength = getFragmentLength(sf);
 
@@ -141,10 +143,10 @@ void* Sampling_threads(void *arg){
     
     //Remove reads which are all N? In this code we remove both pairs if both reads are all N
     int skipread = 1;
-    for(int i=0;skipread&&i<strlen(seq_r1);i++)
+    for(int i=0;skipread&&i<(int)strlen(seq_r1);i++)
       if(seq_r1[i]!='N')
 	      skipread = 0;
-    for(int i=0;seq_r2 && skipread && i<strlen(seq_r2);i++)
+    for(int i=0;seq_r2 && skipread && i<(int)strlen(seq_r2);i++)
       if(seq_r2[i]!='N')
 	      skipread = 0;
     
@@ -234,7 +236,7 @@ void* Sampling_threads(void *arg){
 	    
     read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%s:%zu-%zu_length:%d", struct_obj->threadno, rand_id,strand,chrname,
       rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],(int)fraglength);
-
+    
     // Adding adapters before adding sequencing errors.
     if(strcasecmp(struct_obj->Adapter_flag,"true")==0){
       // Because i have reverse complemented the correct sequences and adapters depending on the strand origin (or flags), i know all adapters will be in 3' end
@@ -377,82 +379,110 @@ void* Sampling_threads(void *arg){
       //SeqAdapt1_len = seqlen+Adapter1_len;
       uint32_t cigsunmap[2][10];
       size_t n_cigar_unmap=1;
-      uint32_t cigar_bit_match_unmap  = bam_cigar_gen(seqlen, BAM_CSOFT_CLIP);
+      
 
       // Flags and cigar string for reads depending on adapters
       //prepare cigarstrings for 10 cigar operations
       uint32_t cigs[2][10];//cigs[0] is read1 cigs[1] is read2
-      uint32_t cigar_bit_match = bam_cigar_gen(seqlen, BAM_CMATCH);
-      uint32_t cigar_bit_soft;
-      size_t n_cigar;
+      size_t n_cigar = 1;
 
       // By keeping the alignment information all reads will have matches in their cigar string     
       if(strcasecmp(struct_obj->Adapter_flag,"true")==0){
-        //fprintf(stderr,"ADAPTER FLAGS \n");
-        n_cigar = 2;
-        //fprintf(stderr,"Adapter Length %d\t%d\n",Adapter1_len,Adapter2_len);
         if(flags[0] == 0 || flags[0] == 97){
-          //fprintf(stderr,"Flag printf 1 %d & %d and strand %d\n",flags[0],flags[1],strand);
-          //strand == 0 for read 1
           // flag 0 is for SE so that would be same adapter (-a1) as provided for PE for flag 97
           if(readsizelimit>=SeqAdapt1_len){
-            cigar_bit_soft = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);
+            n_cigar = 2;
+            cigs[0][0] = bam_cigar_gen(seqlen, BAM_CMATCH);
+            cigs[0][1] = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);
+            
             cigsunmap[0][0] = bam_cigar_gen(SeqAdapt1_len, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
           }
-          else{
-            cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt1_len, BAM_CSOFT_CLIP);
+          else if(readsizelimit>seqlen && readsizelimit<SeqAdapt1_len){
+            // i.e fragment length of 148 and 10 adapter nucleotides will be large than inferred read
+            n_cigar = 2;
+            cigs[0][0] = bam_cigar_gen(seqlen, BAM_CMATCH);
+            cigs[0][1] = bam_cigar_gen(Adapter1_len-(SeqAdapt1_len-readsizelimit), BAM_CSOFT_CLIP);
+            //fprintf(stderr,"Read length %d and seq adapt length %d and soft clip %d\n",seqlen,SeqAdapt1_len,Adapter1_len-(SeqAdapt1_len-readsizelimit));
             cigsunmap[0][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
           }
-          //          uint32_t cigar_arr[] = {cigar_bit_match,cigar_bit_soft}; cigar = cigar_arr;
-          cigs[0][0] = cigar_bit_match;
-          cigs[0][1] = cigar_bit_soft;
+          else{
+            //reads above the inferred read length will simply be containing matches
+            n_cigar = 1;
+            cigs[0][0] = bam_cigar_gen(readsizelimit, BAM_CMATCH);
+            cigsunmap[0][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
+          }
+
           if(flags[1] == 145){ //strand == 1 for read 2
-            //fprintf(stderr,"Flags printf 4 %d & %d and strand %d\n",flags[0],flags[1],strand);
-            //fprintf(stderr,"FLAGS 145\n");
             if(readsizelimit>=SeqAdapt2_len){
+              n_cigar = 2;
+              cigs[1][1] = bam_cigar_gen(seqlen, BAM_CMATCH);
               cigs[1][0] = bam_cigar_gen(Adapter2_len, BAM_CSOFT_CLIP);
               cigsunmap[1][0] = bam_cigar_gen(SeqAdapt2_len, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
             }
-            else{
-              cigs[1][0] = bam_cigar_gen(readsizelimit-SeqAdapt2_len, BAM_CSOFT_CLIP);
+            else if(readsizelimit>seqlen && readsizelimit<SeqAdapt2_len){
+              // i.e fragment length of 148 and 10 adapter nucleotides will be large than inferred read
+              n_cigar = 2;
+              cigs[1][1] = bam_cigar_gen(seqlen, BAM_CMATCH);
+              cigs[1][0] = bam_cigar_gen(Adapter2_len-(SeqAdapt2_len-readsizelimit), BAM_CSOFT_CLIP);
+              //fprintf(stderr,"Read length %d and seq adapt length %d and soft clip %d\n",seqlen,SeqAdapt1_len,Adapter1_len-(SeqAdapt1_len-readsizelimit));
               cigsunmap[1][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
             }
-            cigs[1][1] = cigar_bit_match;
+            else{
+              n_cigar = 1;
+              cigs[1][0] = bam_cigar_gen(readsizelimit, BAM_CMATCH);
+              cigsunmap[1][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
+            }
           }
         }
         else if(flags[0] == 16 || flags[0] == 81){ //strand == 1 for read 1
-          //fprintf(stderr,"Flag printf 2 %d & %d and strand %d\n",flags[0],flags[1],strand);
-          // flag 16 is for SE so that would be same adapter (-a1) as provided for PE for flag 81
           if(readsizelimit>=SeqAdapt1_len){
-            cigar_bit_soft = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);
+            n_cigar = 2;
+            cigs[0][0] = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);
+            cigs[0][1] = bam_cigar_gen(seqlen, BAM_CMATCH);
             cigsunmap[0][0] = bam_cigar_gen(SeqAdapt1_len, BAM_CSOFT_CLIP);
           }
+          else if(readsizelimit>seqlen && readsizelimit<SeqAdapt1_len){
+            // i.e fragment length of 148 and 10 adapter nucleotides will be large than inferred read
+            n_cigar = 2;
+            cigs[0][0] = bam_cigar_gen(Adapter1_len-(SeqAdapt1_len-readsizelimit), BAM_CSOFT_CLIP);
+            cigs[0][1] = bam_cigar_gen(seqlen, BAM_CMATCH);
+            //fprintf(stderr,"Read length %d and seq adapt length %d and soft clip %d\n",seqlen,SeqAdapt1_len,Adapter1_len-(SeqAdapt1_len-readsizelimit));
+            cigsunmap[0][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
+          }
           else{
-            cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt1_len, BAM_CSOFT_CLIP);
+            n_cigar = 1;
+            cigs[0][0] = bam_cigar_gen(readsizelimit, BAM_CMATCH);
             cigsunmap[0][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP);
           }
-          cigs[0][1] = cigar_bit_match;
-          cigs[0][0] = cigar_bit_soft;
-              //ReversComplement(Adapter_1);
+
           if(flags[1] == 161){ //strand == 0 for read 2
             //fprintf(stderr,"Flag printf 3 %d & %d and strand %d\n",flags[0],flags[1],strand);
             if(readsizelimit>=SeqAdapt2_len){
-              cigar_bit_soft = bam_cigar_gen(Adapter2_len, BAM_CSOFT_CLIP);
+              n_cigar = 2;
+              cigs[1][0] = bam_cigar_gen(seqlen, BAM_CMATCH);
+              cigs[1][1] = bam_cigar_gen(Adapter2_len, BAM_CSOFT_CLIP);
               cigsunmap[1][0] = bam_cigar_gen(SeqAdapt2_len, BAM_CSOFT_CLIP);
             }
+            else if(readsizelimit>seqlen && readsizelimit<SeqAdapt2_len){
+              // i.e fragment length of 148 and 10 adapter nucleotides will be large than inferred read
+              n_cigar = 2;
+              cigs[1][0] = bam_cigar_gen(seqlen, BAM_CMATCH);
+              cigs[1][1] = bam_cigar_gen(Adapter2_len-(SeqAdapt2_len-readsizelimit), BAM_CSOFT_CLIP);
+              //fprintf(stderr,"Read length %d and seq adapt length %d and soft clip %d\n",seqlen,SeqAdapt1_len,Adapter1_len-(SeqAdapt1_len-readsizelimit));
+              cigsunmap[1][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
+            }
             else{
-              cigar_bit_soft = bam_cigar_gen(readsizelimit-SeqAdapt2_len, BAM_CSOFT_CLIP);
+              n_cigar = 1;
+              cigs[1][0] = bam_cigar_gen(readsizelimit, BAM_CMATCH);
               cigsunmap[1][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP);
             }
-
-            cigs[1][0] = cigar_bit_match;
-            cigs[1][1] = cigar_bit_soft;  
           }
         }
       }
       else{
         n_cigar = 1;
-        //uint32_t cigar_arr[] = {cigar_bit_match};
+        uint32_t cigar_bit_match_unmap  = bam_cigar_gen(seqlen, BAM_CSOFT_CLIP);
+        uint32_t cigar_bit_match = bam_cigar_gen(seqlen, BAM_CMATCH);
         cigs[0][0] = cigar_bit_match;
         cigs[1][0] = cigar_bit_match;
         cigsunmap[0][0] = cigar_bit_match_unmap; // read 1 - no align
