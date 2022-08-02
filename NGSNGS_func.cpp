@@ -205,7 +205,6 @@ void InsertChar(char* array,std::string ins,int index){
 
 void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total,int chr_idx_arr[],size_t genome_len,char CommandArray[1024],const char* version){
   // Creates a header for the bamfile. The header is initialized before the function is called //
-  char *fn_ref = 0;
   if (header == NULL) { fprintf(stderr, "sam_hdr_init");}
   
   // Creating header information

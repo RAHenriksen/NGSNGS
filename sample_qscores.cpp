@@ -35,7 +35,7 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
   double probs[MAXBINS];
   for(int b=0;b<5;b++){
     dists[b] = new ransampl_ws *[readcycle];
-    for(unsigned long pos = 0 ; pos<readcycle;pos++){
+    for(int pos = 0 ; pos<readcycle;pos++){
       int at = 0;
       probs[at++] = atof(strtok(all_lines[2+b*readcycle+pos],"\n\t ")); //1+b*readcyclelength+pos
       char *tok = NULL;
@@ -92,6 +92,7 @@ void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *N
     int qscore = ransampl_draw2(ws[nuc2int[inbase]][i],dtemp1,dtemp2);
     qscores[i] = NtQuals[qscore]; //why did you have +33
     if (simError){
+      fprintf(stderr,"SEQUENCING ERRORS\n");
       if ( mrand_pop(mr) < phred2Prob(qscore)){
         int outbase;
         int inbase = nuc2int[bases[i]];
