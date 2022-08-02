@@ -1,3 +1,8 @@
+/*
+  part of NGSNGS
+  program models briggs errors found in aDNA. Method assumes that seqlen>30 and that seq is 5->3
+*/
+
 #ifndef BRIGGS_H
 #define BRIGGS_H
 #include "mrand.h"

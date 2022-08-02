@@ -96,8 +96,8 @@ void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *N
       if ( mrand_pop(mr) < phred2Prob(qscore)){
         int outbase;
         int inbase = nuc2int[bases[i]];
-        while ((outbase=((int)floor(4*mrand_pop(mr)))) == inbase);
-          bases[i] = int2nuc[outbase];
+        while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
+	bases[i] = int2nuc[outbase];
       }
     }
   }
