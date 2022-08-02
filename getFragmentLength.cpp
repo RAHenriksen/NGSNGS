@@ -80,6 +80,8 @@ int getFragmentLength(sim_fragment *sf){
     //fprintf(stderr,"type 7 gamma\n");
     res = sf->GammaDist(sf->Gen);//sf->LengthDist;
   }
+  if(res<0)
+    return getFragmentLength(sf);
   return res;
 }
 
