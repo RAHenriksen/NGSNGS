@@ -27,7 +27,7 @@ struct Parsarg_for_Sampling_thread{
   ransampl_ws ***QualDist_r2;
 
   double* MisMatch;
-  const char* SubFlag;
+  int doMisMatchErr;
   int MisLength;
 
   double *NtErr_r1;
@@ -45,11 +45,11 @@ struct Parsarg_for_Sampling_thread{
   int LengthData;
   int MaximumLength;
 
-  const char* Adapter_flag;
+  int AddAdapt;
   const char* Adapter_1;
   const char* Adapter_2;
 
-  const char* Briggs_flag;
+  int DoBriggs;
   float *BriggsParam;
   
   const char* SizeFile;
@@ -62,7 +62,7 @@ struct Parsarg_for_Sampling_thread{
   seqtype_e SeqType;
   const char* QualFlag;
 
-  int ErrorFlag;
+  int DoSeqErr;
   char* Variant_flag;
   char NoAlign;
   char PolyNt;

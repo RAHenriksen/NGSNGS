@@ -21,18 +21,17 @@
 #define LENS 4096
 #define MAXBINS 100
 
-void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
-                        const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],const char* Briggs_flag,
+void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
+                        const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,
                         const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
-                        const char* QualStringFlag,const char* Polynt,int ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName,
-                        const char* MisMatchFlag,const char* SubProfile,int MisLength,int RandMacro,const char *VCFformat,char* Variant_flag,const char *VarType,
+                        const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr[1024],const char* FastaFileName,
+                        int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VCFformat,char* Variant_flag,const char *VarType,
                         char CommandArray[1024],const char* version,const char* HeaderIndiv,const char* NoAlign,size_t BufferLength){
   //creating an array with the arguments to create multiple threads;
   //fprintf(stderr,"Random MacIntType %d\n",MacroRandType);
   //fprintf(stderr,"\t-> Command 3 : %s \n",CommandArray);
   int nthreads=thread_no;
-  std::cout << "ERROROR FLAG " << ErrorFlag << std::endl;
   pthread_t *mythreads = new pthread_t[nthreads]; //pthread_t mythreads[nthreads];
 
   int chr_total = 0;
@@ -112,37 +111,37 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
     case faT:
       mode = "wu";
       if(SE==SeqType)
-	suffix1 = ".fa";
+	      suffix1 = ".fa";
       else{
-	suffix1 = "_R1.fa";
-	suffix2 = "_R2.fa";
+	      suffix1 = "_R1.fa";
+	      suffix2 = "_R2.fa";
       }
       break;
     case fagzT:
       mode = "wb";
       if(SE== SeqType)
-	suffix1 = ".fa.gz";
+	      suffix1 = ".fa.gz";
       else{
-	suffix1 = "_R1.fa.gz";
-	suffix2 = "_R2.fa.gz";
+        suffix1 = "_R1.fa.gz";
+        suffix2 = "_R2.fa.gz";
       }
       break;
     case fqT:
       mode = "wu";
       if(SE ==SeqType)
-	suffix1 = ".fq";
+	      suffix1 = ".fq";
       else{
-	suffix1 = "_R1.fq";
-	suffix2 = "_R2.fq";
+        suffix1 = "_R1.fq";
+        suffix2 = "_R2.fq";
       }
       break;
     case fqgzT:
       mode = "w";
       if(SE==SeqType)
-	suffix1 = ".fq.gz";
+	      suffix1 = ".fq.gz";
       else{
-	suffix1 = "_R1.fq.gz";
-	suffix2 = "_R2.fq.gz";
+        suffix1 = "_R1.fq.gz";
+        suffix2 = "_R2.fq.gz";
       }
       break;
 
@@ -294,7 +293,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       // Sequence alteration models
       // 1) nucleotide quality score and sequencing errors,  
       struct_for_threads[i].QualFlag = QualStringFlag;
-      struct_for_threads[i].ErrorFlag = ErrorFlag;
+      struct_for_threads[i].DoSeqErr = DoSeqErr;
       struct_for_threads[i].NtQual_r1 = nt_qual_r1;
       struct_for_threads[i].NtQual_r2 = nt_qual_r2;
       struct_for_threads[i].QualDist_r1 = QualDist;
@@ -305,11 +304,11 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
 
       // 2) briggs model
       struct_for_threads[i].MisMatch = MisMatchFreqArray;
-      struct_for_threads[i].SubFlag = MisMatchFlag;
+      struct_for_threads[i].doMisMatchErr = doMisMatchErr;
       struct_for_threads[i].MisLength = (int) mismatchcyclelength;
 
       // 3) misincorporation matrix
-      struct_for_threads[i].Briggs_flag = Briggs_flag;
+      struct_for_threads[i].DoBriggs = DoBriggs;
       struct_for_threads[i].BriggsParam = BriggsParam;
 
       // 4) Bcf file and variation incorporation
@@ -329,7 +328,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
       struct_for_threads[i].BufferLength = BufferLength;
 
       // Additional information for sequence reads
-      struct_for_threads[i].Adapter_flag = Adapt_flag;
+      struct_for_threads[i].AddAdapt = AddAdapt;
       struct_for_threads[i].Adapter_1 = Adapter_1;
       struct_for_threads[i].Adapter_2 = Adapter_2;
       struct_for_threads[i].SeqType = SeqType;

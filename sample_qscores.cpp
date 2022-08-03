@@ -92,12 +92,11 @@ void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *N
     int qscore = ransampl_draw2(ws[nuc2int[inbase]][i],dtemp1,dtemp2);
     qscores[i] = NtQuals[qscore]; //why did you have +33
     if (simError){
-      fprintf(stderr,"SEQUENCING ERRORS\n");
       if ( mrand_pop(mr) < phred2Prob(qscore)){
         int outbase;
         int inbase = nuc2int[bases[i]];
         while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
-	bases[i] = int2nuc[outbase];
+	        bases[i] = int2nuc[outbase];
       }
     }
   }

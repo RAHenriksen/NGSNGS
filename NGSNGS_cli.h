@@ -25,7 +25,7 @@ typedef struct{
   const char *QualProfile1;// filename for quality prof, for R1 or SE
   const char *QualProfile2;// filename for quality prof, for R2 used only in PE
   const char *SubProfile;// filename for misincorperation, typespecific and position specific
-  int ErrorFlag;// should we not add errors?, {T,F}
+  int DoSeqErr;// should we not add errors?, {T,F}
   const char *Briggs; // the four briggs parameters
   int Length; // fragment length when fixed
   const char *LengthFile; //filename for distribution of frag lengths

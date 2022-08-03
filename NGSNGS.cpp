@@ -194,23 +194,16 @@ int main(int argc,char **argv){
     fprintf(stderr,"\t-> Number of sampling threads used (-t): %d and number of compression threads (-t2): %d\n",SamplThreads,CompressThreads);
     fprintf(stderr,"\t-> Number of simulated reads: %zu or coverage: %f\n",mypars->nreads,mypars->coverage);
 
-    const char* Adapt_flag;
-    const char* Adapter_1 = NULL;
-    const char* Adapter_2 = NULL;
+    int AddAdapt = 0;
     const char* Polynt;
     if (mypars->Adapter1 != NULL){
-      //fprintf(stderr,"\t-> ARGPARSE ADAPTER + POLY\n");
-      Adapt_flag = "true";
-      Adapter_1 = mypars->Adapter1;
-      Adapter_2 = mypars->Adapter2;
+      AddAdapt = 1;
 
       if (mypars->Poly != NULL){Polynt =mypars->Poly;}
       else{Polynt = "F";}
-      
     }
     else{
       //fprintf(stderr,"\t-> ARGPARSE ADAPT FLAG+ POLY\n");
-      Adapt_flag = "false";
       if (mypars->Poly != NULL){ErrMsg(14.0);exit(0);}
       else{Polynt = "F";}
     }
@@ -249,20 +242,21 @@ int main(int argc,char **argv){
     }
     else{NoAlign = "F";}
 
-    if (strcasecmp("false",QualStringFlag)==0){
-      if(strcasecmp("true",Adapt_flag)==0 && mypars->Poly != NULL){WarMsg(2.0);}
+    //NB!
+    /*if (strcasecmp("false",QualStringFlag)==0){
+      if(strcasecmp("true",Adapt_flag==0 && mypars->Poly != NULL){WarMsg(2.0);}
       //if(mypars->ErrorFlag == NULL){WarMsg(3.0);}
     }
     if (strcasecmp("true",QualStringFlag)==0){
       if(OutputFormat== faT|| fagzT==OutputFormat)
-	WarMsg(4.0);
-    }
+	    WarMsg(4.0);
+    }*/
 
     int qualstringoffset = 0;
     if(fqT==OutputFormat|| fqgzT==OutputFormat)
       qualstringoffset = 33;
     
-    const char* Briggs_Flag;
+    int DoBriggs = 0;
     float Param[4];
     if (mypars->Briggs != NULL){
       char* BriggsParam = strdup(mypars->Briggs);
@@ -270,17 +264,17 @@ int main(int argc,char **argv){
       Param[1] = myatof(strtok(NULL,"\", \t"));
       Param[2] = myatof(strtok(NULL,"\", \t"));
       Param[3] = myatof(strtok(NULL,"\", \t"));
-      Briggs_Flag = "True";
+      DoBriggs = 1;
       free(BriggsParam); // Again using strdup
     }
-    else{Briggs_Flag = "False";}
     
-    const char* SubProfile; const char* SubFlag;
+    const char* SubProfile; 
+    int doMisMatchErr = 0;
     
     SubProfile = mypars->SubProfile;
-    if (SubProfile == NULL){SubFlag = "false";}
-    else{SubFlag = "true";}
-    //fprintf(stderr,"SUB FLAG IS %s\n",SubFlag);
+    if (SubProfile != NULL)
+      doMisMatchErr = 1;
+
     if(SubProfile != NULL && mypars->Briggs != NULL){
       ErrMsg(12.0);
       exit(0);
@@ -318,10 +312,10 @@ int main(int argc,char **argv){
 
     int DeamLength = 0;
     ThreadInitialization(seq_ref,SamplThreads,Glob_seed,nreads_per_thread,filename,
-                      Adapt_flag,Adapter_1,Adapter_2,mypars->OutFormat,mypars->seq_type,
-                      Param,Briggs_Flag,Sizefile,FixedSize,SizeDistType,val1,val2,
+                      AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->OutFormat,mypars->seq_type,
+                      Param,DoBriggs,Sizefile,FixedSize,SizeDistType,val1,val2,
                       qualstringoffset,QualProfile1,QualProfile2,CompressThreads,QualStringFlag,Polynt,
-                      mypars->ErrorFlag,Specific_Chr,fastafile,SubFlag,SubProfile,DeamLength,mypars->rng_type,
+                      mypars->DoSeqErr,Specific_Chr,fastafile,doMisMatchErr,SubProfile,DeamLength,mypars->rng_type,
                       VCFformat,Variant_flag,VarType,Command,NGSNGS_VERSION,HeaderIndiv,NoAlign,BufferLength);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);

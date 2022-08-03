@@ -27,7 +27,7 @@ argStruct *getpars(int argc,char ** argv){
   // 1) nucleotide quality score and sequencing errors,  
   mypars->QualProfile1 = NULL;
   mypars->QualProfile2 = NULL;
-  mypars->ErrorFlag = 1;
+  mypars->DoSeqErr = 1;
   // 2) briggs model
   mypars->Briggs = NULL; //"0.024,0.36,0.68,0.0097";
   // 3) misincorporation matrix
@@ -156,7 +156,7 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-ne",*argv)==0 || strcasecmp("--noerror",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
-      mypars->ErrorFlag = 0;//"F";
+      mypars->DoSeqErr = 0;//"F";
       strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-na",*argv)==0 || strcasecmp("--noalign",*argv)==0){
