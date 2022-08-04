@@ -13,11 +13,12 @@ typedef struct{
   char **seqs;
   char **seqs_names;
   int *seqs_l;
+  size_t seq_l_total;
   ransampl_ws *ws;
 }fasta_sampler;
 
 
-fasta_sampler *fasta_sampler_alloc(const char *);
+fasta_sampler *fasta_sampler_alloc(const char *,const char *);
 void fasta_sampler_destroy(fasta_sampler *fs);
 char* sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &posB,int &posE,int fraglength);
 #endif
