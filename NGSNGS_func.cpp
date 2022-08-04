@@ -203,23 +203,20 @@ void InsertChar(char* array,std::string ins,int index){
   strcpy(array, s.c_str());    
 }
 
-void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,faidx_t *seq_ref,int chr_total,int chr_idx_arr[],size_t genome_len,char CommandArray[1024],const char* version){
+void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,fasta_sampler *fs,char CommandArray[1024],const char* version){
   // Creates a header for the bamfile. The header is initialized before the function is called //
   if (header == NULL) { fprintf(stderr, "sam_hdr_init");}
-  
+
   // Creating header information
   
   char genome_len_buf[1024];
   //sam_hdr_add_line(header, "HD", "VN",version, "SO", "unsorted", NULL);
-  for(int i=0;i<chr_total;i++){
-    const char *name = faidx_iseq(seq_ref,chr_idx_arr[i]);
+  for(int i=0;i<fs->nref;i++){
     //fprintf(stderr,"chromosomes added to bam header %d\n",chr_idx_arr[i]);
-
-    int name_len =  faidx_seq_len(seq_ref,name);
-    snprintf(genome_len_buf,1024,"%d", name_len);
+    snprintf(genome_len_buf,1024,"%d", fs->seqs_l[i]);
     
     // reference part of the header, int r variable ensures the header is added
-    int r = sam_hdr_add_line(header, "SQ", "SN", name, "LN", genome_len_buf, NULL);
+    int r = sam_hdr_add_line(header, "SQ", "SN", fs->seqs_names[i], "LN", genome_len_buf, NULL);
     if (r < 0) { fprintf(stderr,"sam_hdr_add_line");}
    
     //cram_set_option(fmt_hts, CRAM_OPT_DECODE_MD, 1);
@@ -369,42 +366,6 @@ char* HaploGenome(char* genome,char genome_data1[],char genome_data2[],int chr_s
   fprintf(stderr,"Genome II   example %c%c%c%c%c\n",genome[19000014],genome[19000015],genome[19000016], genome[19000017], genome[19000018]);
   fprintf(stderr,"Genome III  example %c%c%c%c%c\n",genome[19000014+107349540],genome[19000015+107349540],genome[19000016+107349540], genome[19000017+107349540], genome[19000018+107349540]);*/
 
-  return genome;
-}
-
-char* full_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[]){
-  size_t genome_size = 0;
-  chr_size_cumm[0] = 0;
-  /*std::string Nstr = std::string(300, 'N');
-  std::cout << Nstr << std::endl;
-  const char* Ndata =  Nstr.c_str();
-  std::cout << Ndata << std::endl;
-  std::cout << strlen(Ndata) << std::endl;*/
-  for (int i = 0; i < chr_total; i++){
-    const char *chr_name = faidx_iseq(seq_ref,i);
-    int chr_len = faidx_seq_len(seq_ref,chr_name);
-    chr_sizes[i] = chr_len;
-    chr_names[i] = chr_name;
-    genome_size += chr_len;// + strlen(Ndata);
-    chr_size_cumm[i+1] = genome_size;
-  }
-  
-  char* genome = (char*) malloc(sizeof(char) * (genome_size+chr_total+1));//(strlen(Ndata)*chr_total)
-  genome[0] = 0; //Init to create proper C string before strcat
-  //chr_total
-  for (int i = 0; i < chr_total; i++){
-
-    const char *data = fai_fetch(seq_ref,chr_names[i],&chr_sizes[i]);
-    //sprintf(&genome[strlen(genome)],data);
-    //strcat(genome,data);  //Both gives conditional jump or move error
-    if (data != NULL){
-      //std::cout << strlen(genome) << std::endl;
-      sprintf(genome+strlen(genome),"%s",data);
-      //strcat(genome,Ndata);
-    }
-    // several of the build in functions allocates memory without freeing it again.
-    free((char*)data); //Free works on const pointers, so we have to cast into a const char pointer
-  }
   return genome;
 }
 

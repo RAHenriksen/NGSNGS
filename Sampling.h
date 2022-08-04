@@ -8,13 +8,8 @@ struct Parsarg_for_Sampling_thread{
   fasta_sampler *reffasta;
   kstring_t *fqresult_r1;
   kstring_t *fqresult_r2;
-  char *genome;
-  int *chr_idx_array;
-  int chr_no;
   int threadno;
   int totalThreads; //<- this contains the total number of threads. This is shared among all threads
-  size_t *size_cumm;
-  char **names;
 
   int* FragLen;
   double* FragFreq;

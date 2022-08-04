@@ -22,11 +22,11 @@
 #define LENS 4096
 #define MAXBINS 100
 
-void* ThreadInitialization(const char* refSseq,faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
+void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
                         const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,
                         const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
-                        const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr[1024],const char* FastaFileName,
+                        const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VCFformat,char* Variant_flag,const char *VarType,
                         char CommandArray[1024],const char* version,const char* HeaderIndiv,const char* NoAlign,size_t BufferLength){
   //creating an array with the arguments to create multiple threads;
@@ -36,62 +36,17 @@ void* ThreadInitialization(const char* refSseq,faidx_t *seq_ref,int thread_no, i
   pthread_t *mythreads = new pthread_t[nthreads]; //pthread_t mythreads[nthreads];
 
   //allocate for reference file
-  fasta_sampler *reffasta = fasta_sampler_alloc(refSseq);
-
+  fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
+  
   fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome\n",reffasta->nref);
-
-  int chr_total = 0;
-  char *genome_data;
-  if (Specific_Chr[0] != NULL){
-    while (Specific_Chr[chr_total]){chr_total++;}
-  }
-  else{
-    chr_total = faidx_nseq(seq_ref);
-  }
-
-  const char **chr_names = new const char*[chr_total]; //const char *chr_names[chr_total];
-  int *chr_sizes = new int[chr_total]; //int chr_sizes[chr_total];
-  int *chr_idx_arr= new int[chr_total]; //int chr_idx_arr[chr_total];
-  size_t *chr_size_cumm = new size_t[chr_total+1]; //size_t chr_size_cumm[chr_total+1];
+  fprintf(stderr,"\t-> Chromsoome name first %s and length %d and full length %zu\n",reffasta->seqs_names[0],reffasta->seqs_l[0],reffasta->seq_l_total);
   
-  if (chr_total < faidx_nseq(seq_ref)){
-    for (int j = 0; j < faidx_nseq(seq_ref); j++){
-      for (int i = 0; i < chr_total; i++){
-        if(strcasecmp(faidx_iseq(seq_ref, j),Specific_Chr[i])==0){
-          chr_idx_arr[i] = j;
-        }
-      } 
-    }
-  }
-  else
-  {
-    for (int j = 0; j < faidx_nseq(seq_ref); j++){;chr_idx_arr[j] = j;}
-  }
-  
-  if(VCFformat != NULL && strcasecmp(Variant_flag,"bcf")==0){
+  /*if(VCFformat != NULL && strcasecmp(Variant_flag,"bcf")==0){
     //const char* HeaderIndiv = "HG00097";
     genome_data = full_vcf_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm,VCFformat,VarType,HeaderIndiv);
-  }
-  else{
-    if (chr_total == faidx_nseq(seq_ref)){
-      genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
-    }  
-    else{
-      fprintf(stderr,"Generating partial\n");
-      fprintf(stderr,"chr_total: %d, nseq: %d\n",chr_total,faidx_nseq(seq_ref));
-      //      std::cout << chr_total << " " << faidx_nseq(seq_ref) << std::endl;
-      fprintf(stderr,"chr total %d \t specific chr %s\n",chr_total,Specific_Chr[0]);
-      genome_data = partial_genome_create(seq_ref,chr_total-1,chr_sizes,Specific_Chr,chr_size_cumm);
-      fprintf(stderr,"Generating done\n");
-      for (int i = 0; i < chr_total; i++){
-        chr_names[i] = Specific_Chr[i];
-      }
-    }
-  }
+  }*/
 
-  size_t genome_size = strlen(genome_data);;
-  if (genome_data != NULL){
-    fprintf(stderr,"\t-> Completed the generation of the contigous sequence, with size of %lu bp\n",genome_size);
+  if (reffasta->seqs != NULL){
   
     Parsarg_for_Sampling_thread *struct_for_threads = new Parsarg_for_Sampling_thread[nthreads]; //Parsarg_for_Sampling_thread struct_for_threads[nthreads];
 
@@ -195,8 +150,8 @@ void* ThreadInitialization(const char* refSseq,faidx_t *seq_ref,int thread_no, i
     }
     else{
       //strlen(".fastq.gz") = longest suffix for fasta file + 2 in case of Null string terminators
-      char *ref =(char*) malloc(strlen(".fasta.gz") + strlen(FastaFileName) + 2);
-      sprintf(ref, "reference=%s", FastaFileName);
+      char *ref =(char*) malloc(strlen(".fasta.gz") + strlen(refSseq) + 2);
+      sprintf(ref, "reference=%s", refSseq);
       
       // Save reference file name for header creation of the sam output
       //  hts_opt_add((hts_opt **)&fmt_hts->specific,ref);
@@ -210,9 +165,11 @@ void* ThreadInitialization(const char* refSseq,faidx_t *seq_ref,int thread_no, i
         }
         hts_set_opt(SAMout, HTS_OPT_THREAD_POOL, &p);
       }
-      hts_set_opt(SAMout, CRAM_OPT_REFERENCE, FastaFileName);
+      hts_set_opt(SAMout, CRAM_OPT_REFERENCE, refSseq);
       // generate header
-      Header_func(fmt_hts,filename1,SAMout,SAMHeader,seq_ref,chr_total,chr_idx_arr,genome_size,CommandArray,version);
+      Header_func(fmt_hts,filename1,SAMout,SAMHeader,reffasta,CommandArray,version);
+      //void Header_func( int chr_total,char* chr_names[],int arra[],char CommandArray[1024],const char* version){
+
       free(ref);
       // hts_opt_free((hts_opt *)fmt_hts->specific);
     }
@@ -291,9 +248,6 @@ void* ThreadInitialization(const char* refSseq,faidx_t *seq_ref,int thread_no, i
       // Thread generation and sampling specific information
       struct_for_threads[i].threadno = i;
       struct_for_threads[i].totalThreads = nthreads;
-      struct_for_threads[i].genome = genome_data;
-      struct_for_threads[i].chr_idx_array = chr_idx_arr;
-      struct_for_threads[i].chr_no = chr_total;
       struct_for_threads[i].threadseed = seed;
       struct_for_threads[i].rng_type = RandMacro;
 
@@ -341,15 +295,6 @@ void* ThreadInitialization(const char* refSseq,faidx_t *seq_ref,int thread_no, i
       struct_for_threads[i].SeqType = SeqType;
       struct_for_threads[i].PolyNt = polynucleotide;
       struct_for_threads[i].NoAlign = (char) NoAlign[0];
-
-      //declaring the size of the different sampling arrays
-      struct_for_threads[i].size_cumm = (size_t*)malloc(sizeof(size_t) * (struct_for_threads[i].chr_no+1));
-      struct_for_threads[i].size_cumm[0] = 0;
-      memcpy(struct_for_threads[i].size_cumm, chr_size_cumm, sizeof(&chr_size_cumm)); //memcpy(struct_for_threads[i].size_cumm, chr_size_cumm, sizeof(chr_size_cumm));
-      
-      struct_for_threads[i].names = (char**)malloc(sizeof(char*) * struct_for_threads[i].chr_no+1);
-      struct_for_threads[i].names[0] = 0;
-      memcpy(struct_for_threads[i].names, chr_names, sizeof(&chr_names)); //memcpy(struct_for_threads[i].names, chr_names, sizeof(chr_names));
     }
     
     pthread_attr_t attr;
@@ -416,18 +361,10 @@ void* ThreadInitialization(const char* refSseq,faidx_t *seq_ref,int thread_no, i
       delete[] Frag_len;
     }
 
-    // free allocated memory for chromosome info    
-    delete[] chr_names; //const char **chr_names = new const char*[chr_total];
-    delete[] chr_sizes; //int *chr_sizes = new int[chr_total]; //int chr_sizes[chr_total];
-    delete[] chr_idx_arr; //int *chr_idx_arr= new int[chr_total]; //int chr_idx_arr[chr_total];
-    delete[] chr_size_cumm; //size_t *chr_size_cumm = new size_t[chr_total+1]; //size_t chr_size_cumm[chr_total+1];
-    
     delete[] struct_for_threads; //Parsarg_for_Sampling_thread *struct_for_threads = new Parsarg_for_Sampling_thread[nthreads];
 
     delete[] MisMatchFreqArray; //if(SubProfile != NULL){delete[] MisMatchFreqArray;}
     
-    //CHECK IF FRAG_FREG,FRAG_LEN,QUALDIST SHOULDN'T BE DELETED NO MATTER WHAT? OR HAS THE RELEVANS CHANGED SINCE WE RESTRUCTURED THE CODE
-    free(genome_data);
     fflush(stderr);
   }
   return NULL;

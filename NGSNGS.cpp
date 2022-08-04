@@ -74,18 +74,13 @@ int main(int argc,char **argv){
     if(mypars==NULL)
       return 1;
     
-    char* Command = mypars->CommandRun;
     fprintf(stderr,"\n\t-> ngsngs version: %s (htslib: %s) build(%s %s)\n",NGSNGS_VERSION,hts_version(),__DATE__,__TIME__); 
-    fprintf(stderr,"\t-> Mycommmand: %s\n",Command);
+    fprintf(stderr,"\t-> Mycommmand: %s\n",mypars->CommandRun);
 
-    //fprintf(stderr,"\t-> Command 2 : %s and version %s \n",CommandArray,version);
     clock_t t = clock();
     time_t t2 = time(NULL);
-    int Glob_seed = mypars->Glob_seed; 
 
-    const char *fastafile = mypars->Reference;
     //const char* OutputFormat = mypars->OutFormat;
-    const char* filename = mypars->OutName; //"chr22_out";
     double readcov = mypars->coverage;
 
     if (mypars->rng_type == -1){
@@ -100,31 +95,28 @@ int main(int argc,char **argv){
     }
     //fprintf(stderr,"RANDOM VALUE %d \n",MacroRandType);
     
-    if (fastafile == NULL){ErrMsg(1.0);}
-    if (filename == NULL){ErrMsg(8.0);}
+    if (mypars->Reference == NULL){ErrMsg(1.0);}
+    if (mypars->OutName == NULL){ErrMsg(8.0);}
     
-    //fprintf(stderr,"\t-> Command: %s \n",Command);
-    int FixedSize = mypars->Length;
-    const char* Sizefile = mypars->LengthFile;
     const char* SizeDist = mypars->LengthDist;
     double meanlength = 0;
     int SizeDistType=-1;double val1 = 0; double val2  = 0;
 
-    if (FixedSize != 0){
-      if (FixedSize < 0){ErrMsg(3.0);}
+    if (mypars->Length != 0){
+      if (mypars->Length < 0){ErrMsg(3.0);}
       else{
-        meanlength = FixedSize;
+        meanlength = mypars->Length;
         SizeDistType=0;
       } 
     }
-    if (Sizefile != NULL){
+    if (mypars->LengthFile != NULL){
       //fprintf(stderr,"SIZE FILE ARG\n");
       double sum,n;
       sum=n=0;
 
       char buf[LENS];
       gzFile gz = Z_NULL;
-      gz = gzopen(Sizefile,"r");
+      gz = gzopen(mypars->LengthFile,"r");
       assert(gz!=Z_NULL);
       while(gzgets(gz,buf,LENS)){
         double Length_tmp = atof(strtok(buf,"\n\t "));
@@ -135,7 +127,7 @@ int main(int argc,char **argv){
       gzclose(gz);
       
       meanlength = sum/n;
-      if (FixedSize <0){fprintf(stderr,"FIXED SIZE %d",FixedSize);ErrMsg(5.0);}
+      if (mypars->Length <0){fprintf(stderr,"FIXED SIZE %d",mypars->Length);ErrMsg(5.0);}
       SizeDistType=1;
     }
     if (SizeDist != NULL){
@@ -153,18 +145,16 @@ int main(int argc,char **argv){
       if (strcasecmp(Dist,"Pois")==0){SizeDistType=5;meanlength= val1;}
       if (strcasecmp(Dist,"Exp")==0){SizeDistType=6;meanlength= 1/val1;}
       if (strcasecmp(Dist,"Gam")==0){SizeDistType=7;meanlength= (val1/val2);}
-      if (FixedSize >0){ErrMsg(5.0);}
+      if (mypars->Length >0){ErrMsg(5.0);}
       free((char *)Dist);
     }
 
     faidx_t *seq_ref = NULL;
-    seq_ref  = fai_load(fastafile);
+    seq_ref  = fai_load(mypars->Reference);
     
     assert(seq_ref!=NULL);
     
     int chr_total = faidx_nseq(seq_ref);
-    int SamplThreads = mypars->SamplThreads;
-    int CompressThreads = mypars->CompressThreads;
 
     //first capture the awkward cases where no reads or cov has been defined or both defined
     if(mypars->nreads == 0 && readcov == 0.0){
@@ -186,13 +176,11 @@ int main(int argc,char **argv){
       mypars->nreads =  (readcov*genome_size)/meanlength;
     }
   
-    size_t nreads_per_thread = mypars->nreads/SamplThreads;
+    //size_t nreads_per_thread = mypars->nreads/mypars->SamplThreads;
     
-    size_t BufferLength = mypars->KstrBuf;
-
-    fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
-    fprintf(stderr,"\t-> Seed used: %d\n",Glob_seed);
-    fprintf(stderr,"\t-> Number of sampling threads used (-t): %d and number of compression threads (-t2): %d\n",SamplThreads,CompressThreads);
+    fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",mypars->Reference,chr_total);
+    fprintf(stderr,"\t-> Seed used: %d\n",mypars->Glob_seed);
+    fprintf(stderr,"\t-> Number of sampling threads used (-t): %d and number of compression threads (-t2): %d\n",mypars->SamplThreads,mypars->CompressThreads);
     fprintf(stderr,"\t-> Number of simulated reads: %zu or coverage: %f\n",mypars->nreads,mypars->coverage);
 
     int AddAdapt = 0;
@@ -209,17 +197,15 @@ int main(int argc,char **argv){
       else{Polynt = "F";}
     }
     // QUALITY PROFILES
-    const char* QualProfile1; const char* QualProfile2;
-    QualProfile1 = mypars->QualProfile1; QualProfile2 = mypars->QualProfile2;
 
     const char* QualStringFlag;
-    if (QualProfile1 == NULL){QualStringFlag = "false";}
+    if (mypars->QualProfile1 == NULL){QualStringFlag = "false";}
     else{QualStringFlag = "true";}
     //fprintf(stderr,"qualstring test %s",QualStringFlag);
     outputformat_e OutputFormat = mypars->OutFormat;
     if (strcasecmp("true",QualStringFlag)==0){
       if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
-        if (mypars->seq_type == PE && QualProfile2 == NULL){
+        if (mypars->seq_type == PE && mypars->QualProfile2 == NULL){
           ErrMsg(11.0);
           //fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
           exit(0);
@@ -269,36 +255,19 @@ int main(int argc,char **argv){
       free(BriggsParam); // Again using strdup
     }
     
-    const char* SubProfile; 
     int doMisMatchErr = 0;
     
-    SubProfile = mypars->SubProfile;
-    if (SubProfile != NULL)
+    if (mypars->SubProfile != NULL)
       doMisMatchErr = 1;
 
-    if(SubProfile != NULL && mypars->Briggs != NULL){
+    if(mypars->SubProfile != NULL && mypars->Briggs != NULL){
       ErrMsg(12.0);
       exit(0);
-    }
-
-    const char* Specific_Chr[1024] = {};
-    if (mypars->Chromosomes != NULL){
-      fprintf(stderr,"PARTIAL chromosomes %s\n",mypars->Chromosomes);
-      int chr_idx_partial = 0;
-      Specific_Chr[chr_idx_partial++] = strtok(strdup(mypars->Chromosomes),"\", \t");
-      char *chrtok = NULL;
-      while(((chrtok=strtok(NULL,"\", \t")))){
-	      Specific_Chr[chr_idx_partial++] = strdup(chrtok);
-	      assert(chr_idx_partial<MAXBINS);
-      }
-      fprintf(stderr,"AFTER WHILE and chr_idx_partial %d\n",chr_idx_partial);
-      Specific_Chr[chr_idx_partial++] = "\0";
     }
     
     char* Variant_flag =NULL;
     const char* VCFformat = mypars->Variant;
     const char* VarType =mypars->Variant_type;
-    const char* HeaderIndiv = mypars->HeaderIndiv;
 
     if (VCFformat != NULL){
       Variant_flag = strdup("bcf");
@@ -312,12 +281,12 @@ int main(int argc,char **argv){
     }
 
     int DeamLength = 0;
-    ThreadInitialization(mypars->Reference,seq_ref,SamplThreads,Glob_seed,nreads_per_thread,filename,
+    ThreadInitialization(mypars->Reference,mypars->SamplThreads,mypars->Glob_seed,mypars->nreads/mypars->SamplThreads,mypars->OutName,
                       AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->OutFormat,mypars->seq_type,
-                      Param,DoBriggs,Sizefile,FixedSize,SizeDistType,val1,val2,
-                      qualstringoffset,QualProfile1,QualProfile2,CompressThreads,QualStringFlag,Polynt,
-                      mypars->DoSeqErr,Specific_Chr,fastafile,doMisMatchErr,SubProfile,DeamLength,mypars->rng_type,
-                      VCFformat,Variant_flag,VarType,Command,NGSNGS_VERSION,HeaderIndiv,NoAlign,BufferLength);
+                      Param,DoBriggs,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,
+                      qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->CompressThreads,QualStringFlag,Polynt,
+                      mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
+                      VCFformat,Variant_flag,VarType,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,NoAlign,mypars->KstrBuf);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));
@@ -336,7 +305,6 @@ int main(int argc,char **argv){
   // OPTIONAL DEALLOCATIONS
   free((char *)mypars->Variant);
   free((char *)mypars->Variant_type);
-  free((char *)mypars->HeaderIndiv);
   free((char *)mypars->Adapter1);
   free((char *)mypars->Adapter2);
   free((char *)mypars->QualProfile1);
