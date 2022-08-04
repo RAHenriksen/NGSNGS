@@ -17,11 +17,12 @@
 #include "Sampling.h"
 #include "sample_qscores.h"
 #include "NGSNGS_cli.h"
+#include "fasta_sampler.h"
 
 #define LENS 4096
 #define MAXBINS 100
 
-void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
+void* ThreadInitialization(const char* refSseq,faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
                         const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,
                         const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
@@ -33,6 +34,11 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
   //fprintf(stderr,"\t-> Command 3 : %s \n",CommandArray);
   int nthreads=thread_no;
   pthread_t *mythreads = new pthread_t[nthreads]; //pthread_t mythreads[nthreads];
+
+  //allocate for reference file
+  fasta_sampler *reffasta = fasta_sampler_alloc(refSseq);
+
+  fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome\n",reffasta->nref);
 
   int chr_total = 0;
   char *genome_data;
@@ -260,6 +266,7 @@ void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t read
     }
 
     for (int i = 0; i < nthreads; i++){
+      struct_for_threads[i].reffasta = reffasta;
       // generating strings for which the simulated reads will be contained
       struct_for_threads[i].fqresult_r1 =new kstring_t;
       struct_for_threads[i].fqresult_r1 -> l = 0;

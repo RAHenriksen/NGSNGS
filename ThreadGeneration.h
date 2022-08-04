@@ -3,7 +3,7 @@
 #include "NGSNGS_cli.h"
 #define LENS 4096
 
-void* ThreadInitialization(faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
+void* ThreadInitialization(const char* refSseq,faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
                         const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,
                         const char* Sizefile,int FixedSize,int SizeDistType,double val1,double val2,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int threadwriteno,

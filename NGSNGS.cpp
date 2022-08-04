@@ -27,6 +27,7 @@
 #include "HelpPage.h"
 #include "NGSNGS.h"
 #include "NGSNGS_cli.h"
+#include "fasta_sampler.h"
 
 #include <signal.h>
 #define LENS 4096
@@ -311,7 +312,7 @@ int main(int argc,char **argv){
     }
 
     int DeamLength = 0;
-    ThreadInitialization(seq_ref,SamplThreads,Glob_seed,nreads_per_thread,filename,
+    ThreadInitialization(mypars->Reference,seq_ref,SamplThreads,Glob_seed,nreads_per_thread,filename,
                       AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->OutFormat,mypars->seq_type,
                       Param,DoBriggs,Sizefile,FixedSize,SizeDistType,val1,val2,
                       qualstringoffset,QualProfile1,QualProfile2,CompressThreads,QualStringFlag,Polynt,

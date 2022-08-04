@@ -26,6 +26,7 @@
 #include "ThreadGeneration.h"
 #include "Sampling.h"
 #include "sample_qscores.h"
+#include "fasta_sampler.h"
 
 #define LENS 4096
 #define MAXBINS 100
@@ -43,7 +44,16 @@ void* Sampling_threads(void *arg){
   mrand_t *drand_alloc_nt = mrand_alloc(struct_obj->rng_type,loc_seed);
   mrand_t *drand_alloc_nt_adapt = mrand_alloc(struct_obj->rng_type,loc_seed);
   mrand_t *drand_alloc_briggs = mrand_alloc(struct_obj->rng_type,loc_seed);
-  
+
+  fprintf(stderr,"INSIDE SAMPLING THREADS\n");
+  fprintf(stderr,"-----------------------\nFASTA SAMPLER \n---------------------");
+  int seed = 101;
+  mrand_t *mr = mrand_alloc(3,seed);
+  char *chr1; //this is an unallocated pointer to a chromosome name, eg chr1, chrMT etc
+  int posB1,posE1;//this is the first and last position of our fragment
+  char *seq;//actual sequence, this is unallocated
+  int fraglength;
+
   //if(fqT==struct_obj->OutputFormat|| fqgzT==struct_obj->OutputFormat)
   //  qualstringoffset = 33;
   
@@ -86,6 +96,11 @@ void* Sampling_threads(void *arg){
   size_t current_reads_atom = 0;
   int readsizelimit;
 
+  char *chr; //this is an unallocated pointer to a chromosome name, eg chr1, chrMT etc
+  int posB,posE;//this is the first and last position of our fragment
+  char *seq1;
+  char *seq2;
+
   extern int SIG_COND;
 
   std::default_random_engine RndGen(loc_seed);
@@ -114,7 +129,7 @@ void* Sampling_threads(void *arg){
     if (current_reads_atom > 1 && current_reads_atom%moduloread == 0)
       fprintf(stderr,"\t-> Thread %d roduced %zu reads with a current total of %zu\n",struct_obj->threadno,moduloread,current_reads_atom);
     
-    int fraglength = getFragmentLength(sf);
+    int fraglength = getFragmentLength(sf); //fraglength = abs(mrand_pop_long(drand_alloc)) % 1000;
 
     // Selecting genomic start position across the generated contiguous contigs for which to extract 
     double rand_val = mrand_pop(drand_alloc);
@@ -147,21 +162,33 @@ void* Sampling_threads(void *arg){
     /*
       make one line, where you copy only min(readsizelimit,fraglength)
     */
-    if (fraglength > readsizelimit)
-      strncpy(seq_r1,struct_obj->genome+rand_start-1,readsizelimit);
+    //std::cout <<struct_obj->reffasta->seqs_names[0] << std::endl;
+    //fprintf(stderr,"BEFORE FRAGMENT LENGTHS %d\tFOR THREAD %d\n",fraglength,struct_obj->threadno);
+
+    if (fraglength > readsizelimit){
+      seq = sample(struct_obj->reffasta,drand_alloc,&chr,posB,posE,readsizelimit);
+      strncpy(seq_r1,seq,posE-posB);
+      //strncpy(seq_r2,struct_obj->genome+rand_start+fraglength-1-readsizelimit,readsizelimit);
+    }
     else
-      strncpy(seq_r1,struct_obj->genome+rand_start-1,fraglength);
+      seq = sample(struct_obj->reffasta,drand_alloc,&chr,posB,posE,fraglength);
+      strncpy(seq_r1,seq,posE-posB);
+      //strncpy(seq_r1,struct_obj->genome+rand_start-1,fraglength);
 
     if(PE==struct_obj->SeqType){
       if (fraglength > readsizelimit)
-	      strncpy(seq_r2,struct_obj->genome+rand_start+fraglength-1-readsizelimit,readsizelimit);
+        seq2 = sample(struct_obj->reffasta,drand_alloc,&chr,posB,posE,readsizelimit);
+	      //strncpy(seq_r2,struct_obj->genome+rand_start+fraglength-1-readsizelimit,readsizelimit);
       else
-	      strncpy(seq_r2,struct_obj->genome+rand_start-1,fraglength);
+        seq2 = sample(struct_obj->reffasta,drand_alloc,&chr,posB,posE,fraglength);
+	      //strncpy(seq_r2,struct_obj->genome+rand_start-1,fraglength);
     }
     /*
       ||------R1------>,,,,,,,,,,|-------R2----->||
      */
     
+    //unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
+    //exit(0);
     //Selecting strand, 0-> forward strand (+) 5'->3', 1 -> reverse strand (-) 3'->5'
     //rename to strand to strandR1
     int strand = mrand_pop(drand_alloc)>0.5?0:1; //int strand = (int) (rand_start%2);
@@ -244,15 +271,18 @@ void* Sampling_threads(void *arg){
     }
       
     //this will be changed by fasta_sampler
-    char *chrname = struct_obj->names[chr_idx];
-      
-      // Extract specific chromosome name similar to the bcf
-    if (struct_obj->Variant_flag!=NULL && strcasecmp(struct_obj->Variant_flag ,"bcf")==0)
-      chrname = struct_obj->names[0];
+  
+
+    // Extract specific chromosome name similar to the bcf
+    //if (struct_obj->Variant_flag!=NULL && strcasecmp(struct_obj->Variant_flag ,"bcf")==0)
+    //  chrname = struct_obj->names[0];
 	    
-    read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%s:%zu-%zu_length:%d", struct_obj->threadno, rand_id,strand,chrname,
+    /*read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%s:%zu-%zu_length:%d", struct_obj->threadno, rand_id,strand,chr,
 			     rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],(int)fraglength);
-    
+    */
+    read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%s:%zu-%zu_length:%d", struct_obj->threadno, rand_id,strand,chr,posB,posE,fraglength);
+    //fprintf(stdout,"chr:%s\tposB:%d\tposE:%d\tfraglength:%d\tfraglength:%d\tSequenceLength:%d\texample:%s\n",chr,posB,posE,fraglength,readsizelimit,strlen(seq_r1),seq_r1);
+
     // Adding adapters before adding sequencing errors.
 
     int Adapter1_len = 0;
@@ -273,7 +303,7 @@ void* Sampling_threads(void *arg){
       }
       //for monophosphate the soft clip needs to be extended in length
       if (struct_obj->PolyNt != 'F'){
-	Adapter1_len = readsizelimit - seqlen; 
+	      Adapter1_len = readsizelimit - seqlen; 
         Adapter2_len = readsizelimit - seqlen; 
         //fprintf(stderr,"FIRST ADAPTER 2 LENGTH WITH POLY %d\n",Adapter2_len);
       }

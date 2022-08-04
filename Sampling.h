@@ -2,8 +2,10 @@
 #define SAMPLING_H
 #define LENS 4096
 #include "NGSNGS_cli.h"
+#include "fasta_sampler.h"
 
 struct Parsarg_for_Sampling_thread{
+  fasta_sampler *reffasta;
   kstring_t *fqresult_r1;
   kstring_t *fqresult_r2;
   char *genome;
