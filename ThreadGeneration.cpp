@@ -329,7 +329,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
        hts_tpool_destroy(p.pool);
     
     //fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr,VariantFile,VarType,HeaderIndiv);
-    //fasta_sampler_destroy(reffasta);
+    fasta_sampler_destroy(reffasta);
 
     for(int i=0;i<nthreads;i++){
       free(struct_for_threads[i].fqresult_r1 -> s);

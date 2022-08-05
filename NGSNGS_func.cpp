@@ -174,7 +174,7 @@ char* HaploType(char genome_data1[],htsFile *bcf_obj,bcf_hdr_t *bcf_head,hts_idx
       }
     }
     else{
-      fprintf(stderr,"Reference chromosome %s has no variations in vcf file at chromosomes %s\n",chr_names[0],bcf_hdr_id2name(bcf_head, bcf_records->rid));
+      fprintf(stderr,"Reference chromosome %s has no variations in vcf file at chromosomes %s\n",chr_name,bcf_hdr_id2name(bcf_head, bcf_records->rid));
     }
   }
   return genome_data1;

@@ -63,20 +63,22 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr,const 
         hts_idx_t *bcf_idx = bcf_index_load(VariantFile);
         bcf1_t *bcf_records = bcf_init();
         
-        char SeqName[1024] = {0};
+        /*char SeqName[1024] = {0};
         char SeqName2[1024] = {0};
         fs->seqs_names[0] = SeqName;
         fs->seqs_names[1] = SeqName2;
-        
+        */
         //size_t pos = 19000017;
 
         for(int i=0;i<fs->nref;i++){
           //fs->seqs_names[i] = strdup(SubsetChr[0]);
-          snprintf(fs->seqs_names[i],1024,"%sH%d",strdup(SubsetChr[0]),i+1);
+          //snprintf(fs->seqs_names[i],1024,"%sH%d",strdup(SubsetChr[0]),i+1);
+          fs->seqs_names[i] = strdup(SubsetChr[0]);
           fs->seqs[i] = fai_fetch(fs->fai,strdup(SubsetChr[0]),fs->seqs_l+i);
-          fprintf(stderr,"%d)\tchr:%s\tlen:%d\n",i,fs->seqs_names[i],fs->seqs_l[i]);
+          //fprintf(stderr,"%d)\tchr:%s\tlen:%d\n",i,fs->seqs_names[i],fs->seqs_l[i]);
           //fprintf(stderr,"%zu POSITION \t before alterations %c%c%c\n",pos,fs->seqs[i][pos-1],fs->seqs[i][pos],fs->seqs[i][pos+1]);
-          HaploType(fs->seqs[i],bcf_obj,bcf_head,bcf_idx,bcf_records,"14",i,HeaderIndiv);
+          
+          HaploType(fs->seqs[i],bcf_obj,bcf_head,bcf_idx,bcf_records,strdup(SubsetChr[0]),i,HeaderIndiv); // "14"
           //fprintf(stderr,"%zu POSITION \t after alterations %c%c%c\n",pos,fs->seqs[i][pos-1],fs->seqs[i][pos],fs->seqs[i][pos+1]);
         }
         //fprintf(stderr,"--------------------\n");
