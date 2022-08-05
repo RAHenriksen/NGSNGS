@@ -37,7 +37,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
   //allocate for reference file
   fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
-  
+
   fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome\n",reffasta->nref);
   fprintf(stderr,"\t-> Chromsoome name first %s and length %d and full length %zu\n",reffasta->seqs_names[0],reffasta->seqs_l[0],reffasta->seq_l_total);
   
@@ -237,6 +237,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
       // The output format, output files, and structural elements for SAM outputs
       struct_for_threads[i].OutputFormat = OutputFormat;
+      struct_for_threads[i].SeqType = SeqType;
       struct_for_threads[i].bgzf_fp = bgzf_fp;
       struct_for_threads[i].SAMout = SAMout;
       struct_for_threads[i].SAMHeader = SAMHeader;
@@ -292,7 +293,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].AddAdapt = AddAdapt;
       struct_for_threads[i].Adapter_1 = Adapter_1;
       struct_for_threads[i].Adapter_2 = Adapter_2;
-      struct_for_threads[i].SeqType = SeqType;
       struct_for_threads[i].PolyNt = polynucleotide;
       struct_for_threads[i].NoAlign = (char) NoAlign[0];
     }
@@ -324,6 +324,8 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
      if (p.pool)
        hts_tpool_destroy(p.pool);
     
+    fasta_sampler_destroy(reffasta);
+
     for(int i=0;i<nthreads;i++){
       free(struct_for_threads[i].fqresult_r1 -> s);
       free(struct_for_threads[i].list_of_reads);

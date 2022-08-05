@@ -131,11 +131,11 @@ void* Sampling_threads(void *arg){
     int skipread = 1;
     for(int i=0;skipread&&i<(int)strlen(seq_r1);i++)
       if(seq_r1[i]!='N')
-	skipread = 0;
+	      skipread = 0;
 
     for(int i=0;seq_r2 && skipread && i<(int)strlen(seq_r2);i++)
       if(seq_r2[i]!='N')
-	skipread = 0;
+	    skipread = 0;
     
     if(skipread==1)
       continue;
@@ -148,7 +148,7 @@ void* Sampling_threads(void *arg){
     //lets flip to 5 to 3
     if (SE==struct_obj->SeqType){
       if (strandR1 == 0)
-	SamFlags[0] = 0;
+	      SamFlags[0] = 0;
       else if (strandR1 == 1){
         SamFlags[0] = 16;
         ReversComplement(seq_r1);
@@ -203,153 +203,179 @@ void* Sampling_threads(void *arg){
     
     //add adapters
     if(struct_obj->AddAdapt){
+      //fprintf(stderr,"INSIDE ADD ADAPT!\n%s\n",seq_r1);
       // Because i have reverse complemented the correct sequences and adapters depending on the strand origin (or flags), i know all adapters will be in 3' end
       nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
-      strncpy(seq_r1,struct_obj->Adapter_1,nsofts[0]);
+      //fprintf(stderr,"The minimum values are %d \t %d \t %d \n",maxbases,struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
+      strncpy(seq_r1+strlen(seq_r1),struct_obj->Adapter_1,nsofts[0]);
+      //fprintf(stderr,"SEQUENCE R1\n%s\n",seq_r1);
       if(PE==struct_obj->SeqType){
-	nsofts[1] = std::min(struct_obj->maxreadlength-strlen(seq_r2),strlen(struct_obj->Adapter_2));
-	strncpy(seq_r2,struct_obj->Adapter_2,nsofts[1]);
+        nsofts[1] = std::min(struct_obj->maxreadlength-strlen(seq_r2),strlen(struct_obj->Adapter_2));
+        //fprintf(stderr,"The minimum values are %d \t %d \t %d \n",struct_obj->maxreadlength,struct_obj->maxreadlength-strlen(seq_r2),strlen(struct_obj->Adapter_2));
+        //fprintf(stderr,"INSIDE ADD ADAPT!\n%s\n",seq_r2);
+        strncpy(seq_r2+strlen(seq_r2),struct_obj->Adapter_2,nsofts[1]);
+        //fprintf(stderr,"SEQUENCE R1\n%s\n",seq_r2);
       }
       //do we need to keep track of both or is there some kind of symmetry?
     }
 
     //add polytail
     if (struct_obj->PolyNt != 'F') {
-      int nitems = maxbases-strlen(seq_r1);
+      int nitems = struct_obj->maxreadlength-strlen(seq_r1);
+      //fprintf(stderr,"The minimum values are %d \t %d \t %d \n",struct_obj->maxreadlength,strlen(seq_r1),nitems);
+      //fprintf(stderr,"INSIDE POLY ADAPT!\n%s\n",seq_r1);
       memset(seq_r1+strlen(seq_r1),struct_obj->PolyNt,nitems);
+      //fprintf(stderr,"INSIDE POLY ADAPT!\n%s\n",seq_r1);
+      //fprintf(stderr,"SOFT CLIPPED NUMEBR\n%d\n",nsofts[0]);
       nsofts[0] += nitems;
+      //fprintf(stderr,"SOFT CLIPPED NUMEBR\n%d\n",nsofts[0]);
       if(PE==struct_obj->SeqType){
-	nitems = maxbases-strlen(seq_r2);
-	memset(seq_r2+strlen(seq_r2),struct_obj->PolyNt,nitems);
-	nsofts[1] += nitems;
+        nitems = struct_obj->maxreadlength-strlen(seq_r2);
+        memset(seq_r2+strlen(seq_r2),struct_obj->PolyNt,nitems);
+        nsofts[1] += nitems;
       }
     }
-    //sanity check
-    if(strlen(seq_r1)!=naligned[0]+nsofts[0]){
-      fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
-      exit(0);
+
+    if(struct_obj->SAMout){
+      //sanity check
+      //fprintf(stderr,"SANITY CHECK seq_R1 %d \t %d \t %d \n seq_R2  %d \t %d \t %d \n",strlen(seq_r1),naligned[0],nsofts[0],strlen(seq_r2),naligned[1],nsofts[1]);
+      if(strlen(seq_r1)!=naligned[0]+nsofts[0]){
+        fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
+        exit(0);
+      }
+      //below only runs for PE that is when nalign[1] is not -1
+      if(naligned[1]!=-1 && strlen(seq_r2)!=naligned[1]+nsofts[1]){
+        fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
+        exit(0);
+      }
     }
-    //below only runs for PE that is when nalign[1] is not -1
-    if(naligned[1]!=-1 && strlen(seq_r2)!=naligned[1]+nsofts[1]){
-      fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
-      exit(0);
-    }
-    
     //now seq_r1 and seq_r2 is completely populated let is build qualscore if
-    
     //saving both fasta and adapter to fasta format
     if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
       ksprintf(struct_obj->fqresult_r1,">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
       if (PE==struct_obj->SeqType)
-	ksprintf(struct_obj->fqresult_r2,">%s R2\n%s\n",READ_ID,seq_r2);
-    } else {
-
+	      ksprintf(struct_obj->fqresult_r2,">%s R2\n%s\n",READ_ID,seq_r2);
+    } 
+    else{
       // Fastq and Sam needs quality scores
-       
       sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt_adapt,struct_obj->DoSeqErr);
       if (PE==struct_obj->SeqType)
-	sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt_adapt,struct_obj->DoSeqErr);
+      	sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt_adapt,struct_obj->DoSeqErr);
       
       //write fq if requested
       if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){
-	ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
-	if (PE==struct_obj->SeqType)
-	  ksprintf(struct_obj->fqresult_r2,"@%s R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);
+        ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
+        if (PE==struct_obj->SeqType)
+          ksprintf(struct_obj->fqresult_r2,"@%s R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);
       }
 
       //now only sam family needs to be done, lets revcomplement the bases, and reverse the quality scores so everything is back to forward/+ strand
       if(struct_obj->SAMout){
-	uint32_t AlignCigar[2][10];//cigs[0] is read1 cigs[1] is read2
-	size_t n_cigar[2] = {1,1};
+        uint32_t AlignCigar[2][10];//cigs[0] is read1 cigs[1] is read2
+        size_t n_cigar[2] = {1,1};
 
-	if (struct_obj->NoAlign != 'T'){
-	  AlignCigar[0][0] = bam_cigar_gen(naligned[0], BAM_CMATCH);
-	  if(nsofts[0]>0){
-	    AlignCigar[0][1] = bam_cigar_gen(nsofts[0], BAM_CSOFT_CLIP);
-	    n_cigar[0] = 2;
-	  }
-	  if(strandR1==1){
-	    ReversComplement(seq_r1);
-	    reverseChar(qual_r1,strlen(seq_r1));
-	    if(n_cigar[0]>1){
-	      //swap softclip and match
-	      uint32_t tmp= AlignCigar[0][0];
-	      AlignCigar[0][0] = AlignCigar[0][1];
-	      AlignCigar[0][1] = tmp;
-	    }
-	  }
-	  if (PE==struct_obj->SeqType){
-	    AlignCigar[1][0] = bam_cigar_gen(naligned[1], BAM_CMATCH);
-	    if(nsofts[1]>0){
-	      AlignCigar[1][1] = bam_cigar_gen(nsofts[1], BAM_CSOFT_CLIP);
-	      n_cigar[1] = 2;
-	    }
-	    if(strandR1==0){
-	      ReversComplement(seq_r2);
-	      reverseChar(qual_r2,strlen(seq_r2));
-	      if(n_cigar[1]>1){
-		//swap softclip and match
-		uint32_t tmp= AlignCigar[1][0];
-		AlignCigar[1][0] = AlignCigar[1][1];
-		AlignCigar[1][1] = tmp;
-	      } 
-	    }
-	  }
-	}else{
-	  //this is unaligned part
-	  AlignCigar[0][0] = bam_cigar_gen(strlen(seq_r1), BAM_CSOFT_CLIP);
-	  AlignCigar[1][0] = bam_cigar_gen(strlen(seq_r2), BAM_CSOFT_CLIP);
-	  
-	}
-	//now reads, cigards and quals are correct 
+      if (struct_obj->NoAlign != 'T'){
+        AlignCigar[0][0] = bam_cigar_gen(naligned[0], BAM_CMATCH);
+        if(nsofts[0]>0){
+          AlignCigar[0][1] = bam_cigar_gen(nsofts[0], BAM_CSOFT_CLIP);
+          n_cigar[0] = 2;
+        }
+        if(strandR1==1){
+          ReversComplement(seq_r1);
+          reverseChar(qual_r1,strlen(seq_r1));
+          if(n_cigar[0]>1){
+            //swap softclip and match
+            uint32_t tmp= AlignCigar[0][0];
+            AlignCigar[0][0] = AlignCigar[0][1];
+            AlignCigar[0][1] = tmp;
+          }
+        }
+        if (PE==struct_obj->SeqType){
+          AlignCigar[1][0] = bam_cigar_gen(naligned[1], BAM_CMATCH);
+          if(nsofts[1]>0){
+            AlignCigar[1][1] = bam_cigar_gen(nsofts[1], BAM_CSOFT_CLIP);
+            n_cigar[1] = 2;
+          }
+          if(strandR1==0){
+            ReversComplement(seq_r2);
+            reverseChar(qual_r2,strlen(seq_r2));
+            if(n_cigar[1]>1){
+              //swap softclip and match
+              uint32_t tmp= AlignCigar[1][0];
+              AlignCigar[1][0] = AlignCigar[1][1];
+              AlignCigar[1][1] = tmp;
+            } 
+          }
+        }
+      }
+      else{
+        //this is unaligned part
+        AlignCigar[0][0] = bam_cigar_gen(strlen(seq_r1), BAM_CSOFT_CLIP);
+        AlignCigar[1][0] = bam_cigar_gen(strlen(seq_r2), BAM_CSOFT_CLIP);
+      }
+      //now reads, cigards and quals are correct 
 
-	//generating id, position and the remaining sam field information
-	size_t l_aux = 2; uint8_t mapq = 60;
-	hts_pos_t min_beg, max_end, insert; //max_end, insert;
-	min_beg = posB;
-	max_end = posE;
-	if (PE==struct_obj->SeqType)
-	  insert = max_end - min_beg + 1;
-	else
-	  insert = max_end = min_beg = -1;
+      //generating id, position and the remaining sam field information
+      size_t l_aux = 2; uint8_t mapq = 60;
+      hts_pos_t min_beg, max_end, insert; //max_end, insert;
+      min_beg = posB;
+      max_end = posE;
+      hts_pos_t min_beg_mate, max_end_mate;
+      insert = max_end - min_beg + 1;
+      /*if (PE==struct_obj->SeqType)
+        insert = max_end - min_beg + 1;
+      else
+        insert = max_end - min_beg + 1;
+        //insert = max_end = min_beg = -1;*/
 
-	const char* suffR1 = " R1";
-	const char* suffR2 = " R2";
+      const char* suffR1 = " R1";
+      const char* suffR2 = " R2";
 
-	char READ_ID2[1024];
-	strcpy(READ_ID2,READ_ID);
-	
-	strcat(READ_ID,suffR1);
-	if(PE==struct_obj->SeqType)
-	  strcat(READ_ID2,suffR2);
-	if (struct_obj->NoAlign == 'T'){
-	  mapq = 255;
-	  SamFlags[0] = SamFlags[1] = 4;
-	  chr_idx = -1;
-	  min_beg = max_end = -1;
-	}
+      char READ_ID2[1024];
+      strcpy(READ_ID2,READ_ID);
+      
+      strcat(READ_ID,suffR1);
+      //fprintf(stderr,"CHR IDX %d\n",chr_idx);
+      //fprintf(stderr,"BEGIN %d AND END %d\n",min_beg,max_end);
+      int chr_idx_mate = -1;
+      int chr_max_end_mate = -1;
+      int insert_mate = 0;
+      if(PE==struct_obj->SeqType){
+        strcat(READ_ID2,suffR2);
+        chr_idx_mate = chr_idx;
+        chr_max_end_mate = max_end;
+        insert_mate = insert;
+        //fprintf(stderr,"CHR IDX %d\n",chr_idx_mate);
+      }
+      if (struct_obj->NoAlign == 'T'){
+        mapq = 255;
+        SamFlags[0] = SamFlags[1] = 4;
+        chr_idx = -1;
+        min_beg = max_end = -1;
+      }
 
-	//we have set the parameters accordingly above for no align and PE
-	bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx,min_beg,mapq,
-		     n_cigar[0],AlignCigar[0],chr_idx,-1,0,strlen(seq_r1),seq_r1,qual_r1,l_aux);
-
-	//write PE also
-	if (PE==struct_obj->SeqType)
-	    bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx,max_end,mapq,
-		     n_cigar[1],AlignCigar[1],chr_idx,min_beg,posE-maxbases,strlen(seq_r2),seq_r2,qual_r2,l_aux);
-	
-	
-	if (struct_obj->LengthData < struct_obj->MaximumLength){   
-	  pthread_mutex_lock(&write_mutex);
-	  for (int k = 0; k < struct_obj->LengthData; k++){
-	    assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) >=0 );
-	  }
-	  pthread_mutex_unlock(&write_mutex);
-	  struct_obj->LengthData = 0;
-	}
-	struct_obj->fqresult_r1->l =0;
-	struct_obj->fqresult_r2->l =0;	
-	
+      //we have set the parameters accordingly above for no align and PE
+      //fprintf(stderr,"chr idx %d \t chr_max %d \t chr_insert %d\n",chr_idx_mate,chr_max_end_mate,insert_mate);
+      bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx,min_beg,mapq,
+            n_cigar[0],AlignCigar[0],chr_idx_mate,chr_max_end_mate,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
+      //exit(0);
+      //write PE also
+      if (PE==struct_obj->SeqType){
+        fprintf(stderr,"INISINDE PE LOPP SAM WRITE\n");
+        bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx,max_end,mapq,
+          n_cigar[1],AlignCigar[1],chr_idx,min_beg,0-insert_mate,strlen(seq_r2),seq_r2,qual_r2,l_aux);
+      }
+    
+      if (struct_obj->LengthData < struct_obj->MaximumLength){   
+        pthread_mutex_lock(&write_mutex);
+        for (int k = 0; k < struct_obj->LengthData; k++){
+          assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) >=0 );
+        }
+        pthread_mutex_unlock(&write_mutex);
+        struct_obj->LengthData = 0;
+      }
+      struct_obj->fqresult_r1->l =0;
+      struct_obj->fqresult_r2->l =0;	
       }
       
     }
@@ -359,8 +385,8 @@ void* Sampling_threads(void *arg){
         pthread_mutex_lock(&write_mutex);
         assert(bgzf_write(struct_obj->bgzf_fp[0],struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l)!=0);
         if (PE==struct_obj->SeqType){
-	  assert(bgzf_write(struct_obj->bgzf_fp[1],struct_obj->fqresult_r2->s,struct_obj->fqresult_r2->l)!=0);
-	}
+          assert(bgzf_write(struct_obj->bgzf_fp[1],struct_obj->fqresult_r2->s,struct_obj->fqresult_r2->l)!=0);
+        }
         pthread_mutex_unlock(&write_mutex);
         struct_obj->fqresult_r1->l =0;
         struct_obj->fqresult_r2->l =0;
