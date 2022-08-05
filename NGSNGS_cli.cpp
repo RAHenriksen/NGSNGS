@@ -71,9 +71,8 @@ argStruct *getpars(int argc,char ** argv){
       mypars->Variant_type = strdup(*(++argv));
       strcat(Command,mypars->Variant_type); strcat(Command," ");
       if(mypars->Variant == NULL){ErrMsg(13.0);}
-      else if (mypars->Variant_type && strcasecmp("snp",mypars->Variant_type)!=0 && 
-      strcasecmp("indel",mypars->Variant_type)!=0 &&
-      strcasecmp("all",mypars->Variant_type)!=0){ErrMsg(13.5); exit(0);}      
+      else if (mypars->Variant_type && strcasecmp("snp",mypars->Variant_type)!=0){ErrMsg(13.5); exit(0);}
+      // else if (mypars->Variant_type && strcasecmp("snp",mypars->Variant_type)!=0 && strcasecmp("indel",mypars->Variant_type)!=0 && strcasecmp("all",mypars->Variant_type)!=0){ErrMsg(13.5); exit(0);}        
     }
     else if(strcasecmp("-t",*argv)==0 || strcasecmp("--threads",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");

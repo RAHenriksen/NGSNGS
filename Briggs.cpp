@@ -112,4 +112,6 @@ void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s,
             seq[i] = seq_intermediate[i];
         }
     }
+  //just to ensure no issues arise in case of not clearing out the intermediate sequence
+  memset(seq_intermediate, 0, sizeof seq_intermediate);
 }
