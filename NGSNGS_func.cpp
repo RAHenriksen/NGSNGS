@@ -34,99 +34,6 @@
 #define LENS 4096
 #define MAXBINS 100
 
-void FragDistArray(int& number,int*& Length, double*& Frequency,int SizeDistType,int seed,int val1, int val2){
-  // Generate a similar structure as length distribution file, with fragment length and frequency using length distributions
-  std::default_random_engine generator(seed);
-  const int nrolls=10000;
-  int p[nrolls]={};
-  
-  if (SizeDistType==1){std::uniform_int_distribution<int> distribution(val1,val2);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}} //if(number > 30){p[i] = number;}}
-  else if (SizeDistType==2){std::normal_distribution<double> distribution(val1,val2);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
-  else if (SizeDistType==3){std::lognormal_distribution<double> distribution(val1,val2);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
-  else if (SizeDistType==4){std::poisson_distribution<int> distribution(val1);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
-  else if (SizeDistType==5){std::exponential_distribution<double> distribution(val1);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
-  else if (SizeDistType==6){std::gamma_distribution<double> distribution(val1,val2);for (int i=0; i<nrolls; ++i) {int number = distribution(generator);p[i] = number;}}
-
-  
-  int len = sizeof(p)/sizeof(p[0]);
-  sort(p,p+len,std::less<int>());
-
-  std::map<int,int> counts;
-  for (int i =0; i<nrolls;i++){counts[p[i]]++;}
-
-  int n =1;
-
-  Length[0] = 0; Frequency[0] = (float) 0;
-  double CumulativeCount = 0;
-  for (auto const &key : counts){
-      CumulativeCount += (double) key.second/(double)nrolls;
-      Length[n] = key.first;
-      Frequency[n] = CumulativeCount;
-      n++;
-  }
-  number = n;
-}
-
-void FragArray(int& number,int*& Length, double*& Frequency,const char* filename){
-  //int LENS = 4096;
-  //int* Frag_len = new int[LENS];
-  //double* Frag_freq = new double[LENS];
-  int n =1;
-
-  gzFile gz = Z_NULL;
-  char buf[LENS];
-  
-  gz = gzopen(filename,"r");
-  assert(gz!=Z_NULL);
-  Length[0] = 0; Frequency[0] = (float) 0;
-  while(gzgets(gz,buf,LENS)){
-    Length[n] = atoi(strtok(buf,"\n\t ")); //before it was Frag_len[n]
-    Frequency[n] = atof(strtok(NULL,"\n\t "));
-    n++;
-  }
-  gzclose(gz); 
-
-  number = n;
-  //Length = Frag_len;
-  //Frequency = Frag_freq;
-  //delete[] Frag_len;
-  //delete[] Frag_freq;
-}
-
-void delete_seq(char *str, int seq_len, int del_len, size_t pos,int alt_len){
-    //instert_seq(char *str, size_t len, char insert_seq[],size_t ins_len, size_t pos){
-    for (int i = alt_len; i < del_len; i++)
-    {
-        //fprintf(stderr,"deletion pos 1 %d \t and pos %zu\n",i,pos-seq_len);
-        //std::cout << str[pos] << " " << str[pos+1] << std::endl;
-        //std::cout << seq_len << " " << pos << " " << pos - seq_len << std::endl;
-        memmove(&str[pos], &str[pos+1], pos-seq_len);
-        //memmove(&str[pos-1], &str[pos], pos-seq_len-1);
-        //fprintf(stderr,"deletion pos 2 %d\n",seq_len - pos);
-        seq_len--;
-    }
-}
-
-void delete_seq_ins(char *str, int seq_len, int del_len, size_t pos){
-    // after insertion it deleted the reference allele, e.g. REF A -> ALT AGGGGGG, which creates a 6 bp insertion
-    for (int i = 0; i < del_len; i++)
-    {
-        memmove(&str[pos], &str[pos+1], seq_len - pos);
-        seq_len--;
-    }
-}
-
-void instert_seq(char *str, int len, char insert_seq[],int ins_len, size_t pos){
-    for (int i = 0; i < ins_len; i++)
-    {
-        memmove(&str[pos+1], &str[pos], len - pos + 1);
-        str[pos] = insert_seq[i];
-        len++;
-    }
-    //the insertion doesn't overlap so i remove the nucleotide which the insertion replace
-    delete_seq_ins(str, (int) strlen(str),1,pos+ins_len);
-}
-
 void DNA_CAPITAL(char seq[]){
   while (*seq) {
     switch(*seq) {
@@ -183,24 +90,8 @@ void ReversComplement(char seq[]){
   for(int i=seqlen-1;i>-1;i--){
     seq[seqlen-i-1] = seq_intermediate[i];
   }
-  //fprintf(stderr,"REVERSE COMP SEQUENCE \t%s\n",seq);
   //just to ensure no issues arise in case of not clearing out the intermediate sequence
   memset(seq_intermediate, 0, sizeof seq_intermediate);
-}
-
-void deletechar(char* array,int seq_len, size_t index_to_remove, int del_len){
-  /*memmove(&array[index_to_remove],
-        &array[index_to_remove + 5],
-        seq_len - index_to_remove - 5);*/
-  std::string s(array);
-  s.erase(s.begin()+index_to_remove, s.end()-(seq_len-index_to_remove-del_len));
-  strcpy(array, s.c_str());
-}
-
-void InsertChar(char* array,std::string ins,int index){
-  std::string s(array);
-  s.insert(index,ins);  
-  strcpy(array, s.c_str());    
 }
 
 void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,fasta_sampler *fs,char CommandArray[1024],const char* version){
@@ -212,21 +103,16 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
   char genome_len_buf[1024];
   //sam_hdr_add_line(header, "HD", "VN",version, "SO", "unsorted", NULL);
   for(int i=0;i<fs->nref;i++){
-    //fprintf(stderr,"chromosomes added to bam header %d\n",chr_idx_arr[i]);
     snprintf(genome_len_buf,1024,"%d", fs->seqs_l[i]);
     
     // reference part of the header, int r variable ensures the header is added
     int r = sam_hdr_add_line(header, "SQ", "SN", fs->seqs_names[i], "LN", genome_len_buf, NULL);
     if (r < 0) { fprintf(stderr,"sam_hdr_add_line");}
    
-    //cram_set_option(fmt_hts, CRAM_OPT_DECODE_MD, 1);
-    //int r = sam_hdr_add_line(header, "SQ", "SN", "NZ_CP029543.1", "LN", genome_len_buf,"M5", "0b2443d4c092a093964e0ffdae92bf3a",NULL); //"UR", "Test_Examples/Mycobacterium_leprae.fa.gz"
-    //if (r < 0) {fprintf(stderr,"sam_hdr_add_line");}
     memset(genome_len_buf,0, sizeof(genome_len_buf));
-    //snprintf(genome_len_buf,1024,"COMMAND ./ngsngs");
-    //memset(genome_len_buf,0, sizeof(genome_len_buf));
+  
   }
-  // Adding PG tag
+  // Adding PG tag specifying the command used for simulations
   sam_hdr_add_pg(header,"NGSNGS","VN",version,"CL",CommandArray,NULL);
   // saving the header to the file
   if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile_nam); //outfile
@@ -369,31 +255,76 @@ char* HaploGenome(char* genome,char genome_data1[],char genome_data2[],int chr_s
   return genome;
 }
 
-char* partial_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[]){
+
+
+char* HaploType(char genome_data1[],htsFile *bcf_obj,bcf_hdr_t *bcf_head,hts_idx_t *bcf_idx,bcf1_t *bcf_records,const char *chr_name,int HaploGroup,const char* HeaderIndiv){
+
+  fprintf(stderr, "INSIDE HAPLOTYPE FUNC \n"); //bcf.nsamples(fp)
+  DNA_CAPITAL(genome_data1);
+  std::cout << genome_data1[10000000] << std::endl;
   
-  size_t genome_size = 0;
-  chr_size_cumm[0] = 0;
-  for (int i = 0; i < chr_total; i++){
-    int chr_len = faidx_seq_len(seq_ref,chr_names[i]);
-    fprintf(stderr,"chr len %d\n",chr_len);
-    chr_sizes[i] = chr_len;
-    genome_size += chr_len;
-    chr_size_cumm[i+1] = genome_size;
-  }
-  fprintf(stderr,"OUT OF FOR\n");
-  char* genome = (char*) malloc(sizeof(char) * (genome_size+chr_total+1));
-  genome[0] = 0; //Init to create proper C string before strcat
-  //chr_total
-  for (int i = 0; i < chr_total; i++){
-    const char *data = fai_fetch(seq_ref,chr_names[i],&chr_sizes[i]);
-    if (data != NULL){
-      sprintf(genome+strlen(genome),"%s",data);  
+  hts_itr_t *itr = bcf_itr_querys(bcf_idx, bcf_head,chr_name);
+  int record_indiv;
+  int nsamples = bcf_hdr_nsamples(bcf_head);
+  fprintf(stderr,"number of samples %d\n",nsamples);
+  
+  while ((record_indiv = bcf_itr_next(bcf_obj, itr, bcf_records)) == 0){
+    if(strcasecmp(bcf_hdr_id2name(bcf_head, bcf_records->rid),chr_name)==0){
+      bcf_unpack((bcf1_t*)bcf_records, BCF_UN_ALL);
+
+      // gt data for each call
+      int32_t ngt_arr = 0;     
+      int32_t *gt_arr = NULL;
+      int ngt = bcf_get_genotypes(bcf_head, bcf_records, &gt_arr, &ngt_arr);
+      int max_ploidy = ngt/nsamples;
+      int HaploGroupAlter = max_ploidy-HaploGroup-1;
+
+      //fprintf(stderr,"HaploGroup 1 %d and 2 %d\n",HaploGroup,HaploGroupAlter);
+
+      for (int i =0; i<nsamples; i++){
+        char* haplotype1 = NULL;
+        //iterates through all samples
+        // match the names in the header with the input indivduals
+        if(strcasecmp(bcf_head->samples[i],HeaderIndiv)==0){
+          //fprintf(stderr,"--------\nTHE SAMPLE INDEX IS %d and sample name is %s\n",i,bcf_head->samples[i]);
+          int32_t *ptr = gt_arr + i*max_ploidy;
+
+          //for (int j=0; j<max_ploidy; j++){fprintf(stderr,"the ploidy index is %d \t alelle values %d\n",j,bcf_gt_allele(ptr[j]));}
+          int haplotype1_int = bcf_gt_allele(ptr[HaploGroup]); 
+          int haplotype2_int = bcf_gt_allele(ptr[HaploGroupAlter]);
+          
+          //Extract actual allele chars;
+          if(haplotype1_int == 0 && haplotype2_int == 0){
+            //homozygous for reference
+            haplotype1 = bcf_records->d.allele[bcf_gt_allele(gt_arr[0])];
+          }
+          else if(haplotype1_int == 1 && haplotype2_int == 1){
+            //homozygous for alternative
+            haplotype1 = bcf_records->d.allele[bcf_gt_allele(gt_arr[1])];
+          }
+          else if(haplotype1_int != haplotype2_int){
+            //heterozygous
+            haplotype1 = bcf_records->d.allele[bcf_gt_allele(gt_arr[HaploGroup])];
+          }
+
+          size_t pos = (int) bcf_records->pos;
+          //fprintf(stderr,"Position %zu \t The haplotypes values are %d \t %d and characters are %c \t %c \n",pos,haplotype1_int,haplotype2_int,*haplotype1,*haplotype2);
+          //Current SNP location
+          //fprintf(stderr,"%zu POSITION \t before alterations %c%c%c\n",pos,genome_data1[pos-1],genome_data1[pos],genome_data1[pos+1]);
+          genome_data1[pos] = *haplotype1;
+          //fprintf(stderr,"after alterations %c%c%c\n",genome_data1[pos-1],genome_data1[pos],genome_data1[pos+1]);
+        }
+      }
     }
-    // several of the build in functions allocates memory without freeing it again.
-    free((char*)data); //Free works on const pointers, so we have to cast into a const char pointer
+    else{
+      fprintf(stderr,"LOL\n");
+      //fprintf(stderr,"Reference chromosome %s has no variations in vcf file at chromosomes %s\n",chr_names[0],bcf_hdr_id2name(bcf_head, bcf_records->rid));
+    }
   }
-  return genome;
+  return genome_data1;
 }
+
+
 
 char* full_vcf_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[],const char* bcf_file,const char* VarType,const char* HeaderIndiv){
   fprintf(stderr,"BCF FILE %s\n",bcf_file);

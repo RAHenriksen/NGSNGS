@@ -2,6 +2,7 @@
 #define NGSNGSFUNC_H
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
+#include <htslib/vcf.h>
 #include "mrand.h"
 #include "RandSampling.h"
 #include "fasta_sampler.h"
@@ -19,7 +20,7 @@ void deletechar(char* str,int seq_len, size_t index_to_remove,int del_len);
 void InsertChar(char* array,std::string ins,int index);
 
 void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,fasta_sampler *fs,char CommandArray[1024],const char* version);
-
+char* HaploType(char genome_data1[],htsFile *bcf_obj,bcf_hdr_t *bcf_head,hts_idx_t *bcf_idx,bcf1_t *bcf_records,const char *chr_name,int HaploGroup,const char* HeaderIndiv);
 char* HaploGenome(char* genome,char genome_data[],char genome_data2[],int chr_sizes,const char* bcf_file,const char *chr_names[],const char* VarType,FILE *VarInfoFile,const char* HeaderIndiv);
 char* partial_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[]);
 char* full_vcf_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[],const char* bcf_file,const char* VarType,const char* HeaderIndiv);

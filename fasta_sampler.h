@@ -3,9 +3,11 @@
 #include <cstring>//for strcmp
 #include <cstdio>//for stderr
 #include <cassert>//for assert
-#include <htslib/faidx.h>//for faidx
 #include "RandSampling.h"
 #include "mrand.h"
+#include <htslib/faidx.h>
+#include <htslib/sam.h>
+#include <htslib/vcf.h>
 
 typedef struct{
   faidx_t *fai;
@@ -17,8 +19,8 @@ typedef struct{
   ransampl_ws *ws;
 }fasta_sampler;
 
-
-fasta_sampler *fasta_sampler_alloc(const char *,const char *);
+fasta_sampler *fasta_sampler_alloc(const char *,const char *,const char *,const char *,const char *);
 void fasta_sampler_destroy(fasta_sampler *fs);
 char* sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength);
+
 #endif
