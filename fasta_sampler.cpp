@@ -45,59 +45,7 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr,const 
       //  fprintf(stderr,"%d)\tchr:%s\tlen:%d\n",i,fs->seqs_names[i],fs->seqs_l[i]);
     }
   else{
-    if(VariantFile != NULL){
-      if(SubsetChr.size()>1){
-        fprintf(stderr,"Specify a single chromsome matching the chromosome from the input bcf");
-      }
-      else{
-        //preparing the output sequences, one for each haplotype
-        char SeqNameP1[1024] = {0};
-        char SeqNameP2[1024] = {0};
-        strcpy(SeqNameP1,strdup(SubsetChr[0])); strcat(SeqNameP1,"_P1");
-        strcpy(SeqNameP2,strdup(SubsetChr[0])); strcat(SeqNameP2,"_P2");
-        fs->seqs_names[0] = SeqNameP1;
-        fs->seqs_names[1] = SeqNameP1;
-        fs->seqs[0] = fai_fetch(fs->fai,strdup(SubsetChr[0]),fs->seqs_l);
-        fs->seqs[1] = fai_fetch(fs->fai,strdup(SubsetChr[0]),fs->seqs_l);
-        //Preparing the bcf file 
-        htsFile *bcf_obj = bcf_open(VariantFile, "r");
-        bcf_hdr_t *bcf_head = bcf_hdr_read(bcf_obj);
-        hts_idx_t *bcf_idx = bcf_index_load(VariantFile);
-        bcf1_t *bcf_records = bcf_init();
-        //fprintf(stderr, "File contains before %i samples\n",bcf_hdr_nsamples(bcf_head)); //bcf.nsamples(fp)
-        /*const char **seqnames = NULL;
-          seqnames = bcf_hdr_seqnames(bcf_head, &nseq);
-
-          // check if the headers match
-          int chr_exit = 0;
-          for (int vcf_i = 0; vcf_i < nseq; vcf_i++){
-            if(strcasecmp(seqnames[vcf_i],chr_names[0])==0){continue;}//fprintf(stderr,"number of chromosomes %d and names %s\n",chr_i,chr_names[chr_i]);
-            else{chr_exit++;}
-          }
-          if(chr_exit == nseq){
-            fprintf(stderr,"Reference file chromosome %s is not identified in vcf/bcf header\n",chr_names[0]);
-            exit(0);
-          }
-          */
-        //strdup(SubsetChr[0])
-        //size_t pos = 19000016;
-        //fprintf(stderr,"%zu POSITION \t before alterations %c%c%c\n",pos,fs->seqs[0][pos-1],fs->seqs[0][pos],fs->seqs[0][pos+1]);
-        HaploType(fs->seqs[0],bcf_obj,bcf_head,bcf_idx,bcf_records,"14",0,HeaderIndiv);
-        //fprintf(stderr,"after alterations %c%c%c\n",fs->seqs[0][pos-1],fs->seqs[0][pos],fs->seqs[0][pos+1]);
-        //std::cout << "--------------" << std::endl;
-        //fprintf(stderr,"%zu POSITION \t before alterations %c%c%c\n",pos,fs->seqs[1][pos-1],fs->seqs[1][pos],fs->seqs[1][pos+1]);
-        HaploType(fs->seqs[1],bcf_obj,bcf_head,bcf_idx,bcf_records,"14",1,HeaderIndiv);
-        //fprintf(stderr,"after alterations %c%c%c\n",fs->seqs[1][pos-1],fs->seqs[1][pos],fs->seqs[1][pos+1]);
-
-        fprintf(stderr,"%d)\tchr:%s\tlen:%d\n",0,fs->seqs_names[0],fs->seqs_l[0]);
-        fprintf(stderr,"%d)\tchr:%s\tlen:%d\n",1,fs->seqs_names[1],fs->seqs_l[1]);
-        //fprintf(stderr,"LOADING VARIANT FILE WORKS!!\n");
-        bcf_hdr_destroy(bcf_head);
-        bcf_destroy(bcf_records); 
-        bcf_close(bcf_obj);
-      }
-    }
-    else{
+    if(VariantFile == NULL){
       //subset of chromosomes
       for(int i=0;i<SubsetChr.size();i++){
         fs->seqs_names[i] = strdup(SubsetChr[i]);
@@ -105,13 +53,50 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr,const 
         fprintf(stderr,"%d)\tchr:%s\tlen:%d\n",i,fs->seqs_names[i],fs->seqs_l[i]);
       }
     }
+    else{
+      if(SubsetChr.size()>1){
+        fprintf(stderr,"Specify a single chromsome matching the chromosome from the input bcf");
+      }
+      else{
+        htsFile *bcf_obj = bcf_open(VariantFile, "r");
+        bcf_hdr_t *bcf_head = bcf_hdr_read(bcf_obj);
+        hts_idx_t *bcf_idx = bcf_index_load(VariantFile);
+        bcf1_t *bcf_records = bcf_init();
+        
+        char SeqName[1024] = {0};
+        char SeqName2[1024] = {0};
+        fs->seqs_names[0] = SeqName;
+        fs->seqs_names[1] = SeqName2;
+        
+        //size_t pos = 19000017;
+
+        for(int i=0;i<fs->nref;i++){
+          //fs->seqs_names[i] = strdup(SubsetChr[0]);
+          snprintf(fs->seqs_names[i],1024,"%sH%d",strdup(SubsetChr[0]),i+1);
+          fs->seqs[i] = fai_fetch(fs->fai,strdup(SubsetChr[0]),fs->seqs_l+i);
+          fprintf(stderr,"%d)\tchr:%s\tlen:%d\n",i,fs->seqs_names[i],fs->seqs_l[i]);
+          //fprintf(stderr,"%zu POSITION \t before alterations %c%c%c\n",pos,fs->seqs[i][pos-1],fs->seqs[i][pos],fs->seqs[i][pos+1]);
+          HaploType(fs->seqs[i],bcf_obj,bcf_head,bcf_idx,bcf_records,"14",i,HeaderIndiv);
+          //fprintf(stderr,"%zu POSITION \t after alterations %c%c%c\n",pos,fs->seqs[i][pos-1],fs->seqs[i][pos],fs->seqs[i][pos+1]);
+        }
+        //fprintf(stderr,"--------------------\n");
+        fprintf(stderr,"AFTER FOR \n%d)\tchr: %s\tlen:%d\n",0,fs->seqs_names[0],fs->seqs_l[0]);
+        fprintf(stderr,"AFTER FOR \n%d)\tchr: %s\tlen:%d\n",1,fs->seqs_names[1],fs->seqs_l[1]);
+        
+        //exit(0);
+        bcf_hdr_destroy(bcf_head);
+        bcf_destroy(bcf_records); 
+        bcf_close(bcf_obj);
+      }
+    }
   }
+  fprintf(stderr,"number of nref %d\n",fs->nref);
   fs->ws = ransampl_alloc(fs->nref);
   double *p = new double[fs->nref];
   fs->seq_l_total =0;
   for(int i=0;i<fs->nref;i++){
-    fprintf(stderr,"CHROMOSOME NAME %s AND LENGTH %zu AND TOTAL LENGTH %zu\n",fs->seqs_names[i],fs->seqs_l[i],fs->seq_l_total);
     fs->seq_l_total += fs->seqs_l[i];
+    fprintf(stderr,"Total length %d\t%zu\n",i,fs->seq_l_total);
   }
   for(int i=0;i<fs->nref;i++)
     p[i] = ((double) fs->seqs_l[i])/fs->seq_l_total;
@@ -123,7 +108,7 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr,const 
 char *sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength){
   chr_idx = ransampl_draw2(fs->ws,mrand_pop(mr),mrand_pop(mr));
   *chromoname = fs->seqs_names[chr_idx];
-  //std::cout << fs->seqs_names[0] << fs->seqs_names[1] << fs->seqs_names[2] << std::endl;
+  //fprintf(stderr,"CHROMOSOME NAME XX  %s \t %s and index %d\n",fs->seqs_names[0],fs->seqs_names[1],chr_idx);
   posB = abs(mrand_pop_long(mr)) % fs->seqs_l[chr_idx]+1;
   posE = posB +fraglength;
   if(posE>fs->seqs_l[chr_idx]){

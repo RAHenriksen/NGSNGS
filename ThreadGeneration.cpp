@@ -42,7 +42,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
   fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome\n",reffasta->nref);
   fprintf(stderr,"\t-> Chromsoome name first %s and length %d and full length %zu\n",reffasta->seqs_names[0],reffasta->seqs_l[0],reffasta->seq_l_total);
-  exit(0);
   /*if(VCFformat != NULL && strcasecmp(Variant_flag,"bcf")==0){
     //const char* HeaderIndiv = "HG00097";
     genome_data = full_vcf_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm,VCFformat,VarType,HeaderIndiv);
@@ -329,6 +328,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
      if (p.pool)
        hts_tpool_destroy(p.pool);
     
+    //fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr,VariantFile,VarType,HeaderIndiv);
     //fasta_sampler_destroy(reffasta);
 
     for(int i=0;i<nthreads;i++){
