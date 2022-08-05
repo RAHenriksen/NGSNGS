@@ -51,35 +51,17 @@ void* Sampling_threads(void *arg){
   int fraglength;
 
   // sequence reads, original, modified, with adapters, pe
-  char READ_ID[1024];int read_id_length;
-  
+  char READ_ID[1024];
   char seq_r1[1024] = {0};
-
-  char read[1024] = {0};
-  char readadapt[1024] = {0};
-
   char seq_r2[1024] = {0};
-  char read2[1024] = {0};
-  char readadapt2[1024] = {0};
+  char qual_r1[1024] = "\0";
+  char qual_r2[1024] = "\0"; // {0};
+ 
   
-  char Adapter_1[1024] = {0};
-  char Adapter_2[1024] = {0};
-
   size_t reads = struct_obj -> reads;
   size_t BufferLength = struct_obj -> BufferLength;
 
-  char qual_r1[1024] = "\0";
-  char qual_r2[1024] = "\0"; // {0};
-
-  std::string MonoPhosphateSeq;
-  std::string MonoPhosphateQual;
-  int MonoLen;
-  if (struct_obj->PolyNt != 'F'){
-    MonoPhosphateSeq = std::string(1000, struct_obj->PolyNt);
-    MonoPhosphateQual = std::string(1000, '!'); //lowest nucleotide quality string
-    //char MonoPhosphateSeq[1024] = {0}; memset(MonoPhosphateSeq,struct_obj->PolyNt,1000);
-  }
-
+  
   size_t localread = 0;
   int iter = 0;
   size_t current_reads_atom = 0;
@@ -212,7 +194,7 @@ void* Sampling_threads(void *arg){
     }
       
     
-    read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%s:%zu-%zu_length:%d", struct_obj->threadno, rand_id,strandR1,chr,posB,posE,fraglength);
+    sprintf(READ_ID,"T%d_RID%d_S%d_%s:%zu-%zu_length:%d", struct_obj->threadno, rand_id,strandR1,chr,posB,posE,fraglength);
     
     int nsofts[2] = {0,0};//this will contain the softclip information to be used by sam/bam/cram out
     //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail
