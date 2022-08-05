@@ -50,9 +50,6 @@ void* Sampling_threads(void *arg){
   char *seq;//actual sequence, this is unallocated
   int fraglength;
 
-  //if(fqT==struct_obj->OutputFormat|| fqgzT==struct_obj->OutputFormat)
-  //  qualstringoffset = 33;
-  
   // sequence reads, original, modified, with adapters, pe
   char READ_ID[1024];int read_id_length;
   
@@ -86,7 +83,6 @@ void* Sampling_threads(void *arg){
   size_t localread = 0;
   int iter = 0;
   size_t current_reads_atom = 0;
-  int readsizelimit;
 
   char *chr; //this is an unallocated pointer to a chromosome name, eg chr1, chrMT etc
   int posB,posE;//this is the first and last position of our fragment
@@ -112,58 +108,41 @@ void* Sampling_threads(void *arg){
     memset(seq_r1, 0, sizeof seq_r1);
     memset(seq_r2, 0, sizeof seq_r2);
       
-    memset(readadapt, 0, sizeof readadapt);
-    memset(readadapt2, 0, sizeof readadapt2);
-
     //printing out every tenth of the runtime
     if (current_reads_atom > 1 && current_reads_atom%moduloread == 0)
       fprintf(stderr,"\t-> Thread %d roduced %zu reads with a current total of %zu\n",struct_obj->threadno,moduloread,current_reads_atom);
-    
+
+    //sample fragmentlength
     int fraglength = getFragmentLength(sf); //fraglength = abs(mrand_pop_long(drand_alloc)) % 1000;
-
+    
     // Selecting genomic start position across the generated contiguous contigs for which to extract 
-    int chr_idx = 0;
+    int chr_idx = -1;
 
-    //NB char * to int for discrete
-    // doQuals {0,1}
-    if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
-      // no read upper read length limit
-      readsizelimit = fraglength;
-    }
-    else{
-      if(strcasecmp("false",struct_obj->QualFlag)==0){readsizelimit = fraglength;} //THIS WOULD BE THE CASE FOR FASATA
-      else{readsizelimit = struct_obj->readcycle;}//OBS CHANGE SUCH THAT IT DOESNT HOLD TRUE FOR FASTA
-    }
+    //maxbases is the number of nucleotides we will work with.
+    //set this to minimum of bases sequenced or fragment length.
+    //if output is fasta then legnth is simply the entire fragment
+    int maxbases = std::min(fraglength,struct_obj->maxreadlength);
+    if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT)
+      maxbases = fraglength;
+
 
     //Generating random ID unique for each read output
     double rand_val_id = mrand_pop(drand_alloc);
     int rand_id = (rand_val_id * fraglength-1); //100
+    //why above? just to get random unique?
 
+    //get shallow copy of chromosome, offset into, is defined by posB, and posE
+    char *seq = sample(struct_obj->reffasta,drand_alloc,&chr,chr_idx,posB,posE,fraglength);
 
-    if (fraglength > readsizelimit){
-      seq = sample(struct_obj->reffasta,drand_alloc,&chr,posB,posE,readsizelimit);
-      strncpy(seq_r1,seq,readsizelimit);
-    }
-    else{
-      seq = sample(struct_obj->reffasta,drand_alloc,&chr,posB,posE,fraglength);
-      strncpy(seq_r1,seq,fraglength);
-    }
-    if(PE==struct_obj->SeqType){
-      if (fraglength > readsizelimit){
-        seq2 = sample(struct_obj->reffasta,drand_alloc,&chr,posB,posE,readsizelimit);
-        strncpy(seq_r2,seq2,readsizelimit);
-      }
-      else{
-        seq2 = sample(struct_obj->reffasta,drand_alloc,&chr,posB,posE,fraglength);
-        strncpy(seq_r2,seq2,fraglength);
-      }
-    }
+    //now copy the actual sequence into seq_r1 and seq_r2 if PE 
+    strncpy(seq_r1,seq+posB,maxbases);
+    if(PE==struct_obj->SeqType)
+      strncpy(seq_r2,seq+posE-maxbases,maxbases);
+    
     /*
       ||------R1------>,,,,,,,,,,|-------R2----->||
-     */
+    */
     
-    //unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
-    //exit(0);
     //Selecting strand, 0-> forward strand (+) 5'->3', 1 -> reverse strand (-) 3'->5'
     //rename to strand to strandR1
     int strandR1 = mrand_pop(drand_alloc)>0.5?0:1; //int strand = (int) (rand_start%2);
@@ -172,12 +151,12 @@ void* Sampling_threads(void *arg){
     int skipread = 1;
     for(int i=0;skipread&&i<(int)strlen(seq_r1);i++)
       if(seq_r1[i]!='N')
-	      skipread = 0;
+	skipread = 0;
 
     for(int i=0;seq_r2 && skipread && i<(int)strlen(seq_r2);i++)
       if(seq_r2[i]!='N')
-	      skipread = 0;
-
+	skipread = 0;
+    
     if(skipread==1)
       continue;
     
@@ -185,18 +164,17 @@ void* Sampling_threads(void *arg){
     int seqlen = strlen(seq_r1);
     int SamFlags[2] = {-1,-1}; //flag[0] is for read1, flag[1] is for read2
     
-    // Immediately generating the proper orientation and corresponding flag for potential bam output
-
     //now everything is the same strand as reference, which we call plus/+
+    //lets flip to 5 to 3
     if (SE==struct_obj->SeqType){
       if (strandR1 == 0)
-	      SamFlags[0] = 0;
+	SamFlags[0] = 0;
       else if (strandR1 == 1){
         SamFlags[0] = 16;
         ReversComplement(seq_r1);
       }
     }
-    else if (PE==struct_obj->SeqType){
+    if (PE==struct_obj->SeqType){
       if (strandR1 == 0){
         SamFlags[0] = 97;
         SamFlags[1] = 145;
@@ -208,34 +186,23 @@ void* Sampling_threads(void *arg){
         ReversComplement(seq_r1);
       }
     }
-    //so now everything is on 5->3 and some of them will be complement
+    //so now everything is on 5->3 and some of them will be reverse complement to referene
 
     //Nucleotide alteration models only on the sequence itself which holds for fa,fq,sam
-    // bfiggs_flag -> doBriggs {0,1}
-    //    if(struct_obj->doBriggs) 0:=false 1:=true
-
-    /*char seq_r2[1024] = {0};
-    memset(seq_r2, 'C', sizeof seq_r2);
-    fprintf(stderr,"seq BEFORE %s\n",seq_r2);*/
     if(struct_obj->DoBriggs){
       SimBriggsModel(seq_r1,fraglength,struct_obj->BriggsParam[0],
-                                                        struct_obj->BriggsParam[1],
-                                                        struct_obj->BriggsParam[2], 
-                                                        struct_obj->BriggsParam[3],loc_seed,drand_alloc_briggs);
-      //fraglenth -> strlen(seq_r1) ??
-  
+		     struct_obj->BriggsParam[1],
+		     struct_obj->BriggsParam[2], 
+		     struct_obj->BriggsParam[3],loc_seed,drand_alloc_briggs);
       if (PE==struct_obj->SeqType){
         SimBriggsModel(seq_r2, fraglength,struct_obj->BriggsParam[0], 
-                                                      struct_obj->BriggsParam[1], 
-                                                      struct_obj->BriggsParam[2], 
-                                                      struct_obj->BriggsParam[3],loc_seed,drand_alloc_briggs);
-        //strncpy(seq_r2, seq_r2_mod, sizeof(seq_r2));
+		       struct_obj->BriggsParam[1], 
+		       struct_obj->BriggsParam[2], 
+		       struct_obj->BriggsParam[3],loc_seed,drand_alloc_briggs);
       }
     }
-    //fprintf(stderr,"seq AFTER %s\n",seq_r2);
-    //exit(0);
-    
-    // subflag-> doMisMatchErr {0,1}
+
+    //should this be based on forward + strand or on the 5->3 sequences?
     if(struct_obj->doMisMatchErr){
       //this function below modifies sequence to include substitutions from mismatch incorperation file
       //this option is currently -mf, NB change name
@@ -244,372 +211,182 @@ void* Sampling_threads(void *arg){
 	      MisMatchFile(seq_r2,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
     }
       
-    //this will be changed by fasta_sampler
-  
-
-    // Extract specific chromosome name similar to the bcf
-    //if (struct_obj->Variant_flag!=NULL && strcasecmp(struct_obj->Variant_flag ,"bcf")==0)
-    //  chrname = struct_obj->names[0];
-	    
-    /*read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%s:%zu-%zu_length:%d", struct_obj->threadno, rand_id,strand,chr,
-			     rand_start-struct_obj->size_cumm[chr_idx],rand_start+fraglength-1-struct_obj->size_cumm[chr_idx],(int)fraglength);
-    */
+    
     read_id_length = sprintf(READ_ID,"T%d_RID%d_S%d_%s:%zu-%zu_length:%d", struct_obj->threadno, rand_id,strandR1,chr,posB,posE,fraglength);
-    //fprintf(stdout,"chr:%s\tposB:%d\tposE:%d\tfraglength:%d\tfraglength:%d\tSequenceLength:%d\texample:%s\n",chr,posB,posE,fraglength,readsizelimit,strlen(seq_r1),seq_r1);
-
-    // Adding adapters before adding sequencing errors.
-
-    int Adapter1_len = 0;
-    int Adapter2_len = 0;
-    int SeqAdapt1_len = 0;
-    int SeqAdapt2_len = 0;
-
-    fprintf(stderr,"ADAPTER 1 LENGTH %d \n",struct_obj->Adapter_1);
-    //make adapt_flag into addAdapt -> {0,1}
-    if(struct_obj->AddAdapt){
-      strncpy(Adapter_1, struct_obj->Adapter_1, sizeof(Adapter_1));//strncpy or memcpy
-      Adapter1_len = strlen(Adapter_1);
-      SeqAdapt1_len = seqlen+Adapter1_len;
-      if (PE==struct_obj->SeqType){
-        strncpy(Adapter_2, struct_obj->Adapter_2, sizeof(Adapter_2)); //strncpy or memcpy
-        Adapter2_len = strlen(Adapter_2);
-        //fprintf(stderr,"FIRST ADAPTER 2 LENGTH %d\n",Adapter2_len);
-        SeqAdapt2_len = seqlen+Adapter2_len;
-      }
-      //for monophosphate the soft clip needs to be extended in length
-      if (struct_obj->PolyNt != 'F'){
-	      Adapter1_len = readsizelimit - seqlen; 
-        Adapter2_len = readsizelimit - seqlen; 
-        //fprintf(stderr,"FIRST ADAPTER 2 LENGTH WITH POLY %d\n",Adapter2_len);
-      }
-    }
-    //now Adapter1 and adapter2 contains a full copy of the full adapters from the struct
-
-    //make adapt_flag into addAdapt -> {0,1}
+    
+    int nsofts[2] = {0,0};//this will contain the softclip information to be used by sam/bam/cram out
+    //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail
+    int naligned[2] = {(int)strlen(seq_r1),-1};
+    if(PE==struct_obj->SeqType)
+      naligned[1] = strlen(seq_r2);
+    
+    
+    //add adapters
     if(struct_obj->AddAdapt){
       // Because i have reverse complemented the correct sequences and adapters depending on the strand origin (or flags), i know all adapters will be in 3' end
-      fprintf(stderr,"seq_r1 %s \n",seq_r1);
-      strncpy(seq_r1+strlen(seq_r1),Adapter_1,strlen(Adapter_1));
-      fprintf(stderr,"seq_r1 %s \n",seq_r1);
+      nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
+      strncpy(seq_r1,struct_obj->Adapter_1,nsofts[0]);
+      if(PE==struct_obj->SeqType){
+	nsofts[1] = std::min(struct_obj->maxreadlength-strlen(seq_r2),strlen(struct_obj->Adapter_2));
+	strncpy(seq_r2,struct_obj->Adapter_2,nsofts[1]);
+      }
+      //do we need to keep track of both or is there some kind of symmetry?
+    }
 
-      fprintf(stderr,"seq_r2 %s \n",seq_r2);
-      strncpy(seq_r2+strlen(seq_r2),Adapter_2,strlen(Adapter_2));
-      fprintf(stderr,"seq_r2 %s \n",seq_r2);
-
+    //add polytail
+    if (struct_obj->PolyNt != 'F') {
+      int nitems = maxbases-strlen(seq_r1);
+      memset(seq_r1+strlen(seq_r1),struct_obj->PolyNt,nitems);
+      nsofts[0] += nitems;
+      if(PE==struct_obj->SeqType){
+	nitems = maxbases-strlen(seq_r2);
+	memset(seq_r2+strlen(seq_r2),struct_obj->PolyNt,nitems);
+	nsofts[1] += nitems;
+      }
+    }
+    //sanity check
+    if(strlen(seq_r1)!=naligned[0]+nsofts[0]){
+      fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
       exit(0);
-      strcpy(read2,seq_r2);
-      strcat(read2,Adapter_2);
-
-      //rem now add polystuff
-      //if(struct_obj->addPolyTail){}
+    }
+    //below only runs for PE that is when nalign[1] is not -1
+    if(naligned[1]!=-1 && strlen(seq_r2)!=naligned[1]+nsofts[1]){
+      fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
+      exit(0);
+    }
     
-      //saving both fasta and adapter to fasta format
-      if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
-        ksprintf(struct_obj->fqresult_r1,">%s R1\n%s%s\n",READ_ID,seq_r1,Adapter_1);//make this into read
-        if (PE==struct_obj->SeqType)
-	        ksprintf(struct_obj->fqresult_r2,">%s R2\n%s%s\n",READ_ID,seq_r2,Adapter_2);
-      } 
-      else {
-        // Fastq and Sam needs quality score for both read and adapter, but the length cannot exceed the readcycle length inferred from read profile
-        strncpy(readadapt, read, readsizelimit);
-        if (PE==struct_obj->SeqType)
-          strncpy(readadapt2, read2, readsizelimit);
-          
-        // Since the adapters don't have to be the same length, it is necessary to seperate Read 1 from Read 2 when generating quality string
-        sample_qscores(readadapt,qual_r1,strlen(readadapt),struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt_adapt,struct_obj->DoSeqErr);
+    //now seq_r1 and seq_r2 is completely populated let is build qualscore if
+    
+    //saving both fasta and adapter to fasta format
+    if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
+      ksprintf(struct_obj->fqresult_r1,">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
+      if (PE==struct_obj->SeqType)
+	ksprintf(struct_obj->fqresult_r2,">%s R2\n%s\n",READ_ID,seq_r2);
+    } else {
 
-        if (struct_obj->PolyNt != 'F'){
-          MonoLen = readsizelimit - strlen(readadapt);
-	        if (struct_obj->OutputFormat==fqT ||struct_obj->OutputFormat==fqgzT)
-            ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s%s\n+\n%s%s\n",READ_ID,readadapt,MonoPhosphateSeq.substr(1,MonoLen).c_str(),qual_r1,MonoPhosphateQual.substr(1,MonoLen).c_str());
-          else if (struct_obj->SAMout){
-	          if(SamFlags[0] == 0 || SamFlags[0] == 97)
-		        ksprintf(struct_obj->fqresult_r1,"%s%s",readadapt,MonoPhosphateSeq.substr(1,MonoLen).c_str());
-            // CIGAR STRING YSXM, Y=ADAPTERLENGTH, X=SEQUENCE LENGTH, The sequence is equal to reference but adapter is reverse complementary
-            else if(SamFlags[0] == 16 || SamFlags[0] == 81){     
-              //change orientation back to reference genome
-              ReversComplement(readadapt);
-              //adding monophosphate
-              ksprintf(struct_obj->fqresult_r1,"%.*s%.*s%s",seqlen,readadapt+Adapter1_len,Adapter1_len,readadapt,MonoPhosphateSeq.substr(1,MonoLen).c_str());
-            }
-          }
-        }
-        else{
-          if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT)
-            ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s\n+\n%s\n",READ_ID,readadapt,qual_r1);
-          else if (struct_obj->SAMout){
-            if(SamFlags[0] == 0 || SamFlags[0] == 97)
-              ksprintf(struct_obj->fqresult_r1,"%s",readadapt);
-            else if(SamFlags[0] == 16 || SamFlags[0] == 81){
-              ReversComplement(readadapt);
-              ksprintf(struct_obj->fqresult_r1,"%.*s%.*s",seqlen,readadapt+Adapter1_len,Adapter1_len,readadapt);
-            }
-          }
-        }
-
-        // Adding sequencing errors for second read
-        if (PE==struct_obj->SeqType){
-          //generate nucleotide quality score
-          sample_qscores(readadapt2,qual_r2,strlen(readadapt2),struct_obj->QualDist_r2,struct_obj->NtQual_r2,drand_alloc_nt_adapt,struct_obj->DoSeqErr);
-
-          if (struct_obj->PolyNt != 'F'){
-            MonoLen = readsizelimit - strlen(readadapt2);
-            if (struct_obj->OutputFormat==fqT ||struct_obj->OutputFormat==fqgzT)
-              ksprintf(struct_obj->fqresult_r2,"@%s R2\n%s%s\n+\n%s%s\n",READ_ID,readadapt2,MonoPhosphateSeq.substr(1,MonoLen).c_str(),qual_r2,MonoPhosphateQual.substr(1,MonoLen).c_str());
-            else if (struct_obj->SAMout){
-              if(SamFlags[1] == 161)
-                ksprintf(struct_obj->fqresult_r2,"%s%s",readadapt2,MonoPhosphateSeq.substr(1,MonoLen).c_str());
-              else if(SamFlags[1] == 145){
-                ReversComplement(readadapt2);
-                ksprintf(struct_obj->fqresult_r2,"%.*s%.*s%s",seqlen,readadapt2+Adapter2_len,Adapter2_len,readadapt2,MonoPhosphateSeq.substr(1,MonoLen).c_str());
-              }
-            }
-          }
-          else{
-            if (struct_obj->OutputFormat==fqT ||struct_obj->OutputFormat==fqgzT)
-              ksprintf(struct_obj->fqresult_r2,"@%s R2\n%s\n+\n%s\n",READ_ID,readadapt2,qual_r2);
-            else if (struct_obj->SAMout){
-              if(SamFlags[1] == 161)
-		            ksprintf(struct_obj->fqresult_r2,"%s",readadapt2);
-              else if(SamFlags[1] == 145){
-                ReversComplement(readadapt2);
-                ksprintf(struct_obj->fqresult_r2,"%.*s%.*s",seqlen,readadapt2+Adapter2_len,Adapter2_len,readadapt2);
-              }
-            }
-          } 
-        }
+      // Fastq and Sam needs quality scores
+       
+      sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt_adapt,struct_obj->DoSeqErr);
+      if (PE==struct_obj->SeqType)
+	sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt_adapt,struct_obj->DoSeqErr);
+      
+      //write fq if requested
+      if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){
+	ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
+	if (PE==struct_obj->SeqType)
+	  ksprintf(struct_obj->fqresult_r2,"@%s R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);
       }
+
+      //now only sam family needs to be done, lets revcomplement the bases, and reverse the quality scores so everything is back to forward/+ strand
+      if(struct_obj->SAMout){
+	uint32_t AlignCigar[2][10];//cigs[0] is read1 cigs[1] is read2
+	size_t n_cigar[2] = {1,1};
+
+	if (struct_obj->NoAlign != 'T'){
+	  AlignCigar[0][0] = bam_cigar_gen(naligned[0], BAM_CMATCH);
+	  if(nsofts[0]>0){
+	    AlignCigar[0][1] = bam_cigar_gen(nsofts[0], BAM_CSOFT_CLIP);
+	    n_cigar[0] = 2;
+	  }
+	  if(strandR1==1){
+	    ReversComplement(seq_r1);
+	    reverseChar(qual_r1,strlen(seq_r1));
+	    if(n_cigar[0]>1){
+	      //swap softclip and match
+	      uint32_t tmp= AlignCigar[0][0];
+	      AlignCigar[0][0] = AlignCigar[0][1];
+	      AlignCigar[0][1] = tmp;
+	    }
+	  }
+	  if (PE==struct_obj->SeqType){
+	    AlignCigar[1][0] = bam_cigar_gen(naligned[1], BAM_CMATCH);
+	    if(nsofts[1]>0){
+	      AlignCigar[1][1] = bam_cigar_gen(nsofts[1], BAM_CSOFT_CLIP);
+	      n_cigar[1] = 2;
+	    }
+	    if(strandR1==0){
+	      ReversComplement(seq_r2);
+	      reverseChar(qual_r2,strlen(seq_r2));
+	      if(n_cigar[1]>1){
+		//swap softclip and match
+		uint32_t tmp= AlignCigar[1][0];
+		AlignCigar[1][0] = AlignCigar[1][1];
+		AlignCigar[1][1] = tmp;
+	      } 
+	    }
+	  }
+	}else{
+	  //this is unaligned part
+	  AlignCigar[0][0] = bam_cigar_gen(strlen(seq_r1), BAM_CSOFT_CLIP);
+	  AlignCigar[1][0] = bam_cigar_gen(strlen(seq_r2), BAM_CSOFT_CLIP);
+	  
+	}
+	//now reads, cigards and quals are correct 
+
+	//generating id, position and the remaining sam field information
+	size_t l_aux = 2; uint8_t mapq = 60;
+	hts_pos_t min_beg, max_end, insert; //max_end, insert;
+	min_beg = posB;
+	max_end = posE;
+	if (PE==struct_obj->SeqType)
+	  insert = max_end - min_beg + 1;
+	else
+	  insert = max_end = min_beg = -1;
+
+	const char* suffR1 = " R1";
+	const char* suffR2 = " R2";
+
+	char READ_ID2[1024];
+	strcpy(READ_ID2,READ_ID);
+	
+	strcat(READ_ID,suffR1);
+	if(PE==struct_obj->SeqType)
+	  strcat(READ_ID2,suffR2);
+	if (struct_obj->NoAlign == 'T'){
+	  mapq = 255;
+	  SamFlags[0] = SamFlags[1] = 4;
+	  chr_idx = -1;
+	  min_beg = max_end = -1;
+	}
+
+	//we have set the parameters accordingly above for no align and PE
+	bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx,min_beg,mapq,
+		     n_cigar[0],AlignCigar[0],chr_idx,-1,0,strlen(seq_r1),seq_r1,qual_r1,l_aux);
+
+	//write PE also
+	if (PE==struct_obj->SeqType)
+	    bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx,max_end,mapq,
+		     n_cigar[1],AlignCigar[1],chr_idx,min_beg,posE-maxbases,strlen(seq_r2),seq_r2,qual_r2,l_aux);
+	
+	
+	if (struct_obj->LengthData < struct_obj->MaximumLength){   
+	  pthread_mutex_lock(&write_mutex);
+	  for (int k = 0; k < struct_obj->LengthData; k++){
+	    assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) >=0 );
+	  }
+	  pthread_mutex_unlock(&write_mutex);
+	  struct_obj->LengthData = 0;
+	}
+	struct_obj->fqresult_r1->l =0;
+	struct_obj->fqresult_r2->l =0;	
+	
+      }
+      
     }
-    // Saving reads without adapter
-    else{
-      //saving both fasta and adapter to fasta format
-      if (struct_obj->OutputFormat==faT || struct_obj->OutputFormat==fagzT){
-        ksprintf(struct_obj->fqresult_r1,">%s R1\n%s\n",READ_ID,seq_r1);
-        if (PE==struct_obj->SeqType)
-          ksprintf(struct_obj->fqresult_r2,">%s R2\n%s\n",READ_ID,seq_r2);
-      }
-      else{
-        sample_qscores(seq_r1,qual_r1,seqlen,struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt,struct_obj->DoSeqErr);
-
-        if (struct_obj->OutputFormat==fqT ||struct_obj->OutputFormat==fqgzT)
-          ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
-        else if (struct_obj->SAMout){
-          if (SamFlags[0] == 0 || SamFlags[0] == 97)
-	          ksprintf(struct_obj->fqresult_r1,"%s",seq_r1);
-          else if (SamFlags[0] == 16 || SamFlags[0] == 81){
-            ReversComplement(seq_r1);
-            ksprintf(struct_obj->fqresult_r1,"%s",seq_r1);
-	        }
-	      }
-
-        if (PE==struct_obj->SeqType){
-          sample_qscores(seq_r2,qual_r2,seqlen,struct_obj->QualDist_r2,struct_obj->NtQual_r2,drand_alloc_nt,struct_obj->DoSeqErr);
-
-          if (struct_obj->OutputFormat==fqT ||struct_obj->OutputFormat==fqgzT)
-            ksprintf(struct_obj->fqresult_r2,"@%s R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);
-          else if (struct_obj->SAMout){
-            if (SamFlags[1] == 161)
-		          ksprintf(struct_obj->fqresult_r2,"%s",seq_r2);
-            else if (SamFlags[1] == 145){
-		          ReversComplement(seq_r2);
-              ksprintf(struct_obj->fqresult_r2,"%s",seq_r2);
-	          }
-          }
-        }
-      }
-    }
+    
     if (struct_obj->bgzf_fp[0]){
       if (struct_obj->fqresult_r1->l > BufferLength){
         pthread_mutex_lock(&write_mutex);
         assert(bgzf_write(struct_obj->bgzf_fp[0],struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l)!=0);
-        if (PE==struct_obj->SeqType){assert(bgzf_write(struct_obj->bgzf_fp[1],struct_obj->fqresult_r2->s,struct_obj->fqresult_r2->l)!=0);}
+        if (PE==struct_obj->SeqType){
+	  assert(bgzf_write(struct_obj->bgzf_fp[1],struct_obj->fqresult_r2->s,struct_obj->fqresult_r2->l)!=0);
+	}
         pthread_mutex_unlock(&write_mutex);
         struct_obj->fqresult_r1->l =0;
         struct_obj->fqresult_r2->l =0;
       }
     }
-    else if (struct_obj->SAMout){
-      // Generate CIGAR string for potential sam output with or without adapter
-      //unaligned reads
-      
-      //Adapter1_len = strlen(Adapter_1);
-      //SeqAdapt1_len = seqlen+Adapter1_len;
-      uint32_t cigsunmap[2][10];
-      size_t n_cigar_unmap=1;
-      
-
-      // Flags and cigar string for reads depending on adapters
-      //prepare cigarstrings for 10 cigar operations
-      uint32_t AlignCigar[2][10];//cigs[0] is read1 cigs[1] is read2
-      size_t n_cigar = 1;
-
-      // By keeping the alignment information all reads will have matches in their cigar string     
-      if(struct_obj->AddAdapt){
-        if(SamFlags[0] == 0 || SamFlags[0] == 97){
-          // flag 0 is for SE so that would be same adapter (-a1) as provided for PE for flag 97
-          if(readsizelimit>=SeqAdapt1_len){
-            n_cigar = 2;
-            AlignCigar[0][0] = bam_cigar_gen(seqlen, BAM_CMATCH);
-            AlignCigar[0][1] = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);
-            
-            cigsunmap[0][0] = bam_cigar_gen(SeqAdapt1_len, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
-          }
-          else if(readsizelimit>seqlen && readsizelimit<SeqAdapt1_len){
-            // i.e fragment length of 148 and 10 adapter nucleotides will be large than inferred read
-            n_cigar = 2;
-            AlignCigar[0][0] = bam_cigar_gen(seqlen, BAM_CMATCH);
-            AlignCigar[0][1] = bam_cigar_gen(Adapter1_len-(SeqAdapt1_len-readsizelimit), BAM_CSOFT_CLIP);
-            //fprintf(stderr,"Read length %d and seq adapt length %d and soft clip %d\n",seqlen,SeqAdapt1_len,Adapter1_len-(SeqAdapt1_len-readsizelimit));
-            cigsunmap[0][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
-          }
-          else{
-            //reads above the inferred read length will simply be containing matches
-            n_cigar = 1;
-            AlignCigar[0][0] = bam_cigar_gen(readsizelimit, BAM_CMATCH);
-            cigsunmap[0][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
-          }
-
-          if(SamFlags[1] == 145){ //strand == 1 for read 2
-            if(readsizelimit>=SeqAdapt2_len){
-              n_cigar = 2;
-              AlignCigar[1][1] = bam_cigar_gen(seqlen, BAM_CMATCH);
-              AlignCigar[1][0] = bam_cigar_gen(Adapter2_len, BAM_CSOFT_CLIP);
-              cigsunmap[1][0] = bam_cigar_gen(SeqAdapt2_len, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
-            }
-            else if(readsizelimit>seqlen && readsizelimit<SeqAdapt2_len){
-              // i.e fragment length of 148 and 10 adapter nucleotides will be large than inferred read
-              n_cigar = 2;
-              AlignCigar[1][1] = bam_cigar_gen(seqlen, BAM_CMATCH);
-              AlignCigar[1][0] = bam_cigar_gen(Adapter2_len-(SeqAdapt2_len-readsizelimit), BAM_CSOFT_CLIP);
-              //fprintf(stderr,"Read length %d and seq adapt length %d and soft clip %d\n",seqlen,SeqAdapt1_len,Adapter1_len-(SeqAdapt1_len-readsizelimit));
-              cigsunmap[1][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
-            }
-            else{
-              n_cigar = 1;
-              AlignCigar[1][0] = bam_cigar_gen(readsizelimit, BAM_CMATCH);
-              cigsunmap[1][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
-            }
-          }
-        }
-        else if(SamFlags[0] == 16 || SamFlags[0] == 81){ //strand == 1 for read 1
-          if(readsizelimit>=SeqAdapt1_len){
-            n_cigar = 2;
-            AlignCigar[0][0] = bam_cigar_gen(Adapter1_len, BAM_CSOFT_CLIP);
-            AlignCigar[0][1] = bam_cigar_gen(seqlen, BAM_CMATCH);
-            cigsunmap[0][0] = bam_cigar_gen(SeqAdapt1_len, BAM_CSOFT_CLIP);
-          }
-          else if(readsizelimit>seqlen && readsizelimit<SeqAdapt1_len){
-            // i.e fragment length of 148 and 10 adapter nucleotides will be large than inferred read
-            n_cigar = 2;
-            AlignCigar[0][0] = bam_cigar_gen(Adapter1_len-(SeqAdapt1_len-readsizelimit), BAM_CSOFT_CLIP);
-            AlignCigar[0][1] = bam_cigar_gen(seqlen, BAM_CMATCH);
-            //fprintf(stderr,"Read length %d and seq adapt length %d and soft clip %d\n",seqlen,SeqAdapt1_len,Adapter1_len-(SeqAdapt1_len-readsizelimit));
-            cigsunmap[0][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
-          }
-          else{
-            n_cigar = 1;
-            AlignCigar[0][0] = bam_cigar_gen(readsizelimit, BAM_CMATCH);
-            cigsunmap[0][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP);
-          }
-
-          if(SamFlags[1] == 161){ //strand == 0 for read 2
-            //fprintf(stderr,"Flag printf 3 %d & %d and strand %d\n",flags[0],flags[1],strand);
-            if(readsizelimit>=SeqAdapt2_len){
-              n_cigar = 2;
-              AlignCigar[1][0] = bam_cigar_gen(seqlen, BAM_CMATCH);
-              AlignCigar[1][1] = bam_cigar_gen(Adapter2_len, BAM_CSOFT_CLIP);
-              cigsunmap[1][0] = bam_cigar_gen(SeqAdapt2_len, BAM_CSOFT_CLIP);
-            }
-            else if(readsizelimit>seqlen && readsizelimit<SeqAdapt2_len){
-              // i.e fragment length of 148 and 10 adapter nucleotides will be large than inferred read
-              n_cigar = 2;
-              AlignCigar[1][0] = bam_cigar_gen(seqlen, BAM_CMATCH);
-              AlignCigar[1][1] = bam_cigar_gen(Adapter2_len-(SeqAdapt2_len-readsizelimit), BAM_CSOFT_CLIP);
-              //fprintf(stderr,"Read length %d and seq adapt length %d and soft clip %d\n",seqlen,SeqAdapt1_len,Adapter1_len-(SeqAdapt1_len-readsizelimit));
-              cigsunmap[1][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP); //read 1 adapter 1 - no align
-            }
-            else{
-              n_cigar = 1;
-              AlignCigar[1][0] = bam_cigar_gen(readsizelimit, BAM_CMATCH);
-              cigsunmap[1][0] = bam_cigar_gen(readsizelimit, BAM_CSOFT_CLIP);
-            }
-          }
-        }
-      }
-      else{
-	//this is not bullshit
-        n_cigar = 1;
-        uint32_t cigar_bit_match_unmap  = bam_cigar_gen(seqlen, BAM_CSOFT_CLIP);
-        uint32_t cigar_bit_match = bam_cigar_gen(seqlen, BAM_CMATCH);
-        AlignCigar[0][0] = cigar_bit_match;
-        AlignCigar[1][0] = cigar_bit_match;
-        cigsunmap[0][0] = cigar_bit_match_unmap; // read 1 - no align
-        cigsunmap[1][0] = cigar_bit_match_unmap; // read 2 - no align
-        
-      }
-        //generating id, position and the remaining sam field information
-      size_t l_aux = 2; uint8_t mapq = 60;
-      hts_pos_t min_beg, max_end, insert; //max_end, insert;
-      min_beg = posB;
-      max_end = posE;
-      insert = max_end - min_beg + 1;
-
-      // Change the orientation of quality string similar to changing read orientation
-      if (SamFlags[0] == 16 || SamFlags[0] == 81)
-	      reverseChar(qual_r1,strlen(seq_r1));
-      else if (SamFlags[1] == 145)
-	      reverseChar(qual_r2,strlen(seq_r2));
-        
-      char READIDR1[1024];
-	    char READIDR2[1024];
-      const char* suffR1 = " R1";const char* suffR2 = " R2";
-      strcpy(READIDR1,READ_ID);strcat(READIDR1,suffR1);
-
-      if (SE==struct_obj->SeqType){
-        //Utlizing the sam format as a sequence container
-        if (struct_obj->NoAlign == 'T'){
-          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR1),READIDR1,4,-1,-1,
-          255,n_cigar_unmap,cigsunmap[0],-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,NULL,0);
-        }
-        else{ //saving 'alignment' information
-          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR1),READIDR1,SamFlags[0],chr_idx,min_beg,mapq,
-          n_cigar,AlignCigar[0],-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
-        }
-        //const char* MDtag = "\tMD:Z:"; //bam_aux_update_str(struct_obj->list_of_reads[struct_obj->LengthData-1],"MD",5,"MDtag");
-      }
-      else if (PE==struct_obj->SeqType){
-        strcpy(READIDR2,READ_ID);strcat(READIDR2,suffR2);
-        if (struct_obj->NoAlign == 'T'){
-          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR1),READIDR1,4,-1,-1,
-          255,n_cigar_unmap,cigsunmap[0],-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,NULL,0);
-          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR2),READIDR2,4,-1,-1,
-          255,n_cigar_unmap,cigsunmap[1],-1,-1,0,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,NULL,0);
-        }
-        else{
-          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR1),READIDR1,SamFlags[0],chr_idx,min_beg,mapq,
-          n_cigar,AlignCigar[0],chr_idx,max_end,insert,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,qual_r1,l_aux);
-	    
-          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],read_id_length+strlen(suffR2),READIDR2,SamFlags[1],chr_idx,max_end,mapq,
-          n_cigar,AlignCigar[1],chr_idx,min_beg,0-insert,strlen(struct_obj->fqresult_r2->s),struct_obj->fqresult_r2->s,qual_r2,l_aux);
-        }
-      }
-
-      if (struct_obj->LengthData < struct_obj->MaximumLength){   
-        pthread_mutex_lock(&write_mutex);
-        for (int k = 0; k < struct_obj->LengthData; k++){
-          assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) >=0 );
-        }
-        pthread_mutex_unlock(&write_mutex);
-        struct_obj->LengthData = 0;
-      }
-      struct_obj->fqresult_r1->l =0;
-      struct_obj->fqresult_r2->l =0;
-    }
-  
-
-      // didnt work memset(Adapter_1, 0, sizeof Adapter_1);memset(Adapter_2, 0, sizeof Adapter_2);
-            
-    chr_idx = 0;
+    chr_idx = -1;
     iter++;
     localread++;
     current_reads_atom++;

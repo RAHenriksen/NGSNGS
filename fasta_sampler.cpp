@@ -53,16 +53,18 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
   return fs;
 }
 
-char *sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &posB,int &posE,int fraglength){
-  int idx = ransampl_draw2(fs->ws,mrand_pop(mr),mrand_pop(mr));
-  *chromoname = fs->seqs_names[idx];
+//functions returns head of chromosome, with posB, posE, chr_idx and fraglength set accordingly
+char *sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength){
+  chr_idx = ransampl_draw2(fs->ws,mrand_pop(mr),mrand_pop(mr));
+  *chromoname = fs->seqs_names[chr_idx];
   //std::cout << fs->seqs_names[0] << fs->seqs_names[1] << fs->seqs_names[2] << std::endl;
-  posB = abs(mrand_pop_long(mr)) % fs->seqs_l[idx]+1;
+  posB = abs(mrand_pop_long(mr)) % fs->seqs_l[chr_idx]+1;
   posE = posB +fraglength;
-  if(posE>fs->seqs_l[idx]){
-    posE=fs->seqs_l[idx]-posB;
+  if(posE>fs->seqs_l[chr_idx]){
+    posE=fs->seqs_l[chr_idx];
+    fraglength = posE-posB;
   }
-  return fs->seqs[idx]+posB;
+  return fs->seqs[chr_idx];
 }
 void fasta_sampler_destroy(fasta_sampler *fs){
   fai_destroy(fs->fai);

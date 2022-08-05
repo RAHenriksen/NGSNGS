@@ -20,5 +20,5 @@ typedef struct{
 
 fasta_sampler *fasta_sampler_alloc(const char *,const char *);
 void fasta_sampler_destroy(fasta_sampler *fs);
-char* sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &posB,int &posE,int fraglength);
+char* sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength);
 #endif

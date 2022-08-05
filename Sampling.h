@@ -53,7 +53,7 @@ struct Parsarg_for_Sampling_thread{
   const char* SizeFileFlag;
   int FixedSize;
 
-  int readcycle;
+  int maxreadlength;
   
   outputformat_e OutputFormat;
   seqtype_e SeqType;

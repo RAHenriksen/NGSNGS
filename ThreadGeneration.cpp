@@ -185,7 +185,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     const char *freqfile_r1; //"Qual_profiles/AccFreqL150R1.txt";
     const char *freqfile_r2;
     int outputoffset = qualstringoffset;
-    int readcyclelength;
+    int maxreadlength;
     //fprintf(stderr,"\t-> FRAG ARRAY LE\n");
     ransampl_ws ***QualDist = NULL;
     char nt_qual_r1[1024];
@@ -197,12 +197,12 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     //fprintf(stderr,"\t-> BEFORE QUAL STRING IF\n");
     if(strcasecmp("true",QualStringFlag)==0){ //|| strcasecmp("bam",OutputFormat)==0
       freqfile_r1 = QualProfile1;
-      QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1,readcyclelength);
+      QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1,maxreadlength);
       //fprintf(stderr,"\t-> CREATING QUALDIST\n");
       if(PE==SeqType){
         //fprintf(stderr,"\t-> PE LOOP\n");
         freqfile_r2 = QualProfile2;
-        QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2,readcyclelength);
+        QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2,maxreadlength);
       }
     }
     //fprintf(stderr,"\t-> AFTER QUAL STRING IF\n");
@@ -261,7 +261,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].QualDist_r2 = QualDist2;
       struct_for_threads[i].NtErr_r1 = ErrArray_r1;
       struct_for_threads[i].NtErr_r2 = ErrArray_r2;
-      struct_for_threads[i].readcycle = (int) readcyclelength;
+      struct_for_threads[i].maxreadlength = (int) maxreadlength;
 
       // 2) briggs model
       struct_for_threads[i].MisMatch = MisMatchFreqArray;
@@ -337,7 +337,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
     if(strcasecmp("true",QualStringFlag)==0){
       for(int base=0;base<5;base++){
-        for(int pos = 0 ; pos< (int) readcyclelength;pos++){
+        for(int pos = 0 ; pos< (int) maxreadlength;pos++){
           ransampl_free(QualDist[base][pos]);
         }
         delete[] QualDist[base];
@@ -346,7 +346,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
       if(PE==SeqType){
         for(int base=0;base<5;base++){
-          for(int pos = 0 ; pos< (int) readcyclelength;pos++){
+          for(int pos = 0 ; pos< (int) maxreadlength;pos++){
             ransampl_free(QualDist2[base][pos]);
           }
           delete[] QualDist2[base];
