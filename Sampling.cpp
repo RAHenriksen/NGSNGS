@@ -68,8 +68,6 @@ void* Sampling_threads(void *arg){
 
   char *chr; //this is an unallocated pointer to a chromosome name, eg chr1, chrMT etc
   int posB,posE;//this is the first and last position of our fragment
-  char *seq1;
-  char *seq2;
 
   extern int SIG_COND;
 
