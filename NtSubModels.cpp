@@ -1,6 +1,6 @@
 #include <zlib.h>
 #include <cassert>
-
+#include <cstring>
 #include "NtSubModels.h"
 #include "mrand.h"
 
