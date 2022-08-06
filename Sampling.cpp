@@ -133,7 +133,7 @@ void* Sampling_threads(void *arg){
       if(seq_r1[i]!='N')
 	      skipread = 0;
 
-    for(int i=0;seq_r2 && skipread && i<(int)strlen(seq_r2);i++)
+    for(int i=0; skipread && i<(int)strlen(seq_r2);i++)
       if(seq_r2[i]!='N')
 	    skipread = 0;
     
@@ -192,7 +192,7 @@ void* Sampling_threads(void *arg){
     }
       
     
-    sprintf(READ_ID,"T%d_RID%d_S%d_%s:%zu-%zu_length:%d", struct_obj->threadno, rand_id,strandR1,chr,posB,posE,fraglength);
+    sprintf(READ_ID,"T%d_RID%d_S%d_%s:%d-%d_length:%d", struct_obj->threadno, rand_id,strandR1,chr,posB,posE,fraglength);
     
     int nsofts[2] = {0,0};//this will contain the softclip information to be used by sam/bam/cram out
     //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail
@@ -203,32 +203,21 @@ void* Sampling_threads(void *arg){
     
     //add adapters
     if(struct_obj->AddAdapt){
-      //fprintf(stderr,"INSIDE ADD ADAPT!\n%s\n",seq_r1);
       // Because i have reverse complemented the correct sequences and adapters depending on the strand origin (or flags), i know all adapters will be in 3' end
       nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
       //fprintf(stderr,"The minimum values are %d \t %d \t %d \n",maxbases,struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
       strncpy(seq_r1+strlen(seq_r1),struct_obj->Adapter_1,nsofts[0]);
-      //fprintf(stderr,"SEQUENCE R1\n%s\n",seq_r1);
       if(PE==struct_obj->SeqType){
         nsofts[1] = std::min(struct_obj->maxreadlength-strlen(seq_r2),strlen(struct_obj->Adapter_2));
-        //fprintf(stderr,"The minimum values are %d \t %d \t %d \n",struct_obj->maxreadlength,struct_obj->maxreadlength-strlen(seq_r2),strlen(struct_obj->Adapter_2));
-        //fprintf(stderr,"INSIDE ADD ADAPT!\n%s\n",seq_r2);
         strncpy(seq_r2+strlen(seq_r2),struct_obj->Adapter_2,nsofts[1]);
-        //fprintf(stderr,"SEQUENCE R1\n%s\n",seq_r2);
       }
-      //do we need to keep track of both or is there some kind of symmetry?
     }
 
     //add polytail
     if (struct_obj->PolyNt != 'F') {
       int nitems = struct_obj->maxreadlength-strlen(seq_r1);
-      //fprintf(stderr,"The minimum values are %d \t %d \t %d \n",struct_obj->maxreadlength,strlen(seq_r1),nitems);
-      //fprintf(stderr,"INSIDE POLY ADAPT!\n%s\n",seq_r1);
       memset(seq_r1+strlen(seq_r1),struct_obj->PolyNt,nitems);
-      //fprintf(stderr,"INSIDE POLY ADAPT!\n%s\n",seq_r1);
-      //fprintf(stderr,"SOFT CLIPPED NUMEBR\n%d\n",nsofts[0]);
       nsofts[0] += nitems;
-      //fprintf(stderr,"SOFT CLIPPED NUMEBR\n%d\n",nsofts[0]);
       if(PE==struct_obj->SeqType){
         nitems = struct_obj->maxreadlength-strlen(seq_r2);
         memset(seq_r2+strlen(seq_r2),struct_obj->PolyNt,nitems);
