@@ -20,12 +20,9 @@
 #include "add_variants.h"
 
 #define LENS 4096
-#define MAXBINS 100
 
 void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,fasta_sampler *fs,char CommandArray[1024],const char* version){
   // Creates a header for the bamfile. The header is initialized before the function is called //
-  if (header == NULL) { fprintf(stderr, "sam_hdr_init");}
-
   // Creating header information
   
   char genome_len_buf[1024];
