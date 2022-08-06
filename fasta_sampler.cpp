@@ -41,6 +41,7 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
     char *chrtok = NULL;
     while(((chrtok=strtok(NULL,"\", \t"))))
       SubsetChr.push_back(strdup(chrtok));
+    fprintf(stderr,"\t-> Number of entries in chromosome list: %lu\n",SubsetChr.size());
   }
 
   fasta_sampler *fs = new fasta_sampler;
@@ -66,14 +67,23 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
       //  fprintf(stderr,"%d)\tchr:%s\tlen:%d\n",i,fs->seqs_names[i],fs->seqs_l[i]);
     }
   else{
+    int at = 0;
     for(int i=0;i<SubsetChr.size();i++){
-      fs->seqs_names[i] = strdup(SubsetChr[i]);
-      fs->seqs[i] = fai_fetch(fs->fai,fs->seqs_names[i],fs->seqs_l+i);
-      fs->char2idx[fs->seqs_names[i]] = i;
+      if( faidx_has_seq(fs->fai, SubsetChr[i])){
+	fs->seqs_names[at] = strdup(SubsetChr[i]);
+	fs->seqs[at] = fai_fetch(fs->fai,fs->seqs_names[i],fs->seqs_l+at);
+	fs->char2idx[fs->seqs_names[i]] = at;
+	at++;
+      }
     }
+    fs->nref = at;
   }
 
   fprintf(stderr,"\t-> Number of nref %d in file: \'%s\'\n",fs->nref,fa);
+  if(fs->nref==0){
+    fprintf(stderr,"\t-> Possible error, no sequences loaded\n");
+    exit(0);
+  }
   fasta_sampler_setprobs(fs);
   
   return fs;
