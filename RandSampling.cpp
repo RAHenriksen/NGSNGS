@@ -20,14 +20,8 @@
 #include <map>
 #include <math.h>
 #include <pthread.h>
-
-#include "NGSNGS_func.h"
+#include "RandSampling.h"
 #include "mrand.h"
-
-
-//#if defined(__APPLE__) && defined(__MACH__) 
-//#include "NGSNGS_Random.h"
-//#endif /* __APPLE__ */
 
 #define LENS 4096
 #define MAXBINS 100
