@@ -11,16 +11,40 @@
 #include "mrand.h"
 #include "Briggs.h"
 #include "NtSubModels.h"
-#include "NGSNGS_func.h"
 #include "RandSampling.h"
 #include "getFragmentLength.h"
 #include "Sampling.h"
 #include "sample_qscores.h"
 #include "NGSNGS_cli.h"
 #include "fasta_sampler.h"
+#include "add_variants.h"
 
 #define LENS 4096
 #define MAXBINS 100
+
+void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,fasta_sampler *fs,char CommandArray[1024],const char* version){
+  // Creates a header for the bamfile. The header is initialized before the function is called //
+  if (header == NULL) { fprintf(stderr, "sam_hdr_init");}
+
+  // Creating header information
+  
+  char genome_len_buf[1024];
+  //sam_hdr_add_line(header, "HD", "VN",version, "SO", "unsorted", NULL);
+  for(int i=0;i<fs->nref;i++){
+    snprintf(genome_len_buf,1024,"%d", fs->seqs_l[i]);
+    
+    // reference part of the header, int r variable ensures the header is added
+    int r = sam_hdr_add_line(header, "SQ", "SN", fs->seqs_names[i], "LN", genome_len_buf, NULL);
+    if (r < 0) { fprintf(stderr,"sam_hdr_add_line");}
+   
+    memset(genome_len_buf,0, sizeof(genome_len_buf));
+  
+  }
+  // Adding PG tag specifying the command used for simulations
+  sam_hdr_add_pg(header,"NGSNGS","VN",version,"CL",CommandArray,NULL);
+  // saving the header to the file
+  if (sam_hdr_write(outfile, header) < 0) fprintf(stderr,"writing headers to %s", outfile_nam); //outfile
+}
 
 void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
                         const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,
@@ -36,7 +60,8 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   pthread_t *mythreads = new pthread_t[nthreads]; //pthread_t mythreads[nthreads];
 
   //allocate for reference file
-  fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr,VariantFile,VarType,HeaderIndiv);
+  fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
+  add_variants(reffasta,VariantFile);
 
   //fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr,VariantFile,VarType,HeaderIndiv);
 

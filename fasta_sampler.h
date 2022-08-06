@@ -3,11 +3,23 @@
 #include <cstring>//for strcmp
 #include <cstdio>//for stderr
 #include <cassert>//for assert
+#include <map> //for map
 #include "RandSampling.h"
 #include "mrand.h"
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
 #include <htslib/vcf.h>
+
+struct ltstr
+{
+  bool operator()(const char* s1, const char* s2) const
+  {
+    return strcmp(s1, s2) < 0;
+  }
+};
+
+typedef std::map<const char *,int,ltstr> char2int;
+
 
 typedef struct{
   faidx_t *fai;
@@ -17,10 +29,12 @@ typedef struct{
   int *seqs_l;
   size_t seq_l_total;
   ransampl_ws *ws;
+  char2int char2idx;
 }fasta_sampler;
 
-fasta_sampler *fasta_sampler_alloc(const char *,const char *,const char *,const char *,const char *);
+fasta_sampler *fasta_sampler_alloc(const char *,const char *);
 void fasta_sampler_destroy(fasta_sampler *fs);
 char* sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength);
-
+void fasta_sampler_setprobs(fasta_sampler *fs);
+void fasta_sampler_print(FILE *fp,fasta_sampler *fs);
 #endif
