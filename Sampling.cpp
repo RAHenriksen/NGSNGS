@@ -5,7 +5,8 @@
 #include <cassert>
 #include <cstdint>
 #include <iostream>
-#include <math.h>
+#include <cmath>
+#include <algorithm>
 
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
