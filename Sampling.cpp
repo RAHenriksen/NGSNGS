@@ -20,7 +20,6 @@
 #include "mrand.h"
 #include "Briggs.h"
 #include "NtSubModels.h"
-#include "NGSNGS_func.h"
 #include "RandSampling.h"
 #include "getFragmentLength.h"
 #include "ThreadGeneration.h"
@@ -31,6 +30,40 @@
 #define LENS 4096
 #define MAXBINS 100
 unsigned char nuc2int[255];
+
+
+void reverseChar(char* str,int length) {
+    std::reverse(str, str + length);
+}
+
+void ReversComplement(char seq[]){
+  // generates the reverse complementary sequence from an input sequence
+  unsigned char nuc2int[255];
+  nuc2int['a'] = nuc2int['A'] = nuc2int[0] = 0;
+  nuc2int['t'] = nuc2int['T'] = nuc2int[1] = 1;
+  nuc2int['g'] = nuc2int['G'] = nuc2int[2] = 2;
+  nuc2int['c'] = nuc2int['C'] = nuc2int[3] = 3;
+  nuc2int['n'] = nuc2int['N'] = nuc2int[4] = 4;
+
+  char ntdeam[4] = {'T', 'A', 'C', 'G'};
+  char seq_intermediate[1024] = {0};
+  strcpy(seq_intermediate,seq);
+  //fprintf(stderr,"SEQUENCE \t\t%s\n",seq_intermediate);
+  int seqlen = strlen(seq);
+  //Complementing sequence
+  for(int i=0;i<seqlen;i++){
+    seq_intermediate[i] = ntdeam[nuc2int[(unsigned char) seq_intermediate[i]]]; //warning: array subscript has type 'char' [-Wchar-subscripts]
+  }
+  //fprintf(stderr,"COMP SEQUENCE \t\t%s\n",seq_intermediate);
+
+  //reverse complement
+  for(int i=seqlen-1;i>-1;i--){
+    seq[seqlen-i-1] = seq_intermediate[i];
+  }
+  //just to ensure no issues arise in case of not clearing out the intermediate sequence
+  memset(seq_intermediate, 0, sizeof seq_intermediate);
+}
+
 
 pthread_mutex_t write_mutex = PTHREAD_MUTEX_INITIALIZER;
 
