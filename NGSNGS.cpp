@@ -17,7 +17,6 @@
 
 #include <pthread.h>
 
-#include "NGSNGS_func.h"
 #include "Sampling.h"
 #include "mrand.h"
 #include "Briggs.h"
