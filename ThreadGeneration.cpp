@@ -47,28 +47,21 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
-                        int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,char* Variant_flag,const char *VarType,
+                        int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,
                         char CommandArray[1024],const char* version,const char* HeaderIndiv,const char* NoAlign,size_t BufferLength){
   //creating an array with the arguments to create multiple threads;
-  //fprintf(stderr,"Random MacIntType %d\n",MacroRandType);
-  //fprintf(stderr,"\t-> Command 3 : %s \n",CommandArray);
+
   int nthreads=thread_no;
   pthread_t *mythreads = new pthread_t[nthreads]; //pthread_t mythreads[nthreads];
 
   //allocate for reference file
   fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
-  fprintf(stderr,"variantfile: %s\n",VariantFile);
   if(VariantFile)
     add_variants(reffasta,VariantFile);
   fasta_sampler_print(stderr,reffasta);
   fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome\n",reffasta->nref);
   fprintf(stderr,"\t-> Chromsoome name first %s and length %d and full length %zu\n",reffasta->seqs_names[0],reffasta->seqs_l[0],reffasta->seq_l_total);
-  /*if(VCFformat != NULL && strcasecmp(Variant_flag,"bcf")==0){
-    //const char* HeaderIndiv = "HG00097";
-    genome_data = full_vcf_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm,VCFformat,VarType,HeaderIndiv);
-    char* full_vcf_genome_create(faidx_t *seq_ref,int chr_total,int chr_sizes[],const char *chr_names[],size_t chr_size_cumm[],const char* bcf_file,const char* VarType,const char* HeaderIndiv){
 
-  }*/
 
   if (reffasta->seqs != NULL){
   
@@ -296,9 +289,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       // 3) misincorporation matrix
       struct_for_threads[i].DoBriggs = DoBriggs;
       struct_for_threads[i].BriggsParam = BriggsParam;
-
-      // 4) Bcf file and variation incorporation
-      struct_for_threads[i].Variant_flag = Variant_flag;
       
       // Fragment lengths 
       struct_for_threads[i].FragLen = Frag_len;
@@ -349,7 +339,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
      if (p.pool)
        hts_tpool_destroy(p.pool);
     
-    //fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr,VariantFile,VarType,HeaderIndiv);
     fasta_sampler_destroy(reffasta);
 
     for(int i=0;i<nthreads;i++){

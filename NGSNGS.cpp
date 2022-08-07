@@ -266,20 +266,7 @@ int main(int argc,char **argv){
     
     char* Variant_flag =NULL;
     const char* VariantFile = mypars->Variant;
-    const char* VarType =mypars->Variant_type;
-    if(mypars->Variant != NULL){
-      char *last = strrchr((char*)strdup(mypars->Variant), '.');
-      if(strcasecmp((char*) last+1,"bcf")!=0){
-        fprintf(stderr,"provide the variant file in a binary format (.bcf)\n");
-      }
-      Variant_flag = (char*) last+1;
-      if(VarType == NULL){
-        VarType = strdup("snp");
-      }
-      else if(VarType != NULL){
-        VarType = strdup("snp"); //mypars->Variant_type;
-      }
-    }
+
     int DeamLength = 0;
 
     ThreadInitialization(mypars->Reference,mypars->SamplThreads,mypars->Glob_seed,mypars->nreads/mypars->SamplThreads,mypars->OutName,
@@ -287,7 +274,7 @@ int main(int argc,char **argv){
                       Param,DoBriggs,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,
                       qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->CompressThreads,QualStringFlag,Polynt,
                       mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
-                      VariantFile,Variant_flag,mypars->Variant_type,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,NoAlign,mypars->KstrBuf);
+                      VariantFile,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,NoAlign,mypars->KstrBuf);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));
