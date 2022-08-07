@@ -23,7 +23,6 @@
 
 void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,fasta_sampler *fs,char CommandArray[1024],const char* version){
   // Creates a header for the bamfile. The header is initialized before the function is called //
-  // Creating header information
   
   char genome_len_buf[1024];
   //sam_hdr_add_line(header, "HD", "VN",version, "SO", "unsorted", NULL);
@@ -58,11 +57,10 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
   //allocate for reference file
   fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
+  fprintf(stderr,"variantfile: %s\n",VariantFile);
   if(VariantFile)
     add_variants(reffasta,VariantFile);
-
-  //fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr,VariantFile,VarType,HeaderIndiv);
-
+  fasta_sampler_print(stderr,reffasta);
   fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome\n",reffasta->nref);
   fprintf(stderr,"\t-> Chromsoome name first %s and length %d and full length %zu\n",reffasta->seqs_names[0],reffasta->seqs_l[0],reffasta->seq_l_total);
   /*if(VCFformat != NULL && strcasecmp(Variant_flag,"bcf")==0){

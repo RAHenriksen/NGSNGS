@@ -21,15 +21,17 @@ void fasta_sampler_setprobs(fasta_sampler *fs){
   }
   for(int i=0;i<fs->nref;i++)
     p[i] = ((double) fs->seqs_l[i])/fs->seq_l_total;
+  
   ransampl_set(fs->ws,p);
+  delete [] p;
 }
 void fasta_sampler_print(FILE *fp,fasta_sampler *fs){
-  fprintf(fp,"--------------\nfai: %p nref: %d\n",fs->fai,fs->nref);
+  fprintf(fp,"--------------\n[%s]\tfai: %p nref: %d\n",__FUNCTION__,fs->fai,fs->nref);
   for(int i=0;i<fs->nref;i++)
-    fprintf(fp,"idx:%d) name:%s example:%.15s length: %d\n",i,fs->seqs_names[i],fs->seqs[i],fs->seqs_l[i]);
+    fprintf(fp,"[%s]\tidx:%d) name:%s example:%.15s length: %d\n",__FUNCTION__,i,fs->seqs_names[i],fs->seqs[i],fs->seqs_l[i]);
 
   for(char2int::iterator it=fs->char2idx.begin();it!=fs->char2idx.end();it++)
-    fprintf(fp,"key: %s val:%d\n",it->first,it->second);
+    fprintf(fp,"[%s]\tkey: %s val:%d\n",__FUNCTION__,it->first,it->second);
   fprintf(fp,"------------\n");
 }
 

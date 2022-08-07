@@ -21,7 +21,7 @@ int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
 	max_l = i;
     }
   }
-  
+  max_l = max_l +1;
   fprintf(stderr,"\t-> From header in bcf we observe %lu different scaffolds/chromosomes we will allocate lookup table with dim: %d\n",res.size(),max_l);
   if(res.size()==0)
     return NULL;
@@ -97,6 +97,8 @@ void add_variant(fasta_sampler *fs, int chr_idx,int pos,char **alleles, int32_t 
 
 
 int add_variants(fasta_sampler *fs,const char *bcffilename){
+  if(bcffilename==NULL)
+    return 0;
   htsFile *bcf = bcf_open(bcffilename, "r");
   bcf_hdr_t *bcf_head = bcf_hdr_read(bcf);
   bcf1_t *brec = bcf_init();
@@ -126,12 +128,17 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
       assert((ngt %nsamples)==0);
       inferred_ploidy = ngt/nsamples;
     }
-    
+    fprintf(stderr,"nallele: %d\n",brec->n_allele);
+    if(brec->n_allele==1){
+      fprintf(stderr,"\t-> Only Reference allele defined for pos: %lld will skip\n",brec->pos+1);
+      continue;
+    }
     if(whichsample!=-1)
       add_variant(fs,brec->rid,brec->pos,brec->d.allele,gt_arr+inferred_ploidy*whichsample,inferred_ploidy);
     else
       add_variant(fs,brec->rid,brec->pos,brec->d.allele,nodatagt,inferred_ploidy);
   }
+  fasta_sampler_setprobs(fs);
   bcf_hdr_destroy(bcf_head);
   bcf_destroy(brec); 
   bcf_close(bcf);
@@ -142,17 +149,17 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
 #ifdef __WITH_MAIN__
 
 int main(int argc,char **argv){
-  const char* subsetchr = "1,2,3,4,5,MT";
+  const char* subsetchr = NULL;//"hej";
   
   int seed = 101;
   mrand_t *mr = mrand_alloc(3,seed);
-  char *ref = "../hs37d5.fa.gz";
-  char *vcf = "sub2.bcf";
+  char *ref = "Test_Examples/Mycobacterium_leprae.fa.gz";
+  char *vcf = "vcf.vcf";
   fasta_sampler *fs = fasta_sampler_alloc(ref,subsetchr);
   fprintf(stderr,"Done adding fasta, will now add variants\n");
   fasta_sampler_print(stderr,fs);
   add_variants(fs,vcf);
-  fasta_sampler_setprobs(fs);
+ 
   fasta_sampler_print(stderr,fs);
   char *chr; //this is an unallocated pointer to a chromosome name, eg chr1, chrMT etc
   int chr_idx;
