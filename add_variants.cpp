@@ -41,7 +41,7 @@ void add_variant(fasta_sampler *fs, int chr_idx,int pos,char **alleles, int32_t 
   //  fprintf(stderr,"Adding genotype informaiton for chromosome: %s pos: %d\n",fs->seqs_names[chr_idx],pos);
   char ref = fs->seqs[chr_idx][pos];
   for(int i=0;0&&i<ploidy;i++){
-    fprintf(stderr,"%d) gt: %d and GT alleles are  '%s' (first one should be reference?)\n",i,gts[i],alleles[i]);
+    fprintf(stderr,"%d) gt: %d and GT alleles are  '%s' (first one should be reference?)\n",i,bcf_gt_allele(gts[i]),alleles[i]);
   }
   //first check if all parental chromosomes exists
   int isThere  = 1;
@@ -89,12 +89,12 @@ void add_variant(fasta_sampler *fs, int chr_idx,int pos,char **alleles, int32_t 
   //now lets add snp
   for(int i=0;i<ploidy;i++){
     if(i==0)
-      fs->seqs[chr_idx][pos] = alleles[gts[i]][0];
+      fs->seqs[chr_idx][pos] = alleles[bcf_gt_allele(gts[i])][0];
     else{
       snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[chr_idx],i);
       char2int::iterator it = fs->char2idx.find(buf);
       assert(it!=fs->char2idx.end());
-      fs->seqs[it->second][pos] = alleles[gts[i]][0];
+      fs->seqs[it->second][pos] = alleles[bcf_gt_allele(gts[i])][0];
     }
   }
   
@@ -127,7 +127,6 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
       fprintf(stderr,"chrname: %s does not exists in fasta reference\n",bcf_hdr_id2name(bcf_head,brec->rid));
       exit(0);
     }
-    
     if(whichsample!=-1){
       ngt = bcf_get_genotypes(bcf_head, brec, &gt_arr, &ngt_arr);
       assert((ngt %nsamples)==0);
@@ -138,6 +137,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
       fprintf(stderr,"\t-> Only Reference allele defined for pos: %lld will skip\n",brec->pos+1);
       continue;
     }
+
     if(whichsample!=-1)
       add_variant(fs,brec->rid,brec->pos,brec->d.allele,gt_arr+inferred_ploidy*whichsample,inferred_ploidy);
     else
