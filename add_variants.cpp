@@ -1,5 +1,24 @@
+#include <map>
 #include <htslib/vcf.h>
 #include "fasta_sampler.h"
+
+typedef struct{
+  int rid;
+  int pos;
+}bcfkey;
+
+struct bcfkey_cmp
+{
+  bool operator()(bcfkey s1,bcfkey s2) const
+  {
+    if(s1.rid==s2.rid)
+      return s1.pos<s2.pos;
+    return s1.rid<s2.rid;
+  }
+};
+
+typedef std::map<bcfkey,bcf1_t*,bcfkey_cmp> bcfmap;
+
 
 int verbose2000 = 0;
 int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
@@ -34,6 +53,11 @@ int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
     lookup[it->first] = it->second;
   
   return lookup;
+}
+
+void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr){
+
+  
 }
 
 //fasta sampler struct, index for chromosomenaem, position, the alleles, the genotypes and the ploidy. 
@@ -107,7 +131,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
   htsFile *bcf = bcf_open(bcffilename, "r");
   bcf_hdr_t *bcf_head = bcf_hdr_read(bcf);
   bcf1_t *brec = bcf_init();
-  int whichsample=-1;//if minus one then ref and alt fields are used, if nonnegative then it is used as offset to which genotype to use from the GT fields
+  int whichsample=0;//if minus one then ref and alt fields are used, if nonnegative then it is used as offset to which genotype to use from the GT fields
   //map chromosomenames in bcf to index in fastafile
   int max_l;
   int *bcf_idx_2_fasta_idx = mapper(bcf_head,fs->char2idx,max_l);
@@ -117,7 +141,8 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
   int32_t *gt_arr = NULL;
   int ngt;
   int inferred_ploidy =2;//assume ploidy is two.
-  int32_t nodatagt[2] = {0,1};
+  int32_t nodatagt[5] = {0,1,0,0,0};//assume maxploidy is 5 for this temparray
+  bcfmap mybcfmap;
   
   while(((ret=bcf_read(bcf,bcf_head,brec)))==0){
     bcf_unpack((bcf1_t*)brec, BCF_UN_ALL);
@@ -133,15 +158,37 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
       inferred_ploidy = ngt/nsamples;
     }
     fprintf(stderr,"nallele: %d\n",brec->n_allele);
+    for(int i=0;i<brec->n_allele;i++)
+      fprintf(stderr,"nal:%d %s %zu\n",i,brec->d.allele[i],strlen(brec->d.allele[i]));
     if(brec->n_allele==1){
       fprintf(stderr,"\t-> Only Reference allele defined for pos: %lld will skip\n",brec->pos+1);
       continue;
     }
-
-    if(whichsample!=-1)
-      add_variant(fs,brec->rid,brec->pos,brec->d.allele,gt_arr+inferred_ploidy*whichsample,inferred_ploidy);
+    int32_t *mygt=NULL;
+    if(whichsample==-1)
+      mygt = nodatagt;
     else
-      add_variant(fs,brec->rid,brec->pos,brec->d.allele,nodatagt,inferred_ploidy);
+      mygt = gt_arr+inferred_ploidy*whichsample;
+
+    //figure out if its an indel
+    int isindel  = 0;
+    for(int i=0;i<inferred_ploidy;i++)
+      if(strlen(brec->d.allele[bcf_gt_allele(mygt[i])])>1)
+	isindel =1;
+    if(isindel==0)
+      add_variant(fs,brec->rid,brec->pos,brec->d.allele,mygt,inferred_ploidy);
+    else{
+      fprintf(stderr,"Found an indel as rid: %d pos:%lld\n",brec->rid,brec->pos);
+      bcfkey key;
+      key.rid=brec->rid;
+      key.pos= (int) brec->pos;
+      bcf1_t *duped= bcf_dup(brec);
+      mybcfmap[key] =duped;
+    }
+  }
+  if(mybcfmap.size()>0){
+    fprintf(stderr,"Found some indels, these will now be added to internal datastructures\n");
+    add_indels(fs,mybcfmap,bcf_head);
   }
   fasta_sampler_setprobs(fs);
   bcf_hdr_destroy(bcf_head);
