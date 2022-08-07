@@ -28,7 +28,7 @@ void fasta_sampler_setprobs(fasta_sampler *fs){
 void fasta_sampler_print(FILE *fp,fasta_sampler *fs){
   fprintf(fp,"--------------\n[%s]\tfai: %p nref: %d\n",__FUNCTION__,fs->fai,fs->nref);
   for(int i=0;i<fs->nref;i++)
-    fprintf(fp,"[%s]\tidx:%d) name:%s example:%.15s length: %d\n",__FUNCTION__,i,fs->seqs_names[i],fs->seqs[i],fs->seqs_l[i]);
+    fprintf(fp,"[%s]\tidx:%d) name:%s example:%.15s length: %d realidx: %d\n",__FUNCTION__,i,fs->seqs_names[i],fs->seqs[i],fs->seqs_l[i],fs->realnameidx[i]);
 
   for(char2int::iterator it=fs->char2idx.begin();it!=fs->char2idx.end();it++)
     fprintf(fp,"[%s]\tkey: %s val:%d\n",__FUNCTION__,it->first,it->second);
@@ -59,7 +59,7 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
   fs->seqs = new char* [fs->nref];
   fs->seqs_l = new int[fs->nref];
   fs->seqs_names = new char *[fs->nref];
-  
+  fs->realnameidx = new int[fs->nref];
   if(SubsetChr.size()==0)
     for(int i=0;i<fs->nref;i++){
       fs->seqs_names[i] = strdup(faidx_iseq(fs->fai,i));
@@ -80,6 +80,8 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
     }
     fs->nref = at;
   }
+  for(int i=0;i<fs->nref;i++)
+    fs->realnameidx[i] = i;
 
   fprintf(stderr,"\t-> Number of nref %d in file: \'%s\'\n",fs->nref,fa);
   if(fs->nref==0){
@@ -87,7 +89,6 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
     exit(0);
   }
   fasta_sampler_setprobs(fs);
-  
   return fs;
 }
 
@@ -101,7 +102,9 @@ char *sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &p
     posE=fs->seqs_l[chr_idx];
     fraglength = posE-posB;
   }
-  return fs->seqs[chr_idx];
+  char *ret =fs->seqs[chr_idx]; 
+  chr_idx = fs->realnameidx[chr_idx];
+  return ret;
 }
 
 void fasta_sampler_destroy(fasta_sampler *fs){

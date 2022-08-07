@@ -30,6 +30,7 @@ typedef struct{
   size_t seq_l_total;
   ransampl_ws *ws;
   char2int char2idx;
+  int *realnameidx;
 }fasta_sampler;
 
 fasta_sampler *fasta_sampler_alloc(const char *,const char *);

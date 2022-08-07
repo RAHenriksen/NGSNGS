@@ -58,18 +58,22 @@ void add_variant(fasta_sampler *fs, int chr_idx,int pos,char **alleles, int32_t 
     char **seqs = (char**) new char*[nref];
     char **seqs_names = (char**) new char*[nref];
     int *seqs_l = new int[nref];
+    int *realnameidx = new int[nref];
     for(int i=0;i<fs->nref;i++){
       seqs[i] = fs->seqs[i];
       seqs_names[i] = fs->seqs_names[i];
       seqs_l[i] =fs->seqs_l[i];
+      realnameidx[i] = fs->realnameidx[i];
     }
     delete [] fs->seqs;
     delete [] fs->seqs_names;
     delete [] fs->seqs_l;
+    delete [] fs->realnameidx;
 
     fs->seqs = seqs;
     fs->seqs_names = seqs_names;
     fs->seqs_l = seqs_l;
+    fs->realnameidx = realnameidx;
     for(int i=1;i<ploidy;i++) {
       snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[chr_idx],i);
       fprintf(stderr,"Allocating extra space space space\n");
@@ -77,6 +81,7 @@ void add_variant(fasta_sampler *fs, int chr_idx,int pos,char **alleles, int32_t 
       fs->seqs_names[fs->nref+i-1] = strdup(buf);
       fs->seqs_l[fs->nref+i-1] = fs->seqs_l[chr_idx];
       fs->char2idx[fs->seqs_names[fs->nref+i-1]] =fs->nref+i-1;
+      fs->realnameidx[fs->nref+i-1] = chr_idx;
     }
     fs->nref = nref;
   }
