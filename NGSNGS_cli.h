@@ -6,7 +6,6 @@
 #include "HelpPage.h"
 enum outputformat_e {unknownT, faT, fagzT, fqT, fqgzT, samT, bamT,cramT };
 enum seqtype_e {unknownTT, SE,PE};
-enum variant_e {unknownTTT,snp,indel,all};
 enum dist_e {unknownDist,Uni,Norm,LogNorm,Pois,Exp,Gam};
 enum poly_nt {unknownNt,A,G,C,T,N};
 
@@ -33,9 +32,7 @@ typedef struct{
   const char *Poly; // should poly be added possible values -p G or -p A
   const char *Chromosomes; //for subsetting chromosome of interested, -chr chrX
   int rng_type; //RNG type, drand48 or rand or drand48_r etc
-  const char *Variant; // filename for bcf
-  const char *Variant_type; //-v SNP -v INDEL
-  char *VariantFlag; //bcf
+  const char *vcffile; // filename for bcf
   char *CommandRun; // actual command run in same order
   const char* HeaderIndiv; //samplename from VCF/BCF file
   const char* NoAlign;// This option is cool, but explaining it takes up to much space in comment

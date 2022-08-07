@@ -263,9 +263,6 @@ int main(int argc,char **argv){
       ErrMsg(12.0);
       exit(0);
     }
-    
-    char* Variant_flag =NULL;
-    const char* VariantFile = mypars->Variant;
 
     int DeamLength = 0;
 
@@ -274,7 +271,7 @@ int main(int argc,char **argv){
                       Param,DoBriggs,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,
                       qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->CompressThreads,QualStringFlag,Polynt,
                       mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
-                      VariantFile,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,NoAlign,mypars->KstrBuf);
+                      mypars->vcffile,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,NoAlign,mypars->KstrBuf);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));
@@ -291,8 +288,7 @@ int main(int argc,char **argv){
   //free((char*)mypars->Chromosomes);
 
   // OPTIONAL DEALLOCATIONS
-  free((char *)mypars->Variant);
-  free((char *)mypars->Variant_type);
+  free((char *)mypars->vcffile);
   free((char *)mypars->HeaderIndiv);
   free((char *)mypars->Adapter1);
   free((char *)mypars->Adapter2);

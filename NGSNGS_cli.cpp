@@ -33,8 +33,7 @@ argStruct *getpars(int argc,char ** argv){
   // 3) misincorporation matrix
   mypars->SubProfile = NULL;
   // 4) Bcf file and variation incorporation
-  mypars->Variant = NULL;
-  mypars->Variant_type = NULL; // enum variant_e {unknownTTT,snp,indel,all}; unknownTTT
+  mypars->vcffile = NULL;
 
   // Fragment lengths 
   mypars->Length = 0;
@@ -63,16 +62,8 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-bcf",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
-      mypars->Variant = strdup(*(++argv));
-      strcat(Command,mypars->Variant); strcat(Command," ");
-    }
-    else if(strcasecmp("-v",*argv)==0 || strcasecmp("--variant",*argv)==0){
-      strcat(Command,*argv); strcat(Command," ");
-      mypars->Variant_type = strdup(*(++argv));
-      strcat(Command,mypars->Variant_type); strcat(Command," ");
-      if(mypars->Variant == NULL){ErrMsg(13.0);}
-      else if (mypars->Variant_type && strcasecmp("snp",mypars->Variant_type)!=0){ErrMsg(13.5); exit(0);}
-      // else if (mypars->Variant_type && strcasecmp("snp",mypars->Variant_type)!=0 && strcasecmp("indel",mypars->Variant_type)!=0 && strcasecmp("all",mypars->Variant_type)!=0){ErrMsg(13.5); exit(0);}        
+      mypars->vcffile = strdup(*(++argv));
+      strcat(Command,mypars->vcffile); strcat(Command," ");
     }
     else if(strcasecmp("-t",*argv)==0 || strcasecmp("--threads",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
