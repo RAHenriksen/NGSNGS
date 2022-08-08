@@ -20,6 +20,7 @@ struct ltstr
 
 typedef std::map<const char *,int,ltstr> char2int;
 
+typedef std::map<int,int*> ploidymap;
 
 typedef struct{
   faidx_t *fai;
@@ -31,6 +32,7 @@ typedef struct{
   ransampl_ws *ws;
   char2int char2idx;
   int *realnameidx;
+  ploidymap  pldmap; 
 }fasta_sampler;
 
 fasta_sampler *fasta_sampler_alloc(const char *,const char *);

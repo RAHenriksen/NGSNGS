@@ -5,6 +5,7 @@
 typedef struct{
   int rid;
   int pos;
+  int *gt;
 }bcfkey;
 
 struct bcfkey_cmp
@@ -25,7 +26,7 @@ int verbose2000 = 0;
 int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
   int seqnames_l;
   const char **bcf_chrom_names = bcf_hdr_seqnames(bcf_hdr,&seqnames_l);
-  fprintf(stderr,"Raw number of contigs from bcf: %d\n",seqnames_l);
+  fprintf(stderr,"\t-> Raw number of contigs from bcf: %d\n",seqnames_l);
 
   std::map<int,int> res;
   int max_l = -1;
@@ -57,7 +58,6 @@ int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
 }
 
 int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
-  
   int isThere  = 1;
   char buf[1024];
   for(int i=1;i<ploidy;i++){
@@ -68,11 +68,13 @@ int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
   }
   //its not there lets add it
   if(isThere == 0){
+    fprintf(stderr,"\t[%s] Will duplicate chromosomes to emulate parental chromosomes\n",__FUNCTION__);
     int nref = fs->nref+ploidy-1;
     char **seqs = (char**) new char*[nref];
     char **seqs_names = (char**) new char*[nref];
     int *seqs_l = new int[nref];
     int *realnameidx = new int[nref];
+    int *pldmap = new int[5];
     for(int i=0;i<fs->nref;i++){
       seqs[i] = fs->seqs[i];
       seqs_names[i] = fs->seqs_names[i];
@@ -88,38 +90,124 @@ int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
     fs->seqs_names = seqs_names;
     fs->seqs_l = seqs_l;
     fs->realnameidx = realnameidx;
+    ploidymap::iterator it = fs->pldmap.find(fs_chr_idx);
+    assert(it==fs->pldmap.end());
+    pldmap[0] = fs_chr_idx;
     for(int i=1;i<ploidy;i++) {
       snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[fs_chr_idx],i);
-      fprintf(stderr,"Allocating extra space space space\n");
+      fprintf(stderr,"\t-> Allocating extra chromsome for %s\n",buf);
       fs->seqs[fs->nref+i-1] = strdup(seqs[fs_chr_idx]);
       fs->seqs_names[fs->nref+i-1] = strdup(buf);
       fs->seqs_l[fs->nref+i-1] = fs->seqs_l[fs_chr_idx];
       fs->char2idx[fs->seqs_names[fs->nref+i-1]] =fs->nref+i-1;
       fs->realnameidx[fs->nref+i-1] = fs_chr_idx;
+      pldmap[i] = fs->nref+i-1;
     }
+    fs->pldmap[fs_chr_idx]  = pldmap;
     fs->nref = nref;
+    fprintf(stderr,"\t[%s] Done duplicating chromosomes to emulate parental chromosomes\n",__FUNCTION__);
   }
-
   return 0;
 }
 
 void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
-  int offsets[2][ploidy];
-  int last_rid = -1;
+  int last[ploidy];
+  int last_fid = -1;
   int reset = 1;
+  char buf[1024];
+  int maxsize = -1;
+  int *fsoffsets = NULL;
+  for(int i=0;i<fs->nref;i++)
+    if(fs->seqs_l[i]>maxsize)
+      maxsize= fs->seqs_l[i];
+
+  maxsize += 1000;//this should be enough and never need to reallocate;
+
+  char **elephant =new char*[ploidy];
+  for(int i=0;i<ploidy;i++)
+    elephant[i] =(char*) calloc(maxsize,sizeof(char));
   
-  for(bcfmap::iterator it=mybcfmap.begin();it!=mybcfmap.end();it++)
+  
+  for(bcfmap::iterator it=mybcfmap.begin();0&&it!=mybcfmap.end();it++){
     fprintf(stderr,"%d %d\n",it->first.rid,it->first.pos);
+   
+  }
 
   for(bcfmap::iterator it=mybcfmap.begin();it!=mybcfmap.end();it++){
-    if(it->first.rid!=last_rid)
+    for(int i=0;0&&i<ploidy;i++)
+      fprintf(stderr,"[%s] gt[%d]: %d\n",__FUNCTION__,i,it->first.gt[i]);
+    if(it->first.rid!=last_fid){
+      last_fid = it->first.rid;
       reset = 1;
+    }
 
     if(reset){
+      if(fsoffsets!=NULL){
+	for(int i=0;i<ploidy;i++){
+	  //	  fprintf(stderr,"flushing [%d] last:%d elephant: %s\n",i,last[i],elephant[i]);
 
+	  strcat(elephant[i],fs->seqs[fsoffsets[i]]+last[i]);
+	  fs->seqs_l[fsoffsets[i]] = strlen(elephant[i]);
+	  delete [] fs->seqs[i];
+	  fs->seqs[i] = elephant[i];
+	}
 
+      }
+      
+      ploidymap::iterator it = fs->pldmap.find(last_fid);
+      assert(it!=fs->pldmap.end());
+      fsoffsets = it->second;
+      for(int i=0;i<ploidy;i++)
+	last[i] = 0;
+      reset = 0;
+    }
+
+    bcf1_t *brec = it->second;
+    bcf_unpack(brec, BCF_UN_ALL);
+    //we now loop over mother, father and other parental chromosomes
+    for(int i=0;i<ploidy;i++){
+      //first copy contigous block from last operator
+      assert(strlen(elephant[i])+brec->pos-last[i]< maxsize );//funky assert
+      strncat(elephant[i],fs->seqs[fsoffsets[i]]+last[i],brec->pos-last[i]);
+      char *allele = NULL;
+      allele = it->second->d.allele[it->first.gt[i]];
+      assert(allele!=NULL);
+      
+      //its a deletion if strlen(d.allele[0])>1
+      int isdel = 0;
+      if(it->first.gt[i]==0&&strlen(allele)>1)
+	isdel = strlen(allele);
+#if 0
+      if(isdel)
+	fprintf(stderr,"site: %d,%lld is deletion allele:%s\n",it->first.pos,it->second->pos,allele);
+      if(isdel==0)
+	fprintf(stderr,"site: %d,%lld is insertion allele:%s\n",it->first.pos,it->second->pos,allele);
+#endif
+      last[i] = brec->pos+1;
+      
+      if(isdel)//is deletion then we just skip the number of bases
+	last[i] += strlen(allele);
+      if(isdel==0){
+	//	fprintf(stderr,"before:\t%s\n",elephant[i]);
+	assert(strlen(elephant[i])+strlen(allele)<strlen(elephant[i])+maxsize);
+	//fprintf(stderr,"inserting allele: %s\n",allele);
+	strncat(elephant[i],allele,strlen(allele));
+	//fprintf(stderr,"after:\t%s\n",elephant[i]);
+      }
     }
   }
+  if(fsoffsets!=NULL){
+    for(int i=0;i<ploidy;i++){
+      //      fprintf(stderr,"flushing [%d] last:%d\n",i,last[i]);
+      
+      strcat(elephant[i],fs->seqs[fsoffsets[i]]+last[i]);
+      fs->seqs_l[fsoffsets[i]] = strlen(elephant[i]);
+      delete [] fs->seqs[i];
+      fs->seqs[i] = elephant[i];
+    }
+  }
+
+ 
 }
 
 //fasta sampler struct, index for chromosomenaem, position, the alleles, the genotypes and the ploidy. 
@@ -140,6 +228,7 @@ void add_variant(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32
       char2int::iterator it = fs->char2idx.find(buf);
       assert(it!=fs->char2idx.end());
       fs->seqs[it->second][pos] = alleles[bcf_gt_allele(gts[i])][0];
+      
     }
   }
   
@@ -199,14 +288,17 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
 
     //figure out if its an indel
     int isindel  = 0;
-    for(int i=0;i<inferred_ploidy;i++)
+    bcfkey key;
+    key.gt = new int[inferred_ploidy];
+    for(int i=0;i<inferred_ploidy;i++){
+      key.gt[i] = bcf_gt_allele(mygt[i]);
       if(strlen(brec->d.allele[bcf_gt_allele(mygt[i])])>1)
 	isindel =1;
+    }
     if(isindel==0)
       add_variant(fs,fai_chr,brec->pos,brec->d.allele,mygt,inferred_ploidy);
     else{
       fprintf(stderr,"\t-> Found an indel as rid: %d pos:%lld\n",brec->rid,brec->pos);
-      bcfkey key;
       key.rid=fai_chr;
       key.pos= (int) brec->pos;
       bcf1_t *duped= bcf_dup(brec);
