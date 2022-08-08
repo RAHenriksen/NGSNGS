@@ -147,12 +147,10 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-ne",*argv)==0 || strcasecmp("--noerror",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
       mypars->DoSeqErr = 0;//"F";
-      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-na",*argv)==0 || strcasecmp("--noalign",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
       mypars->NoAlign = "T";
-      strcat(Command,*argv); strcat(Command," ");
     }
     else if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");

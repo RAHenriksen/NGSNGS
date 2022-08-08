@@ -226,7 +226,7 @@ void* Sampling_threads(void *arg){
     }
       
     
-    sprintf(READ_ID,"T%d_RID%d_S%d_%s:%d-%d_length:%d", struct_obj->threadno, rand_id,strandR1,chr,posB,posE,fraglength);
+    sprintf(READ_ID,"T%d_RID%d_S%d_%s:%d-%d_length:%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength);
     
     int nsofts[2] = {0,0};//this will contain the softclip information to be used by sam/bam/cram out
     //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail
@@ -344,7 +344,7 @@ void* Sampling_threads(void *arg){
       min_beg = posB;
       max_end = posE;
       hts_pos_t min_beg_mate, max_end_mate;
-      insert = max_end - min_beg + 1;
+      insert = max_end - min_beg;
       /*if (PE==struct_obj->SeqType)
         insert = max_end - min_beg + 1;
       else
@@ -380,11 +380,11 @@ void* Sampling_threads(void *arg){
       //we have set the parameters accordingly above for no align and PE
       //fprintf(stderr,"chr idx %d \t chr_max %d \t chr_insert %d\n",chr_idx_mate,chr_max_end_mate,insert_mate);
       bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx,min_beg,mapq,
-            n_cigar[0],AlignCigar[0],chr_idx_mate,chr_max_end_mate,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
+            n_cigar[0],AlignCigar[0],chr_idx_mate,chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
       //exit(0);
       //write PE also
       if (PE==struct_obj->SeqType){
-        bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx,max_end,mapq,
+        bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx,max_end-1,mapq,
           n_cigar[1],AlignCigar[1],chr_idx,min_beg,0-insert_mate,strlen(seq_r2),seq_r2,qual_r2,l_aux);
       }
     
