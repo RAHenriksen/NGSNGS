@@ -183,16 +183,20 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
       if(isdel==0)
 	fprintf(stderr,"site: %d,%lld is insertion allele:%s\n",it->first.pos,it->second->pos,allele);
 #endif
-      last[i] = brec->pos+1;
+
       
-      if(isdel)//is deletion then we just skip the number of bases
-	last[i] += strlen(allele);
+      if(isdel){
+	//is deletion then we just skip the number of bases
+	fprintf(stderr,"In deletion, will skip reference position: %zu\n",strlen(allele));
+	last[i] = brec->pos+ strlen(allele);
+      }
       if(isdel==0){
 	//	fprintf(stderr,"before:\t%s\n",elephant[i]);
 	assert(strlen(elephant[i])+strlen(allele)<strlen(elephant[i])+maxsize);
 	//fprintf(stderr,"inserting allele: %s\n",allele);
 	strncat(elephant[i],allele,strlen(allele));
 	//fprintf(stderr,"after:\t%s\n",elephant[i]);
+	last[i] = brec->pos+1;
       }
     }
   }
