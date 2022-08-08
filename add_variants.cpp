@@ -1,5 +1,25 @@
+#include <map>
 #include <htslib/vcf.h>
 #include "fasta_sampler.h"
+
+typedef struct{
+  int rid;
+  int pos;
+}bcfkey;
+
+struct bcfkey_cmp
+{
+  bool operator()(bcfkey s1,bcfkey s2) const
+  {
+    if(s1.rid==s2.rid)
+      return s1.pos<s2.pos;
+    return s1.rid<s2.rid;
+  }
+};
+
+//NBNB notice that proper rid is NOT bcf1_t->rid but bcfkey->rid which has been shifted relative to fs
+typedef std::map<bcfkey,bcf1_t*,bcfkey_cmp> bcfmap;
+
 
 int verbose2000 = 0;
 int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
@@ -36,18 +56,12 @@ int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
   return lookup;
 }
 
-//fasta sampler struct, index for chromosomenaem, position, the alleles, the genotypes and the ploidy. 
-void add_variant(fasta_sampler *fs, int chr_idx,int pos,char **alleles, int32_t *gts, int ploidy){
-  //  fprintf(stderr,"Adding genotype informaiton for chromosome: %s pos: %d\n",fs->seqs_names[chr_idx],pos);
-  char ref = fs->seqs[chr_idx][pos];
-  for(int i=0;0&&i<ploidy;i++){
-    fprintf(stderr,"%d) gt: %d and GT alleles are  '%s' (first one should be reference?)\n",i,gts[i],alleles[i]);
-  }
-  //first check if all parental chromosomes exists
+int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
+  
   int isThere  = 1;
   char buf[1024];
   for(int i=1;i<ploidy;i++){
-    snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[chr_idx],i);
+    snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[fs_chr_idx],i);
     char2int::iterator it= fs->char2idx.find(buf);
     if(it==fs->char2idx.end())
       isThere  = 0;
@@ -75,26 +89,57 @@ void add_variant(fasta_sampler *fs, int chr_idx,int pos,char **alleles, int32_t 
     fs->seqs_l = seqs_l;
     fs->realnameidx = realnameidx;
     for(int i=1;i<ploidy;i++) {
-      snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[chr_idx],i);
+      snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[fs_chr_idx],i);
       fprintf(stderr,"Allocating extra space space space\n");
-      fs->seqs[fs->nref+i-1] = strdup(seqs[chr_idx]);
+      fs->seqs[fs->nref+i-1] = strdup(seqs[fs_chr_idx]);
       fs->seqs_names[fs->nref+i-1] = strdup(buf);
-      fs->seqs_l[fs->nref+i-1] = fs->seqs_l[chr_idx];
+      fs->seqs_l[fs->nref+i-1] = fs->seqs_l[fs_chr_idx];
       fs->char2idx[fs->seqs_names[fs->nref+i-1]] =fs->nref+i-1;
-      fs->realnameidx[fs->nref+i-1] = chr_idx;
+      fs->realnameidx[fs->nref+i-1] = fs_chr_idx;
     }
     fs->nref = nref;
   }
 
+  return 0;
+}
+
+void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
+  int offsets[2][ploidy];
+  int last_rid = -1;
+  int reset = 1;
+  
+  for(bcfmap::iterator it=mybcfmap.begin();it!=mybcfmap.end();it++)
+    fprintf(stderr,"%d %d\n",it->first.rid,it->first.pos);
+
+  for(bcfmap::iterator it=mybcfmap.begin();it!=mybcfmap.end();it++){
+    if(it->first.rid!=last_rid)
+      reset = 1;
+
+    if(reset){
+
+
+    }
+  }
+}
+
+//fasta sampler struct, index for chromosomenaem, position, the alleles, the genotypes and the ploidy. 
+void add_variant(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32_t *gts, int ploidy){
+  //  fprintf(stderr,"Adding genotype informaiton for chromosome: %s pos: %d\n",fs->seqs_names[chr_idx],pos);
+  char buf[1024];
+  char ref = fs->seqs[fs_chr_idx][pos];
+  for(int i=0;0&&i<ploidy;i++){
+    fprintf(stderr,"%d) gt: %d and GT alleles are  '%s' (first one should be reference?)\n",i,bcf_gt_allele(gts[i]),alleles[i]);
+  }
+  
   //now lets add snp
   for(int i=0;i<ploidy;i++){
     if(i==0)
-      fs->seqs[chr_idx][pos] = alleles[gts[i]][0];
+      fs->seqs[fs_chr_idx][pos] = alleles[bcf_gt_allele(gts[i])][0];
     else{
-      snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[chr_idx],i);
+      snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[fs_chr_idx],i);
       char2int::iterator it = fs->char2idx.find(buf);
       assert(it!=fs->char2idx.end());
-      fs->seqs[it->second][pos] = alleles[gts[i]][0];
+      fs->seqs[it->second][pos] = alleles[bcf_gt_allele(gts[i])][0];
     }
   }
   
@@ -107,7 +152,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
   htsFile *bcf = bcf_open(bcffilename, "r");
   bcf_hdr_t *bcf_head = bcf_hdr_read(bcf);
   bcf1_t *brec = bcf_init();
-  int whichsample=-1;//if minus one then ref and alt fields are used, if nonnegative then it is used as offset to which genotype to use from the GT fields
+  int whichsample=0;//if minus one then ref and alt fields are used, if nonnegative then it is used as offset to which genotype to use from the GT fields
   //map chromosomenames in bcf to index in fastafile
   int max_l;
   int *bcf_idx_2_fasta_idx = mapper(bcf_head,fs->char2idx,max_l);
@@ -116,8 +161,10 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
   int32_t ngt_arr = 0;     
   int32_t *gt_arr = NULL;
   int ngt;
-  int inferred_ploidy =2;//assume ploidy is two.
-  int32_t nodatagt[2] = {0,1};
+  int inferred_ploidy =5;//assume max ploidy is five, this will be adjusted when parsing data
+  int32_t nodatagt[5] = {0,1,0,0,0};
+  inferred_ploidy = 2;
+  bcfmap mybcfmap;
   
   while(((ret=bcf_read(bcf,bcf_head,brec)))==0){
     bcf_unpack((bcf1_t*)brec, BCF_UN_ALL);
@@ -127,21 +174,49 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
       fprintf(stderr,"chrname: %s does not exists in fasta reference\n",bcf_hdr_id2name(bcf_head,brec->rid));
       exit(0);
     }
-    
     if(whichsample!=-1){
       ngt = bcf_get_genotypes(bcf_head, brec, &gt_arr, &ngt_arr);
       assert((ngt %nsamples)==0);
       inferred_ploidy = ngt/nsamples;
     }
+#if 0
     fprintf(stderr,"nallele: %d\n",brec->n_allele);
+    for(int i=0;i<brec->n_allele;i++)
+      fprintf(stderr,"nal:%d %s %zu\n",i,brec->d.allele[i],strlen(brec->d.allele[i]));
+#endif
     if(brec->n_allele==1){
       fprintf(stderr,"\t-> Only Reference allele defined for pos: %lld will skip\n",brec->pos+1);
       continue;
     }
-    if(whichsample!=-1)
-      add_variant(fs,brec->rid,brec->pos,brec->d.allele,gt_arr+inferred_ploidy*whichsample,inferred_ploidy);
+    //check if parental chromosomes exists otherwise add them
+    extend_fasta_sampler(fs,fai_chr,inferred_ploidy);
+    
+    int32_t *mygt=NULL;
+    if(whichsample==-1)
+      mygt = nodatagt;
     else
-      add_variant(fs,brec->rid,brec->pos,brec->d.allele,nodatagt,inferred_ploidy);
+      mygt = gt_arr+inferred_ploidy*whichsample;
+
+    //figure out if its an indel
+    int isindel  = 0;
+    for(int i=0;i<inferred_ploidy;i++)
+      if(strlen(brec->d.allele[bcf_gt_allele(mygt[i])])>1)
+	isindel =1;
+    if(isindel==0)
+      add_variant(fs,fai_chr,brec->pos,brec->d.allele,mygt,inferred_ploidy);
+    else{
+      fprintf(stderr,"\t-> Found an indel as rid: %d pos:%lld\n",brec->rid,brec->pos);
+      bcfkey key;
+      key.rid=fai_chr;
+      key.pos= (int) brec->pos;
+      bcf1_t *duped= bcf_dup(brec);
+      mybcfmap[key] =duped;
+    }
+  }
+  fprintf(stderr,"\t-> Done adding snp variants\n");
+  if(mybcfmap.size()>0){
+    fprintf(stderr,"\t-> Found some indels, these will now be added to internal datastructures\n");
+    add_indels(fs,mybcfmap,bcf_head,inferred_ploidy);
   }
   fasta_sampler_setprobs(fs);
   bcf_hdr_destroy(bcf_head);
