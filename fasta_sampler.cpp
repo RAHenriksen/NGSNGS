@@ -5,6 +5,9 @@
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
 #include <htslib/vcf.h>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
 #define MAXBINS 100
 
 
@@ -96,7 +99,7 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
 char *sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength){
   chr_idx = ransampl_draw2(fs->ws,mrand_pop(mr),mrand_pop(mr));
   *chromoname = fs->seqs_names[chr_idx];
-  posB = abs(mrand_pop_long(mr)) % fs->seqs_l[chr_idx]+1;
+  posB = abs(mrand_pop_long(mr)) % fs->seqs_l[chr_idx]+20;
   posE = posB +fraglength;
   if(posE>fs->seqs_l[chr_idx]){
     posE=fs->seqs_l[chr_idx];

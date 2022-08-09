@@ -22,8 +22,10 @@ void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s,
     dtemp1 = mrand_pop(mr); dtemp2 = mrand_pop(mr);
     int l = 0;
     int r = L-1;
-
-    char seq_intermediate[1024] = {0};
+    //fprintf(stderr,"SEQUENCE \t %s\n",seq);
+    char seq_intermediate[1024];
+    //just to ensure no issues arise in case of not clearing out the intermediate sequence
+    memset(seq_intermediate, 0, sizeof seq_intermediate);
     strcpy(seq_intermediate,seq);
     //fprintf(stderr,"----------------------\n");
     //fprintf(stderr,"THE SEED IS %u and l : %d and r : %d\n",&seed,l,r);
@@ -112,6 +114,4 @@ void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s,
             seq[i] = seq_intermediate[i];
         }
     }
-  //just to ensure no issues arise in case of not clearing out the intermediate sequence
-  memset(seq_intermediate, 0, sizeof seq_intermediate);
 }

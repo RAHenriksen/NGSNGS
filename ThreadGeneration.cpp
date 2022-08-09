@@ -60,14 +60,14 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     add_variants(reffasta,VariantFile);
   
    //printout all
-  for(int i=0;i<reffasta->nref;i++)
+  /*for(int i=0;i<reffasta->nref;i++)
     for(int j=0;j<reffasta->seqs_l[i];j++)
-      fprintf(stderr,"INTERNAL\t%s\t%d\t%c\n",reffasta->seqs_names[i],j,reffasta->seqs[i][j]);
+      fprintf(stderr,"INTERNAL\t%s\t%d\t%c\n",reffasta->seqs_names[i],j,reffasta->seqs[i][j]);*/
   
   fasta_sampler_print(stderr,reffasta);
   
   fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome\n",reffasta->nref);
-  fprintf(stderr,"\t-> Chromsoome name first %s and length %d and full length %zu\n",reffasta->seqs_names[0],reffasta->seqs_l[0],reffasta->seq_l_total);
+  fprintf(stderr,"\t-> Chromosome name first %s and length %d and full length %zu\n",reffasta->seqs_names[0],reffasta->seqs_l[0],reffasta->seq_l_total);
 
 
   if (reffasta->seqs != NULL){

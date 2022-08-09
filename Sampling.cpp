@@ -78,8 +78,8 @@ void* Sampling_threads(void *arg){
   mrand_t *drand_alloc_nt_adapt = mrand_alloc(struct_obj->rng_type,loc_seed);
   mrand_t *drand_alloc_briggs = mrand_alloc(struct_obj->rng_type,loc_seed);
 
-  fprintf(stderr,"INSIDE SAMPLING THREADS\n");
-  fprintf(stderr,"-----------------------\nFASTA SAMPLER \n---------------------\n");
+  //fprintf(stderr,"INSIDE SAMPLING THREADS\n");
+  //fprintf(stderr,"-----------------------\nFASTA SAMPLER \n---------------------\n");
 
   char *seq;//actual sequence, this is unallocated
   int fraglength;
@@ -121,10 +121,6 @@ void* Sampling_threads(void *arg){
 
     memset(seq_r1, 0, sizeof seq_r1);
     memset(seq_r2, 0, sizeof seq_r2);
-      
-    //printing out every tenth of the runtime
-    if (current_reads_atom > 1 && current_reads_atom%moduloread == 0)
-      fprintf(stderr,"\t-> Thread %d roduced %zu reads with a current total of %zu\n",struct_obj->threadno,moduloread,current_reads_atom);
 
     //sample fragmentlength
     int fraglength = getFragmentLength(sf); //fraglength = abs(mrand_pop_long(drand_alloc)) % 1000;
@@ -157,6 +153,7 @@ void* Sampling_threads(void *arg){
       ||------R1------>,,,,,,,,,,|-------R2----->||
     */
     
+    //fprintf(stderr,"Current read %zu and max bases %d and fraglent %d  and coordinates %d \t %d \t seq length %d\n",current_reads_atom,maxbases,fraglength,posB,posE,strlen(seq_r1));
     //Selecting strand, 0-> forward strand (+) 5'->3', 1 -> reverse strand (-) 3'->5'
     //rename to strand to strandR1
     int strandR1 = mrand_pop(drand_alloc)>0.5?0:1; //int strand = (int) (rand_start%2);
@@ -176,6 +173,10 @@ void* Sampling_threads(void *arg){
     
     // generating sam output information
     int seqlen = strlen(seq_r1);
+
+    if(strlen(seq_r1) < 20)
+      continue;
+
     int SamFlags[2] = {-1,-1}; //flag[0] is for read1, flag[1] is for read2
     
     //now everything is the same strand as reference, which we call plus/+
@@ -418,6 +419,9 @@ void* Sampling_threads(void *arg){
     iter++;
     localread++;
     current_reads_atom++;
+    //printing out every tenth of the runtime
+    if (current_reads_atom > 1 && current_reads_atom%moduloread == 0)
+      fprintf(stderr,"\t-> Thread %d produced %zu reads with a current total of %zu\n",struct_obj->threadno,moduloread,current_reads_atom);
   }
   if (struct_obj->bgzf_fp[0]){
     if (struct_obj->fqresult_r1->l > 0){
