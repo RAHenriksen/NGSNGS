@@ -231,3 +231,27 @@ argStruct *getpars(int argc,char ** argv){
   //free(mypars->CommandRun)
   return mypars;
 }
+
+
+void argStruct_destroy(argStruct *mypars){
+  free(mypars->Reference); //-i
+  free(mypars->OutName);
+  free(mypars->LengthFile);
+  free(mypars->LengthDist);
+  
+  free(mypars->CommandRun);
+  if(mypars->Chromosomes)
+    free(mypars->Chromosomes);
+
+  // OPTIONAL DEALLOCATIONS
+  free(mypars->vcffile);
+  free(mypars->HeaderIndiv);
+  free(mypars->Adapter1);
+  free(mypars->Adapter2);
+  free(mypars->QualProfile1);
+  free(mypars->QualProfile2);
+  free(mypars->SubProfile);
+  free(mypars->Briggs);
+  free(mypars->Poly);
+  delete mypars;
+}

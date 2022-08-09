@@ -277,25 +277,5 @@ int main(int argc,char **argv){
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));
   }
 
-  // MEMORY DEALLOCATION OF STRDUP FROM INPUT PARAMETERS
-  // REQUIRED DEALLOCATIONS
-  free((char *)mypars->Reference); //-i
-  free((char *)mypars->OutName);
-  free((char *)mypars->LengthFile);
-  free((char *)mypars->LengthDist);
-  
-  free((char*)mypars->CommandRun);
-  //free((char*)mypars->Chromosomes);
-
-  // OPTIONAL DEALLOCATIONS
-  free((char *)mypars->vcffile);
-  free((char *)mypars->HeaderIndiv);
-  free((char *)mypars->Adapter1);
-  free((char *)mypars->Adapter2);
-  free((char *)mypars->QualProfile1);
-  free((char *)mypars->QualProfile2);
-  free((char *)mypars->SubProfile);
-  free((char *)mypars->Briggs);
-  free((char *)mypars->Poly);
-  delete mypars;
+  argStruct_destroy(mypars);
 }

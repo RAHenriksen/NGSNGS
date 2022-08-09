@@ -92,6 +92,8 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
     exit(0);
   }
   fasta_sampler_setprobs(fs);
+  for(int i=0;i<SubsetChr.size();i++)
+    free(SubsetChr[i]);
   return fs;
 }
 
@@ -119,7 +121,7 @@ void fasta_sampler_destroy(fasta_sampler *fs){
   delete [] fs->seqs_names;
   delete [] fs->seqs_l;
   delete [] fs->seqs;
-
+  delete [] fs->realnameidx;
   ransampl_free(fs->ws);
   delete fs;
 }
