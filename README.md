@@ -25,8 +25,8 @@ cd NGSNGS; make
 Next Generation Simulator for Next Generator Sequencing Data version 1.0.0 
 
 ~~~~bash
+Usage
 Next Generation Simulator for Next Generator Sequencing Data version 0.5.0 
-
 Usage
 ./ngsngs [options] -i <input_reference.fa> -r/-c <Number of reads or depth of coverage> -l/-lf <fixed length or length file> -seq <SE/PE> -f <output format> -o <output name prefix>
 
@@ -35,63 +35,63 @@ Example
 
 ./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t1 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -q2 Test_Examples/Qual_profiles/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut
 
-./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/DeamSubFile.txt -f fa -o MycoBactFaSEOut
+./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/MisincorpFile.txt -f fa -o MycoBactFaSEOut
 
--h   | --help: 			 Print help page.
+Parameters 
+
+-h   | --help: 				 Print help page.
 
 Required: 
 
--i   | --input: 		 Reference file in fasta format (.fa,.fasta) to sample reads.
--r   | --reads: 		 Number of reads to simulate, conflicts with -c option.
--c   | --coverage: 		 Depth of Coverage to simulate, conflics with -r option.
--l   | --length: 		 Fixed length of simulated fragments, conflicts with -lf & -ld option.
--lf  | --lengthfile: 		 CDF of a length distribution, conflicts with -l & -ld option.
--ld  | --lengthdist: 		 Discrete or continuous probability distributions, conflicts with -l & -lf option.
-	eg.	 Uni,40,180 || Norm,80,30 || LogNorm,4,1 || Pois,165 || Exp,0.025 || Gam,20,2
--seq | --sequencing: 		 Simulate single-end or paired-end reads.
-	 <SE>	 single-end 
- 	 <PE>	 paired-end.
--f   | --format: 		 File format of the simulated output reads.
-	 <fa||fasta||fa.gz||fasta.gz>		 Nucletide sequence w. different compression levels. 
- 	 <fq||fastq||fq.gz||fastq.gz>		 Nucletide sequence with corresponding quality score w. different compression levels. 
- 	 <sam||bam||cram>			 Sequence Alignment Map format w. different compression levels.
--o   | --output: 		 Prefix of output file name.
+-i   | --input: 			 Reference file in fasta format (.fa,.fasta) to sample reads.
+-r   | --reads: 			 Number of reads to simulate, conflicts with -c option.
+-c   | --coverage: 			 Depth of Coverage to simulate, conflics with -r option.
+-l   | --length: 			 Fixed length of simulated fragments, conflicts with -lf & -ld option.
+-lf  | --lengthfile: 			 CDF of a length distribution, conflicts with -l & -ld option.
+-ld  | --lengthdist: 			 Discrete or continuous probability distributions, conflicts with -l & -lf option.
+	<Uni,40,180 || Norm,80,30 || LogNorm,4,1 || Pois,165 || Exp,0.025 || Gam,20,2>
+-seq | --sequencing: 			 Simulate single-end <SE> or paired-end <PE> reads.
+	 <SE||PE>
+-f   | --format: 			 File format with different compression levels of the simulated output reads.
+	 <fa||fasta||fa.gz||fasta.gz>
+	 <fq||fastq||fq.gz||fastq.gz>		 
+	 <sam||bam||cram>
+-o   | --output: 			 Prefix of output file name.
 
 Optional: 
 
 Nucleotide Alterations: 
--bcf: 				 Binary Variant Calling Format (.bcf)
--v:  | --variant: 		 Specific variants to simulate
-	 eg.	 snp || indel. Default = all
--b   | --briggs: 		 Parameters for the damage patterns using the Briggs model.
+-bcf: 					 Binary Variant Calling Format (.bcf), only incorporates SNP's
+-id  | --indiv: 			 Unique ID for individual present in the bcf header
+-b   | --briggs: 			 Parameters for the damage patterns using the Briggs model.
 	 <nv,Lambda,Delta_s,Delta_d> : 0.024,0.36,0.68,0.0097 (from Briggs et al., 2007).
 	 nv: Nick rate pr site. 
  	 Lambda: Geometric distribution parameter for overhang length.
  	 Delta_s: PMD rate in single-strand regions.
  	 Delta_d: PMD rate in double-strand regions.
 -mf  | --mismatch: 			 Nucleotide substitution frequency file.
--ne  | --noerror: 		 Disabling the nucleotide subsitutions based on nucleotide qualities.
+-ne  | --noerror: 			 Disabling the nucleotide subsitutions based on nucleotide qualities.
 
 Read Specific: 
--chr | --chromosomes: 		 Specific chromosomes from input reference file.
--a1  | --adapter1: 		 Adapter sequence to add for simulated reads (SE) or first read pair (PE).
-	 e.g. Illumina TruSeq Adapter 1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG 
-
--a2  | --adapter2: 		 Adapter sequence to add for second read pair (PE). 
-	 e.g. Illumina TruSeq Adapter 2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT 
-
--p   | --poly: 			 Create Poly(X) tails for reads, containing adapters with lengths below the inferred readcycle length. 
- 	 e.g -p G or -p A 
--q1  | --quality1: 		 Read Quality profile for single-end reads (SE) or first read pair (PE).
--q2  | --quality2: 		 Read Quality profile for for second read pair (PE).
+-chr | --chromosomes: 			 Specific chromosomes from input reference file. NB! Used in conjunction with input reference genome.
+	 e.g -i Hg19 -chr chr2 
+-a1  | --adapter1: 			 Adapter sequence to add for simulated reads (SE) or first read pair (PE).
+	 e.g Illumina TruSeq Adapter 1: <AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG> 
+-a2  | --adapter2: 			 Adapter sequence to add for second read pair (PE). 
+	 e.g. Illumina TruSeq Adapter 2: <AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT> 
+-p   | --poly: 				 Create Poly(X) tails for reads, containing adapters (-a1, a2) with lengths below the inferred readcycle length. 
+ 	 <A||G||C||T||N>
+-q1  | --quality1: 			 Read Quality profile for single-end reads (SE) or first read pair (PE). NB! only required for output format different from fasta
+-q2  | --quality2: 			 Read Quality profile for for second read pair (PE). NB! only required for output format different from fasta
 
 Other: 
--t1  | --threads1: 		 Number of sampling threads, default = 1.
--t2  | --threads2: 		 Number of compression threads, default = 0.
--s   | --seed: 			 Random seed, default = current calendar time (s).
--rand: 				 Pseudo-random number generator, OS specific
-	 e.g. linux || unix -> drand48_r (-rand = 0), not available for MacOS.
-	 APPLE and MacOS (-rand = 1).
+-t1  | --threads1: 			 Number of sampling threads, default = 1.
+-t2  | --threads2: 			 Number of compression threads, default = 0.
+-na  | --noalign: 			 Disable the storage of alignment information for the sam||bam||cram formats.
+-s   | --seed: 				 Random seed, default = current calendar time (s).
+-bl  | --bufferlength: 			 Length of the nucleotide string returned to the buffer nedded to store in the output file, default = 30000000.
+-rnd | --random: 			 Pseudo-random number generator, OS specific
+	 e.g. linux || unix -> drand48_r (-rand = 0) || MacOS (-rand = 0) is altered to -rand 3.
 ~~~~
 
 ## Output format - FQ, SAM
@@ -159,11 +159,25 @@ The CDF of the fragment lengths of Ancient DNA.
 ~~~~
 
 ## EXAMPLE OF USAGE
-### Simulate Single-end reads, with deamination and fragment length distribution using several threads in a .bam format
+### Simulate Single-end reads, using a provided number of reads, deamination and fragment length distribution using several threads in a .bam format
 ~~~~bash
 ../ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 2 -s 1 -lf Test_Examples/Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut
 ~~~~
+### Simulate Paired-end reads, with a desired coverage, without sequencing errors, a fixed fragment length using several threads in a .fq format
+~~~~bash
+./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t1 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -q2 Test_Examples/Qual_profiles/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut
+~~~~
+### Simulate Single-end reads, using a provided number of reads, a fragment length poisson distribution generating nucleotide substitutions from a misincorporation file in a .fa format 
+~~~~bash
+./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/MisincorpFile.txt -f fa -o MycoBactFaSEOut
+~~~~
+
 
 ## MISC
-### ASome analysis requires MD tag
-samtools sort -@ 10 -m 2G MycoBactBamSEOut.bam -o MycoBactBamSEOut_sort.bam; samtools index MycoBactBamSEOut_sort.bam; samtools calmd -@ 10 -e -r -b MycoBactBamSEOut_sort.bam Test_Examples/Mycobacterium_leprae.fa.gz > MycoBactBamSEOut_sort_MD.bam; rm MycoBactBamSEOut_sort.bam.bai;rm MycoBactBamSEOut_sort.bam
+### Some analysis requires MD tag which can be added after simulations
+~~~~bash
+samtools sort -@ 10 -m 2G MycoBactBamSEOut.bam -o MycoBactBamSEOut_sort.bam; 
+samtools index MycoBactBamSEOut_sort.bam; 
+samtools calmd -@ 10 -e -r -b MycoBactBamSEOut_sort.bam Test_Examples/Mycobacterium_leprae.fa.gz > MycoBactBamSEOut_sort_MD.bam; 
+rm MycoBactBamSEOut_sort.bam.bai;rm MycoBactBamSEOut_sort.bam
+~~~~
