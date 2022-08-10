@@ -149,18 +149,14 @@ void* Sampling_threads(void *arg){
     double rand_val = mrand_pop(drand_alloc);
     rand_start = rand_val * (genome_len-300)+1; //genome_len-100000;
     double rand_val_len = mrand_pop(drand_alloc);
-    //std::cout << rand_val_len << std::endl;
     // Fragment length creation
     int fraglength;
     if (struct_obj->No_Len_Val != -1){
       // random start and length are not dependent on the same rand val
-      //fprintf(stderr,"Legth%f \n",mrand_pop(drand_alloc));
       int lengthbin = BinarySearch_fraglength(struct_obj->FragFreq,0, struct_obj->No_Len_Val - 1, rand_val_len);
       fraglength =  struct_obj->FragLen[lengthbin];
-      //fprintf(stderr,"rand val %f \t fraglent %d\n",rand_val,fraglength);
     }
     else{
-      //fprintf(stderr,"FIXED LENGTH \n");
       fraglength = struct_obj->FixedSize;
     } 
     if(strcasecmp("false",struct_obj->QualFlag)==0){
@@ -172,9 +168,7 @@ void* Sampling_threads(void *arg){
     //we need a new random value here otherwise the random ID would be the same for 
     //based on the fragment lengths
     double rand_val_id = mrand_pop(drand_alloc);
-    //int rand_id = (rand_val * fraglength-1); //100
     int rand_id = (rand_val_id * fraglength-1); //100
-    //fprintf(stderr,"Random val %f \t id %d\n",rand_val_id,rand_id);
     
     int chr_idx = 0;
     while (rand_start > struct_obj->size_cumm[chr_idx+1]){chr_idx++;}
@@ -188,8 +182,6 @@ void* Sampling_threads(void *arg){
         } // case 1
       else {strncpy(seq_r2,struct_obj->genome+rand_start-1,fraglength);}  // case 2
     }
-
-    //fprintf(stderr,"Chrindx %d \t chromosome name %s \t chromosome length %zu \t cumulative length %zu \t start pos %zu \n",chr_idx,struct_obj->names[chr_idx],struct_obj->size_cumm[chr_idx+1]-struct_obj->size_cumm[chr_idx],struct_obj->size_cumm[chr_idx+1],rand_start);
 
     //removes reads with NNN
     char * pch;
@@ -219,18 +211,14 @@ void* Sampling_threads(void *arg){
       // then all the same start pos would have the same strand no matter the chromosome?
       int strand = (int) (rand_start%2);//(int) rand_r(&loc_seed)%2;//1;//rand() % 2;
       
-      //fprintf(stderr,"STRAND %d \t random start %zu \t random start int %d \t modulo %zu\n",strand,rand_start,(int) rand_start, rand_start%2);
-
       if (struct_obj->SAMout){
         // in bam files the reads are all aligning to the forward strand, but the flags identify read property
         if (strcasecmp("SE",struct_obj->SeqType)==0){
           if (strand == 0){flag = 0;} // se read forward strand
           else{flag = 16;
-            //fprintf(stderr,"--------------\nFLAG IS %d\n ORIG\n%s \n",flag,seq_r1);
             // Simulate reads from the negative strand but change the orientation to 5' to 3' fragment
             DNA_complement(seq_r1);
             reverseChar(seq_r1,strlen(seq_r1));
-            //fprintf(stderr,"FIRST REV COMP\n%s \n",seq_r1);
           }
         }
         if (strcasecmp("PE",struct_obj->SeqType)==0 && strand == 0){
@@ -270,19 +258,6 @@ void* Sampling_threads(void *arg){
             MisMatchFile(seq_r2,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
           }
         }
-
-        //I chose not to add sequencing errors here, since we need the adapter to be added first.
-
-        // HERE WE USE SEQUENCING ERRORS TO CREATE SUBSTITUTIONS.
-        // ADD SEQUENCING ERROR HERE IN ORDER TO GET CORRECT ORIENATION OF THE ADDED NUCLEOTIDE SUBSTITUTIONS
-
-        // Due to real life empirical sam files and its specifications we need all single-end data to be from the positive strand, as such we need to 
-        // change the orientation and sequence for the reads from the reverse strand back to the forward strand.
-        
-        /*if (flag == 16 || flag == 81){
-          fprintf(stderr,"INSIDE DNA COMPLEMENT LOOP\n------------------\n");
-          DNA_complement(seq_r1);reverseChar(seq_r1);}
-        else if (flag == 97){DNA_complement(seq_r2);reverseChar(seq_r2);}*/  
       }
       else{
         // in fasta and fastq the sequences need to be on forward or reverse strand, i.e we need reverse complementary        
@@ -318,14 +293,10 @@ void* Sampling_threads(void *arg){
         }
 
         if(strcasecmp("true",struct_obj->SubFlag)==0){
-          //fprintf(stderr,"mismatch matrix %f \t %f \t %f \t %f \t %f \t %f \n",struct_obj->MisMatch[0],struct_obj->MisMatch[10],struct_obj->MisMatch[14],struct_obj->MisMatch[15],struct_obj->MisMatch[30],struct_obj->MisMatch[45]);
-          //fprintf(stderr,"SEQUENCE %s\n",seq_r1);
           MisMatchFile(seq_r1,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
-          // IS THIS THE WAY TO DO IT?
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             MisMatchFile(seq_r2,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
           }
-          //fprintf(stderr,"SEQUENCE %s\n",seq_r1);
         }
       }
       
@@ -369,7 +340,6 @@ void* Sampling_threads(void *arg){
             double dtemp1;double dtemp2;
             dtemp1 = mrand_pop(drand_alloc_nt_adapt);
             dtemp2 = mrand_pop(drand_alloc_nt_adapt);
-            //fprintf(stderr,"temp lol 1 %f \t temp 2 %f\n",dtemp1,dtemp2);
 
             int base = readadapt[p];
             int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
@@ -469,11 +439,8 @@ void* Sampling_threads(void *arg){
             sprintf(readadapt_err1, "%*s", (int)strlen(readadapt) - (int)strlen(seq_r1), readadapt+(int)strlen(seq_r1));
             sprintf(read_rc_sam1, "%.*s", (int)strlen(seq_r1), readadapt);
             DNA_complement(read_rc_sam1);reverseChar(read_rc_sam1,strlen(read_rc_sam1));
-            //fprintf(stderr,"string before \t\t %s \n",readadapt_rc_sam1);
             sprintf(readadapt_rc_sam1, "%s", read_rc_sam1);
-            //fprintf(stderr,"string after \t\t %s \n",readadapt_rc_sam1);
             strcat(readadapt_rc_sam1, readadapt_err1);
-            //fprintf(stderr,"string after II \t %s \n ----------------- \n",readadapt_rc_sam1);
             if (strcasecmp("PE",struct_obj->SeqType)==0){
               // the mate to flag 81 will be the second in pair on the forward strand - just to esnrue identical names
               sprintf(readadapt_rc_sam2, "%s",readadapt2);
@@ -489,13 +456,8 @@ void* Sampling_threads(void *arg){
             // type cast to int
             DNA_complement(read_rc_sam2);reverseChar(read_rc_sam2,strlen(read_rc_sam1)); // reverse complement sequence 2 
             
-            //fprintf(stderr,"string before \t\t %s \n",readadapt_rc_sam2);
             sprintf(readadapt_rc_sam2, "%s", read_rc_sam2);
-            //fprintf(stderr,"string after I \t\t %s \n",readadapt_rc_sam2);
             strcat(readadapt_rc_sam2, readadapt_err2);
-            //fprintf(stderr,"string after II\t\t %s \n",readadapt_rc_sam2);
-            //sprintf(readadapt_rc_sam2, "%s%s", read_rc_sam2,readadapt_err2); // create rev comp sequence 2 + adapter
-
           }
 
           if (struct_obj->PolyNt != 'F'){
@@ -522,27 +484,22 @@ void* Sampling_threads(void *arg){
           if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,">%s_R2\n%s\n",READ_ID,seq_r2);}
         }
         if (strcasecmp(struct_obj -> OutputFormat,"fq")==0|| strcasecmp(struct_obj -> OutputFormat,"fq.gz")==0){
-          //fprintf(stderr,"TEST FQ BC%s\n",qual_r1);
           for(long unsigned int p = 0;p<strlen(seq_r1);p++){
             double dtemp1;double dtemp2;
             dtemp1 = mrand_pop(drand_alloc_nt);
             dtemp2 = mrand_pop(drand_alloc_nt);
 
-            //fprintf(stderr,"NOT ADAPTER tmp1 %f\t%f\n",dtemp1,dtemp2);
             int base = seq_r1[p];
             int qscore = ransampl_draw2(struct_obj->QualDist_r1[nuc2int[base]][p],dtemp1,dtemp2);
             qual_r1[p] = struct_obj->NtQual_r1[qscore];
 
             if (struct_obj->ErrorFlag == 'T'){
-              //fprintf(stderr,"ERROFRFLAG %c\n",struct_obj->ErrorFlag);
               double dtemp3;double dtemp4;
               dtemp3 = mrand_pop(drand_alloc_nt);
               dtemp4 = mrand_pop(drand_alloc_nt);
-              //fprintf(stderr,"temp lol 3 %f \t temp 4 %f\n----------------\n",dtemp3,dtemp4);
               if (dtemp3 < struct_obj->NtErr_r1[qscore]){ErrorSub(dtemp4,seq_r1,p);}
             }
           }
-          //fprintf(stderr,"TEST FQ AC%s\n",qual_r1);
           ksprintf(struct_obj->fqresult_r1,"@%s_R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){
             for(int p = 0;p<seqlen;p++){
@@ -605,11 +562,9 @@ void* Sampling_threads(void *arg){
               }
             }
           }
-          //fprintf(stderr,"AFTER SEQ ERR \n%s \n",seq_r1);
           if (flag == 16 || flag == 81){DNA_complement(seq_r1);reverseChar(seq_r1,strlen(seq_r1));}
           else if (flag == 97){DNA_complement(seq_r2);reverseChar(seq_r2,strlen(seq_r2));}  
           ksprintf(struct_obj->fqresult_r1,"%s",seq_r1);
-          //fprintf(stderr,"SAVE OUTPUT \n%s \n",seq_r1);
           if (strcasecmp("PE",struct_obj->SeqType)==0){ksprintf(struct_obj->fqresult_r2,"%s",seq_r2);}
         }
       }
@@ -673,7 +628,6 @@ void* Sampling_threads(void *arg){
           }
         }
         else if (strcasecmp("SE",struct_obj->SeqType)==0){
-          //fprintf(stderr,"READID v2 %s\n",READIDR1);
           if (struct_obj->NoAlign == 'T'){
             bam_set1(struct_obj->list_of_reads[struct_obj->l++],read_id_length+strlen(suffR1),READIDR1,4,-1,-1,
             255,n_cigar_unmap,cigar_unmap,-1,-1,0,strlen(struct_obj->fqresult_r1->s),struct_obj->fqresult_r1->s,NULL,0);
@@ -692,7 +646,6 @@ void* Sampling_threads(void *arg){
         if (struct_obj->l < struct_obj->m){   
           pthread_mutex_lock(&Fq_write_mutex);
           for (int k = 0; k < struct_obj->l; k++){
-            //fprintf(stderr,"INSIDE FOR LOOP WITH ASSERTION\n");
             assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) != assert_int);
           }
           pthread_mutex_unlock(&Fq_write_mutex);
@@ -702,8 +655,6 @@ void* Sampling_threads(void *arg){
         struct_obj->fqresult_r2->l =0;
       }
       
-      //fprintf(stderr,"Thread %d \tlocal read number %d \t current read %d \t reads %d\n",struct_obj->threadno,localread,current_reads_atom,reads);
-      //fprintf(stderr,"The seq %s \t qual %s \n",seq_r1,qual_r1);
       memset(qual_r1, 0, sizeof qual_r1); 
       memset(qual_r2, 0, sizeof qual_r2);  
       memset(seq_r1, 0, sizeof seq_r1);
@@ -755,8 +706,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
                         const char* MisMatchFlag,const char* SubProfile,int MisLength,int RandMacro,const char *VCFformat,char* Variant_flag,const char *VarType,
                         char CommandArray[1024],const char* version,const char* HeaderIndiv,const char* NoAlign,size_t BufferLength){
   //creating an array with the arguments to create multiple threads;
-  //fprintf(stderr,"Random MacIntType %d\n",MacroRandType);
-  //fprintf(stderr,"\t-> Command 3 : %s \n",CommandArray);
+
   int nthreads=thread_no;
   pthread_t mythreads[nthreads];
 
@@ -770,7 +720,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
   char *genome_data;
   if (Specific_Chr[0] != NULL){
     while (Specific_Chr[chr_total]){
-      std::cout << " lol " << chr_total << std::endl;
       chr_total++;
       }
   }
@@ -782,8 +731,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
   int chr_sizes[chr_total];
   int chr_idx_arr[chr_total];
   size_t chr_size_cumm[chr_total+1];
-  /*fprintf(stderr,"Chromosome count %d\n",chr_total);
-  fprintf(stderr,"DONE WITH LOOP\n");*/
   
   if (chr_total < faidx_nseq(seq_ref)){
     for (int j = 0; j < faidx_nseq(seq_ref); j++){
@@ -808,11 +755,7 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
       genome_data = full_genome_create(seq_ref,chr_total,chr_sizes,chr_names,chr_size_cumm);
     }  
     else{
-      fprintf(stderr,"Generating partial\n");
-      std::cout << chr_total << " " << faidx_nseq(seq_ref) << std::endl;
-      fprintf(stderr,"chr total %d \t specific chr %s\n",chr_total,Specific_Chr[0]);
       genome_data = partial_genome_create(seq_ref,chr_total-1,chr_sizes,Specific_Chr,chr_size_cumm);
-      fprintf(stderr,"Generating done\n");
       for (int i = 0; i < chr_total; i++){
         chr_names[i] = Specific_Chr[i];
       }
@@ -845,7 +788,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
     const char *mode;
     int alnformatflag = 0;
     if(strcasecmp("fa",OutputFormat)==0){
-      //fprintf(stderr,"\t-> FA SE FILE\n");
       mode = "wu";
       if(strcasecmp("SE",SeqType)==0){suffix1 = ".fa";}
       else{suffix1 = "_R1.fa";suffix2 = "_R2.fa";}
@@ -856,7 +798,6 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
       else{suffix1 = "_R1.fa.gz";suffix2 = "_R2.fa.gz";}
     }
     else if(strcasecmp("fq",OutputFormat)==0){
-      //fprintf(stderr,"\t-> FQ SE FILE\n");
       mode = "wu";
       if(strcasecmp("SE",SeqType)==0){suffix1 = ".fq";}
       else{suffix1 = "_R1.fq";suffix2 = "_R2.fq";}
@@ -867,13 +808,11 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
       else{suffix1 = "_R1.fq.gz";suffix2 = "_R2.fq.gz";}
     }
     else if(strcasecmp("sam",OutputFormat)==0){
-      //fprintf(stderr,"\t-> SAM SE FILE\n");
       mode = "ws";
       suffix1 = ".sam";
       alnformatflag++;
     }
     else if(strcasecmp("bam",OutputFormat)==0){
-      //fprintf(stderr,"\t-> BAM SE FILE\n");
       mode = "wb";//"wc";
       suffix1 = ".bam"; //".cram";
       alnformatflag++;
@@ -885,22 +824,18 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
     }
     else{fprintf(stderr,"\t-> Fileformat is currently not supported \n");}
     strcat(file1,suffix1);
-    //fprintf(stderr,"\t-> Compression level for file %s and writing mode %s \n",OutputFormat,mode);
 
     fprintf(stderr,"\t-> File output name is %s\n",file1);
     const char* filename1 = file1;
     const char* filename2 = NULL;
 
     if(alnformatflag == 0){
-      //fprintf(stderr,"not bam loop \n");
       int mt_cores = threadwriteno;
       int bgzf_buf = 256;
       
       bgzf_fp1 = bgzf_open(filename1,mode); //w
-      //fprintf(stderr,"Number of writing cores %d\n",mt_cores);
       bgzf_mt(bgzf_fp1,mt_cores,bgzf_buf); //
       
-      //fprintf(stderr,"\t-> BGZF FILE\n");
       if(strcasecmp("PE",SeqType)==0){
         strcat(file2,suffix2);
         filename2 = file2;
@@ -909,13 +844,10 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
       }
     }
     else{
-      //fprintf(stderr,"Fasta input file name is %s\n",FastaFileName);
       char *ref =(char*) malloc(10 + strlen(FastaFileName) + 1);
       sprintf(ref, "reference=%s", FastaFileName);
-      //char *ref =(char*) malloc(10 + strlen("Test_Examples/Mycobacterium_leprae.fa.gz") + 1);
-      //sprintf(ref, "reference=%s", "Test_Examples/Mycobacterium_leprae.fa.gz");
+      
       hts_opt_add((hts_opt **)&fmt_hts->specific,ref);
-      //fprintf(stderr,"Writing mode is %s\n",mode);
       SAMout = sam_open_format(filename1, mode, fmt_hts);
       SAMHeader = sam_hdr_init();
 
@@ -932,56 +864,42 @@ void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,c
       free(ref);
       hts_opt_free((hts_opt *)fmt_hts->specific);
     }
-    //fprintf(stderr,"\t-> AFTER OUTPUT FORMAT\n");
 
     int number; int* Frag_len; double* Frag_freq;
-    //fprintf(stderr,"SizeDistType %d \t FixedSize %d\n",SizeDistType,FixedSize);
     if(FixedSize==-1 && SizeDistType==-1){
-      //fprintf(stderr,"\t-> FRAG DIST FILE\n");
       Frag_len = new int[LENS];
       Frag_freq = new double[LENS];
       FragArray(number,Frag_len,Frag_freq,Sizefile); //Size_dist_sampling //"Size_dist/Size_freq_modern.txt"
-      //fprintf(stderr,"\t-> FRAG ARRAY LE\n");
     }
     else if(FixedSize==-1 && SizeDistType!=-1){
-      //fprintf(stderr,"\t-> FRAG DIST LENGTH\n");
       Frag_len = new int[LENS];
       Frag_freq = new double[LENS];
       FragDistArray(number,Frag_len,Frag_freq,SizeDistType,seed,val1, val2);
     }
     else if(FixedSize!=-1){number = -1;}
-    //fprintf(stderr,"THE NUMBER IS %d\n",number);
     const char *freqfile_r1; //"Qual_profiles/AccFreqL150R1.txt";
     const char *freqfile_r2;
     int outputoffset = qualstringoffset;
     unsigned long readcyclelength;
-    //fprintf(stderr,"\t-> FRAG ARRAY LE\n");
     ransampl_ws ***QualDist;
     char nt_qual_r1[1024];
     ransampl_ws ***QualDist2;
     char nt_qual_r2[1024];
-    //fprintf(stderr,"\t-> QUAL POINTER POINTER POINTER\n");
     double ErrArray_r1[1024];
     double ErrArray_r2[1024];
-    //fprintf(stderr,"\t-> BEFORE QUAL STRING IF\n");
     if(strcasecmp("true",QualStringFlag)==0){ //|| strcasecmp("bam",OutputFormat)==0
       freqfile_r1 = QualProfile1;
       QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1,readcyclelength);
-      //fprintf(stderr,"\t-> CREATING QUALDIST\n");
       if(strcasecmp("PE",SeqType)==0){
-        //fprintf(stderr,"\t-> PE LOOP\n");
         freqfile_r2 = QualProfile2;
         QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2,readcyclelength);
       }
     }
-    //fprintf(stderr,"\t-> AFTER QUAL STRING IF\n");
     
     int maxsize = 20;
     char polynucleotide;
-    //fprintf(stderr,"\t-> BEFORE POLY\n");
     if (Polynt != NULL && strlen(Polynt) == 1){polynucleotide = (char) Polynt[0];}
     else{polynucleotide = 'F';}
-    //fprintf(stderr,"\t-> AFTER POLY\n");
 
     double* MisMatchFreqArray;
     int mismatchcyclelength = 0;

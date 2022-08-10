@@ -33,11 +33,9 @@
 #define MAXBINS 100
 
 int BinarySearch_fraglength(double* SearchArray,int low, int high, double key){
-    //fprintf(stderr,"first element %lf\n",SearchArray[low]);
     int ans = 0; 
     while (low <= high) {
         int mid = low + (high - low + 1) / 2;
-        //fprintf(stderr,"test %lf\n",SearchArray[mid]);
         double midVal = SearchArray[mid];
  
         if (midVal < key) {
@@ -141,7 +139,6 @@ void ransampl_set( ransampl_ws *ws, const double* p )
 
 int ransampl_draw2( ransampl_ws *ws,double r1, double r2)
 {   
-    //fprintf(stderr,"%lf\t%lf\n",r1,r2);
     const int i = (int) (ws->n * r1);
     return r2 < ws->prob[i] ? i : ws->alias[i];
 }

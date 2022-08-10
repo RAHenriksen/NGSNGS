@@ -68,47 +68,49 @@ int HelpPage(FILE *fp){
   fprintf(fp,"Usage\n./ngsngs [options] -i <input_reference.fa> -r/-c <Number of reads or depth of coverage> -l/-lf <fixed length or length file> -seq <SE/PE> -f <output format> -o <output name prefix>\n");
   fprintf(fp,"\nExample \n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 2 -s 1 -lf Test_Examples/Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut\n");
   fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t1 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -q2 Test_Examples/Qual_profiles/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut\n");  
-  fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/DeamSubFile.txt -f fa -o MycoBactFaSEOut\n");    
-  fprintf(fp,"\n-h   | --help: \t\t\t Print help page.\n");
+  fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/MisincorpFile.txt -f fa -o MycoBactFaSEOut\n");    
+  fprintf(fp,"\nParameters \n");
+  fprintf(fp,"\n-h   | --help: \t\t\t\t Print help page.\n");
   fprintf(fp,"\nRequired: \n\n");
-  fprintf(fp,"-i   | --input: \t\t Reference file in fasta format (.fa,.fasta) to sample reads.\n");
-  fprintf(fp,"-r   | --reads: \t\t Number of reads to simulate, conflicts with -c option.\n");
-  fprintf(fp,"-c   | --coverage: \t\t Depth of Coverage to simulate, conflics with -r option.\n");
-  fprintf(fp,"-l   | --length: \t\t Fixed length of simulated fragments, conflicts with -lf & -ld option.\n");
-  fprintf(fp,"-lf  | --lengthfile: \t\t CDF of a length distribution, conflicts with -l & -ld option.\n");
-  fprintf(fp,"-ld  | --lengthdist: \t\t Discrete or continuous probability distributions, conflicts with -l & -lf option.\n");
-  fprintf(fp,"\teg.\t Uni,40,180 || Norm,80,30 || LogNorm,4,1 || Pois,165 || Exp,0.025 || Gam,20,2\n");
-  fprintf(fp,"-seq | --sequencing: \t\t Simulate single-end or paired-end reads.\n");
-  fprintf(fp,"\t <SE>\t single-end \n \t <PE>\t paired-end.\n");
-  fprintf(fp,"-f   | --format: \t\t File format of the simulated output reads.\n");
-  fprintf(fp,"\t <fa||fasta||fa.gz||fasta.gz>\t\t Nucletide sequence w. different compression levels. \n \t <fq||fastq||fq.gz||fastq.gz>\t\t Nucletide sequence with corresponding quality score w. different compression levels. \n \t <sam||bam||cram>\t\t\t Sequence Alignment Map format w. different compression levels.\n");
-  fprintf(fp,"-o   | --output: \t\t Prefix of output file name.\n");
+  fprintf(fp,"-i   | --input: \t\t\t Reference file in fasta format (.fa,.fasta) to sample reads.\n");
+  fprintf(fp,"-r   | --reads: \t\t\t Number of reads to simulate, conflicts with -c option.\n");
+  fprintf(fp,"-c   | --coverage: \t\t\t Depth of Coverage to simulate, conflics with -r option.\n");
+  fprintf(fp,"-l   | --length: \t\t\t Fixed length of simulated fragments, conflicts with -lf & -ld option.\n");
+  fprintf(fp,"-lf  | --lengthfile: \t\t\t CDF of a length distribution, conflicts with -l & -ld option.\n");
+  fprintf(fp,"-ld  | --lengthdist: \t\t\t Discrete or continuous probability distributions, conflicts with -l & -lf option.\n");
+  fprintf(fp,"\t<Uni,40,180 || Norm,80,30 || LogNorm,4,1 || Pois,165 || Exp,0.025 || Gam,20,2>\n");
+  fprintf(fp,"-seq | --sequencing: \t\t\t Simulate single-end <SE> or paired-end <PE> reads.\n");
+  fprintf(fp,"\t <SE||PE>\n");
+  fprintf(fp,"-f   | --format: \t\t\t File format with different compression levels of the simulated output reads.\n");
+  fprintf(fp,"\t <fa||fasta||fa.gz||fasta.gz>\n\t <fq||fastq||fq.gz||fastq.gz>\t\t \n\t <sam||bam||cram>\n");
+  fprintf(fp,"-o   | --output: \t\t\t Prefix of output file name.\n");
   fprintf(fp,"\nOptional: \n");
   fprintf(fp,"\nNucleotide Alterations: \n");
-  fprintf(fp,"-bcf: \t\t\t\t Binary Variant Calling Format (.bcf)\n");
-  fprintf(fp,"-v:  | --variant: \t\t Specific variants to simulate\n");
-  fprintf(fp,"\t eg.\t snp || indel. Default = all\n");
-  fprintf(fp,"-b   | --briggs: \t\t Parameters for the damage patterns using the Briggs model.\n");
+  fprintf(fp,"-bcf: \t\t\t\t\t Binary Variant Calling Format (.bcf), only incorporates SNP's\n");
+  fprintf(fp,"-id  | --indiv: \t\t\t Unique ID for individual present in the bcf header\n");
+  fprintf(fp,"-b   | --briggs: \t\t\t Parameters for the damage patterns using the Briggs model.\n");
   fprintf(fp,"\t <nv,Lambda,Delta_s,Delta_d> : 0.024,0.36,0.68,0.0097 (from Briggs et al., 2007).\n");
   fprintf(fp,"\t nv: Nick rate pr site. \n \t Lambda: Geometric distribution parameter for overhang length.\n \t Delta_s: PMD rate in single-strand regions.\n \t Delta_d: PMD rate in double-strand regions.\n");
   fprintf(fp,"-mf  | --mismatch: \t\t\t Nucleotide substitution frequency file.\n");
-  fprintf(fp,"-ne  | --noerror: \t\t Disabling the nucleotide subsitutions based on nucleotide qualities.\n");
+  fprintf(fp,"-ne  | --noerror: \t\t\t Disabling the nucleotide subsitutions based on nucleotide qualities.\n");
   fprintf(fp,"\nRead Specific: \n");
-  fprintf(fp,"-chr | --chromosomes: \t\t Specific chromosomes from input reference file.\n");
-  fprintf(fp,"-a1  | --adapter1: \t\t Adapter sequence to add for simulated reads (SE) or first read pair (PE).\n");
-  fprintf(fp,"\t e.g. Illumina TruSeq Adapter 1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG \n\n");
-  fprintf(fp,"-a2  | --adapter2: \t\t Adapter sequence to add for second read pair (PE). \n");
-  fprintf(fp,"\t e.g. Illumina TruSeq Adapter 2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT \n\n");
-  fprintf(fp,"-p   | --poly: \t\t\t Create Poly(X) tails for reads, containing adapters with lengths below the inferred readcycle length. \n \t e.g -p G or -p A \n");
-  fprintf(fp,"-q1  | --quality1: \t\t Read Quality profile for single-end reads (SE) or first read pair (PE).\n");
-  fprintf(fp,"-q2  | --quality2: \t\t Read Quality profile for for second read pair (PE).\n");
+  fprintf(fp,"-chr | --chromosomes: \t\t\t Specific chromosomes from input reference file. NB! Used in conjunction with input reference genome.\n");
+  fprintf(fp,"\t e.g -i Hg19 -chr chr2 \n");
+  fprintf(fp,"-a1  | --adapter1: \t\t\t Adapter sequence to add for simulated reads (SE) or first read pair (PE).\n");
+  fprintf(fp,"\t e.g Illumina TruSeq Adapter 1: <AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG> \n");
+  fprintf(fp,"-a2  | --adapter2: \t\t\t Adapter sequence to add for second read pair (PE). \n");
+  fprintf(fp,"\t e.g. Illumina TruSeq Adapter 2: <AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT> \n");
+  fprintf(fp,"-p   | --poly: \t\t\t\t Create Poly(X) tails for reads, containing adapters (-a1, a2) with lengths below the inferred readcycle length. \n \t <A||G||C||T||N>\n");
+  fprintf(fp,"-q1  | --quality1: \t\t\t Read Quality profile for single-end reads (SE) or first read pair (PE). NB! only required for output format different from fasta\n");
+  fprintf(fp,"-q2  | --quality2: \t\t\t Read Quality profile for for second read pair (PE). NB! only required for output format different from fasta\n");
   fprintf(fp,"\nOther: \n");
-  fprintf(fp,"-t1  | --threads1: \t\t Number of sampling threads, default = 1.\n");
-  fprintf(fp,"-t2  | --threads2: \t\t Number of compression threads, default = 0.\n");
-  fprintf(fp,"-s   | --seed: \t\t\t Random seed, default = current calendar time (s).\n");
-  fprintf(fp,"-rand: \t\t\t\t Pseudo-random number generator, OS specific\n");
-  fprintf(fp,"\t e.g. linux || unix -> drand48_r (-rand = 0), not available for MacOS.\n");
-  fprintf(fp,"\t APPLE and MacOS (-rand = 1).\n");
+  fprintf(fp,"-t1  | --threads1: \t\t\t Number of sampling threads, default = 1.\n");
+  fprintf(fp,"-t2  | --threads2: \t\t\t Number of compression threads, default = 0.\n");
+  fprintf(fp,"-na  | --noalign: \t\t\t Disable the storage of alignment information for the sam||bam||cram formats.\n");
+  fprintf(fp,"-s   | --seed: \t\t\t\t Random seed, default = current calendar time (s).\n");
+  fprintf(fp,"-bl  | --bufferlength: \t\t\t Length of the nucleotide string returned to the buffer nedded to store in the output file, default = 30000000.\n");
+  fprintf(fp,"-rnd | --random: \t\t\t Pseudo-random number generator, OS specific\n");
+  fprintf(fp,"\t e.g. linux || unix -> drand48_r (-rand = 0) || MacOS (-rand = 0) is altered to -rand 3.\n");
   //NoAlign //Indiv
   exit(1);
   return 0;
@@ -145,7 +147,7 @@ void ErrMsg(double messageno){
   else if(messageno == 11.0){fprintf(stderr,"\nCould not parse the Nucleotide Quality profile(s), for format <fq, fq.gz, sam, bam, cram> provide -q1 for SE and -q1, -q2 for PE.\n");}
   else if(messageno == 12.0){fprintf(stderr,"\nBoth a mismatch file and briggs deamination parameters has been provided. Provide either briggs (-p) og mismatch (-mf).\n");}
   else if(messageno == 13.0){fprintf(stderr,"\nOnly variantion type has been provided (-v). Provide variant calling format (-bcf).\n");}
-  else if(messageno == 13.5){fprintf(stderr,"\nProvide variantion type not recognized, provide either snp, indel or all (default)\n");}
+  else if(messageno == 13.5){fprintf(stderr,"\nProvide variantion type not recognized, provide snp\n");}
   else {fprintf(stderr,"\nError with input parameters, see helppage (-h)");}
   fprintf(stderr,"see helppage (-h)\n");
   exit(0);
@@ -209,9 +211,7 @@ argStruct *getpars(int argc,char ** argv){
       mypars->Variant_type = strdup(*(++argv));
       strcat(Command,mypars->Variant); strcat(Command," ");
       if(mypars->Variant == NULL){ErrMsg(13.0);}
-      else if (mypars->Variant_type && strcasecmp("snp",mypars->Variant_type)!=0 && 
-      strcasecmp("indel",mypars->Variant_type)!=0 &&
-      strcasecmp("all",mypars->Variant_type)!=0){ErrMsg(13.5); exit(0);}      
+      else if (mypars->Variant_type && strcasecmp("snp",mypars->Variant_type)!=0){ErrMsg(13.5); exit(0);}      
     }
     else if(strcasecmp("-t1",*argv)==0 || strcasecmp("--threads1",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
@@ -343,12 +343,12 @@ argStruct *getpars(int argc,char ** argv){
       strcasecmp("T",mypars->Poly)!=0 &&
       strcasecmp("N",mypars->Poly)!=0){ErrMsg(10.0);}
     }
-    else if(strcasecmp("-indiv",*argv)==0){
+    else if(strcasecmp("-id",*argv)==0||strcasecmp("-indiv",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
       mypars->HeaderIndiv = strdup(*(++argv));
       strcat(Command,*argv); strcat(Command," ");
     }
-    else if(strcasecmp("-rand",*argv)==0){
+    else if(strcasecmp("-rnd",*argv)==0 || strcasecmp("--random",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
       mypars->rand_val = atoi(*(++argv));
       strcat(Command,*argv); strcat(Command," ");
@@ -393,7 +393,6 @@ void catchkill(){
 // ------------------------------ //
 
 int main(int argc,char **argv){
-  //fprintf(stderr,"PRINT TYPE %d\n",MacroRandType);
   argStruct *mypars = NULL;
   if(argc==1||(argc==2&&(strcasecmp(argv[1],"--help")==0||strcasecmp(argv[1],"-h")==0))){
     HelpPage(stderr);
@@ -407,9 +406,7 @@ int main(int argc,char **argv){
     
     char* Command = mypars->CommandRun;
     fprintf(stderr,"\n\t-> ngsngs version: %s (htslib: %s) build(%s %s)\n",NGSNGS_VERSION,hts_version(),__DATE__,__TIME__); 
-    fprintf(stderr,"\t-> Mycommmand: %s\n strlen: %lu\n",Command,strlen(mypars->CommandRun));
-
-    //fprintf(stderr,"\t-> Command 2 : %s and version %s \n",CommandArray,version);
+    fprintf(stderr,"\t-> Mycommmand: %s\n",Command);
     clock_t t = clock();
     time_t t2 = time(NULL);
     int Glob_seed = mypars->Glob_seed; 
@@ -431,9 +428,7 @@ int main(int argc,char **argv){
       #else
       #   error "Unknown compiler"
       #endif
-    }
-    //fprintf(stderr,"RANDOM VALUE %d \n",MacroRandType);
-    
+    }   
     
     if (fastafile == NULL){ErrMsg(1.0);}
     if (Seq_Type == NULL){ErrMsg(6.0);}
@@ -443,7 +438,6 @@ int main(int argc,char **argv){
     if (mypars->nreads == 0 && readcov== -1.0 )
         ErrMsg(2.0);
 
-    //fprintf(stderr,"\t-> Command: %s \n",Command);
     int FixedSize = mypars->Length;
     const char* Sizefile = mypars->LengthFile;
     const char* SizeDist = mypars->LengthDist;
@@ -457,7 +451,6 @@ int main(int argc,char **argv){
       } 
     }
     if (Sizefile != NULL){
-      //fprintf(stderr,"SIZE FILE ARG\n");
       double sum,n;
       sum=n=0;
 
@@ -479,14 +472,12 @@ int main(int argc,char **argv){
 
     
     if (SizeDist != NULL){
-      //fprintf(stderr,"LENGTH DISTRIBUTION and %s",SizeDist);
       std::default_random_engine generator(Glob_seed);
       char* Dist;
       
       char* DistParam = strdup(SizeDist);
       Dist = strtok(DistParam,",");
       val1 = atoi(strtok (NULL, ","));
-      //fprintf(stderr,"strtok %d\n",val1);
       char* tmp = strtok(NULL, ",");
       if(tmp == NULL){val2 = 0;}
       else{val2 = atoi(tmp);}
@@ -538,8 +529,6 @@ int main(int argc,char **argv){
     
     size_t BufferLength = mypars->KstrBuf;
 
-    //fprintf(stderr,"\t-> Command: %s \n",Command);
-    //fprintf(stderr,"\t-> Command 2 : %s \n",CommandArray);
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",fastafile,chr_total);
     fprintf(stderr,"\t-> Seed used: %d\n",Glob_seed);
     fprintf(stderr,"\t-> Number of sampling threads used (-t1): %d and number of compression threads (-t2): %d\n",threads1,threads2);
@@ -550,7 +539,6 @@ int main(int argc,char **argv){
     const char* Adapter_2;
     const char* Polynt;
     if (mypars->Adapter1 != NULL){
-      //fprintf(stderr,"\t-> ARGPARSE ADAPTER + POLY\n");
       Adapt_flag = "true";
       Adapter_1 = mypars->Adapter1;
       Adapter_2 = mypars->Adapter2;
@@ -560,7 +548,6 @@ int main(int argc,char **argv){
       
     }
     else{
-      //fprintf(stderr,"\t-> ARGPARSE ADAPT FLAG+ POLY\n");
       Adapt_flag = "false";
       if (mypars->Poly != NULL){fprintf(stderr,"Poly tail error: Missing adapter sequence, provide adapter sequence (-a1,-a2) as well\n");exit(0);}
       else{Polynt = "F";}
@@ -572,12 +559,10 @@ int main(int argc,char **argv){
     const char* QualStringFlag;
     if (QualProfile1 == NULL){QualStringFlag = "false";}
     else{QualStringFlag = "true";}
-    //fprintf(stderr,"qualstring test %s",QualStringFlag);
     if (strcasecmp("true",QualStringFlag)==0){
       if(OutputFormat && (strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0 || strcasecmp("sam",OutputFormat)==0 || strcasecmp("bam",OutputFormat)==0 || strcasecmp("cram",OutputFormat)==0)){
         if (strcasecmp("PE",Seq_Type)==0 && QualProfile2 == NULL){
           ErrMsg(11.0);
-          //fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
           exit(0);
         }
       }
@@ -586,12 +571,9 @@ int main(int argc,char **argv){
     {
       if(strcasecmp("fq",OutputFormat)==0 || strcasecmp("fq.gz",OutputFormat)==0){
         ErrMsg(11.0);
-        //fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
         exit(0);
       }
     }
-    //fprintf(stderr,"\t-> ADAPTER FLAG IS:%s\n",Adapt_flag);
-    //fprintf(stderr,"\t-> QUAL STRING FLAG IS:%s\n",QualStringFlag);
     const char* ErrorFlag;
     if (mypars->ErrorFlag != NULL){
       ErrorFlag = mypars->ErrorFlag;
@@ -633,7 +615,6 @@ int main(int argc,char **argv){
     SubProfile = mypars->SubProfile;
     if (SubProfile == NULL){SubFlag = "false";}
     else{SubFlag = "true";}
-    //fprintf(stderr,"SUB FLAG IS %s\n",SubFlag);
     if(SubProfile != NULL && mypars->Briggs != NULL){
       ErrMsg(12.0);
       exit(0);
@@ -641,7 +622,6 @@ int main(int argc,char **argv){
 
     const char* Specific_Chr[1024] = {};
     if (mypars->Chromosomes != NULL){
-      fprintf(stderr,"PARTIAL chromosomes %s\n",mypars->Chromosomes);
       int chr_idx_partial = 0;
       Specific_Chr[chr_idx_partial++] = strtok(strdup(mypars->Chromosomes),"\", \t");
       char *chrtok = NULL;
@@ -649,7 +629,6 @@ int main(int argc,char **argv){
 	      Specific_Chr[chr_idx_partial++] = strdup(chrtok);
 	      assert(chr_idx_partial<MAXBINS);
       }
-      fprintf(stderr,"AFTER WHILE and chr_idx_partial %d\n",chr_idx_partial);
       Specific_Chr[chr_idx_partial++] = "\0";
     }
     
@@ -666,10 +645,8 @@ int main(int argc,char **argv){
       else if(VarType != NULL){
         VarType = mypars->Variant_type;
       }
-      fprintf(stderr,"VARIANT TYPE %s\n",VarType);
     }
 
-    //if(Specific_Chr[0]=='\0'){fprintf(stderr,"HURRA");}
     int DeamLength = 0;
     //const char* HeaderIndiv = "HG00096";
     Create_se_threads(seq_ref,threads1,Glob_seed,nreads_per_thread,filename,

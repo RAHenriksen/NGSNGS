@@ -28,26 +28,25 @@
 
 void ErrorSub(double randval,char seqchar[], int pos){
   // Generates nucleotide substitutions
-  //fprintf(stderr,"SUBERROR\n"); X, W, Z, Y
   if (seqchar[pos] == 'A' || seqchar[pos] == 'a'){
-    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'C';} //X 
-    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos] = 'G';} //T
-    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'T';} //C
+    if (0 < randval && randval <= 1.0/3.0){seqchar[pos] = 'C';} //X 
+    else if (1.0/3.0 < randval && randval <= 2.0/3.0){seqchar[pos] = 'G';} //T
+    else if (2.0/3.0 < randval && randval <= 1){seqchar[pos]  = 'T';} //C
   }
   else if (seqchar[pos] == 'C'|| seqchar[pos] == 'c'){ //'Z'
-    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'G';} //Z
-    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos]  = 'T';} //G
-    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'A';} //G
+    if (0 < randval && randval <= 1.0/3.0){seqchar[pos] = 'G';} //Z
+    else if (1.0/3.0 < randval && randval <= 2.0/3.0){seqchar[pos]  = 'T';} //G
+    else if (2.0/3.0 < randval && randval <= 1){seqchar[pos]  = 'A';} //G
   }
   else if (seqchar[pos] == 'G'|| seqchar[pos] == 'g'){
-    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'T';} //A
-    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos]  = 'A';} //T
-    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'C';} //C
+    if (0 < randval && randval <= 1.0/3.0){seqchar[pos] = 'T';} //A
+    else if (1.0/3.0 < randval && randval <= 2.0/3.0){seqchar[pos]  = 'A';} //T
+    else if (2.0/3.0 < randval && randval <= 1){seqchar[pos]  = 'C';} //C
   }
   else if (seqchar[pos] == 'T'|| seqchar[pos] == 't'){
-    if (0 < randval && randval <= 0.3333333333){seqchar[pos] = 'A';} //G
-    else if (0.3333333333 < randval && randval <= 0.6666666667){seqchar[pos]  = 'C';} //A
-    else if (0.6666666667 < randval && randval <= 1){seqchar[pos]  = 'G';} //C
+    if (0 < randval && randval <= 1.0/3.0){seqchar[pos] = 'A';} //G
+    else if (1.0/3.0 < randval && randval <= 2.0/3.0){seqchar[pos]  = 'C';} //A
+    else if (2.0/3.0 < randval && randval <= 1){seqchar[pos]  = 'G';} //C
   }
 }
 
@@ -60,7 +59,6 @@ double* MisMatchFileArray(double* freqval,const char* filename,int &mismatchcycl
     while(gzgets(gz,buf,LENS)){
         double val1;double val2;double val3;double val4;
         sscanf(buf,"%lf\t%lf\t%lf\t%lf\n",&val1,&val2,&val3,&val4);
-        //std::cout << "iter " << i << std::endl;// " " << buf << std::endl;
         freqval[i*4] = val1; freqval[i*4+1] = val2; freqval[i*4+2] = val3; freqval[i*4+3] = val4;
         i++;
     }
@@ -88,7 +86,6 @@ void MisMatchFile(char seq[],mrand_t *mr,double* freqval,int LEN){
   //5'
   for (int row_idx = 0; row_idx < LEN;row_idx++){
     dtemp1 = mrand_pop(mr);//0.99;// mrand_pop(mr);
-    //fprintf(stderr,"RANDOM VALUE %lf\n",dtemp1);
     if (seq[row_idx] == 'A' || seq[row_idx] == 'a'){
       if (dtemp1 <= freqval[Astart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}
       else if (freqval[Astart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Astart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
@@ -108,7 +105,6 @@ void MisMatchFile(char seq[],mrand_t *mr,double* freqval,int LEN){
       else if (freqval[Gstart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Gstart+(row_idx*4)+3]){seq[row_idx] = ntdeam[3];}
     }
     else if (seq[row_idx] == 'C' || seq[row_idx] == 'c'){
-      //fprintf(stderr,"FREQ VAL INDEX %d\n",Cstart+(row_idx));
       if (dtemp1 <= freqval[Cstart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}
       else if (freqval[Cstart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Cstart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
       else if (freqval[Cstart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Cstart+(row_idx*4)+2]){seq[row_idx] = ntdeam[2];}
