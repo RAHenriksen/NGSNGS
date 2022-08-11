@@ -96,7 +96,7 @@ void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *N
     if (simError){
       double tmprand = mrand_pop(mr);
       if ( tmprand < phred2Prob[qscore]){
-        int outbase;
+        int outbase=(int)floor(4*tmprand);//DRAGON
         int inbase = nuc2int[bases[i]];
         while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
 	bases[i] = int2nuc[outbase];
