@@ -9,11 +9,13 @@
 #define MAXBINS 100
 
 char int2nuc[5] = {'A','C','G','T','N'};
-double phred2Prob(int qscore){
-  double d = qscore;
-  return pow(10,-d/10);
-}
+char phred2Prob[256];
+
 ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const char *freqfile,int &readcycle){
+  for(int qscore =0 ;qscore<256;qscore++){
+    double d = qscore;
+    phred2Prob[qscore] = pow(10,-d/10);
+  }
   ransampl_ws ***dists = new ransampl_ws**[5];
 
   std::vector<char *> all_lines;
@@ -92,11 +94,12 @@ void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *N
     int qscore = ransampl_draw2(ws[nuc2int[inbase]][i],dtemp1,dtemp2);
     qscores[i] = NtQuals[qscore]; //why did you have +33
     if (simError){
-      if ( mrand_pop(mr) < phred2Prob(qscore)){
+      double tmprand = mrand_pop(mr);
+      if ( tmprand < phred2Prob[qscore]){
         int outbase;
         int inbase = nuc2int[bases[i]];
         while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
-	        bases[i] = int2nuc[outbase];
+	bases[i] = int2nuc[outbase];
       }
     }
   }
