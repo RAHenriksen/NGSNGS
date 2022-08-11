@@ -86,7 +86,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-o   | --output: \t\t\t Prefix of output file name.\n");
   fprintf(fp,"\nOptional: \n");
   fprintf(fp,"\nNucleotide Alterations: \n");
-  fprintf(fp,"-bcf: \t\t\t\t\t Binary Variant Calling Format (.bcf), only incorporates SNP's\n");
+  fprintf(fp,"-bcf: \t\t\t\t\t Binary Variant Calling Format (.bcf), only incorporates SNP\n");
   fprintf(fp,"-id  | --indiv: \t\t\t Unique ID for individual present in the bcf header\n");
   fprintf(fp,"-b   | --briggs: \t\t\t Parameters for the damage patterns using the Briggs model.\n");
   fprintf(fp,"\t <nv,Lambda,Delta_s,Delta_d> : 0.024,0.36,0.68,0.0097 (from Briggs et al., 2007).\n");
@@ -95,7 +95,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-ne  | --noerror: \t\t\t Disabling the nucleotide subsitutions based on nucleotide qualities.\n");
   fprintf(fp,"\nRead Specific: \n");
   fprintf(fp,"-chr | --chromosomes: \t\t\t Specific chromosomes from input reference file. NB! Used in conjunction with input reference genome.\n");
-  fprintf(fp,"\t e.g -i Hg19 -chr chr2 \n");
+  fprintf(fp,"\t e.g -i Hg19.fa -chr chr2 \n");
   fprintf(fp,"-a1  | --adapter1: \t\t\t Adapter sequence to add for simulated reads (SE) or first read pair (PE).\n");
   fprintf(fp,"\t e.g Illumina TruSeq Adapter 1: <AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG> \n");
   fprintf(fp,"-a2  | --adapter2: \t\t\t Adapter sequence to add for second read pair (PE). \n");
