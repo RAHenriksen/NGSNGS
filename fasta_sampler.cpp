@@ -99,7 +99,9 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
 
 //functions returns head of chromosome, with posB, posE, chr_idx and fraglength set accordingly
 char *sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength){
-  chr_idx = ransampl_draw2(fs->ws,mrand_pop(mr),mrand_pop(mr));
+  chr_idx = 0;
+  if(fs->nref>1)
+    chr_idx = ransampl_draw2(fs->ws,mrand_pop(mr),mrand_pop(mr));
   *chromoname = fs->seqs_names[chr_idx];
   posB = abs(mrand_pop_long(mr)) % fs->seqs_l[chr_idx]+20;
   posE = posB +fraglength;

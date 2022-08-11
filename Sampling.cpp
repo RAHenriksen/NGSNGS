@@ -116,12 +116,14 @@ void* Sampling_threads(void *arg){
   size_t moduloread = reads/10;
   while (current_reads_atom < reads && SIG_COND){
     //lets start by resetting out datastructures to NULL, nill, nothing.
+    qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0';
+#if 0
     memset(qual_r1, 0, sizeof qual_r1); 
     memset(qual_r2, 0, sizeof qual_r2);  
 
     memset(seq_r1, 0, sizeof seq_r1);
     memset(seq_r2, 0, sizeof seq_r2);
-
+#endif
     //sample fragmentlength
     int fraglength = getFragmentLength(sf); //fraglength = abs(mrand_pop_long(drand_alloc)) % 1000;
     
