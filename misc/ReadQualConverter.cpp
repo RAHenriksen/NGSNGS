@@ -166,7 +166,6 @@ int main_qual(int argc,char **argv){
                     strtok(Count_line1,"\t");
                     char* tok1;
                     tok1 = strtok(NULL,"\t"); //first token is position
-
                     //extract all the next tokens, i.e. the nucleotide quality counts, since the counts are cummulative, i only need the final element for each nucleotide position
 
                     while(((tok1 = strtok(NULL,"\t")))){linesum = atoi(tok1);line_elem++;}  //linesum += atoi(tok1);line_elem++;
@@ -200,6 +199,7 @@ int main_qual(int argc,char **argv){
                         //fprintf(stderr,"Nucleotide quality frequency : %e and CDF value %e for nucelotide index %d\n",Freq_array[i],CDF_array[i],i);
                         i++;
                     }
+
                     //exit(0);
                     // creates final token of the nucleotide qualities for that position
                     strtok(Qual_line,"\t");
@@ -219,11 +219,16 @@ int main_qual(int argc,char **argv){
                     for (int col_i = 0; col_i < col_no; col_i++){
                         // if the index of nucleotide qualities match with the total nuceltide quality array, then save the CDF of that index
                         if(FullQual[col_i] == Qual_no[col_i]){
-                            if (CDF_array[col_i] < 1.000000e-100){
+                            if (CDF_array[col_i-1] == 1.000000e+00){
                                 // after having a CDF_array[col_i-1] to be the value of 1.000000e+00
-                                fprintf(ReadQual_2,"%f \t",0.00);
+                                //fprintf(stderr,"line number %d col number %d \t %e\t %e\n",col_i,count_line,CDF_array[col_i-1],CDF_array[col_i]);
+                                fprintf(ReadQual_2,"%e\t",0.0);
                             }
                             else{
+                                /*if(count_line == 560){
+                                    fprintf(stderr,"line number v2 %d col number %d \t %e\t %e\n",col_i,count_line,CDF_array[col_i-1],CDF_array[col_i]);
+                                    fprintf(ReadQual_2,"%d \t",2);
+                                }*/
                                 fprintf(ReadQual_2,"%e \t",CDF_array[col_i]);
                             }                        
                             //fprintf(stderr,"Full quality element : %d line quality %d CDF value %e for column index %d\n",FullQual[col_i],Qual_no[col_i],CDF_array[col_i],col_i);
@@ -239,13 +244,25 @@ int main_qual(int argc,char **argv){
                         if(FullQual[col_i] != Qual_no[col_i]){
                             // if the last column values are below 1.0e-100 after moving several columns into the
                             // quality profile then its an artefact of skipping columns.
-                            //std::cout << CDF_array[col_i-1] << std::endl;
-                            if (CDF_array[col_i-1] < 1.000000e-100){
-                                fprintf(ReadQual_2,"%f \t",0.00);
+                            if (CDF_array[col_i-1] == 1.000000e+00){
+                                fprintf(ReadQual_2,"%e \t",0.00);
                             }
-                            // so the column index which are skipped received the value of 0.00 since this is the case when the previous value equals 1.00, 
-                            // as a way to keep the CDF. Previously it was simply given the value of 1.00 
-                            else{fprintf(ReadQual_2,"%e \t",0.00);} 
+                            else{
+                                if (FullQual[col_i] == Qual_no[col_i-1]){
+                                    fprintf(ReadQual_2,"%e \t",CDF_array[col_i]);
+                                }
+                                else if (CDF_array[col_i-1] == Qual_no[col_i-1]){
+                                    fprintf(ReadQual_2,"%e \t",CDF_array[col_i]);
+                                }
+                                else{
+                                    if(Qual_no[col_i] == 0){
+                                        fprintf(ReadQual_2,"%e \t",0.00);
+                                    }
+                                    else{
+                                        fprintf(ReadQual_2,"%e \t",CDF_array[col_i-1]);
+                                    }
+                                }
+                            } 
                             //fprintf(stderr,"Full quality element : %d line quality %d CDF value %e for column index %d\n",FullQual[col_i],Qual_no[col_i],CDF_array[col_i],col_i);
                         }
                     }
@@ -272,5 +289,6 @@ int main(int argc,char **argv){
 }
 #endif
 
-//g++ ReadQualConverter.cpp -std=c++11 -lm -lz -I /home/wql443/scratch/htslib/ /home/wql443/scratch/htslib/libhts.a -lpthread -lhts -lgsl -lgslcblas -lm -o QualConvert
-//g++ ReadQualConverter.cpp -std=c++11 -lm -lz -D__WITH_MAIN__ -o QualConvert
+//g++ ReadQualConverter.cpp -std=c++11 -lm -lz -I /maps/projects/lundbeck/scratch/wql443/WP1/htslib/ /maps/projects/lundbeck/scratch/wql443/WP1/htslib/libhts.a -lpthread -lhts -lgsl -lgslcblas -lm -o QualConvert
+//g++ ReadQualConverter.cpp -std=c++11 -lz -lm -I/maps/projects/lundbeck/scratch/wql443/WP1/htslib -D__WITH_MAIN__ -o QualConvert
+//./QualConvert -i ../Test_Examples/Qual_profiles/HiSeq2500L150R1filter.txt -o HiSeq2500L150R1_CDF.txt

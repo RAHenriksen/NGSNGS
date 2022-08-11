@@ -1,9 +1,9 @@
 #rm *.bam *.sam *.fa.gz *.fq.gz *.fq *.fa 
 PRG=../ngsngs
 IN=../Test_Examples/Mycobacterium_leprae.fa.gz
-LF=../Test_Examples/Size_dist/Size_dist_sampling.txt
-Q1=../Test_Examples/Qual_profiles/AccFreqL150R1.txt
-Q2=../Test_Examples/Qual_profiles/AccFreqL150R2.txt
+LF=../Test_Examples/Size_dist_sampling.txt
+Q1=../Test_Examples/AccFreqL150R1.txt
+Q2=../Test_Examples/AccFreqL150R2.txt
 A1=AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG
 A2=AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT
 MF=../Test_Examples/MisincorpFile.txt
