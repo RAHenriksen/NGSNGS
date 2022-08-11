@@ -85,16 +85,20 @@ int main(int argc,char **argv){
   mrand_t *myrand;
   int type =0;
   int seed =1;
-  int nitems =10;
+  long long nitems =10;
   if(argc==4){
     type = atoi(argv[1]);
     seed = atoi(argv[2]);
-    nitems = atoi(argv[3]);
+    nitems = atoll(argv[3]);
   }
-  fprintf(stderr,"type: %d seed: %d nitems: %d\n",type,seed,nitems);
+  fprintf(stderr,"type: %d seed: %d nitems: %lld\n",type,seed,nitems);
   myrand = mrand_alloc(type,seed);
-  for(int i=0;i<nitems;i++)
-    fprintf(stdout,"%f\n",i,mrand_pop(myrand));
+  double sum = 0;
+  for(long long i=0;i<nitems;i++){
+    sum += mrand_pop(myrand);
+
+  }
+  fprintf(stdout,"type %d\tseed: %d\tsum:%f\tnitems in mio:%f mean: %f\n",type,seed,sum,nitems/1e6,sum/((double)nitems));
   return 0;
 }
 

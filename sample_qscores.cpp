@@ -9,7 +9,7 @@
 #define MAXBINS 100
 
 char int2nuc[5] = {'A','C','G','T','N'};
-char phred2Prob[256];
+double phred2Prob[256];
 
 ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const char *freqfile,int &readcycle){
   for(int qscore =0 ;qscore<256;qscore++){
@@ -90,14 +90,13 @@ void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *N
     double dtemp1 = mrand_pop(mr);
     double dtemp2 = mrand_pop(mr);
     
-    char inbase = bases[i];// <- is this ACGT,or 01234
-    int qscore = ransampl_draw2(ws[nuc2int[inbase]][i],dtemp1,dtemp2);
-    qscores[i] = NtQuals[qscore]; //why did you have +33
+    char inbase = nuc2int[bases[i]];
+    int qscore = ransampl_draw2(ws[inbase][i],dtemp1,dtemp2);
+    qscores[i] = NtQuals[qscore]; 
     if (simError){
       double tmprand = mrand_pop(mr);
       if ( tmprand < phred2Prob[qscore]){
-        int outbase=(int)floor(4*tmprand);//DRAGON
-        int inbase = nuc2int[bases[i]];
+        int outbase=(int)floor(4.0*phred2Prob[qscore]*tmprand);//DRAGON
         while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
 	bases[i] = int2nuc[outbase];
       }
