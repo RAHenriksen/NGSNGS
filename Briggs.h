@@ -7,8 +7,8 @@
 #define BRIGGS_H
 #include "mrand.h"
 
-int Random_geometric_k(unsigned int  seed,const double p);
+int Random_geometric_k(const double p,mrand_t *mr);
 
-void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, double delta, unsigned int seed,mrand_t *mr);
+void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, double delta,mrand_t *mr);
 
 #endif /* NGSNGSFUNC_H */
