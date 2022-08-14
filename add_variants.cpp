@@ -140,7 +140,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
       last_fid = it->first.rid;
       reset = 1;
     }
-
+    
     if(reset){
       if(fsoffsets!=NULL){
 	for(int i=0;i<ploidy;i++){
@@ -151,7 +151,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
 	  delete [] fs->seqs[i];
 	  fs->seqs[i] = elephant[i];
 	}
-
+	
       }
       
       ploidymap::iterator it = fs->pldmap.find(last_fid);
@@ -167,8 +167,12 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
     //we now loop over mother, father and other parental chromosomes
     for(int i=0;i<ploidy;i++){
       //first copy contigous block from last operator
+      if(last[i]>it->first.pos)
+	last[i] = it->first.pos;
+
+      int nitems2copy = brec->pos-last[i];
       assert(strlen(elephant[i])+brec->pos-last[i]< maxsize );//funky assert
-      strncat(elephant[i],fs->seqs[fsoffsets[i]]+last[i],brec->pos-last[i]);
+      strncat(elephant[i],fs->seqs[fsoffsets[i]]+last[i],nitems2copy);
       char *allele = NULL;
       allele = it->second->d.allele[it->first.gt[i]];
       assert(allele!=NULL);
@@ -187,7 +191,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
       
       if(isdel){
 	//is deletion then we just skip the number of bases
-	fprintf(stderr,"In deletion, will skip reference position: %zu\n",strlen(allele));
+	//	fprintf(stderr,"In deletion, will skip reference position: %lld length of allele: %zu\n",it->first.pos,strlen(allele));
 	last[i] = brec->pos+ strlen(allele);
       }
       if(isdel==0){
@@ -273,7 +277,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
       inferred_ploidy = ngt/nsamples;
     }
 #if 0
-    fprintf(stderr,"nallele: %d\n",brec->n_allele);
+    fprintf(stderr,"brec->pos: %d nallele: %d\n",brec->pos+1,brec->n_allele);
     for(int i=0;i<brec->n_allele;i++)
       fprintf(stderr,"nal:%d %s %zu\n",i,brec->d.allele[i],strlen(brec->d.allele[i]));
 #endif
@@ -289,7 +293,10 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
       mygt = nodatagt;
     else
       mygt = gt_arr+inferred_ploidy*whichsample;
-
+    if(bcf_gt_is_missing(mygt[0])){
+      //      fprintf(stderr,"\t-> Genotype is missing for pos: %lld will skip\n",brec->pos+1);
+      continue;
+    }
     //figure out if its an indel
     int isindel  = 0;
     bcfkey key;
@@ -325,12 +332,12 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
 #ifdef __WITH_MAIN__
 
 int main(int argc,char **argv){
-  const char* subsetchr = NULL;//"hej";
+  const char* subsetchr ="17";
   
   int seed = 101;
   mrand_t *mr = mrand_alloc(3,seed);
-  char *ref = "Test_Examples/Mycobacterium_leprae.fa.gz";
-  char *vcf = "vcf.vcf";
+  char *ref = "/willerslev/datasets/reference_genomes/hs37d5/hs37d5.fa";
+  char *vcf = "sub3.vcf";
   fasta_sampler *fs = fasta_sampler_alloc(ref,subsetchr);
   fprintf(stderr,"Done adding fasta, will now add variants\n");
   fasta_sampler_print(stderr,fs);
