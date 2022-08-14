@@ -4,9 +4,9 @@
 #include <cstring>
 #include <cstdlib>
 
-int Random_geometric_k(unsigned int  seed, const double p)
+int Random_geometric_k(const double p,mrand_t *mr)
 {
-  double u = ((double) rand_r(&seed)/ RAND_MAX); // this between 0 and 1
+  double u = mrand_pop(mr);
   int k;
 
   if (p == 1){k = 1;}
@@ -16,10 +16,11 @@ int Random_geometric_k(unsigned int  seed, const double p)
   return floor(k);
 }
 
-void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, double delta, unsigned int seed,mrand_t *mr){
+void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, double delta, mrand_t *mr){
 
     double dtemp1;double dtemp2;
-    dtemp1 = mrand_pop(mr); dtemp2 = mrand_pop(mr);
+    dtemp1 = mrand_pop(mr);
+    dtemp2 = mrand_pop(mr);
     int l = 0;
     int r = L-1;
     //fprintf(stderr,"SEQUENCE \t %s\n",seq);
@@ -34,13 +35,14 @@ void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s,
       r = 0;
       double u_l = dtemp1; // between 0 and 1
       double u_r = dtemp2; // between 0 and 1
-      dtemp1 = mrand_pop(mr); dtemp2 = mrand_pop(mr);
+      dtemp1 = mrand_pop(mr);//why ?
+      dtemp2 = mrand_pop(mr);//why ?
 
       if (u_l > 0.5){
-        l = Random_geometric_k((int) ((dtemp1*30000)+1),lambda); //Random_geometric_k(23424,lambda);//distribution1(generator1);
+        l = Random_geometric_k((int) (lambda,mr); //Random_geometric_k(23424,lambda);//distribution1(generator1);
       }
       if (u_r > 0.5){
-        r = Random_geometric_k((int) ((dtemp2*30000)+1),lambda); //Random_geometric_k(seed,lambda); //distribution1(generator2); //(int) ((rand_r(&seed)%30000)+1)
+        r = Random_geometric_k((int) (lambda,mr); //Random_geometric_k(seed,lambda); //distribution1(generator2); //(int) ((rand_r(&seed)%30000)+1)
       }
     }
     //fprintf(stderr,"R and L values %d \t %d\n",r,l);
