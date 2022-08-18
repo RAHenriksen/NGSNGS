@@ -39,10 +39,10 @@ void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s,
       dtemp2 = mrand_pop(mr);//why ?
 
       if (u_l > 0.5){
-        l = Random_geometric_k((int) (lambda,mr); //Random_geometric_k(23424,lambda);//distribution1(generator1);
+        l = (int) Random_geometric_k(lambda,mr); //Random_geometric_k(23424,lambda);//distribution1(generator1);
       }
       if (u_r > 0.5){
-        r = Random_geometric_k((int) (lambda,mr); //Random_geometric_k(seed,lambda); //distribution1(generator2); //(int) ((rand_r(&seed)%30000)+1)
+        r = (int) Random_geometric_k(lambda,mr); //Random_geometric_k(seed,lambda); //distribution1(generator2); //(int) ((rand_r(&seed)%30000)+1)
       }
     }
     //fprintf(stderr,"R and L values %d \t %d\n",r,l);

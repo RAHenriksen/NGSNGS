@@ -210,14 +210,14 @@ void* Sampling_threads(void *arg){
       SimBriggsModel(seq_r1,fraglength,struct_obj->BriggsParam[0],
 		     struct_obj->BriggsParam[1],
 		     struct_obj->BriggsParam[2], 
-		     struct_obj->BriggsParam[3],loc_seed,drand_alloc_briggs);
+		     struct_obj->BriggsParam[3],drand_alloc_briggs);
       if (PE==struct_obj->SeqType){
         SimBriggsModel(seq_r2, fraglength,struct_obj->BriggsParam[0], 
 		       struct_obj->BriggsParam[1], 
 		       struct_obj->BriggsParam[2], 
-		       struct_obj->BriggsParam[3],loc_seed,drand_alloc_briggs);
+		       struct_obj->BriggsParam[3],drand_alloc_briggs);
       }
-    }
+    } 
 
     //should this be based on forward + strand or on the 5->3 sequences?
     if(struct_obj->doMisMatchErr){
