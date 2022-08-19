@@ -320,7 +320,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     
     pthread_attr_t attr;
     pthread_attr_init(&attr);
-    fprintf(stderr,"\t nthreads: %d\n",nthreads);
     if(nthreads==1){
       Sampling_threads(struct_for_threads);
     }

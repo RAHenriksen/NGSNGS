@@ -48,7 +48,6 @@ void handler(int s) {
     exit(0);
   VERBOSE=0;
   SIG_COND=0;
-  //  pthread_mutex_unlock(&mUpPile_mutex);
 }
 
 void catchkill(){
@@ -61,7 +60,6 @@ void catchkill(){
 }
 
 int main(int argc,char **argv){
-  //fprintf(stderr,"PRINT TYPE %d\n",MacroRandType);
   argStruct *mypars = NULL;
   if(argc==1||(argc==2&&(strcasecmp(argv[1],"--help")==0||strcasecmp(argv[1],"-h")==0))){
     HelpPage(stderr);
