@@ -4,11 +4,49 @@
 #include "sample_qscores.h"
 #include "RandSampling.h"
 #include "mrand.h"
-
 #define LENS 10000
 #define MAXBINS 100
 
-char int2nuc[5] = {'A','C','G','T','N'};
+int refToInt[256] = {
+  0,1,2,3,4,4,4,4,4,4,4,4,4,4,4,4,//15
+  4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//31
+  4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//47
+  0,1,2,3,4,4,4,4,4,4,4,4,4,4,4,4,//63
+  4,0,4,1,4,4,4,2,4,4,4,4,4,4,4,4,//79
+  4,4,4,4,3,4,4,4,4,4,4,4,4,4,4,4,//95
+  4,0,4,1,4,4,4,2,4,4,4,4,4,4,4,4,//111
+  4,4,4,4,3,4,4,4,4,4,4,4,4,4,4,4,//127
+  4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//143
+  4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//159
+  4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//175
+  4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//191
+  4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//207
+  4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//223
+  4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//239
+  4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4//255
+};
+
+char intToRef[5] = {'A','C','G','T','N'};
+
+char refToChar[256] = {
+    0,1,2,3,4,4,4,4,4,4,4,4,4,4,4,4,//15
+    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//31
+    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//47
+    0,1,2,3,4,4,4,4,4,4,4,4,4,4,4,4,//63
+    4,0,4,1,4,4,4,2,4,4,4,4,4,4,4,4,//79
+    4,4,4,4,3,4,4,4,4,4,4,4,4,4,4,4,//95
+    4,0,4,1,4,4,4,2,4,4,4,4,4,4,4,4,//111
+    4,4,4,4,3,4,4,4,4,4,4,4,4,4,4,4,//127
+    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//143
+    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//159
+    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//175
+    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//191
+    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//207
+    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//223
+    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,//239
+    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4//255
+};
+
 double phred2Prob[256];
 
 ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const char *freqfile,int &readcycle){
@@ -78,19 +116,12 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
   return dists;
 }
 void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *NtQuals,mrand_t *mr,int simError){
-  unsigned char nuc2int[256];
-  memset(nuc2int,4,256);
-  nuc2int['a'] = nuc2int['A'] = nuc2int[0] = 0;
-  nuc2int['t'] = nuc2int['T'] = nuc2int[1] = 1;
-  nuc2int['g'] = nuc2int['G'] = nuc2int[2] = 2;
-  nuc2int['c'] = nuc2int['C'] = nuc2int[3] = 3;
-  nuc2int['n'] = nuc2int['N'] = nuc2int[4] = 4;
-  
+
   for(int i = 0;i<len;i++){
     double dtemp1 = mrand_pop(mr);
     double dtemp2 = mrand_pop(mr);
     
-    char inbase = nuc2int[bases[i]];
+    char inbase = refToInt[bases[i]];
     int qscore = ransampl_draw2(ws[inbase][i],dtemp1,dtemp2);
     qscores[i] = NtQuals[qscore]; 
     if (simError){
@@ -98,7 +129,7 @@ void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *N
       if ( tmprand < phred2Prob[qscore]){
         int outbase=(int)floor(4.0*phred2Prob[qscore]*tmprand);//DRAGON
         while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
-	bases[i] = int2nuc[outbase];
+	bases[i] = intToRef[outbase];
       }
     }
   }
@@ -119,7 +150,7 @@ int main(int argc, char **argv){
   memset(qscores,'\0',30);
 
   for(int i=0;i<30;i++){
-    bases[i] = int2nuc[(int)floor(drand48()*4)];
+    bases[i] = intToRef[(int)floor(drand48()*4)];
     std::cout << " i " << i << " bases " << bases[i] << std::endl;
   }
   sample_qscores(bases,qscores,30,ws,ntquals,mr,0);
