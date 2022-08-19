@@ -60,7 +60,7 @@ struct Parsarg_for_Sampling_thread{
   const char* QualFlag;
 
   int DoSeqErr;
-  char NoAlign;
+  int NoAlign;
   char PolyNt;
 
   int rng_type;

@@ -222,11 +222,6 @@ int main(int argc,char **argv){
     //fprintf(stderr,"\t-> ADAPTER FLAG IS:%s\n",Adapt_flag);
     //fprintf(stderr,"\t-> QUAL STRING FLAG IS:%s\n",QualStringFlag);
     
-    const char* NoAlign;
-    if (mypars->NoAlign != NULL){
-      NoAlign = mypars->NoAlign;
-    }
-    else{NoAlign = "F";}
 
     //NB!
     /*if (strcasecmp("false",QualStringFlag)==0){
@@ -271,7 +266,7 @@ int main(int argc,char **argv){
                       Param,DoBriggs,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,
                       qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->CompressThreads,QualStringFlag,Polynt,
                       mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
-                      mypars->vcffile,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,NoAlign,mypars->KstrBuf);
+                      mypars->vcffile,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,mypars->NoAlign,mypars->KstrBuf);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));

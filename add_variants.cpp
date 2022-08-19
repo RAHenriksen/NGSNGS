@@ -282,7 +282,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
       fprintf(stderr,"nal:%d %s %zu\n",i,brec->d.allele[i],strlen(brec->d.allele[i]));
 #endif
     if(brec->n_allele==1){
-      fprintf(stderr,"\t-> Only Reference allele defined for pos: %lld will skip\n",brec->pos+1);
+      fprintf(stderr,"\t-> Only Reference allele defined for pos: %ld will skip\n",brec->pos+1);
       continue;
     }
     //check if parental chromosomes exists otherwise add them
@@ -309,7 +309,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
     if(isindel==0)
       add_variant(fs,fai_chr,brec->pos,brec->d.allele,mygt,inferred_ploidy);
     else{
-      fprintf(stderr,"\t-> Found an indel as rid: %d pos:%lld\n",brec->rid,brec->pos);
+      fprintf(stderr,"\t-> Found an indel as rid: %d pos:%ld\n",brec->rid,brec->pos);
       key.rid=fai_chr;
       key.pos= (int) brec->pos;
       bcf1_t *duped= bcf_dup(brec);

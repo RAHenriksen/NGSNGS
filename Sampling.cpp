@@ -300,7 +300,7 @@ void* Sampling_threads(void *arg){
         uint32_t AlignCigar[2][10];//cigs[0] is read1 cigs[1] is read2
         size_t n_cigar[2] = {1,1};
 
-      if (struct_obj->NoAlign != 'T'){
+      if (struct_obj->NoAlign){
         AlignCigar[0][0] = bam_cigar_gen(naligned[0], BAM_CMATCH);
         if(nsofts[0]>0){
           AlignCigar[0][1] = bam_cigar_gen(nsofts[0], BAM_CSOFT_CLIP);
@@ -373,7 +373,7 @@ void* Sampling_threads(void *arg){
         insert_mate = insert;
         //fprintf(stderr,"CHR IDX %d\n",chr_idx_mate);
       }
-      if (struct_obj->NoAlign == 'T'){
+      if (struct_obj->NoAlign == 1){
         mapq = 255;
         SamFlags[0] = SamFlags[1] = 4;
         chr_idx = -1;

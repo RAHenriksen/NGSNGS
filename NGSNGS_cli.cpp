@@ -14,7 +14,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->OutFormat = unknownT;
   mypars->OutName = NULL; //"output";
   mypars->HeaderIndiv=NULL;
-  mypars->NoAlign=NULL;
+  mypars->NoAlign=0;
 
   // Thread generation and sampling specific information
   mypars->Chromosomes = NULL;
@@ -150,7 +150,7 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-na",*argv)==0 || strcasecmp("--noalign",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
-      mypars->NoAlign = "T";
+      mypars->NoAlign = 1;
     }
     else if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
       strcat(Command,*argv); strcat(Command," ");
