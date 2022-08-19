@@ -248,16 +248,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
     for (int i = 0; i < nthreads; i++){
       struct_for_threads[i].reffasta = reffasta;
-      // generating strings for which the simulated reads will be contained
-      struct_for_threads[i].fqresult_r1 =new kstring_t;
-      struct_for_threads[i].fqresult_r1 -> l = 0;
-      struct_for_threads[i].fqresult_r1 -> m = 0;
-      struct_for_threads[i].fqresult_r1 -> s = NULL;
-
-      struct_for_threads[i].fqresult_r2 =new kstring_t;
-      struct_for_threads[i].fqresult_r2 -> l = 0;
-      struct_for_threads[i].fqresult_r2 -> m = 0;
-      struct_for_threads[i].fqresult_r2 -> s = NULL;
 
       // The output format, output files, and structural elements for SAM outputs
       struct_for_threads[i].OutputFormat = OutputFormat;
@@ -347,14 +337,9 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     
     fasta_sampler_destroy(reffasta);
 
-    for(int i=0;i<nthreads;i++){
-      free(struct_for_threads[i].fqresult_r1 -> s);
+    for(int i=0;i<nthreads;i++)
       free(struct_for_threads[i].list_of_reads);
-      delete struct_for_threads[i].fqresult_r1;
 
-      free(struct_for_threads[i].fqresult_r2 -> s);
-      delete struct_for_threads[i].fqresult_r2;      
-    }
     
     delete[] mythreads; //pthread_t *mythreads = new pthread_t[nthreads]; 
 

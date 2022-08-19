@@ -78,9 +78,6 @@ void* Sampling_threads(void *arg){
   mrand_t *drand_alloc_nt_adapt = mrand_alloc(struct_obj->rng_type,loc_seed);
   mrand_t *drand_alloc_briggs = mrand_alloc(struct_obj->rng_type,loc_seed);
 
-  //fprintf(stderr,"INSIDE SAMPLING THREADS\n");
-  //fprintf(stderr,"-----------------------\nFASTA SAMPLER \n---------------------\n");
-
   char *seq;//actual sequence, this is unallocated
   int fraglength;
 
@@ -95,6 +92,12 @@ void* Sampling_threads(void *arg){
   size_t reads = struct_obj -> reads;
   size_t BufferLength = struct_obj -> BufferLength;
 
+  kstring_t *fqs[2];
+  for(int i=0;i<2;i++){
+    fqs[i] =(kstring_t*) calloc(1,sizeof(kstring_t));
+    fqs[i]->s = NULL;
+    fqs[i]->l = fqs[i]->m = 0;
+  }
   
   size_t localread = 0;
   int iter = 0;
@@ -117,13 +120,7 @@ void* Sampling_threads(void *arg){
   while (current_reads_atom < reads && SIG_COND){
     //lets start by resetting out datastructures to NULL, nill, nothing.
     qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0';
-#if 0
-    memset(qual_r1, 0, sizeof qual_r1); 
-    memset(qual_r2, 0, sizeof qual_r2);  
 
-    memset(seq_r1, 0, sizeof seq_r1);
-    memset(seq_r2, 0, sizeof seq_r2);
-#endif
     //sample fragmentlength
     int fraglength = getFragmentLength(sf); //fraglength = abs(mrand_pop_long(drand_alloc)) % 1000;
     
@@ -278,9 +275,9 @@ void* Sampling_threads(void *arg){
     //now seq_r1 and seq_r2 is completely populated let is build qualscore if
     //saving both fasta and adapter to fasta format
     if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
-      ksprintf(struct_obj->fqresult_r1,">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
+      ksprintf(fqs[0],">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
       if (PE==struct_obj->SeqType)
-	      ksprintf(struct_obj->fqresult_r2,">%s R2\n%s\n",READ_ID,seq_r2);
+	ksprintf(fqs[1],">%s R2\n%s\n",READ_ID,seq_r2);
     } 
     else{
       // Fastq and Sam needs quality scores
@@ -290,9 +287,9 @@ void* Sampling_threads(void *arg){
       
       //write fq if requested
       if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){
-        ksprintf(struct_obj->fqresult_r1,"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
+        ksprintf(fqs[0],"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
         if (PE==struct_obj->SeqType)
-          ksprintf(struct_obj->fqresult_r2,"@%s R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);
+          ksprintf(fqs[1],"@%s R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);
       }
 
       //now only sam family needs to be done, lets revcomplement the bases, and reverse the quality scores so everything is back to forward/+ strand
@@ -399,22 +396,20 @@ void* Sampling_threads(void *arg){
         pthread_mutex_unlock(&write_mutex);
         struct_obj->LengthData = 0;
       }
-      struct_obj->fqresult_r1->l =0;
-      struct_obj->fqresult_r2->l =0;	
+      fqs[0]->l = fqs[1]->l = 0;
       }
       
     }
     
     if (struct_obj->bgzf_fp[0]){
-      if (struct_obj->fqresult_r1->l > BufferLength){
+      if (fqs[0]->l > BufferLength){
         pthread_mutex_lock(&write_mutex);
-        assert(bgzf_write(struct_obj->bgzf_fp[0],struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l)!=0);
+        assert(bgzf_write(struct_obj->bgzf_fp[0],fqs[0]->s,fqs[0]->l)!=0);
         if (PE==struct_obj->SeqType){
-          assert(bgzf_write(struct_obj->bgzf_fp[1],struct_obj->fqresult_r2->s,struct_obj->fqresult_r2->l)!=0);
+          assert(bgzf_write(struct_obj->bgzf_fp[1],fqs[1]->s,fqs[1]->l)!=0);
         }
         pthread_mutex_unlock(&write_mutex);
-        struct_obj->fqresult_r1->l =0;
-        struct_obj->fqresult_r2->l =0;
+	fqs[0]->l = fqs[1]->l = 0;
       }
     }
     chr_idx = -1;
@@ -426,13 +421,12 @@ void* Sampling_threads(void *arg){
       fprintf(stderr,"\t-> Thread %d produced %zu reads with a current total of %zu\n",struct_obj->threadno,moduloread,current_reads_atom);
   }
   if (struct_obj->bgzf_fp[0]){
-    if (struct_obj->fqresult_r1->l > 0){
+    if (fqs[0]->l > 0){
       pthread_mutex_lock(&write_mutex);
-      assert(bgzf_write(struct_obj->bgzf_fp[0],struct_obj->fqresult_r1->s,struct_obj->fqresult_r1->l)!=0);
-      if (PE==struct_obj->SeqType){assert(bgzf_write(struct_obj->bgzf_fp[1],struct_obj->fqresult_r2->s,struct_obj->fqresult_r2->l)!=0);}
+      assert(bgzf_write(struct_obj->bgzf_fp[0],fqs[0]->s,fqs[0]->l)!=0);
+      if (PE==struct_obj->SeqType){assert(bgzf_write(struct_obj->bgzf_fp[1],fqs[1]->s,fqs[1]->l)!=0);}
       pthread_mutex_unlock(&write_mutex);
-      struct_obj->fqresult_r1->l =0;
-      struct_obj->fqresult_r2->l =0;
+	fqs[0]->l = fqs[1]->l = 0;
     } 
   }
 
@@ -440,6 +434,14 @@ void* Sampling_threads(void *arg){
   
   free(sf->rand_alloc);
   delete sf;
+
+  if(fqs[0]->s)
+    free(fqs[0]->s);
+  if(fqs[1]->s)
+    free(fqs[1]->s);
+
+  free(fqs[0]);
+  free(fqs[1]);
   
   free(drand_alloc);
   free(drand_alloc_nt);
