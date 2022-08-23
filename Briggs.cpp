@@ -17,7 +17,7 @@ int Random_geometric_k(const double p,mrand_t *mr)
 }
 
 void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, double delta, mrand_t *mr){
-
+    //fprintf(stderr,"INSIDE THE BRIGGS MODEL \n");
     double dtemp1;double dtemp2;
     dtemp1 = mrand_pop(mr);
     dtemp2 = mrand_pop(mr);
@@ -116,4 +116,5 @@ void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s,
             seq[i] = seq_intermediate[i];
         }
     }
+  //fprintf(stderr,"SEQUENCE \t %s\n-------------\n",seq);
 }

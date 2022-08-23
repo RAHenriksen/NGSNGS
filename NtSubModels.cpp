@@ -9,7 +9,7 @@
 
 void ErrorSub(double randval,char seqchar[], int pos){
   // Generates nucleotide substitutions
-  //fprintf(stderr,"SUBERROR\n"); X, W, Z, Y
+  fprintf(stderr,"SUBERROR\n");
   if (seqchar[pos] == 'A' || seqchar[pos] == 'a'){
     if (0 < randval && randval <= 1.0/3.0){seqchar[pos] = 'C';} //X 
     else if (1.0/3.0 < randval && randval <= 2.0/3.0){seqchar[pos] = 'G';} //T
@@ -33,6 +33,7 @@ void ErrorSub(double randval,char seqchar[], int pos){
 }
 
 double* MisMatchFileArray(double* freqval,const char* filename,int &mismatchcyclelength){
+    //fprintf(stderr,"MisMatchFileArray\n");
     char buf[LENS];
     int i = 0;
     gzFile gz = Z_NULL;
@@ -51,6 +52,7 @@ double* MisMatchFileArray(double* freqval,const char* filename,int &mismatchcycl
 }
 
 void MisMatchFile(char seq[],mrand_t *mr,double* freqval,int LEN){
+  //fprintf(stderr,"MisMatchFileArray\n");
   char ntdeam[4] = {'A', 'T', 'G', 'C'};//{'R', 'Q', 'S', 'U'};//{'X', 'Y', 'Z', 'W'}; //{'A', 'T', 'G', 'C'};
   double dtemp1;
   // 5' moving downwards from the 1 postion in the sequence 

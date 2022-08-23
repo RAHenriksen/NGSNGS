@@ -26,7 +26,7 @@ int refToInt[256] = {
   4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4//255
 };
 
-char intToRef[5] = {'A','C','G','T','N'};
+char intToRef[4] = {'A','C','G','T'};
 
 char refToChar[256] = {
     0,1,2,3,4,4,4,4,4,4,4,4,4,4,4,4,//15
@@ -52,7 +52,9 @@ double phred2Prob[256];
 ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const char *freqfile,int &readcycle){
   for(int qscore =0 ;qscore<256;qscore++){
     double d = qscore;
-    phred2Prob[qscore] = pow(10,-d/10);
+    phred2Prob[qscore] = pow(10,((-d)/10));
+    //fprintf(stderr,"qscore prob cal %lf \t %lf\n",qscore,phred2Prob[qscore]);
+    //std::cout << qscore << " " << phred2Prob[qscore] << std::endl;
   }
   ransampl_ws ***dists = new ransampl_ws**[5];
 
@@ -104,32 +106,44 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
   char *qualtok = NULL;
   //extract the next
   while(((qualtok=strtok(NULL,"\n\t ")))){ntqual[qualidx++] = (char) (atoi(qualtok)+ntcharoffset);}
-  
+  //std::cout << "nt qual" << ntqual[1] << std::endl;
   int Err_idx = 1;
   ErrProb[0] = atof(strtok(all_lines[1],"\n\t"));
   char *Errtok = NULL;
   while ((Errtok=strtok (NULL,"\n\t"))){ErrProb[Err_idx++] = (double) atof(Errtok);}
-  
+  //std::cout << "error prob " << ErrProb[1] << std::endl;
+
   //strdup function allocate necessary memory to store the sourcing string implicitly, i need to free the returned string
   for (unsigned long i = 0; i < all_lines.size(); i++){free(all_lines[i]);}
   //fprintf(stderr,"\t-> Before return in READQUAL FUNC\n");
   return dists;
 }
-void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *NtQuals,mrand_t *mr,int simError){
-
+void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *NtQuals,mrand_t *mr,int simError, int ntcharoffset){
   for(int i = 0;i<len;i++){
     double dtemp1 = mrand_pop(mr);
     double dtemp2 = mrand_pop(mr);
     
     char inbase = refToInt[bases[i]];
-    int qscore = ransampl_draw2(ws[inbase][i],dtemp1,dtemp2);
-    qscores[i] = NtQuals[qscore]; 
+    int qscore_idx = ransampl_draw2(ws[inbase][i],dtemp1,dtemp2);
+    //std::cout << qscore << std::endl;
+    qscores[i] = NtQuals[qscore_idx];
+    //std::cout << " qscore" << qscore_idx << " " << qscores[i]<<std::endl;
+    //std::cout << " qscore " << qscores << " qscore i " << qscores[i] << " phred2prob " << phred2Prob[qscore] << std::endl; 
     if (simError){
+      //fprintf(stderr,"PERFORMING SEQUENCING SUBSITUTIONS\n");
+      //fprintf(stderr,"ntcharoffset %d\n",ntcharoffset);
       double tmprand = mrand_pop(mr);
-      if ( tmprand < phred2Prob[qscore]){
-        int outbase=(int)floor(4.0*phred2Prob[qscore]*tmprand);//DRAGON
+      //std::cout << phred2Prob[qscore] << std::endl;
+      //std::cout << phred2Prob[qscore] << " X " << " qscore i " << qscores[i] << " " << phred2Prob[qscores[i]-33] << std::endl;
+      //phred2Prob[qscores[i]-33]
+      if ( tmprand < phred2Prob[qscores[i]-ntcharoffset]){
+        /*fprintf(stderr,"SIMULATION ERROR \n");
+        std::cout << phred2Prob[qscore]<< std::endl;
+        std::cout << bases[i] << std::endl;*/
+        int outbase=(int)floor(4.0*phred2Prob[qscores[i]-ntcharoffset]*tmprand);//DRAGON
         while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
-	bases[i] = intToRef[outbase];
+	      bases[i] = intToRef[outbase];
+        //std::cout << bases[i] << std::endl;
       }
     }
   }

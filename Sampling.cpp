@@ -39,14 +39,14 @@ void reverseChar(char* str,int length) {
 void ReversComplement(char seq[]){
   // generates the reverse complementary sequence from an input sequence
 
-  char ntdeam[4] = {'T', 'A', 'C', 'G'};
+  char NtComp[5] = {'T', 'G', 'C', 'A','N'};
   char seq_intermediate[1024] = {0};
   strcpy(seq_intermediate,seq);
   //fprintf(stderr,"SEQUENCE \t\t%s\n",seq_intermediate);
   int seqlen = strlen(seq);
   //Complementing sequence
   for(int i=0;i<seqlen;i++){
-    seq_intermediate[i] = ntdeam[refToInt[(unsigned char) seq_intermediate[i]]]; //warning: array subscript has type 'char' [-Wchar-subscripts]
+    seq_intermediate[i] = NtComp[refToInt[(unsigned char) seq_intermediate[i]]]; //warning: array subscript has type 'char' [-Wchar-subscripts]
   }
   //fprintf(stderr,"COMP SEQUENCE \t\t%s\n",seq_intermediate);
 
@@ -85,6 +85,8 @@ void* Sampling_threads(void *arg){
   size_t reads = struct_obj -> reads;
   size_t BufferLength = struct_obj -> BufferLength;
 
+  int ErrProbTypeOffset = 0;
+  if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){ErrProbTypeOffset=33;}
   kstring_t *fqs[2];
   for(int i=0;i<2;i++){
     fqs[i] =(kstring_t*) calloc(1,sizeof(kstring_t));
@@ -270,13 +272,15 @@ void* Sampling_threads(void *arg){
     if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
       ksprintf(fqs[0],">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
       if (PE==struct_obj->SeqType)
-	ksprintf(fqs[1],">%s R2\n%s\n",READ_ID,seq_r2);
+	    ksprintf(fqs[1],">%s R2\n%s\n",READ_ID,seq_r2);
     } 
     else{
       // Fastq and Sam needs quality scores
-      sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt_adapt,struct_obj->DoSeqErr);
+      //if(strandR1==0){fprintf(stderr,"----------\nSEQUENCE \n%s\n",seq_r1);}//int ntcharoffset
+      sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt_adapt,struct_obj->DoSeqErr,ErrProbTypeOffset);
+      //if(strandR1==0){fprintf(stderr,"%s\n",seq_r1);}
       if (PE==struct_obj->SeqType)
-      	sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt_adapt,struct_obj->DoSeqErr);
+      	sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt_adapt,struct_obj->DoSeqErr,ErrProbTypeOffset);
       
       //write fq if requested
       if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){
@@ -363,7 +367,7 @@ void* Sampling_threads(void *arg){
         insert_mate = insert;
         //fprintf(stderr,"CHR IDX %d\n",chr_idx_mate);
       }
-      if (struct_obj->NoAlign == 1){
+      if (struct_obj->NoAlign == 0){
         mapq = 255;
         SamFlags[0] = SamFlags[1] = 4;
         chr_idx = -1;
