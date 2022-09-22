@@ -129,20 +129,23 @@ void* Sampling_threads(void *arg){
     if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT)
       maxbases = fraglength;
 
-
     //Generating random ID unique for each read output
     double rand_val_id = mrand_pop(drand_alloc);
-    int rand_id = (rand_val_id * fraglength-1); //100
+    //fprintf(stderr,"RAndom values for ID %lf \t %lf\n",rand_val_id,mrand_pop(drand_alloc));
+    int rand_id = (rand_val_id * fraglength-1)+(rand_val_id*current_reads_atom); //100
     //why above? just to get random unique?
 
     //get shallow copy of chromosome, offset into, is defined by posB, and posE
     char *seq = sample(struct_obj->reffasta,drand_alloc,&chr,chr_idx,posB,posE,fraglength);
+
     //fprintf(stderr,"chr %s \t idx %d \n",chr,chr_idx);
     //now copy the actual sequence into seq_r1 and seq_r2 if PE 
     strncpy(seq_r1,seq+posB,maxbases);
     if(PE==struct_obj->SeqType)
       strncpy(seq_r2,seq+posE-maxbases,maxbases);
     
+    //fprintf(stderr,"CHECKING THE LENGTH ISSUES %d \t %d \t %d \t %d \n",fraglength,struct_obj->maxreadlength,maxbases,strlen(seq_r1));
+
     /*
       ||------R1------>,,,,,,,,,,|-------R2----->||
     */
@@ -409,6 +412,12 @@ void* Sampling_threads(void *arg){
 	fqs[0]->l = fqs[1]->l = 0;
       }
     }
+
+    memset(qual_r1, 0, sizeof qual_r1); 
+    memset(qual_r2, 0, sizeof qual_r2);  
+    memset(seq_r1, 0, sizeof seq_r1);
+    memset(seq_r2, 0, sizeof seq_r2);
+
     chr_idx = -1;
     iter++;
     localread++;
