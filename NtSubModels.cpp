@@ -9,10 +9,7 @@
 
 void ErrorSub(double randval,char seqchar[], int pos){
   // Generates nucleotide substitutions
-<<<<<<< HEAD
-=======
-  fprintf(stderr,"SUBERROR\n");
->>>>>>> development
+  //fprintf(stderr,"SUBERROR\n");
   if (seqchar[pos] == 'A' || seqchar[pos] == 'a'){
     if (0 < randval && randval <= 1.0/3.0){seqchar[pos] = 'C';} //X 
     else if (1.0/3.0 < randval && randval <= 2.0/3.0){seqchar[pos] = 'G';} //T

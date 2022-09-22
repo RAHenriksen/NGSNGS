@@ -23,9 +23,6 @@ void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s,
     dtemp2 = mrand_pop(mr);
     int l = 0;
     int r = L-1;
-<<<<<<< HEAD
-
-=======
     //fprintf(stderr,"SEQUENCE \t %s\n",seq);
     char seq_intermediate[1024];
     //just to ensure no issues arise in case of not clearing out the intermediate sequence
@@ -33,7 +30,6 @@ void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s,
     strcpy(seq_intermediate,seq);
     //fprintf(stderr,"----------------------\n");
     //fprintf(stderr,"THE SEED IS %u and l : %d and r : %d\n",&seed,l,r);
->>>>>>> development
     while (l+r > L-2){
       l = 0;
       r = 0;
@@ -49,16 +45,14 @@ void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s,
         r = (int) Random_geometric_k(lambda,mr); //Random_geometric_k(seed,lambda); //distribution1(generator2); //(int) ((rand_r(&seed)%30000)+1)
       }
     }
+    //fprintf(stderr,"R and L values %d \t %d\n",r,l);
     for (int i = 0; i<l; i++){
       // l means left overhang (ss)
-<<<<<<< HEAD
-      if (reffrag[i] == 'C' || reffrag[i] == 'c' ){
-=======
       //fprintf(stderr,"FIRST FOR LOOP \n");
       if (seq_intermediate[i] == 'C' || seq_intermediate[i] == 'c' ){
->>>>>>> development
         dtemp1 = mrand_pop(mr);//drand48_r(&buffer, &dtemp1);
         double u = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);//
+        //fprintf(stderr,"Double u C 1 %f\n",u);
         if (u < delta_s){
           seq[i] = 'T'; //T
         }else{
@@ -70,14 +64,11 @@ void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s,
     }
     for (int i = 0; i < r; i++){
       // r means right overhan (ss)
-<<<<<<< HEAD
-      if (reffrag[L-i-1] == 'G' || reffrag[L-i-1] == 'g'){
-=======
       //fprintf(stderr,"SECOND FOR LOOP \n");
       if (seq_intermediate[L-i-1] == 'G' || seq_intermediate[L-i-1] == 'g'){
->>>>>>> development
         dtemp2 = mrand_pop(mr);//drand48_r(&buffer, &dtemp2);
         double u = dtemp2;//((double) rand_r(&seed)/ RAND_MAX);
+        //fprintf(stderr,"Double u G 1 %f\n",u);
         if (u < delta_s){
           seq[L-i-1] = 'A'; //A
         }
@@ -90,6 +81,7 @@ void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s,
     }
     dtemp1 = mrand_pop(mr);//drand48_r(&buffer, &dtemp1);
     double u_nick = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);
+    //fprintf(stderr,"Double u_nick %f\n",u_nick);
     double d = nv/((L-l-r-1)*nv+1-nv);
     int p_nick = l;
     double cumd = d;
@@ -99,14 +91,11 @@ void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s,
     }
     for (int i = l; i < L-r; i++){
       // The double strand part, the left and right hand overhang are probably cut, so only the midlle part of our DNA fragments (ds)
-<<<<<<< HEAD
-        if ((reffrag[i] == 'C' || reffrag[i] == 'c') && i<=p_nick){
-=======
       //fprintf(stderr,"THIRD FOR LOOP \n");
         if ((seq_intermediate[i] == 'C' || seq_intermediate[i] == 'c') && i<=p_nick){
->>>>>>> development
           dtemp1 = mrand_pop(mr);//drand48_r(&buffer, &dtemp1);
           double u = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);
+          //fprintf(stderr,"Double u C 2 %f\n",u);
           if (u < delta){
             seq[i] = 'T'; //T
           }
