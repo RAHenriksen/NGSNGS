@@ -1,13 +1,70 @@
 #ifndef SAMPLING_H
 #define SAMPLING_H
 #define LENS 4096
+#include "NGSNGS_cli.h"
+#include "fasta_sampler.h"
 
-void* Create_se_threads(faidx_t *seq_ref,int thread_no, int seed, size_t reads,const char* OutputName,const char* Adapt_flag,const char* Adapter_1,
-                        const char* Adapter_2,const char* OutputFormat,const char* SeqType,float BriggsParam[4],const char* Briggs_Flag,
-                        const char* Sizefile,int FixedSize,int SizeDistType,int val1,int val2,
-                        int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int threadwriteno,
-                        const char* QualStringFlag,const char* Polynt,const char* ErrorFlag,const char* Specific_Chr[1024],const char* FastaFileName,
-                        const char* SubFlag,const char* SubProfile,int MisLength,int RandMacro,const char *VCFformat, char* Variant_flag,const char *VarType,
-                        char CommandArray[1024],const char* version,const char* HeaderIndiv,const char* NoAlign,size_t BufferLength);
+struct Parsarg_for_Sampling_thread{
+  fasta_sampler *reffasta;
+  int threadno;
+  int totalThreads; //<- this contains the total number of threads. This is shared among all threads
+
+  int* FragLen;
+  double* FragFreq;
+  int No_Len_Val;
+  double distparam1;
+  double distparam2;
+  int LengthType;
+
+  char *NtQual_r1;
+  char *NtQual_r2;
+  ransampl_ws ***QualDist_r1;
+  ransampl_ws ***QualDist_r2;
+
+  double* MisMatch;
+  int doMisMatchErr;
+  int MisLength;
+
+  double *NtErr_r1;
+  double *NtErr_r2;
+
+  int threadseed;
+  size_t reads;
+  size_t BufferLength;
+  
+  BGZF **bgzf_fp;
+
+  samFile *SAMout;
+  sam_hdr_t *SAMHeader;
+  bam1_t **list_of_reads;
+  int LengthData;
+  int MaximumLength;
+
+  int AddAdapt;
+  const char* Adapter_1;
+  const char* Adapter_2;
+
+  int DoBriggs;
+  float *BriggsParam;
+  
+  const char* SizeFile;
+  const char* SizeFileFlag;
+  int FixedSize;
+
+  int maxreadlength;
+  
+  outputformat_e OutputFormat;
+  seqtype_e SeqType;
+  const char* QualFlag;
+
+  int DoSeqErr;
+  int NoAlign;
+  char PolyNt;
+
+  int rng_type;
+};
+
+void* Sampling_threads(void *arg);
+
 
 #endif

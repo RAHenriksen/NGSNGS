@@ -8,7 +8,7 @@ FLAGS=-ggdb -std=c++11
 LIBS = -lz -lm -lbz2 -llzma -lpthread -lcurl
 
 ## add isins crypto trick, copied from ANGSD makefile, which is based on something from samtools
-CRYPTO_TRY=$(shell echo 'int main(){}'|g++ -x c++ - -lcrypto 2>/dev/null; echo $$?)
+CRYPTO_TRY=$(shell echo 'int main(){}'|g++ -x c++ - -lcrypto 1>/dev/null 2>/dev/null; echo $$?)
 ifeq "$(CRYPTO_TRY)" "0"
 $(info Crypto library is available to link; adding -lcrypto to LIBS)
 LIBS += -lcrypto
