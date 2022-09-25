@@ -20,7 +20,7 @@ struct bcfkey_cmp
 
 //NBNB notice that proper rid is NOT bcf1_t->rid but bcfkey->rid which has been shifted relative to fs
 typedef std::map<bcfkey,bcf1_t*,bcfkey_cmp> bcfmap;
-
+//jeg kan ikke lige se hvordan structen eller bcfkey_cmp er shifted ift fs
 
 int verbose2000 = 0;
 int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
@@ -243,13 +243,14 @@ void add_variant(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32
 }
 
 
-int add_variants(fasta_sampler *fs,const char *bcffilename){
+int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
   if(bcffilename==NULL)
     return 0;
   htsFile *bcf = bcf_open(bcffilename, "r");
   bcf_hdr_t *bcf_head = bcf_hdr_read(bcf);
   bcf1_t *brec = bcf_init();
-  int whichsample=0;//if minus one then ref and alt fields are used, if nonnegative then it is used as offset to which genotype to use from the GT fields
+  // So this could be the parameter to change for which individual, but im not actually sure how it works if there isn't any individuals?? check TK's vcf file.
+  int whichsample=HeaderIndiv; //;//if minus one then ref and alt fields are used, if nonnegative then it is used as offset to which genotype to use from the GT fields
   //map chromosomenames in bcf to index in fastafile
   int max_l;
   int *bcf_idx_2_fasta_idx = mapper(bcf_head,fs->char2idx,max_l);
@@ -259,8 +260,8 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
   int32_t *gt_arr = NULL;
   int ngt;
   int inferred_ploidy =5;//assume max ploidy is five, this will be adjusted when parsing data
-  int32_t nodatagt[5] = {0,1,0,0,0};
-  inferred_ploidy = 2;
+  int32_t nodatagt[5] = {0,1,0,0,0}; // im not entirely sure why its 0,1,0,0,0
+  inferred_ploidy = 2; //then this should be removed based on comment above?
   bcfmap mybcfmap;
   
   while(((ret=bcf_read(bcf,bcf_head,brec)))==0){
@@ -303,8 +304,8 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
     key.gt = new int[inferred_ploidy];
     for(int i=0;i<inferred_ploidy;i++){
       key.gt[i] = bcf_gt_allele(mygt[i]);
-      if(strlen(brec->d.allele[bcf_gt_allele(mygt[i])])>1)
-	isindel =1;
+      if(strlen(brec->d.allele[bcf_gt_allele(mygt[i])])>1) //men man kan jo godt have ref der er XXXX altså det kan sagtens være større end 1..
+	      isindel =1; 
     }
     if(isindel==0)
       add_variant(fs,fai_chr,brec->pos,brec->d.allele,mygt,inferred_ploidy);
@@ -320,7 +321,8 @@ int add_variants(fasta_sampler *fs,const char *bcffilename){
   if(mybcfmap.size()>0){
     fprintf(stderr,"\t-> Found some indels, these will now be added to internal datastructures\n");
     add_indels(fs,mybcfmap,bcf_head,inferred_ploidy);
-  }
+  } //hvorfor en internal datastructure? er det for først at tilføje alle snps? og dernæst tilføje indels? 
+  // så tilføj -v snp så kun linje 311 uanset hvad, -v indel kun linje 323, hvis ingenting så bare lad det være.
   fasta_sampler_setprobs(fs);
   bcf_hdr_destroy(bcf_head);
   bcf_destroy(brec); 

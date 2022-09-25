@@ -14,7 +14,7 @@ argStruct *getpars(int argc,char ** argv){
   // The output format, output files, and structural elements for SAM outputs
   mypars->OutFormat = unknownT;
   mypars->OutName = NULL; //"output";
-  mypars->HeaderIndiv=NULL;
+  mypars->HeaderIndiv=-1;
   mypars->NoAlign=1;
 
   // Thread generation and sampling specific information
@@ -58,7 +58,7 @@ argStruct *getpars(int argc,char ** argv){
     if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->Reference = strdup(*(++argv));
     }
-    else if(strcasecmp("-bcf",*argv)==0){
+    else if(strcasecmp("-vcf",*argv)==0 || strcasecmp("-bcf",*argv)==0){
       mypars->vcffile = strdup(*(++argv));
     }
     else if(strcasecmp("-t",*argv)==0 || strcasecmp("--threads",*argv)==0){
@@ -162,7 +162,7 @@ argStruct *getpars(int argc,char ** argv){
       strcasecmp("N",mypars->Poly)!=0){ErrMsg(10.0);}
     }
     else if(strcasecmp("-id",*argv)==0 || strcasecmp("--indiv",*argv)==0){
-      mypars->HeaderIndiv = strdup(*(++argv));
+      mypars->HeaderIndiv = atoi(*(++argv));
     }
     else if(strcasecmp("-rng",*argv)==0 || strcasecmp("--rand",*argv)==0){
       mypars->rng_type = atoi(*(++argv));
@@ -190,7 +190,6 @@ void argStruct_destroy(argStruct *mypars){
 
   // OPTIONAL DEALLOCATIONS
   free(mypars->vcffile);
-  free(mypars->HeaderIndiv);
   free(mypars->Adapter1);
   free(mypars->Adapter2);
   free(mypars->QualProfile1);

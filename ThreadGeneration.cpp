@@ -48,7 +48,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,
-                        char CommandArray[1024],const char* version,const char* HeaderIndiv,int NoAlign,size_t BufferLength){
+                        char CommandArray[1024],const char* version,int HeaderIndiv,int NoAlign,size_t BufferLength){
   //creating an array with the arguments to create multiple threads;
 
   int nthreads=thread_no;
@@ -57,7 +57,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   //allocate for reference file
   fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
   if(VariantFile)
-    add_variants(reffasta,VariantFile);
+    add_variants(reffasta,VariantFile,HeaderIndiv);
   
    //printout all
   /*for(int i=0;i<reffasta->nref;i++)

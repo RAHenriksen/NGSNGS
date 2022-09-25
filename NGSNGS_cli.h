@@ -34,7 +34,7 @@ typedef struct{
   int rng_type; //RNG type, drand48 or rand or drand48_r etc
   char *vcffile; // filename for bcf
   char *CommandRun; // actual command run in same order
-  char* HeaderIndiv; //samplename from VCF/BCF file
+  int HeaderIndiv; //samplename from VCF/BCF file
   int NoAlign;// This option is cool, but explaining it takes up to much space in comment
   size_t KstrBuf; // Buffer size for kstring length
 }argStruct;
