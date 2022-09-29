@@ -14,8 +14,10 @@ mrand_t *mrand_alloc(int type_a,long int seedval){
     ret->type = 3;
   }
 #else
-  if(ret->type==0)
+  if(ret->type==0){
+    //fprintf(stderr,"RANDOM TYPE 0 and Srand seed");
     srand48_r(seedval,(struct drand48_data *) &ret->buf0);
+  }
 #endif
   if(ret->type==1){
     ret->eng = std::default_random_engine(seedval);
@@ -39,6 +41,7 @@ double mrand_pop(mrand_t *mr){
     #if defined(__linux__) || defined(__unix__)
     drand48_r((struct drand48_data*)&mr->buf0,&res);
     #endif
+    //fprintf(stderr,"RANDOM TYPE 0 and drand48 seed");
   }
   else if(mr->type==1){
     res =  mr->distr(mr->eng);

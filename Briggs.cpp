@@ -16,18 +16,19 @@ int Random_geometric_k(const double p,mrand_t *mr)
   return floor(k);
 }
 
-void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, double delta, mrand_t *mr){
+void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, double delta, mrand_t *mr,int rng_type){
     //fprintf(stderr,"INSIDE THE BRIGGS MODEL \n");
     double dtemp1;double dtemp2;
     dtemp1 = mrand_pop(mr);
     dtemp2 = mrand_pop(mr);
+    //fprintf(stderr,"The random generator type in Briggs is %d \t rand1 and 2 %lf \t %lf\n",rng_type,dtemp1,dtemp2);
+    
     int l = 0;
     int r = L-1;
     //fprintf(stderr,"SEQUENCE \t %s\n",seq);
-    char seq_intermediate[1024];
+    char seq_intermediate[1024] = {0};
     //just to ensure no issues arise in case of not clearing out the intermediate sequence
-    memset(seq_intermediate, 0, sizeof seq_intermediate);
-    strcpy(seq_intermediate,seq);
+    //strcpy(seq_intermediate,seq);
     //fprintf(stderr,"----------------------\n");
     //fprintf(stderr,"THE SEED IS %u and l : %d and r : %d\n",&seed,l,r);
     while (l+r > L-2){
@@ -38,45 +39,47 @@ void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s,
       dtemp1 = mrand_pop(mr);//why ?
       dtemp2 = mrand_pop(mr);//why ?
 
+      //(int) Random_geometric_k(lambda,mrand_alloc(struct_obj->rng_type,(dtemp1*30000)+1)) 
+      //before we passed along a seed, so now i just generate a new random number object with a local seed depending on dtemp1 and then pass that to Random_geometirc
       if (u_l > 0.5){
-        l = (int) Random_geometric_k(lambda,mr); //Random_geometric_k(23424,lambda);//distribution1(generator1);
+        l = (int) Random_geometric_k(lambda,mrand_alloc(rng_type,(dtemp1*30000)+1)); //(int) Random_geometric_k(lambda,mr); //Random_geometric_k(23424,lambda);//distribution1(generator1);
       }
       if (u_r > 0.5){
-        r = (int) Random_geometric_k(lambda,mr); //Random_geometric_k(seed,lambda); //distribution1(generator2); //(int) ((rand_r(&seed)%30000)+1)
+        r = (int) Random_geometric_k(lambda,mrand_alloc(rng_type,(dtemp2*30000)+1)); //(int) Random_geometric_k(lambda,mr); //Random_geometric_k(seed,lambda); //distribution1(generator2); //(int) ((rand_r(&seed)%30000)+1)
       }
     }
     //fprintf(stderr,"R and L values %d \t %d\n",r,l);
     for (int i = 0; i<l; i++){
       // l means left overhang (ss)
       //fprintf(stderr,"FIRST FOR LOOP \n");
-      if (seq_intermediate[i] == 'C' || seq_intermediate[i] == 'c' ){
+      if (seq[i] == 'C' || seq[i] == 'c' ){
         dtemp1 = mrand_pop(mr);//drand48_r(&buffer, &dtemp1);
         double u = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);//
         //fprintf(stderr,"Double u C 1 %f\n",u);
         if (u < delta_s){
-          seq[i] = 'T'; //T
+          seq_intermediate[i] = 'T'; //T
         }else{
-          seq[i] = 'C'; //C
+          seq_intermediate[i] = 'C'; //C
         }
       }else{
-        seq[i] = seq_intermediate[i];
+        seq_intermediate[i] = seq[i];
       }
     }
     for (int i = 0; i < r; i++){
-      // r means right overhan (ss)
+      // r means right overhang (ss)
       //fprintf(stderr,"SECOND FOR LOOP \n");
-      if (seq_intermediate[L-i-1] == 'G' || seq_intermediate[L-i-1] == 'g'){
+      if (seq[L-i-1] == 'G' || seq[L-i-1] == 'g'){
         dtemp2 = mrand_pop(mr);//drand48_r(&buffer, &dtemp2);
         double u = dtemp2;//((double) rand_r(&seed)/ RAND_MAX);
         //fprintf(stderr,"Double u G 1 %f\n",u);
         if (u < delta_s){
-          seq[L-i-1] = 'A'; //A
+          seq_intermediate[L-i-1] = 'A'; //A
         }
         else{
-          seq[L-i-1] = 'G'; //G
+          seq_intermediate[L-i-1] = 'G'; //G
         }
       }else{
-        seq[L-i-1] = seq_intermediate[L-i-1];
+        seq_intermediate[L-i-1] = seq[L-i-1];
       }
     }
     dtemp1 = mrand_pop(mr);//drand48_r(&buffer, &dtemp1);
@@ -92,28 +95,31 @@ void SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s,
     for (int i = l; i < L-r; i++){
       // The double strand part, the left and right hand overhang are probably cut, so only the midlle part of our DNA fragments (ds)
       //fprintf(stderr,"THIRD FOR LOOP \n");
-        if ((seq_intermediate[i] == 'C' || seq_intermediate[i] == 'c') && i<=p_nick){
+        if ((seq[i] == 'C' || seq[i] == 'c') && i<=p_nick){
           dtemp1 = mrand_pop(mr);//drand48_r(&buffer, &dtemp1);
           double u = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);
           //fprintf(stderr,"Double u C 2 %f\n",u);
           if (u < delta){
-            seq[i] = 'T'; //T
+            seq_intermediate[i] = 'T'; //T
           }
           else{
-            seq[i] = 'C'; //C
+            seq_intermediate[i] = 'C'; //C
           }
         }
-        else if ((seq_intermediate[i] == 'G' || seq_intermediate[i] == 'g') && i>p_nick){
+        else if ((seq[i] == 'G' || seq[i] == 'g') && i>p_nick){
           dtemp2 = mrand_pop(mr);//drand48_r(&buffer, &dtemp2);
           double u = dtemp2; //((double) rand_r(&seed)/ RAND_MAX);
           if (u < delta){
-            seq[i] = 'A'; //A
+            seq_intermediate[i] = 'A'; //A
           }else{
-            seq[i] = 'G'; //G
+            seq_intermediate[i] = 'G'; //G
           }
         }else{
-            seq[i] = seq_intermediate[i];
+            seq_intermediate[i] = seq[i];
         }
     }
+
+  strcpy(seq,seq_intermediate);
+  memset(seq_intermediate, 0, sizeof seq_intermediate);
   //fprintf(stderr,"SEQUENCE \t %s\n-------------\n",seq);
 }

@@ -205,12 +205,12 @@ void* Sampling_threads(void *arg){
       SimBriggsModel(seq_r1,fraglength,struct_obj->BriggsParam[0],
 		     struct_obj->BriggsParam[1],
 		     struct_obj->BriggsParam[2], 
-		     struct_obj->BriggsParam[3],drand_alloc_briggs);
+		     struct_obj->BriggsParam[3],drand_alloc_briggs,struct_obj->rng_type);
       if (PE==struct_obj->SeqType){
         SimBriggsModel(seq_r2, fraglength,struct_obj->BriggsParam[0], 
 		       struct_obj->BriggsParam[1], 
 		       struct_obj->BriggsParam[2], 
-		       struct_obj->BriggsParam[3],drand_alloc_briggs);
+		       struct_obj->BriggsParam[3],drand_alloc_briggs,struct_obj->rng_type);
       }
     } 
 
