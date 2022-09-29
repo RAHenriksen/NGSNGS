@@ -201,19 +201,21 @@ void* Sampling_threads(void *arg){
     //so now everything is on 5->3 and some of them will be reverse complement to referene
 
     //Nucleotide alteration models only on the sequence itself which holds for fa,fq,sam
+    int ReadDeam;
     if(struct_obj->DoBriggs){
-      SimBriggsModel(seq_r1,fraglength,struct_obj->BriggsParam[0],
+      ReadDeam=0;
+      ReadDeam = SimBriggsModel(seq_r1,fraglength,struct_obj->BriggsParam[0],
 		     struct_obj->BriggsParam[1],
 		     struct_obj->BriggsParam[2], 
-		     struct_obj->BriggsParam[3],drand_alloc_briggs,struct_obj->rng_type);
+		     struct_obj->BriggsParam[3],drand_alloc_briggs);
       if (PE==struct_obj->SeqType){
-        SimBriggsModel(seq_r2, fraglength,struct_obj->BriggsParam[0], 
+        ReadDeam = SimBriggsModel(seq_r2, fraglength,struct_obj->BriggsParam[0], 
 		       struct_obj->BriggsParam[1], 
 		       struct_obj->BriggsParam[2], 
-		       struct_obj->BriggsParam[3],drand_alloc_briggs,struct_obj->rng_type);
+		       struct_obj->BriggsParam[3],drand_alloc_briggs);
       }
     } 
-
+    //fprintf(stderr,"IS READ DAEMINATED WITH VALUE %d\n",ReadDeam);
     //should this be based on forward + strand or on the 5->3 sequences?
     if(struct_obj->doMisMatchErr){
       //this function below modifies sequence to include substitutions from mismatch incorperation file
@@ -224,7 +226,7 @@ void* Sampling_threads(void *arg){
     }
       
     
-    sprintf(READ_ID,"T%d_RID%d_S%d_%s:%d-%d_length:%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength);
+    sprintf(READ_ID,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,0,0,0);
     
     int nsofts[2] = {0,0};//this will contain the softclip information to be used by sam/bam/cram out
     //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail

@@ -137,8 +137,8 @@ void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *N
       //std::cout << phred2Prob[qscore] << " X " << " qscore i " << qscores[i] << " " << phred2Prob[qscores[i]-33] << std::endl;
       //phred2Prob[qscores[i]-33]
       if ( tmprand < phred2Prob[qscores[i]-ntcharoffset]){
-        //fprintf(stderr,"SIMULATION ERROR \n");
-        /*std::cout << phred2Prob[qscore]<< std::endl;
+        /*fprintf(stderr,"SIMULATION ERROR \n");
+        std::cout << phred2Prob[qscore]<< std::endl;
         std::cout << bases[i] << std::endl;*/
         int outbase=(int)floor(4.0*phred2Prob[qscores[i]-ntcharoffset]*tmprand);//DRAGON
         while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
