@@ -25,7 +25,7 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
   // Creates a header for the bamfile. The header is initialized before the function is called //
   
   char genome_len_buf[1024];
-  //sam_hdr_add_line(header, "HD", "VN",version, "SO", "unsorted", NULL);
+  sam_hdr_add_line(header, "HD", "VN",version, "SO", "unsorted", NULL);
   for(int i=0;i<fs->nref;i++){
     snprintf(genome_len_buf,1024,"%d", fs->seqs_l[i]);
     
