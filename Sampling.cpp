@@ -369,21 +369,31 @@ void* Sampling_threads(void *arg){
       strcat(READ_ID,suffR1);
       //fprintf(stderr,"CHR IDX %d\n",chr_idx);
       //fprintf(stderr,"BEGIN %d AND END %d\n",min_beg,max_end);
-      int chr_idx_mate = -1;
-      int chr_max_end_mate = -1;
-      int insert_mate = 0;
+      int chr_idx_mate = -1; // RNEXT 0 -> "=" -1 -> "*s"
+      int chr_max_end_mate = 0; //PNEXT 0-> unavailable for SE
+      int insert_mate = 0; //TLEN
       if(PE==struct_obj->SeqType){
-        strcat(READ_ID2,suffR2);
-        chr_idx_mate = chr_idx;
-        chr_max_end_mate = max_end;
-        insert_mate = insert;
-        //fprintf(stderr,"CHR IDX %d\n",chr_idx_mate);
+        if (struct_obj->NoAlign == 0){
+          mapq = 255;
+          SamFlags[0] = SamFlags[1] = 4;
+          chr_idx = -1;
+          chr_max_end_mate = 0;
+        }
+        else{
+          strcat(READ_ID2,suffR2);
+          chr_idx_mate = chr_idx;
+          chr_max_end_mate = max_end;
+          insert_mate = insert;
+          //fprintf(stderr,"CHR IDX %d\n",chr_idx_mate);
+        }
+        
       }
       if (struct_obj->NoAlign == 0){
         mapq = 255;
         SamFlags[0] = SamFlags[1] = 4;
         chr_idx = -1;
-        min_beg = max_end = -1;
+        min_beg = -1;
+        max_end = 0;
       }
 
       //we have set the parameters accordingly above for no align and PE
