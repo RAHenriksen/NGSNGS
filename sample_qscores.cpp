@@ -124,7 +124,11 @@ void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *N
     double dtemp2 = mrand_pop(mr);
     
     char inbase = refToInt[bases[i]];
-    int qscore_idx = ransampl_draw2(ws[inbase][i],dtemp1,dtemp2);
+    //fprintf(stdout,"dtemp %lf\t%lf\n",dtemp1,dtemp2);
+    //fflush(stdout);
+    int qscore_idx =  ransampl_draw2(ws[inbase][i],dtemp1,dtemp2);//ransampl_draw2(ws[inbase][i],1,1); //ransampl_draw2(ws[inbase][i],dtemp1,dtemp2);
+    //fprintf(stderr,"qscore_idx %d \n",qscore_idx);
+    //fprintf(stderr,"DID NOT FAIL HURRA TK HAPPY \n");
     //std::cout << qscore << std::endl;
     qscores[i] = NtQuals[qscore_idx];
     //std::cout << " qscore" << qscore_idx << " " << qscores[i]<<std::endl;

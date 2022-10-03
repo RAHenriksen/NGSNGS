@@ -13,7 +13,7 @@ typedef struct{
   #endif
   std::random_device rd;
   std::default_random_engine eng;
-  std::uniform_real_distribution<float> distr;
+  std::uniform_real_distribution<double> distr;
   std::uniform_int_distribution<> distrInt;
   unsigned int rand_r_seed;
   unsigned short xsubi[3];

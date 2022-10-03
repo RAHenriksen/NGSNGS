@@ -110,8 +110,9 @@ void ransampl_set( ransampl_ws *ws, const double* p )
 
 int ransampl_draw2( ransampl_ws *ws,double r1, double r2)
 {   
-    //fprintf(stderr,"%lf\t%lf\n",r1,r2);
-    const int i = (int) (ws->n * r1);
+    int i = (int) (ws->n * r1);
+    //fprintf(stdout,"inside ransampl draw %lf\t%lf \t %d\n",r1,r2,i);
+    //fflush(stdout);
     return r2 < ws->prob[i] ? i : ws->alias[i];
 }
 

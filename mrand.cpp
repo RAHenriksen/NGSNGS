@@ -3,6 +3,7 @@
 #include <iostream>
 #include <climits>
 #include "mrand.h"
+#include <cassert>
 
 mrand_t *mrand_alloc(int type_a,long int seedval){
   mrand_t *ret = (mrand_t *) malloc(sizeof(mrand_t));
@@ -18,8 +19,10 @@ mrand_t *mrand_alloc(int type_a,long int seedval){
     srand48_r(seedval,(struct drand48_data *) &ret->buf0);
 #endif
   if(ret->type==1){
+    fprintf(stderr,"REAL UNI DIST\n");
     ret->eng = std::default_random_engine(seedval);
-    ret->distr = std::uniform_real_distribution<float>(0, 1);
+    ret->distr = std::uniform_real_distribution<double>(0, 1);
+    fprintf(stderr,"UNI DIST\n");
     ret->distrInt = std::uniform_int_distribution<>(0,INT_MAX);
   }
   if(ret->type==2)
@@ -44,7 +47,11 @@ double mrand_pop(mrand_t *mr){
     res =  mr->distr(mr->eng);
   }
   else if(mr->type==2){
-    res = (double) rand_r(&mr->rand_r_seed)/RAND_MAX;
+    int randr = rand_r(&mr->rand_r_seed);
+    if (randr == RAND_MAX)
+      res = (double) (randr-1)/RAND_MAX;     
+    else
+      res = (double) randr/RAND_MAX;
   }
   else if(mr->type==3){
     res = erand48(mr->xsubi);
@@ -53,6 +60,8 @@ double mrand_pop(mrand_t *mr){
     fprintf(stderr,"Random parameter %d is not supported\n",mr->type);
     exit(0);
   }
+  assert(res!=0.0);
+  assert(res!=1.0);
   return res;
 }
 long mrand_pop_long(mrand_t *mr){

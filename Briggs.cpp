@@ -16,8 +16,9 @@ int Random_geometric_k(const double p,mrand_t *mr)
   return floor(k);
 }
 
-int SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, double delta, mrand_t *mr){
+int SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, double delta, mrand_t *mr,int strand,int& C_to_T_counter,int& G_to_A_counter,int& C_to_T_counter_rev,int& G_to_A_counter_rev){
     int IsDeam = 0;
+    
     //fprintf(stderr,"INSIDE THE BRIGGS MODEL \n");
     double dtemp1;double dtemp2;
     dtemp1 = mrand_pop(mr);
@@ -57,7 +58,11 @@ int SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, 
         if (u < delta_s){
           IsDeam = 1;
           seq[i] = 'T'; //X
-        }else{
+          if (i == 0&& strand == 0){C_to_T_counter++;}
+          else if(i == 0 && strand==1){C_to_T_counter_rev++;}
+
+        }
+        else{
           seq[i] = seq_intermediate[i]; //C
         }
       }else{
@@ -74,6 +79,8 @@ int SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, 
         if (u < delta_s){
           IsDeam = 1;
           seq[L-i-1] = 'A'; //'Y';
+          if (i == 0&& strand == 0){G_to_A_counter++;}
+          else if(i == 0 && strand==1){G_to_A_counter_rev++;}
         }
         else{
           seq[L-i-1] = seq_intermediate[L-i-1];
@@ -100,8 +107,10 @@ int SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, 
           double u = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);
           //fprintf(stderr,"Double u C 2 %f\n",u);
           if (u < delta){
-            IsDeam = 1;
-            seq[i] = 'T'; //Q
+              IsDeam = 1;
+              seq[i] = 'T'; //Q
+              if (i == 0 && strand == 0){C_to_T_counter++;}
+              else if(i == 0 && strand==1){C_to_T_counter_rev++;}
           }
           else{
             seq[i] = seq_intermediate[i]; //C
@@ -113,7 +122,12 @@ int SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, 
           if (u < delta){
             IsDeam = 1;
             seq[i] = 'A'; //W
-          }else{
+            if (i == 0){
+              if (i == 0 && strand==0){G_to_A_counter++;}
+              else if(i == 0 && strand==1){G_to_A_counter_rev++;}
+            }
+          }
+          else{
             seq[i] = seq_intermediate[i]; //G
           }
         }else{
