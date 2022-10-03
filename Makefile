@@ -3,7 +3,7 @@ CC  ?= gcc
 CXX ?= g++
 
 
-FLAGS=-ggdb -std=c++11
+FLAGS=-ggdb -std=c++11 -O3
 
 LIBS = -lz -lm -lbz2 -llzma -lpthread -lcurl
 
