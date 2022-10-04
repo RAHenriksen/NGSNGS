@@ -5,6 +5,9 @@
 #include <htslib/kstring.h>
 #include <zlib.h>
 #include <htslib/thread_pool.h>
+#include <iostream>
+#include <cmath>
+#include <math.h>
 
 #include <pthread.h>
 
@@ -53,7 +56,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
   int nthreads=thread_no;
   pthread_t *mythreads = new pthread_t[nthreads]; //pthread_t mythreads[nthreads];
-
+  
   //allocate for reference file
   fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
   if(VariantFile)
@@ -298,7 +301,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].LengthType = SizeDistType;
 
       // Sequence output specific
-      struct_for_threads[i].reads = reads;
       struct_for_threads[i].BufferLength = BufferLength;
 
       // Additional information for sequence reads
@@ -308,7 +310,16 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].PolyNt = polynucleotide;
       struct_for_threads[i].NoAlign = NoAlign;
     }
+
+    size_t ThreadReads = (size_t) floor( reads / (double) thread_no);
+    for (int i = 0; i < nthreads-1; i++){
+      struct_for_threads[i].reads = ThreadReads;
+    }
+    struct_for_threads[nthreads-1].reads = reads - (ThreadReads*(nthreads-1));
     
+    //for (int i = 0; i < nthreads; i++){fprintf(stderr,"The number of threads reads for threads %zu \n",struct_for_threads[i].reads);}    
+    //fprintf(stderr,"The number of threads %d and the number of reads %zu\n",thread_no,reads);
+
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     if(nthreads==1){
