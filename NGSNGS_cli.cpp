@@ -143,17 +143,16 @@ argStruct *getpars(int argc,char ** argv){
 	      ErrMsg(7.0);
     }
     else if(strcasecmp("-m",*argv)==0 || strcasecmp("--model",*argv)==0){
-      fprintf(stderr,"---------------------- \n INSIDE M \n");
       ++argv;
       char *tok = *argv;
       std::cout << tok << std::endl;
       char* ModelString = strdup(tok);
-      fprintf(stderr,"Model Choice %s\n",ModelString);
+      //fprintf(stderr,"Model Choice %s\n",ModelString);
       char* BriggsModel;
       BriggsModel = strtok(ModelString,",");
-      fprintf(stderr,"Parameter model %s\n",BriggsModel);
+      //fprintf(stderr,"Parameter model %s\n",BriggsModel);
       char* ModelParam =  strdup(strtok (NULL, ""));
-      fprintf(stderr,"Parameter values %s\n",ModelParam);
+      //fprintf(stderr,"Parameter values %s\n",ModelParam);
       if(strcasecmp("b",BriggsModel)==0 || strcasecmp("briggs",BriggsModel)==0){
 	      mypars->Briggs = ModelParam;
       }
