@@ -1,5 +1,9 @@
 #include <htslib/kstring.h>
 #include "NGSNGS_cli.h"
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <iostream>
 
 argStruct *getpars(int argc,char ** argv){
   argStruct *mypars = new argStruct;
@@ -138,13 +142,32 @@ argStruct *getpars(int argc,char ** argv){
       if(mypars->OutFormat==unknownT)
 	      ErrMsg(7.0);
     }
-    else if(strcasecmp("-b",*argv)==0 || strcasecmp("--briggs",*argv)==0){
+    else if(strcasecmp("-m",*argv)==0 || strcasecmp("--model",*argv)==0){
+      fprintf(stderr,"---------------------- \n INSIDE M \n");
+      ++argv;
+      char *tok = *argv;
+      std::cout << tok << std::endl;
+      char* ModelString = strdup(tok);
+      fprintf(stderr,"Model Choice %s\n",ModelString);
+      char* BriggsModel;
+      BriggsModel = strtok(ModelString,",");
+      fprintf(stderr,"Parameter model %s\n",BriggsModel);
+      char* ModelParam =  strdup(strtok (NULL, ""));
+      fprintf(stderr,"Parameter values %s\n",ModelParam);
+      if(strcasecmp("b",BriggsModel)==0 || strcasecmp("briggs",BriggsModel)==0){
+	      mypars->Briggs = ModelParam;
+      }
+      if(strcasecmp("b7",BriggsModel)==0 || strcasecmp("briggs07",BriggsModel)==0)
+	      mypars->BriggsBiotin = ModelParam; //double nv, double lambda, double delta_s, double delta -> 0.024,0.36,0.68,0.0097
+      // -m || --model b7,0.024,0.36,0.68,0.0097 b10,0.024,0.36,0.68,0.0097 bCpG,0.024,0.36,0.68,0.0097
+    }
+    /*else if(strcasecmp("-b",*argv)==0 || strcasecmp("--briggs",*argv)==0){
       mypars->Briggs = strdup(*(++argv)); //double nv, double lambda, double delta_s, double delta -> 0.024,0.36,0.68,0.0097
       // -m || --model b7,0.024,0.36,0.68,0.0097 b10,0.024,0.36,0.68,0.0097 bCpG,0.024,0.36,0.68,0.0097
     }
-    else if(strcasecmp("-bb",*argv)==0 || strcasecmp("--biotin",*argv)==0){ 
+    else if(strcasecmp("-b7",*argv)==0 || strcasecmp("--briggs07",*argv)==0){ 
       mypars->BriggsBiotin = strdup(*(++argv)); // -bb --biotin
-    }
+    }*/
     else if(strcasecmp("-l",*argv)==0 || strcasecmp("--length",*argv)==0){
       mypars->Length = atoi(*(++argv));
       if (mypars->Length < 0.0){ErrMsg(3.2);}
