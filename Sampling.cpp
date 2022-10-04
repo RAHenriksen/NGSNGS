@@ -83,6 +83,7 @@ void* Sampling_threads(void *arg){
  
   
   size_t reads = struct_obj -> reads;
+  //fprintf(stderr,"INSIDE EACH THREAD NUMBER OF READS %zu \n",reads);
   size_t BufferLength = struct_obj -> BufferLength;
 
   int ErrProbTypeOffset = 0;
@@ -114,7 +115,13 @@ void* Sampling_threads(void *arg){
   int C_total = 0;int C_to_T_counter = 0;int C_to_T_counter_rev = 0;int C_total_rev=0;
   int G_total = 0;int G_to_A_counter = 0;int G_to_A_counter_rev = 0;int G_total_rev=0;
   
-  int modulovalue = 10;
+  int modulovalue;
+  if (reads > 100000){
+    modulovalue = 10;
+  }
+  else{
+    modulovalue = 1;
+  }
   size_t moduloread = reads/modulovalue;
   
   while (current_reads_atom < reads && SIG_COND){
@@ -224,7 +231,7 @@ void* Sampling_threads(void *arg){
       
       if (struct_obj->DoBriggs){
         int RevBriggs = mrand_pop(drand_alloc)>0.5?0:1;
-        fprintf(stderr,"INSIDE DO BRIGGS LOOP %d\n",RevBriggs);
+        //fprintf(stderr,"INSIDE DO BRIGGS LOOP %d\n",RevBriggs);
         // we consider the different strands using the meyer 2010 article in 50% of the cases
         if(RevBriggs == 1){
           //fprintf(stderr,"INSIDE REVBRIGGS IF with strand %d\n",strandR1);
