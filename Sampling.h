@@ -45,6 +45,7 @@ struct Parsarg_for_Sampling_thread{
   const char* Adapter_2;
 
   int DoBriggs;
+  int DoBriggsBiotin;
   float *BriggsParam;
   
   const char* SizeFile;

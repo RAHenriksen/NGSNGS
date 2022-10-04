@@ -43,7 +43,7 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
 }
 
 void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
-                        const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,
+                        const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,int DoBriggsBiotin,
                         const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
@@ -285,6 +285,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
       // 3) misincorporation matrix
       struct_for_threads[i].DoBriggs = DoBriggs;
+      struct_for_threads[i].DoBriggsBiotin = DoBriggsBiotin;
       struct_for_threads[i].BriggsParam = BriggsParam;
       
       // Fragment lengths 

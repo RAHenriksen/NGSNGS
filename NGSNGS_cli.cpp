@@ -31,6 +31,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->DoSeqErr = 1;
   // 2) briggs model
   mypars->Briggs = NULL; //"0.024,0.36,0.68,0.0097";
+  mypars->BriggsBiotin = NULL; //"0.024,0.36,0.68,0.0097";
   // 3) misincorporation matrix
   mypars->SubProfile = NULL;
   // 4) Bcf file and variation incorporation
@@ -121,24 +122,28 @@ argStruct *getpars(int argc,char ** argv){
       ++argv;
       char *tok = *argv;
       if(strcasecmp("fa",tok)==0)
-	mypars->OutFormat = faT;
+	      mypars->OutFormat = faT;
       if(strcasecmp("fa.gz",tok)==0)
-	mypars->OutFormat = fagzT;
+	      mypars->OutFormat = fagzT;
       if(strcasecmp("fq",tok)==0)
-	mypars->OutFormat = fqT;
+	      mypars->OutFormat = fqT;
       if(strcasecmp("fq.gz",tok)==0)
-	mypars->OutFormat = fqgzT;
+	      mypars->OutFormat = fqgzT;
       if(strcasecmp("sam",tok)==0)
-	mypars->OutFormat = samT;
+	      mypars->OutFormat = samT;
       if(strcasecmp("bam",tok)==0)
-	mypars->OutFormat = bamT;
+	      mypars->OutFormat = bamT;
       if(strcasecmp("cram",tok)==0)
-	mypars->OutFormat = cramT;
+	      mypars->OutFormat = cramT;
       if(mypars->OutFormat==unknownT)
-	ErrMsg(7.0);
+	      ErrMsg(7.0);
     }
     else if(strcasecmp("-b",*argv)==0 || strcasecmp("--briggs",*argv)==0){
       mypars->Briggs = strdup(*(++argv)); //double nv, double lambda, double delta_s, double delta -> 0.024,0.36,0.68,0.0097
+      // -m || --model b7,0.024,0.36,0.68,0.0097 b10,0.024,0.36,0.68,0.0097 bCpG,0.024,0.36,0.68,0.0097
+    }
+    else if(strcasecmp("-bb",*argv)==0 || strcasecmp("--biotin",*argv)==0){ 
+      mypars->BriggsBiotin = strdup(*(++argv)); // -bb --biotin
     }
     else if(strcasecmp("-l",*argv)==0 || strcasecmp("--length",*argv)==0){
       mypars->Length = atoi(*(++argv));
@@ -196,6 +201,7 @@ void argStruct_destroy(argStruct *mypars){
   free(mypars->QualProfile2);
   free(mypars->SubProfile);
   free(mypars->Briggs);
+  free(mypars->BriggsBiotin);
   free(mypars->Poly);
   delete mypars;
 }

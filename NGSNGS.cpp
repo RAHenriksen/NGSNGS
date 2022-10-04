@@ -236,14 +236,24 @@ int main(int argc,char **argv){
       qualstringoffset = 33;
     
     int DoBriggs = 0;
+    int DoBriggsBiotin = 0;
     float Param[4];
-    if (mypars->Briggs != NULL){
-      char* BriggsParam = strdup(mypars->Briggs);
+    if (mypars->Briggs != NULL || mypars->BriggsBiotin != NULL){
+      char* BriggsParam;
+      if (mypars->Briggs != NULL){
+        BriggsParam = strdup(mypars->Briggs);
+        DoBriggs = 1;
+      }
+      else{
+        BriggsParam = strdup(mypars->BriggsBiotin);
+        DoBriggsBiotin = 1;
+      }
+      
       Param[0] = myatof(strtok(BriggsParam,"\", \t"));
       Param[1] = myatof(strtok(NULL,"\", \t"));
       Param[2] = myatof(strtok(NULL,"\", \t"));
       Param[3] = myatof(strtok(NULL,"\", \t"));
-      DoBriggs = 1;
+      
       free(BriggsParam); // Again using strdup
     }
     
@@ -261,7 +271,7 @@ int main(int argc,char **argv){
 
     ThreadInitialization(mypars->Reference,mypars->SamplThreads,mypars->Glob_seed,mypars->nreads/mypars->SamplThreads,mypars->OutName,
                       AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->OutFormat,mypars->seq_type,
-                      Param,DoBriggs,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,
+                      Param,DoBriggs,DoBriggsBiotin,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,
                       qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->CompressThreads,QualStringFlag,Polynt,
                       mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
                       mypars->vcffile,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,mypars->NoAlign,mypars->KstrBuf);

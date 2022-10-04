@@ -26,6 +26,7 @@ typedef struct{
   char *SubProfile;// filename for misincorperation, typespecific and position specific
   int DoSeqErr;// should we not add errors?, {T,F}
   char *Briggs; // the four briggs parameters
+  char *BriggsBiotin; // the four briggs parameters in relation to Biotin
   int Length; // fragment length when fixed
   char *LengthFile; //filename for distribution of frag lengths
   char *LengthDist;//name of pdf used for simulating fraglengths (incl parameters)
