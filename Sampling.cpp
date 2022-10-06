@@ -27,6 +27,7 @@
 #include "Sampling.h"
 #include "sample_qscores.h"
 #include "fasta_sampler.h"
+#include "add_indels.h"
 
 #define LENS 4096
 #define MAXBINS 100
@@ -119,7 +120,7 @@ void* Sampling_threads(void *arg){
   if (reads > 100000){
     modulovalue = 10;
   }
-  else{
+  else{ 
     modulovalue = 1;
   }
   size_t moduloread = reads/modulovalue;
@@ -142,7 +143,7 @@ void* Sampling_threads(void *arg){
       maxbases = fraglength;
 
     //Generating random ID unique for each read output
-    double rand_val_id = mrand_pop(drand_alloc);
+    double rand_val_id = mrand_pop(drand_alloc);//<- SHIT
     //fprintf(stderr,"RAndom values for ID %lf \t %lf\n",rand_val_id,mrand_pop(drand_alloc));
     int rand_id = (rand_val_id * fraglength-1)+(rand_val_id*current_reads_atom); //100
     //why above? just to get random unique?
@@ -153,6 +154,12 @@ void* Sampling_threads(void *arg){
     //fprintf(stderr,"chr %s \t idx %d \n",chr,chr_idx);
     //now copy the actual sequence into seq_r1 and seq_r2 if PE 
     strncpy(seq_r1,seq+posB,maxbases);
+    //simulate indels for the fragment
+    double pars[4] = {0.05,0.1,0.1,0.2};
+    int has_indels  = add_indel(drand_alloc,seq_r1,struct_obj->maxreadlength,pars);
+
+    
+    
     if(PE==struct_obj->SeqType)
       strncpy(seq_r2,seq+posE-maxbases,maxbases);
     
