@@ -47,7 +47,7 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
 
 void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
                         const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,int DoBriggsBiotin,
-                        const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,
+                        const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,int readcycle,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,
@@ -212,7 +212,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     const char *freqfile_r1; //"Qual_profiles/AccFreqL150R1.txt";
     const char *freqfile_r2;
     int outputoffset = qualstringoffset;
-    int maxreadlength;
     //fprintf(stderr,"\t-> FRAG ARRAY LE\n");
     ransampl_ws ***QualDist = NULL;
     char nt_qual_r1[1024];
@@ -224,12 +223,12 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     //fprintf(stderr,"\t-> BEFORE QUAL STRING IF\n");
     if(strcasecmp("true",QualStringFlag)==0){ //|| strcasecmp("bam",OutputFormat)==0
       freqfile_r1 = QualProfile1;
-      QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1,maxreadlength);
+      QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1);
       //fprintf(stderr,"\t-> CREATING QUALDIST\n");
       if(PE==SeqType){
         //fprintf(stderr,"\t-> PE LOOP\n");
         freqfile_r2 = QualProfile2;
-        QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2,maxreadlength);
+        QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2);
       }
     }
     //fprintf(stderr,"\t-> AFTER QUAL STRING IF\n");
@@ -279,7 +278,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].QualDist_r2 = QualDist2;
       struct_for_threads[i].NtErr_r1 = ErrArray_r1;
       struct_for_threads[i].NtErr_r2 = ErrArray_r2;
-      struct_for_threads[i].maxreadlength = (int) maxreadlength;
+      struct_for_threads[i].maxreadlength = (int) readcycle;
 
       // 2) briggs model
       struct_for_threads[i].MisMatch = MisMatchFreqArray;
@@ -357,7 +356,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
     if(strcasecmp("true",QualStringFlag)==0){
       for(int base=0;base<5;base++){
-        for(int pos = 0 ; pos< (int) maxreadlength;pos++){
+        for(int pos = 0 ; pos< (int) readcycle;pos++){
           ransampl_free(QualDist[base][pos]);
         }
         delete[] QualDist[base];
@@ -366,7 +365,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
       if(PE==SeqType){
         for(int base=0;base<5;base++){
-          for(int pos = 0 ; pos< (int) maxreadlength;pos++){
+          for(int pos = 0 ; pos< (int) readcycle;pos++){
             ransampl_free(QualDist2[base][pos]);
           }
           delete[] QualDist2[base];

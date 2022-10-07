@@ -77,7 +77,7 @@ int main(int argc,char **argv){
     clock_t t = clock();
     time_t t2 = time(NULL);
 
-    //const char* OutputFormat = mypars->OutFormat;
+    outputformat_e OutputFormat = mypars->OutFormat;
     double readcov = mypars->coverage;
 
     if (mypars->rng_type == -1){
@@ -95,14 +95,32 @@ int main(int argc,char **argv){
     if (mypars->Reference == NULL){ErrMsg(1.0);}
     if (mypars->OutName == NULL){ErrMsg(8.0);}
     
+    int readcycle = 0;
+    std::vector<char *> all_lines;
+    if (mypars->CycleLength != 0){
+      readcycle = mypars->CycleLength;
+    }
+    else{
+      if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
+        gzFile gz = Z_NULL;
+        assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL);
+        char buf[LENS];
+        while(gzgets(gz,buf,LENS))
+          all_lines.push_back(strdup(buf));
+        gzclose(gz);
+      }
+      readcycle = (all_lines.size()-2)/5; //all_lines.size()-1
+    }
+    fprintf(stderr,"\t-> The is provided read cycle length is: %d or the inferred read cycle length is %d\n",mypars->CycleLength,(int)(all_lines.size()-2)/5);    
+
     const char* SizeDist = mypars->LengthDist;
-    double meanlength = 0;
+    double MeanFragLen = 0;
     int SizeDistType=-1;double val1 = 0; double val2  = 0;
 
     if (mypars->Length != 0){
       if (mypars->Length < 0){ErrMsg(3.0);}
       else{
-        meanlength = mypars->Length;
+        MeanFragLen = mypars->Length;
         SizeDistType=0;
       } 
     }
@@ -118,12 +136,20 @@ int main(int argc,char **argv){
       while(gzgets(gz,buf,LENS)){
         double Length_tmp = atof(strtok(buf,"\n\t "));
         double Frequency_tmp = atof(strtok(NULL,"\n\t "));
-        sum += Length_tmp*Frequency_tmp;
-        n = n+1;
+        if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
+          if (Length_tmp <= (double)readcycle){
+            sum += Length_tmp*Frequency_tmp;
+            n = n+1;
+          }
+        }
+        else{
+          sum += Length_tmp*Frequency_tmp;
+          n = n+1;
+        }
       }
       gzclose(gz);
       
-      meanlength = sum/n;
+      MeanFragLen = sum/n;
       if (mypars->Length <0){fprintf(stderr,"FIXED SIZE %d",mypars->Length);ErrMsg(5.0);}
       SizeDistType=1;
     }
@@ -136,12 +162,12 @@ int main(int argc,char **argv){
       if(tmp == NULL){val2 = 0;}
       else{val2 = atof(tmp);}
       
-      if (strcasecmp(Dist,"Uni")==0){SizeDistType=2;meanlength=(0.5*(val1+val2));}
-      if (strcasecmp(Dist,"Norm")==0){SizeDistType=3;meanlength= val1;}
-      if (strcasecmp(Dist,"LogNorm")==0){SizeDistType=4;meanlength= exp((val1+((val2*val2)/2)));}
-      if (strcasecmp(Dist,"Pois")==0){SizeDistType=5;meanlength= val1;}
-      if (strcasecmp(Dist,"Exp")==0){SizeDistType=6;meanlength= 1/val1;}
-      if (strcasecmp(Dist,"Gam")==0){SizeDistType=7;meanlength= (val1/val2);}
+      if (strcasecmp(Dist,"Uni")==0){SizeDistType=2;MeanFragLen=(0.5*(val1+val2));}
+      if (strcasecmp(Dist,"Norm")==0){SizeDistType=3;MeanFragLen= val1;}
+      if (strcasecmp(Dist,"LogNorm")==0){SizeDistType=4;MeanFragLen= exp((val1+((val2*val2)/2)));}
+      if (strcasecmp(Dist,"Pois")==0){SizeDistType=5;MeanFragLen= val1;}
+      if (strcasecmp(Dist,"Exp")==0){SizeDistType=6;MeanFragLen= 1/val1;}
+      if (strcasecmp(Dist,"Gam")==0){SizeDistType=7;MeanFragLen= (val1/val2);}
       if (mypars->Length >0){ErrMsg(5.0);}
       free((char *)Dist);
     }
@@ -170,9 +196,18 @@ int main(int argc,char **argv){
         int chr_len = faidx_seq_len(seq_ref,chr_name);
         genome_size += chr_len;
       }
-      mypars->nreads =  (readcov*genome_size)/meanlength;
+
+      if (MeanFragLen > readcycle){MeanFragLen = readcycle;}
+      
+      
+      if (mypars->seq_type == PE){
+        mypars->nreads =  ((readcov*genome_size)/MeanFragLen)/2;
+      }
+      else{
+        mypars->nreads = (readcov*genome_size)/MeanFragLen;
+      }
     }
-  
+    
     //size_t nreads_per_thread = mypars->nreads/mypars->SamplThreads;
     
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",mypars->Reference,chr_total);
@@ -199,7 +234,6 @@ int main(int argc,char **argv){
     if (mypars->QualProfile1 == NULL){QualStringFlag = "false";}
     else{QualStringFlag = "true";}
     //fprintf(stderr,"qualstring test %s",QualStringFlag);
-    outputformat_e OutputFormat = mypars->OutFormat;
     if (strcasecmp("true",QualStringFlag)==0){
       if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
         if (mypars->seq_type == PE && mypars->QualProfile2 == NULL){
@@ -271,7 +305,7 @@ int main(int argc,char **argv){
     //mypars->nreads/mypars->SamplThreads
     ThreadInitialization(mypars->Reference,mypars->SamplThreads,mypars->Glob_seed,mypars->nreads,mypars->OutName,
                       AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->OutFormat,mypars->seq_type,
-                      Param,DoBriggs,DoBriggsBiotin,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,
+                      Param,DoBriggs,DoBriggsBiotin,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,readcycle,
                       qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->CompressThreads,QualStringFlag,Polynt,
                       mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
                       mypars->vcffile,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,mypars->NoAlign,mypars->KstrBuf);

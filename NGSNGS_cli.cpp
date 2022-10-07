@@ -41,7 +41,8 @@ argStruct *getpars(int argc,char ** argv){
   // 4) Bcf file and variation incorporation
   mypars->vcffile = NULL;
 
-  // Fragment lengths 
+  // Fragment lengths
+  mypars->CycleLength = 0; 
   mypars->Length = 0;
   mypars->LengthFile = NULL;
   mypars->LengthDist = NULL;
@@ -160,13 +161,10 @@ argStruct *getpars(int argc,char ** argv){
 	      mypars->BriggsBiotin = ModelParam; //double nv, double lambda, double delta_s, double delta -> 0.024,0.36,0.68,0.0097
       // -m || --model b7,0.024,0.36,0.68,0.0097 b10,0.024,0.36,0.68,0.0097 bCpG,0.024,0.36,0.68,0.0097
     }
-    /*else if(strcasecmp("-b",*argv)==0 || strcasecmp("--briggs",*argv)==0){
-      mypars->Briggs = strdup(*(++argv)); //double nv, double lambda, double delta_s, double delta -> 0.024,0.36,0.68,0.0097
-      // -m || --model b7,0.024,0.36,0.68,0.0097 b10,0.024,0.36,0.68,0.0097 bCpG,0.024,0.36,0.68,0.0097
+    else if(strcasecmp("-cl",*argv)==0 || strcasecmp("--cycle",*argv)==0){
+      mypars->CycleLength = atoi(*(++argv));
+      if (mypars->CycleLength < 0.0){ErrMsg(3.2);}
     }
-    else if(strcasecmp("-b7",*argv)==0 || strcasecmp("--briggs07",*argv)==0){ 
-      mypars->BriggsBiotin = strdup(*(++argv)); // -bb --biotin
-    }*/
     else if(strcasecmp("-l",*argv)==0 || strcasecmp("--length",*argv)==0){
       mypars->Length = atoi(*(++argv));
       if (mypars->Length < 0.0){ErrMsg(3.2);}

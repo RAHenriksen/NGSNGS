@@ -67,10 +67,10 @@ void* Sampling_threads(void *arg){
   Parsarg_for_Sampling_thread *struct_obj = (Parsarg_for_Sampling_thread*) arg;
 
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
-  mrand_t *drand_alloc = mrand_alloc(struct_obj->rng_type,loc_seed);
-  mrand_t *drand_alloc_nt = mrand_alloc(struct_obj->rng_type,loc_seed);
-  mrand_t *drand_alloc_nt_adapt = mrand_alloc(struct_obj->rng_type,loc_seed);
-  mrand_t *drand_alloc_briggs = mrand_alloc(struct_obj->rng_type,loc_seed);
+  mrand_t *rand_alloc = mrand_alloc(struct_obj->rng_type,loc_seed);
+  mrand_t *rand_alloc_nt = mrand_alloc(struct_obj->rng_type,loc_seed);
+  mrand_t *rand_alloc_nt_adapt = mrand_alloc(struct_obj->rng_type,loc_seed);
+  mrand_t *rand_alloc_briggs = mrand_alloc(struct_obj->rng_type,loc_seed);
 
   char *seq;//actual sequence, this is unallocated
   int fraglength;
@@ -143,20 +143,20 @@ void* Sampling_threads(void *arg){
       maxbases = fraglength;
 
     //Generating random ID unique for each read output
-    double rand_val_id = mrand_pop(drand_alloc);//<- SHIT
+    double rand_val_id = mrand_pop(rand_alloc);//<- SHIT
     //fprintf(stderr,"RAndom values for ID %lf \t %lf\n",rand_val_id,mrand_pop(drand_alloc));
     int rand_id = (rand_val_id * fraglength-1)+(rand_val_id*current_reads_atom); //100
     //why above? just to get random unique?
 
     //get shallow copy of chromosome, offset into, is defined by posB, and posE
-    char *seq = sample(struct_obj->reffasta,drand_alloc,&chr,chr_idx,posB,posE,fraglength);
+    char *seq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength);
 
     //fprintf(stderr,"chr %s \t idx %d \n",chr,chr_idx);
     //now copy the actual sequence into seq_r1 and seq_r2 if PE 
     strncpy(seq_r1,seq+posB,maxbases);
     //simulate indels for the fragment
     double pars[4] = {0.05,0.1,0.1,0.2};
-    int has_indels  = add_indel(drand_alloc,seq_r1,struct_obj->maxreadlength,pars);
+    //int has_indels  = add_indel(drand_alloc,seq_r1,struct_obj->maxreadlength,pars);
 
     
     
@@ -172,7 +172,7 @@ void* Sampling_threads(void *arg){
     //fprintf(stderr,"Current read %zu and max bases %d and fraglent %d  and coordinates %d \t %d \t seq length %d\n",current_reads_atom,maxbases,fraglength,posB,posE,strlen(seq_r1));
     //Selecting strand, 0-> forward strand (+) 5'->3', 1 -> reverse strand (-) 3'->5'
     //rename to strand to strandR1
-    int strandR1 = mrand_pop(drand_alloc)>0.5?0:1; //int strand = (int) (rand_start%2);
+    int strandR1 = mrand_pop(rand_alloc)>0.5?0:1; //int strand = (int) (rand_start%2);
     
     //Remove reads which are all N? In this code we remove both pairs if both reads are all N
     int skipread = 1;
@@ -234,10 +234,10 @@ void* Sampling_threads(void *arg){
       ReadDeam = SimBriggsModel(seq_r1,fraglength,struct_obj->BriggsParam[0],
 		     struct_obj->BriggsParam[1],
 		     struct_obj->BriggsParam[2], 
-		     struct_obj->BriggsParam[3],drand_alloc_briggs,strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
+		     struct_obj->BriggsParam[3],rand_alloc_briggs,strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
       
       if (struct_obj->DoBriggs){
-        int RevBriggs = mrand_pop(drand_alloc)>0.5?0:1;
+        int RevBriggs = mrand_pop(rand_alloc)>0.5?0:1;
         //fprintf(stderr,"INSIDE DO BRIGGS LOOP %d\n",RevBriggs);
         // we consider the different strands using the meyer 2010 article in 50% of the cases
         if(RevBriggs == 1){
@@ -270,7 +270,7 @@ void* Sampling_threads(void *arg){
         ReadDeam = SimBriggsModel(seq_r2, fraglength,struct_obj->BriggsParam[0], 
 		       struct_obj->BriggsParam[1], 
 		       struct_obj->BriggsParam[2], 
-		       struct_obj->BriggsParam[3],drand_alloc_briggs,strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
+		       struct_obj->BriggsParam[3],rand_alloc_briggs,strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
       }
     } 
     //fprintf(stderr,"IS READ DAEMINATED WITH VALUE %d\n",ReadDeam);
@@ -278,9 +278,9 @@ void* Sampling_threads(void *arg){
     if(struct_obj->doMisMatchErr){
       //this function below modifies sequence to include substitutions from mismatch incorperation file
       //this option is currently -mf, NB change name
-      MisMatchFile(seq_r1,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
+      MisMatchFile(seq_r1,rand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
       if (PE==struct_obj->SeqType)
-	      MisMatchFile(seq_r2,drand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
+	      MisMatchFile(seq_r2,rand_alloc_briggs,struct_obj->MisMatch,struct_obj->MisLength);
     }
       
     
@@ -340,10 +340,10 @@ void* Sampling_threads(void *arg){
     else{
       // Fastq and Sam needs quality scores
       //if(strandR1==0){fprintf(stderr,"----------\nSEQUENCE \n%s\n",seq_r1);}//int ntcharoffset
-      sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt_adapt,struct_obj->DoSeqErr,ErrProbTypeOffset);
+      sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc_nt_adapt,struct_obj->DoSeqErr,ErrProbTypeOffset);
       //if(strandR1==0){fprintf(stderr,"%s\n",seq_r1);}
       if (PE==struct_obj->SeqType)
-      	sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,drand_alloc_nt_adapt,struct_obj->DoSeqErr,ErrProbTypeOffset);
+      	sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc_nt_adapt,struct_obj->DoSeqErr,ErrProbTypeOffset);
       
       //write fq if requested
       if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){
@@ -518,10 +518,10 @@ void* Sampling_threads(void *arg){
   free(fqs[0]);
   free(fqs[1]);
   
-  free(drand_alloc);
-  free(drand_alloc_nt);
-  free(drand_alloc_nt_adapt);
-  free(drand_alloc_briggs);
+  free(rand_alloc);
+  free(rand_alloc_nt);
+  free(rand_alloc_nt_adapt);
+  free(rand_alloc_briggs);
   
   fprintf(stderr,"\t-> Number of reads generated by thread %d is %zu \n",struct_obj->threadno,localread);
 

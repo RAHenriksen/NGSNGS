@@ -49,7 +49,7 @@ char refToChar[256] = {
 
 double phred2Prob[256];
 
-ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const char *freqfile,int &readcycle){
+ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const char *freqfile){
   for(int qscore =0 ;qscore<256;qscore++){
     double d = qscore;
     phred2Prob[qscore] = pow(10,((-d)/10));
@@ -68,9 +68,7 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
 
   //fprintf(stderr,"All lines: %lu\n",all_lines.size());
 
-  readcycle = (all_lines.size()-2)/5; //all_lines.size()-1
-
-  fprintf(stderr,"\t-> Inferred read cycle lengths: %d\n",readcycle);
+  int readcycle = (all_lines.size()-2)/5; //all_lines.size()-1
 
   //loop over inputdata
   int nbins = -1;
