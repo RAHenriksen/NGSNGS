@@ -7,7 +7,7 @@ int add_indel(mrand_t *mr,char *frag,int readlength,double *pars){
   int end = strlen(frag);//remember this is the length, not the index of the last element.
   int ops[2] ={0,0};
   while(beg<end){
-    fprintf(stderr,"beg[%d]: %s len:%lu\n",beg,frag,strlen(frag));
+    //fprintf(stderr,"beg[%d]: %s len:%lu\n",beg,frag,strlen(frag));
     //do dont anything if we are in the internal part of the fragmenth that is not getting sequenced
     if(end>2*readlength && beg > readlength && ((end-beg)>readlength))
       continue;
@@ -16,12 +16,12 @@ int add_indel(mrand_t *mr,char *frag,int readlength,double *pars){
       int len = Random_geometric_k(pars[2],mr);
       fprintf(stderr,"Having insertion[%d]: %d end-1: %d\n",beg,len,end-1);
       for(int i=end-1;i>=beg;i--){
-	fprintf(stderr,"%d -> %d\n",i,i+len);
+	//fprintf(stderr,"%d -> %d\n",i,i+len);
 	frag[i+len] = frag[i];
       }
       for(int i=0;i<len;i++){
-	frag[beg+i] = bas2[mrand_pop_long(mr) %5];
-	fprintf(stderr,"Setting insertion: %d\n",beg+i);
+	frag[beg+i] = bas[mrand_pop_long(mr) %5]; //bas[mrand_pop_long(mr) %5];
+	//fprintf(stderr,"Setting insertion: %d\n",beg+i);
       }
       beg += len;
       end += len;
@@ -30,7 +30,7 @@ int add_indel(mrand_t *mr,char *frag,int readlength,double *pars){
     if(mrand_pop(mr)<pars[1]){
       ops[1]++;
       int len = Random_geometric_k(pars[3],mr);
-      fprintf(stderr,"Having deletion[%d]: %d\n",beg,len);
+      //fprintf(stderr,"Having deletion[%d]: %d\n",beg,len);
       if(len>1){
 	//two cases: 1) is that deletion is in the middle of the fragment and we should shift all data to the left
 	//2) Deletion will cover the rest of the read. 
@@ -50,7 +50,7 @@ int add_indel(mrand_t *mr,char *frag,int readlength,double *pars){
       beg++;
       continue;
     }
-    fprintf(stderr,"Nothing happens[%d]\n",beg);
+    //fprintf(stderr,"Nothing happens[%d]\n",beg);
     beg++;
   }
   return ops[0]+ops[1];

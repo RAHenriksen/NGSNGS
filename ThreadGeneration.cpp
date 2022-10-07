@@ -50,7 +50,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,int readcycle,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
-                        int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,
+                        int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],
                         char CommandArray[1024],const char* version,int HeaderIndiv,int NoAlign,size_t BufferLength){
   //creating an array with the arguments to create multiple threads;
 
@@ -279,7 +279,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].NtErr_r1 = ErrArray_r1;
       struct_for_threads[i].NtErr_r2 = ErrArray_r2;
       struct_for_threads[i].maxreadlength = (int) readcycle;
-
+      struct_for_threads[i].IndelFuncParam = IndelFuncParam;
       // 2) briggs model
       struct_for_threads[i].MisMatch = MisMatchFreqArray;
       struct_for_threads[i].doMisMatchErr = doMisMatchErr;

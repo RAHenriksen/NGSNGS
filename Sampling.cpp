@@ -155,7 +155,8 @@ void* Sampling_threads(void *arg){
     //now copy the actual sequence into seq_r1 and seq_r2 if PE 
     strncpy(seq_r1,seq+posB,maxbases);
     //simulate indels for the fragment
-    double pars[4] = {0.05,0.1,0.1,0.2};
+    double pars[4] = {struct_obj->IndelFuncParam[0],struct_obj->IndelFuncParam[1],struct_obj->IndelFuncParam[2],struct_obj->IndelFuncParam[3]};
+    //fprintf(stderr,"params are %f \t %f \t %f \t %f \n",struct_obj->IndelFuncParam[0],struct_obj->IndelFuncParam[1],struct_obj->IndelFuncParam[1],struct_obj->IndelFuncParam[3]);
     //int has_indels  = add_indel(drand_alloc,seq_r1,struct_obj->maxreadlength,pars);
 
     

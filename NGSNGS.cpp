@@ -207,7 +207,7 @@ int main(int argc,char **argv){
         mypars->nreads = (readcov*genome_size)/MeanFragLen;
       }
     }
-    
+
     //size_t nreads_per_thread = mypars->nreads/mypars->SamplThreads;
     
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",mypars->Reference,chr_total);
@@ -291,6 +291,15 @@ int main(int argc,char **argv){
       free(BriggsParam); // Again using strdup
     }
     
+    float IndelFuncParam[4];
+    if (mypars->Indel != NULL){
+      char* IndelInputParam = strdup(mypars->Indel);
+      IndelFuncParam[0] = myatof(strtok(IndelInputParam,"\", \t"));
+      IndelFuncParam[1] = myatof(strtok(NULL,"\", \t"));
+      IndelFuncParam[2] = myatof(strtok(NULL,"\", \t"));
+      IndelFuncParam[3] = myatof(strtok(NULL,"\", \t"));
+    }
+
     int doMisMatchErr = 0;
     
     if (mypars->SubProfile != NULL)
@@ -308,7 +317,7 @@ int main(int argc,char **argv){
                       Param,DoBriggs,DoBriggsBiotin,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,readcycle,
                       qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->CompressThreads,QualStringFlag,Polynt,
                       mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
-                      mypars->vcffile,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,mypars->NoAlign,mypars->KstrBuf);
+                      mypars->vcffile,IndelFuncParam,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,mypars->NoAlign,mypars->KstrBuf);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));

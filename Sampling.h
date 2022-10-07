@@ -63,6 +63,7 @@ struct Parsarg_for_Sampling_thread{
   char PolyNt;
 
   int rng_type;
+  float *IndelFuncParam;
 };
 
 void* Sampling_threads(void *arg);

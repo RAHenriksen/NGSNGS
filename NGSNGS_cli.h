@@ -39,6 +39,7 @@ typedef struct{
   int HeaderIndiv; //samplename from VCF/BCF file
   int NoAlign;// This option is cool, but explaining it takes up to much space in comment
   size_t KstrBuf; // Buffer size for kstring length
+  char *Indel;
 }argStruct;
 argStruct *getpars(int argc,char ** argv);
 void argStruct_destroy(argStruct *mypars);

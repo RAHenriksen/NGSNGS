@@ -52,6 +52,8 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Adapter2 = NULL;
   mypars->Poly = NULL;
 
+  mypars->Indel = NULL;
+
   mypars->CommandRun = NULL;
   kstring_t kstr;kstr.s=NULL;kstr.l=kstr.m=0;
   for(int i=0;i<argc;i++)
@@ -192,6 +194,9 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-rng",*argv)==0 || strcasecmp("--rand",*argv)==0){
       mypars->rng_type = atoi(*(++argv));
     }
+    else if(strcasecmp("-indel",*argv)==0 || strcasecmp("--indel",*argv)==0){
+      mypars->Indel = strdup(*(++argv));
+    }
     else{
       fprintf(stderr,"Unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
       return NULL;
@@ -208,6 +213,7 @@ void argStruct_destroy(argStruct *mypars){
   free(mypars->OutName);
   free(mypars->LengthFile);
   free(mypars->LengthDist);
+  free(mypars->Indel);
   
   free(mypars->CommandRun);
   if(mypars->Chromosomes)

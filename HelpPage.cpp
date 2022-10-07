@@ -27,7 +27,8 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t<LogNorm,Mean,Variance>  Log-normal Distribution, given a mean and variance, e.g. LogNorm,4,1.\n");
   fprintf(fp,"\t<Pois,Rate> \t\t Poisson distribution, given a rate, e.g. Pois,165.\n");
   fprintf(fp,"\t<Exp,Rate> \t\t Exponential distribution, given a rate, e.g. Exp,0.025.\n");
-  fprintf(fp,"\t<Gamma,Shape,Scale> \t Gamma distribution, given a shape and scale, e.g. Gam,20,2.\n\n");
+  fprintf(fp,"\t<Gam,Shape,Scale> \t Gamma distribution, given a shape and scale, e.g. Gam,20,2.\n\n");
+  fprintf(fp,"-cl   | --cycle: \t\t Read cycle length, if not provided the cycle length will be inferred.\n");
   fprintf(fp,"-seq | --sequencing: \t\t Simulate single-end or paired-end reads.\n");
   fprintf(fp,"\t <SE>\t single-end \n \t <PE>\t paired-end.\n");
   fprintf(fp,"-f   | --format: \t\t File format of the simulated output reads.\n");
@@ -39,7 +40,9 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\nNucleotide Alterations: \n");
   fprintf(fp,"-bcf:| -vcf \t\t\t Variant Calling Format (.vcf) or binary format (.bcf)\n");
   fprintf(fp,"-id: | --indiv: \t\t Integer value for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).\n");
-  
+  fprintf(fp,"-indel: | --indel: \t\t Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.\n");
+  fprintf(fp,"\t <InsProb,DelProb,LambdaIns,LambdaDel> \t e.g. 0.05,0.1,0.1,0.2 \n");
+
   fprintf(fp,"-m   | --model: \t\t Choice of deamination model.\n");
   fprintf(fp,"\t <b,nv,Lambda,Delta_s,Delta_d> || <briggs,nv,Lambda,Delta_s,Delta_d> \t Parameters for the damage patterns using the Briggs model 2010.\n");
   fprintf(fp,"\t <b7,nv,Lambda,Delta_s,Delta_d> || <briggs07,nv,Lambda,Delta_s,Delta_d> \t Parameters for the damage patterns using the Briggs model 2007, e.g. 0.024,0.36,0.68,0.0097.\n");
