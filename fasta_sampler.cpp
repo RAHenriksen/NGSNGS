@@ -136,7 +136,7 @@ int main(int argc,char**argv){
 
   int seed = 101;
   mrand_t *mr = mrand_alloc(3,seed);
-  char ref[] = "/projects/lundbeck/scratch/wql443/reference_files/Hg19/chr10_15.fa";
+  char ref[] = "/willerslev/users-shared/science-snm-willerslev-wql443/WP1/NGSNGS/Test_Examples/Mycobacterium_leprae.fa.gz";//"/projects/lundbeck/scratch/wql443/reference_files/Hg19/chr10_15.fa";
   fasta_sampler *fs = fasta_sampler_alloc(ref,SubsetChr);
   //fasta_sampler *fs = fasta_sampler_alloc("Test_Examples/fire.fa");
   

@@ -74,6 +74,7 @@ void* Sampling_threads(void *arg){
 
   // sequence reads, original, modified, with adapters, pe
   char READ_ID[1024];
+  char FragmentSequence[4096];
   char seq_r1[1024] = {0};
   char seq_r2[1024] = {0};
   char qual_r1[1024] = "\0";
@@ -125,6 +126,7 @@ void* Sampling_threads(void *arg){
   while (current_reads_atom < reads && SIG_COND){
     //lets start by resetting out datastructures to NULL, nill, nothing.
     qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0';
+    int posB = 0; int posE = 0;//this is the first and last position of our fragment
 
     //sample fragmentlength
     int fraglength = getFragmentLength(sf); //fraglength = abs(mrand_pop_long(drand_alloc)) % 1000;
@@ -146,21 +148,38 @@ void* Sampling_threads(void *arg){
     //why above? just to get random unique?
 
     //get shallow copy of chromosome, offset into, is defined by posB, and posE
-    char *seq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength);
+    //fprintf(stderr,"NEW READ \n");
+    //fprintf(stderr,"beg %d end %d fragleng %d max %d \n",posB,posE,fraglength,maxbases);
+    char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength);
+    //extracting a biological fragment of the reference genome
+    //fprintf(stderr,"beg %d end %d len: %lu frag %lu \n",posB,posE,strlen(chrseq),fraglength);
+
+    strncpy(FragmentSequence,chrseq+(posB),(posE-posB));
+
+    //fprintf(stderr,"beg %d end %d len: %lu frag %lu \n",posB,posE,strlen(FragmentSequence),fraglength);
+    //fprintf(stderr,"Frag sequence %s \n",FragmentSequence);
+
+    //./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 10 -s 1 -l 2000 -seq SE -indel 0.05,0.1,0.1,0.2 -q1 Test_Examples/AccFreqL150R1.txt -f fq -o MycoBactBamSEOut
+    //./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 1 -s 1 -l 100 -seq SE -indel 0.05,0.1,0.1,0.2 -q1 Test_Examples/AccFreqL150R1.txt -f fq -o MycoBactBamSEOut
+    //generates insertions and deletions to the original fragment, before extracting R1 and R2
+    
+    int has_indels = 0;
+    if(struct_obj->DoIndel){
+      fprintf(stderr,"\n---------INSIDE has indel loop\n");
+      double pars[4] = {struct_obj->IndelFuncParam[0],struct_obj->IndelFuncParam[1],struct_obj->IndelFuncParam[2],struct_obj->IndelFuncParam[3]};
+      has_indels = add_indel(rand_alloc,FragmentSequence,struct_obj->maxreadlength,pars);
+    } 
 
     //fprintf(stderr,"chr %s \t idx %d \n",chr,chr_idx);
     //now copy the actual sequence into seq_r1 and seq_r2 if PE 
-    strncpy(seq_r1,seq+posB,maxbases);
+    strncpy(seq_r1,FragmentSequence,maxbases);
+    //fprintf(stderr,"sequence %s\n",seq_r1);
     //simulate indels for the fragment
-    double pars[4] = {struct_obj->IndelFuncParam[0],struct_obj->IndelFuncParam[1],struct_obj->IndelFuncParam[2],struct_obj->IndelFuncParam[3]};
-    //fprintf(stderr,"params are %f \t %f \t %f \t %f \n",struct_obj->IndelFuncParam[0],struct_obj->IndelFuncParam[1],struct_obj->IndelFuncParam[1],struct_obj->IndelFuncParam[3]);
-    int has_indels  = add_indel(rand_alloc,seq_r1,struct_obj->maxreadlength,pars);
 
-    
-    
     if(PE==struct_obj->SeqType)
-      strncpy(seq_r2,seq+posE-maxbases,maxbases);
-    
+      strncpy(seq_r2,FragmentSequence+(strlen(FragmentSequence)-maxbases),maxbases);
+      //fprintf(stderr,"sequence pos is %d \t %s\n",strlen(FragmentSequence)-maxbases,seq_r2);
+
     //fprintf(stderr,"CHECKING THE LENGTH ISSUES %d \t %d \t %d \t %d \n",fraglength,struct_obj->maxreadlength,maxbases,strlen(seq_r1));
 
     /*
@@ -481,7 +500,8 @@ void* Sampling_threads(void *arg){
     }
 
     memset(qual_r1, 0, sizeof qual_r1); 
-    memset(qual_r2, 0, sizeof qual_r2);  
+    memset(qual_r2, 0, sizeof qual_r2);
+    memset(FragmentSequence,0,sizeof FragmentSequence);  
     memset(seq_r1, 0, sizeof seq_r1);
     memset(seq_r2, 0, sizeof seq_r2);
 
