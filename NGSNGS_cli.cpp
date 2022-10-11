@@ -162,6 +162,7 @@ argStruct *getpars(int argc,char ** argv){
       if(strcasecmp("b7",BriggsModel)==0 || strcasecmp("briggs07",BriggsModel)==0)
 	      mypars->BriggsBiotin = ModelParam; //double nv, double lambda, double delta_s, double delta -> 0.024,0.36,0.68,0.0097
       // -m || --model b7,0.024,0.36,0.68,0.0097 b10,0.024,0.36,0.68,0.0097 bCpG,0.024,0.36,0.68,0.0097
+      free(ModelString);
     }
     else if(strcasecmp("-cl",*argv)==0 || strcasecmp("--cycle",*argv)==0){
       mypars->CycleLength = atoi(*(++argv));

@@ -176,7 +176,7 @@ void* Sampling_threads(void *arg){
     //simulate indels for the fragment
 
     if(PE==struct_obj->SeqType)
-      strncpy(seq_r2,FragmentSequence+(strlen(FragmentSequence)-maxbases),maxbases);
+      strncpy(seq_r2,FragmentSequence+(fraglength-maxbases),maxbases);
       //fprintf(stderr,"sequence pos is %d \t %s\n",strlen(FragmentSequence)-maxbases,seq_r2);
 
     //fprintf(stderr,"CHECKING THE LENGTH ISSUES %d \t %d \t %d \t %d \n",fraglength,struct_obj->maxreadlength,maxbases,strlen(seq_r1));
@@ -241,7 +241,7 @@ void* Sampling_threads(void *arg){
     //so now everything is on 5->3 and some of them will be reverse complement to referene
 
     //Nucleotide alteration models only on the sequence itself which holds for fa,fq,sam
-    int ReadDeam;
+    int ReadDeam = 0;
     if(struct_obj->DoBriggs || struct_obj->DoBriggsBiotin){
       /*fprintf(stderr,"-----------\nDO Briggs model %d \n",struct_obj->DoBriggs);
       fprintf(stderr,"-----------\nDO Briggs Biotin model %d \n",struct_obj->DoBriggsBiotin);
@@ -299,9 +299,8 @@ void* Sampling_threads(void *arg){
 	      MisMatchFile(seq_r2,rand_alloc,struct_obj->MisMatch,struct_obj->MisLength);
     }
       
-    
-    sprintf(READ_ID,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,0,0,0);
-    
+    snprintf(READ_ID,1024,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,0,0,0);
+
     int nsofts[2] = {0,0};//this will contain the softclip information to be used by sam/bam/cram out
     //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail
     int naligned[2] = {(int)strlen(seq_r1),-1};
