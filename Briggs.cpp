@@ -5,18 +5,6 @@
 #include <cstdlib>
 #include <cassert>
 
-int Random_geometric_k(const double p,mrand_t *mr)
-{
-  double u = mrand_pop(mr);
-  int k;
-
-  if (p == 1){k = 1;}
-  else if(p == 0){k=0;}
-  else{k = log (u) / log (1 - p);}
-
-  return floor(k);
-}
-
 int SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, double delta, mrand_t *mr,int strand,int& C_to_T_counter,int& G_to_A_counter,int& C_to_T_counter_rev,int& G_to_A_counter_rev){
     int IsDeam = 0;
     assert(L<1024);
