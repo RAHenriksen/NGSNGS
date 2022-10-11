@@ -6,11 +6,13 @@ int add_indel(mrand_t *mr,char *frag,int readlength,double *pars){
   int beg = 0;
   int end = strlen(frag);//remember this is the length, not the index of the last element.
   int ops[2] ={0,0};
-  while(beg<end){
-    fprintf(stderr,"beg[%d]: %s len:%lu\n",beg,frag,strlen(frag));
+  while(beg<end-1){
+    //fprintf(stderr,"beg[%d]: %s len:%lu\n",beg,frag,strlen(frag));
     //do dont anything if we are in the internal part of the fragmenth that is not getting sequenced
-    if(end>2*readlength && beg > readlength && ((end-beg)>readlength))
+    if(end>2*readlength && beg > readlength && ((end-beg)>readlength)){
+      beg++;
       continue;
+    }
     if(mrand_pop(mr)<pars[0]){
       ops[0]++;
       int len = Random_geometric_k(pars[2],mr);
@@ -50,7 +52,7 @@ int add_indel(mrand_t *mr,char *frag,int readlength,double *pars){
       beg++;
       continue;
     }
-    fprintf(stderr,"Nothing happens[%d]\n",beg);
+    //fprintf(stderr,"Nothing happens[%d]\n",beg);
     beg++;
   }
   return ops[0]+ops[1];

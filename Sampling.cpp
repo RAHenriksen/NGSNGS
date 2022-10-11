@@ -165,7 +165,6 @@ void* Sampling_threads(void *arg){
     
     int has_indels = 0;
     if(struct_obj->DoIndel){
-      fprintf(stderr,"\n---------INSIDE has indel loop\n");
       double pars[4] = {struct_obj->IndelFuncParam[0],struct_obj->IndelFuncParam[1],struct_obj->IndelFuncParam[2],struct_obj->IndelFuncParam[3]};
       has_indels = add_indel(rand_alloc,FragmentSequence,struct_obj->maxreadlength,pars);
     } 
