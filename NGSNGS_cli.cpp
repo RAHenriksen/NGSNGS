@@ -92,7 +92,7 @@ argStruct *getpars(int argc,char ** argv){
       mypars->OutName = strdup(*(++argv));
     }
     else if(strcasecmp("-s",*argv)==0 || strcasecmp("--seed",*argv)==0){
-      mypars->Glob_seed = atoi(*(++argv));
+      mypars->Glob_seed = atoi(*(++argv))*1000;
     }
     else if(strcasecmp("-seq",*argv)==0 || strcasecmp("--sequencing",*argv)==0){
       char * tok = *(++argv);
