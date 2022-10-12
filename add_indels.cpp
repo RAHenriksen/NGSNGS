@@ -15,7 +15,7 @@ int add_indel(mrand_t *mr,char *frag,int readlength,double *pars){
     }
     if(mrand_pop(mr)<pars[0]){
       ops[0]++;
-      int len = Random_geometric_k(pars[2],mr);
+      int len = Random_geometric_k(pars[2],mr)+1;
       //fprintf(stderr,"Having insertion[%d]: %d end-1: %d\n",beg,len,end-1);
       for(int i=end-1;i>=beg;i--){
         //fprintf(stderr,"%d -> %d\n",i,i+len);
@@ -31,9 +31,8 @@ int add_indel(mrand_t *mr,char *frag,int readlength,double *pars){
     }
     if(mrand_pop(mr)<pars[1]){
       ops[1]++;
-      int len = Random_geometric_k(pars[3],mr);
+      int len = Random_geometric_k(pars[3],mr)+1;
       //fprintf(stderr,"Having deletion[%d]: %d\n",beg,len);
-      if(len>1){
         //two cases: 1) is that deletion is in the middle of the fragment and we should shift all data to the left
         //2) Deletion will cover the rest of the read. 
         if(len+beg>end){
@@ -47,8 +46,7 @@ int add_indel(mrand_t *mr,char *frag,int readlength,double *pars){
             frag[beg+i] = frag[beg+i+len];
           end -= len;
           frag[end] = '\0';
-        }
-      }
+        }      
       beg++;
       continue;
     }
