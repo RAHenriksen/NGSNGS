@@ -59,8 +59,10 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   
   //allocate for reference file
   fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
-  if(VariantFile)
+  if(VariantFile){
+    fprintf(stderr,"VARIANT FILE %s Header indiv %d \n",VariantFile,HeaderIndiv);
     add_variants(reffasta,VariantFile,HeaderIndiv);
+  }
   
    //printout all
   /*for(int i=0;i<reffasta->nref;i++)

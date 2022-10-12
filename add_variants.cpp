@@ -277,11 +277,11 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
       assert((ngt %nsamples)==0);
       inferred_ploidy = ngt/nsamples;
     }
-#if 0
+//#if 0
     fprintf(stderr,"brec->pos: %d nallele: %d\n",brec->pos+1,brec->n_allele); //her skal det vel være brec->pos+1
     for(int i=0;i<brec->n_allele;i++)
       fprintf(stderr,"nal:%d %s %zu\n",i,brec->d.allele[i],strlen(brec->d.allele[i]));
-#endif
+//#endif
     if(brec->n_allele==1){
       fprintf(stderr,"\t-> Only Reference allele defined for pos: %ld will skip\n",brec->pos+1);
       continue;
@@ -290,12 +290,14 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
     extend_fasta_sampler(fs,fai_chr,inferred_ploidy);
     
     int32_t *mygt=NULL;
-    if(whichsample==-1)
+    if(whichsample==-1){
       mygt = nodatagt;
+      fprintf(stderr,"inside whichsample==-1  nodatagt %d \n",nodatagt[1]);
+    }
     else
       mygt = gt_arr+inferred_ploidy*whichsample;
     if(bcf_gt_is_missing(mygt[0])){
-      //fprintf(stderr,"\t-> Genotype is missing for pos: %lld will skip\n",brec->pos+1);
+      fprintf(stderr,"\t-> Genotype is missing for pos: %lld will skip\n",brec->pos+1);
       continue;
     }
     //figure out if its an indel
@@ -330,21 +332,20 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
   return 0;
 }
 
-
 #ifdef __WITH_MAIN__
 
 int main(int argc,char **argv){
-  const char* subsetchr ="14";
+  const char* subsetchr ="NZ_CP029543.1";
   
   int seed = 101;
   mrand_t *mr = mrand_alloc(3,seed);
-  char *ref = "/projects/lundbeck/scratch/wql443/WP1/vcfdata/hs37d5.fa.gz"; //"/willerslev/datasets/reference_genomes/hs37d5/hs37d5.fa";
-  char *vcf = "/projects/lundbeck/scratch/wql443/WP1/vcfdata/chr14_indiv_3.bcf";//"sub3.vcf";
+  char *ref = "/willerslev/users-shared/science-snm-willerslev-wql443/WP1/NGSNGS/Test_Examples/Mycobacterium_leprae.fa.gz"; //"/willerslev/datasets/reference_genomes/hs37d5/hs37d5.fa";
+  char *vcf = "DiploidTest.vcf";//"sub3.vcf";
   fasta_sampler *fs = fasta_sampler_alloc(ref,subsetchr);
   fprintf(stderr,"Done adding fasta, will now add variants\n");
   fasta_sampler_print(stderr,fs);
 
-  add_variants(fs,vcf);
+  add_variants(fs,vcf,-1);
   fasta_sampler_print(stderr,fs);
   char *chr; //this is an unallocated pointer to a chromosome name, eg chr1, chrMT etc
   int chr_idx;
@@ -355,13 +356,17 @@ int main(int argc,char **argv){
   size_t nit =0;
   size_t ngen = 30e6;
   char seq_r1[1024] = {0};
-  while(nit++<40){
+  /*while(nit++<40){
     //fraglength = abs(mrand_pop_long(mr)) % 1000;
-    seq = sample(fs,mr,&chr,chr_idx,posB,posE,fraglength);
-    strncpy(seq_r1,seq,fraglength);
+    strncpy(seq_r1,seq+posB,posE-posB);
     fprintf(stdout,"nit:%lu\tchromo:%s\tposB:%d\tposE:%d\tfraglength:%d\texample:%s\n",nit,chr,posB,posE,fraglength,seq_r1);
-  }
+  }*/
+  fprintf(stderr,"BEFORE\n");
+  seq = sample(fs,mr,&chr,chr_idx,posB,posE,fraglength);
+  strncpy(seq_r1,seq+11860,50);
+  fprintf(stdout,"nit:%lu\tchromo:%s\tposB:%d\tposE:%d\tfraglength:%d\texample:%s\n",nit,chr,11860,11860+50,fraglength,seq_r1);
   fprintf(stderr,"after\n");
+
 
   return 0;
   // g++ add_variants.cpp -D__WITH_MAIN__ mrand.o  fasta_sampler.o RandSampling.o /projects/lundbeck/scratch/wql443/WP1/htslib/libhts.a -std=c++11 -lz -lm -lbz2 -llzma -lpthread -lcurl -lcrypto -ggdb
