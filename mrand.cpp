@@ -88,6 +88,19 @@ long mrand_pop_long(mrand_t *mr){
 }
 
 
+int Random_geometric_k(const double p,mrand_t *mr)
+{
+  double u = mrand_pop(mr);
+  int k;
+
+  if (p == 1){k = 1;}
+  else if(p == 0){k=0;}
+  else{k = log (u) / log (1 - p);}
+
+  return floor(k);
+}
+
+
 #ifdef __WITH_MAIN__
 
 int main(int argc,char **argv){
@@ -95,19 +108,28 @@ int main(int argc,char **argv){
   int type =0;
   int seed =1;
   long long nitems =10;
-  if(argc==4){
+  double dogeom = 0.0;
+  if(argc>3){
     type = atoi(argv[1]);
     seed = atoi(argv[2]);
     nitems = atoll(argv[3]);
   }
-  fprintf(stderr,"type: %d seed: %d nitems: %lld\n",type,seed,nitems);
+  if(argc>4)
+    dogeom = atof(argv[4]);
+  fprintf(stderr,"type: %d seed: %d nitems: %lld dogeom: %f\n",type,seed,nitems,dogeom);
   myrand = mrand_alloc(type,seed);
-  double sum = 0;
-  for(long long i=0;i<nitems;i++){
-    sum += mrand_pop(myrand);
 
+  if(dogeom==0){
+    double sum = 0;
+    for(long long i=0;i<nitems;i++){
+      sum += mrand_pop(myrand);
+    }
+    fprintf(stdout,"type %d\tseed: %d\tsum:%f\tnitems in mio:%f mean: %f\n",type,seed,sum,nitems/1e6,sum/((double)nitems));
+  }else{
+    for(long long i=0;i<nitems;i++)
+      fprintf(stdout,"%d\n",Random_geometric_k(dogeom,myrand));
   }
-  fprintf(stdout,"type %d\tseed: %d\tsum:%f\tnitems in mio:%f mean: %f\n",type,seed,sum,nitems/1e6,sum/((double)nitems));
+  
   return 0;
 }
 

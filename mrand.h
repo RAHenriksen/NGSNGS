@@ -26,4 +26,5 @@ typedef struct{
 mrand_t *mrand_alloc(int type_a, long int seedval);
 double mrand_pop(mrand_t *mr);
 long mrand_pop_long(mrand_t *mr);
+int Random_geometric_k(const double p,mrand_t *mr);
 #endif

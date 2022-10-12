@@ -96,7 +96,7 @@ int main(int argc,char **argv){
     if (mypars->OutName == NULL){ErrMsg(8.0);}
     
     int readcycle = 0;
-    std::vector<char *> all_lines;
+    int nlines = 0;
     if (mypars->CycleLength != 0){
       readcycle = mypars->CycleLength;
     }
@@ -106,12 +106,12 @@ int main(int argc,char **argv){
         assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL);
         char buf[LENS];
         while(gzgets(gz,buf,LENS))
-          all_lines.push_back(strdup(buf));
+	  nlines++;
         gzclose(gz);
       }
-      readcycle = (all_lines.size()-2)/5; //all_lines.size()-1
+      readcycle = (nlines-2)/5;
     }
-    fprintf(stderr,"\t-> The is provided read cycle length is: %d or the inferred read cycle length is %d\n",mypars->CycleLength,(int)(all_lines.size()-2)/5);    
+    fprintf(stderr,"\t-> The is provided read cycle length is: %d or the inferred read cycle length is %d\n",mypars->CycleLength,readcycle);    
 
     const char* SizeDist = mypars->LengthDist;
     double MeanFragLen = 0;
