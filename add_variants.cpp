@@ -58,6 +58,15 @@ int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
 }
 
 int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
+  fprintf(stderr,"Extend fasta sampler:%d\n",ploidy);
+  if(ploidy ==1){
+    fprintf(stderr,"ploidy is haploid, will perform updownstream sorting of the reverse positions\n");
+    int *pldmap = new int[5];
+    pldmap[0] = fs_chr_idx;
+    pldmap[1]=    pldmap[2]=    pldmap[3]=    pldmap[4]=-1;
+    fs->pldmap[fs_chr_idx] = pldmap;
+    return 0;
+  }
   int isThere  = 1;
   char buf[1024];
   for(int i=1;i<ploidy;i++){
@@ -126,7 +135,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
   char **elephant =new char*[ploidy];
   for(int i=0;i<ploidy;i++)
     elephant[i] =(char*) calloc(maxsize,sizeof(char));
-  
+
   
   for(bcfmap::iterator it=mybcfmap.begin();0&&it!=mybcfmap.end();it++){
     fprintf(stderr,"%d %d\n",it->first.rid,it->first.pos);
@@ -153,7 +162,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
 	}
 	
       }
-      
+
       ploidymap::iterator it = fs->pldmap.find(last_fid);
       assert(it!=fs->pldmap.end());
       fsoffsets = it->second;
@@ -171,19 +180,28 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
 	last[i] = it->first.pos;
 
       int nitems2copy = brec->pos-last[i];
+      fprintf(stderr,"nitesm2copy: %d\n",nitems2copy);
       assert(strlen(elephant[i])+brec->pos-last[i]< maxsize );//funky assert
       strncat(elephant[i],fs->seqs[fsoffsets[i]]+last[i],nitems2copy);
       char *allele = NULL;
       allele = it->second->d.allele[it->first.gt[i]];
+      fprintf(stderr,"allele: %s\n",allele);
       assert(allele!=NULL);
       
-      //its a deletion if strlen(d.allele[0])>1
+      //its a deletion if strlen(d.allele[0])>1 
       int isdel = 0;
       if(it->first.gt[i]==0&&strlen(allele)>1)
 	isdel = strlen(allele);
-#if 0
+
+      if(ploidy==1){
+	if(strlen(it->second->d.allele[0])&&it->first.gt[i]==1&&strlen(allele)==1)
+	  isdel = strlen(it->second->d.allele[0])-strlen(allele);
+      }
+      
+      
+#if 1
       if(isdel)
-	fprintf(stderr,"site: %d,%lld is deletion allele:%s\n",it->first.pos,it->second->pos,allele);
+	fprintf(stderr,"site: %d,%lld is deletion allele:%s isdel: %d\n",it->first.pos,it->second->pos,allele,isdel);
       if(isdel==0)
 	fprintf(stderr,"site: %d,%lld is insertion allele:%s\n",it->first.pos,it->second->pos,allele);
 #endif
@@ -191,8 +209,9 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
       
       if(isdel){
 	//is deletion then we just skip the number of bases
-	//	fprintf(stderr,"In deletion, will skip reference position: %lld length of allele: %zu\n",it->first.pos,strlen(allele));
-	last[i] = brec->pos+ strlen(allele);
+	fprintf(stderr,"In deletion, will skip reference position: %lld length of allele: %zu\n",it->first.pos,strlen(allele));
+	last[i] = brec->pos+ isdel;
+	//	fprintf(stderr,"last[]: %d\n",last[i]);
       }
       if(isdel==0){
 	//	fprintf(stderr,"before:\t%s\n",elephant[i]);
@@ -220,7 +239,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
 
 //fasta sampler struct, index for chromosomenaem, position, the alleles, the genotypes and the ploidy. 
 void add_variant(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32_t *gts, int ploidy){
-  //  fprintf(stderr,"Adding genotype informaiton for chromosome: %s pos: %d\n",fs->seqs_names[chr_idx],pos);
+  fprintf(stderr,"Adding genotype informaiton for chromosome:pos: %d ploidy: %d\n",pos,ploidy);
   char buf[1024];
   char ref = fs->seqs[fs_chr_idx][pos];
   for(int i=0;0&&i<ploidy;i++){
@@ -274,16 +293,18 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
     }
     if(whichsample!=-1){
       ngt = bcf_get_genotypes(bcf_head, brec, &gt_arr, &ngt_arr);
+      assert(ngt>0);
+
       assert((ngt %nsamples)==0);
       inferred_ploidy = ngt/nsamples;
     }
 #if 0
-    fprintf(stderr,"brec->pos: %d nallele: %d\n",brec->pos+1,brec->n_allele); //her skal det vel være brec->pos+1
+    fprintf(stderr,"brec->pos: %d nallele: %d\n",brec->pos+1,brec->n_allele);
     for(int i=0;i<brec->n_allele;i++)
       fprintf(stderr,"nal:%d %s %zu\n",i,brec->d.allele[i],strlen(brec->d.allele[i]));
 #endif
     if(brec->n_allele==1){
-      fprintf(stderr,"\t-> Only Reference allele defined for pos: %ld will skip\n",brec->pos+1);
+      fprintf(stderr,"\t-> Only Reference allele defined for pos: %lld will skip\n",brec->pos+1);
       continue;
     }
     //check if parental chromosomes exists otherwise add them
@@ -304,13 +325,16 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
     key.gt = new int[inferred_ploidy];
     for(int i=0;i<inferred_ploidy;i++){
       key.gt[i] = bcf_gt_allele(mygt[i]);
-      if(strlen(brec->d.allele[bcf_gt_allele(mygt[i])])>1) //men man kan jo godt have ref der er XXXX altså det kan sagtens være større end 1..
-	      isindel =1; 
+      if(strlen(brec->d.allele[bcf_gt_allele(mygt[i])])>1) 
+	isindel =1;
+      if(strlen(brec->d.allele[0])>1)//this is confusion
+	isindel =1;
+      
     }
     if(isindel==0)
       add_variant(fs,fai_chr,brec->pos,brec->d.allele,mygt,inferred_ploidy);
     else{
-      fprintf(stderr,"\t-> Found an indel as rid: %d pos:%ld\n",brec->rid,brec->pos+1);
+      fprintf(stderr,"\t-> Found an indel as rid: %d pos:%lld\n",brec->rid,brec->pos+1);
       key.rid=fai_chr;
       key.pos= (int) brec->pos;
       bcf1_t *duped= bcf_dup(brec);
