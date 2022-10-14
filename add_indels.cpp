@@ -1,6 +1,6 @@
 #include "add_indels.h"
-char *bas = "ACGTN";
-char *bas2 = "QWERY";
+const char *bas = "ACGTN";
+const char *bas2 = "QWERY";
 
 int add_indel(mrand_t *mr,char *frag,int readlength,double *pars){
   int beg = 0;
