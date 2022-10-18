@@ -28,36 +28,13 @@
 #include "sample_qscores.h"
 #include "fasta_sampler.h"
 #include "add_indels.h"
+#include "NGSNGS_misc.h"
 
 #define LENS 4096
 #define MAXBINS 100
 extern int refToInt[256];
-
-void reverseChar(char* str,int length) {
-    std::reverse(str, str + length);
-}
-
-void ReversComplement(char seq[]){
-  // generates the reverse complementary sequence from an input sequence
-
-  char NtComp[5] = {'T', 'G', 'C', 'A','N'};
-  char seq_intermediate[1024] = {0};
-  strcpy(seq_intermediate,seq);
-  //fprintf(stderr,"SEQUENCE \t\t%s\n",seq_intermediate);
-  int seqlen = strlen(seq);
-  //Complementing sequence
-  for(int i=0;i<seqlen;i++){
-    seq_intermediate[i] = NtComp[refToInt[(unsigned char) seq_intermediate[i]]]; //warning: array subscript has type 'char' [-Wchar-subscripts]
-  }
-  //fprintf(stderr,"COMP SEQUENCE \t\t%s\n",seq_intermediate);
-
-  //reverse complement
-  for(int i=seqlen-1;i>-1;i--){
-    seq[seqlen-i-1] = seq_intermediate[i];
-  }
-  //just to ensure no issues arise in case of not clearing out the intermediate sequence
-  memset(seq_intermediate, 0, sizeof seq_intermediate);
-}
+extern char NtComp[5];
+extern const char *bass;
 
 
 pthread_mutex_t write_mutex = PTHREAD_MUTEX_INITIALIZER;
