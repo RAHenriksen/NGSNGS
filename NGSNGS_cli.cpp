@@ -18,6 +18,7 @@ argStruct *getpars(int argc,char ** argv){
   // The output format, output files, and structural elements for SAM outputs
   mypars->OutFormat = unknownT;
   mypars->OutName = NULL; //"output";
+  mypars->DumpFile = NULL; //"output";
   mypars->HeaderIndiv=-1;
   mypars->NoAlign=1;
 
@@ -198,6 +199,9 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-indel",*argv)==0 || strcasecmp("--indel",*argv)==0){
       mypars->Indel = strdup(*(++argv));
     }
+    else if(strcasecmp("-—dump-internal",*argv)==0){
+      mypars->DumpFile = strdup(*(++argv));
+    }
     else{
       fprintf(stderr,"Unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
       return NULL;
@@ -212,6 +216,7 @@ argStruct *getpars(int argc,char ** argv){
 void argStruct_destroy(argStruct *mypars){
   free(mypars->Reference); //-i
   free(mypars->OutName);
+  free(mypars->DumpFile);
   free(mypars->LengthFile);
   free(mypars->LengthDist);
   free(mypars->Indel);

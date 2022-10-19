@@ -92,7 +92,7 @@ void* Sampling_threads(void *arg){
   int G_total = 0;int G_to_A_counter = 0;int G_to_A_counter_rev = 0;int G_total_rev=0;
   
   int modulovalue;
-  if (reads > 100000){
+  if (reads > 1000000){
     modulovalue = 10;
   }
   else{ 
@@ -102,7 +102,7 @@ void* Sampling_threads(void *arg){
   
   while (current_reads_atom < reads && SIG_COND){
     //lets start by resetting out datastructures to NULL, nill, nothing.
-    qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0';
+    qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0'; //Disse skal jo rykkes hvis vi bruger et char** til fragmenter
     int posB = 0; int posE = 0;//this is the first and last position of our fragment
 
     //sample fragmentlength
@@ -124,6 +124,8 @@ void* Sampling_threads(void *arg){
     int rand_id = (rand_val_id * fraglength-1)+(rand_val_id*current_reads_atom); //100
     //why above? just to get random unique?
 
+    int strandR1 = mrand_pop(rand_alloc)>0.5?0:1; //int strand = (int) (rand_start%2);
+
     //get shallow copy of chromosome, offset into, is defined by posB, and posE
     //fprintf(stderr,"NEW READ \n");
     //fprintf(stderr,"beg %d end %d fragleng %d max %d \n",posB,posE,fraglength,maxbases);
@@ -131,20 +133,45 @@ void* Sampling_threads(void *arg){
     //extracting a biological fragment of the reference genome
     //fprintf(stderr,"beg %d end %d len: %lu frag %lu \n",posB,posE,strlen(chrseq),fraglength);
 
-    strncpy(FragmentSequence,chrseq+(posB),(posE-posB));
-
-    //fprintf(stderr,"beg %d end %d len: %lu frag %lu \n",posB,posE,strlen(FragmentSequence),fraglength);
-    //fprintf(stderr,"Frag sequence %s \n",FragmentSequence);
-
-    //./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 10 -s 1 -l 2000 -seq SE -indel 0.05,0.1,0.1,0.2 -q1 Test_Examples/AccFreqL150R1.txt -f fq -o MycoBactBamSEOut
-    //./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 1 -s 1 -l 100 -seq SE -indel 0.05,0.1,0.1,0.2 -q1 Test_Examples/AccFreqL150R1.txt -f fq -o MycoBactBamSEOut
-    //generates insertions and deletions to the original fragment, before extracting R1 and R2
+    strncpy(FragmentSequence,chrseq+(posB),(posE-posB)); // same orientation as reference genome 5' -------> FWD -------> 3'
+    int fragmentLength = strlen(FragmentSequence);
     
+    // Sequence alteration integers
+    int FragDeam = 0;
     int has_indels = 0;
+    int FragMisMatch = 0;
+
+    // Nucleotide alteration models
+
+    // Stochastic structural variation model    
     if(struct_obj->DoIndel){
       double pars[4] = {struct_obj->IndelFuncParam[0],struct_obj->IndelFuncParam[1],struct_obj->IndelFuncParam[2],struct_obj->IndelFuncParam[3]};
       has_indels = add_indel(rand_alloc,FragmentSequence,struct_obj->maxreadlength,pars);
     } 
+
+    // Mismatch matrix input file
+    if(struct_obj->doMisMatchErr){
+      FragMisMatch = MisMatchFile(FragmentSequence,rand_alloc,struct_obj->MisMatch,struct_obj->MisLength);
+    }
+    //./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 10 -s 1 -l 2000 -seq SE -indel 0.05,0.1,0.1,0.2 -q1 Test_Examples/AccFreqL150R1.txt -f fq -o MycoBactBamSEOut
+    //./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 1 -s 1 -l 100 -seq SE -indel 0.05,0.1,0.1,0.2 -q1 Test_Examples/AccFreqL150R1.txt -f fq -o MycoBactBamSEOut
+    //generates insertions and deletions to the original fragment, before extracting R1 and R2
+    
+    if (strandR1 == 1){
+      // 5' -------> REV -------> 3'
+      ReversComplement(FragmentSequence);
+    }
+
+    /*
+
+    INSERT NYE BRIGGS HER, LAV CHAR** OGSÅ FOR GAMLE BRIGGS OG SÅ GEM LÆNGDEN OG SÅ LAV ET TIL
+    SVARENDE FOR LOOP SOM I DIN GAMLE SAMPLING OG LØB IGENNEM DEM ALLESAMMEN
+
+
+
+
+    */
+
 
     //fprintf(stderr,"chr %s \t idx %d \n",chr,chr_idx);
     //now copy the actual sequence into seq_r1 and seq_r2 if PE 
@@ -165,7 +192,6 @@ void* Sampling_threads(void *arg){
     //fprintf(stderr,"Current read %zu and max bases %d and fraglent %d  and coordinates %d \t %d \t seq length %d\n",current_reads_atom,maxbases,fraglength,posB,posE,strlen(seq_r1));
     //Selecting strand, 0-> forward strand (+) 5'->3', 1 -> reverse strand (-) 3'->5'
     //rename to strand to strandR1
-    int strandR1 = mrand_pop(rand_alloc)>0.5?0:1; //int strand = (int) (rand_start%2);
     
     //Remove reads which are all N? In this code we remove both pairs if both reads are all N
     int skipread = 1;
@@ -179,6 +205,7 @@ void* Sampling_threads(void *arg){
     
     if(skipread==1)
       continue;
+    // NB SKAL RYKKES NED TIL AT PASSE MED DE NYE CHAR ARRAYS EFTER BRIGGS ER LAVET
     
     // generating sam output information
     int seqlen = strlen(seq_r1);
@@ -266,17 +293,8 @@ void* Sampling_threads(void *arg){
 		       struct_obj->BriggsParam[3],rand_alloc,strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
       }
     } 
-    //fprintf(stderr,"IS READ DAEMINATED WITH VALUE %d\n",ReadDeam);
-    //should this be based on forward + strand or on the 5->3 sequences?
-    if(struct_obj->doMisMatchErr){
-      //this function below modifies sequence to include substitutions from mismatch incorperation file
-      //this option is currently -mf, NB change name
-      MisMatchFile(seq_r1,rand_alloc,struct_obj->MisMatch,struct_obj->MisLength);
-      if (PE==struct_obj->SeqType)
-	      MisMatchFile(seq_r2,rand_alloc,struct_obj->MisMatch,struct_obj->MisLength);
-    }
       
-    snprintf(READ_ID,1024,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,0,0,0);
+    snprintf(READ_ID,1024,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,0,0);
 
     int nsofts[2] = {0,0};//this will contain the softclip information to be used by sam/bam/cram out
     //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail

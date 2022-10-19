@@ -40,4 +40,5 @@ void fasta_sampler_destroy(fasta_sampler *fs);
 char* sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength);
 void fasta_sampler_setprobs(fasta_sampler *fs);
 void fasta_sampler_print(FILE *fp,fasta_sampler *fs);
+void dump_internal(fasta_sampler *fs,const char* filename);
 #endif

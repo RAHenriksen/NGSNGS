@@ -51,7 +51,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
-                        char CommandArray[1024],const char* version,int HeaderIndiv,int NoAlign,size_t BufferLength){
+                        char CommandArray[1024],const char* version,int HeaderIndiv,int NoAlign,size_t BufferLength,const char* FileDump){
   //creating an array with the arguments to create multiple threads;
 
   int nthreads=thread_no;
@@ -59,17 +59,27 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   
   //allocate for reference file
   fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
+  
   if(VariantFile){
     fprintf(stderr,"specific chr %s \n",Specific_Chr);
     fprintf(stderr,"Variant file %s and individual in Header %d \n",VariantFile,HeaderIndiv);
     add_variants(reffasta,VariantFile,HeaderIndiv);
   }
 
-   //printout all
-  /*for(int i=0;i<reffasta->nref;i++)
-    for(int j=0;j<reffasta->seqs_l[i];j++)
-      fprintf(stderr,"INTERNAL\t%s\t%d\t%c\n",reffasta->seqs_names[i],j,reffasta->seqs[i][j]);*/
-  
+  //const char* file = "FileDump.txt";
+  if (VariantFile && FileDump != NULL){
+    fprintf(stderr,"BEFORE \n");
+    char dumpfile1[80];
+    const char* dumpfile1prefix = FileDump;
+    const char* dumpfile1suffix = ".fa";
+
+    strcpy(dumpfile1,dumpfile1prefix);
+    strcat(dumpfile1,dumpfile1suffix);
+    const char* dumpfilefull = dumpfile1;
+    dump_internal(reffasta,dumpfilefull);
+    fprintf(stderr,"AFTER \n");
+  }
+ 
   //fasta_sampler_print(stderr,reffasta);
   
   fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome\n",reffasta->nref);

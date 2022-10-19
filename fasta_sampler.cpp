@@ -8,6 +8,8 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <htslib/bgzf.h>
+
 #define MAXBINS 100
 
 
@@ -112,6 +114,33 @@ char *sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &p
   char *ret =fs->seqs[chr_idx]; 
   chr_idx = fs->realnameidx[chr_idx];
   return ret;
+}
+
+void dump_internal(fasta_sampler *fs,const char* filename){
+  kstring_t *fa_s[1];
+  fa_s[0] =(kstring_t*) calloc(1,sizeof(kstring_t));
+  fa_s[0]->s = NULL;
+  fa_s[0]->l = fa_s[0]->m = 0;
+
+  BGZF **bgzf_fp = (BGZF **) calloc(2,sizeof(BGZF *));
+
+  int mt_cores = 1;
+  int bgzf_buf = 256;
+  const char* mode = "wu";
+
+  bgzf_fp[0] = bgzf_open(filename,mode); //w
+  bgzf_mt(bgzf_fp[0],mt_cores,bgzf_buf); //
+  
+  for(int i=0;i<fs->nref;i++){
+    ksprintf(fa_s[0],">%s\n%s\n",fs->seqs_names[i],fs->seqs[i]);//make this into read
+    assert(bgzf_write(bgzf_fp[0],fa_s[0]->s,fa_s[0]->l)!=0);
+  }
+
+  free(fa_s[0]->s);
+  free(fa_s[0]);
+
+  bgzf_close(bgzf_fp[0]);
+  free(bgzf_fp);
 }
 
 void fasta_sampler_destroy(fasta_sampler *fs){
