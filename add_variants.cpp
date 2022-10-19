@@ -152,22 +152,21 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
     
     if(reset){
       if(fsoffsets!=NULL){
-	for(int i=0;i<ploidy;i++){
-	  //	  fprintf(stderr,"flushing [%d] last:%d elephant: %s\n",i,last[i],elephant[i]);
+        for(int i=0;i<ploidy;i++){
+          //fprintf(stderr,"flushing [%d] last:%d elephant: %s\n",i,last[i],elephant[i]);
 
-	  strcat(elephant[i],fs->seqs[fsoffsets[i]]+last[i]);
-	  fs->seqs_l[fsoffsets[i]] = strlen(elephant[i]);
-	  delete [] fs->seqs[i];
-	  fs->seqs[i] = elephant[i];
-	}
-	
+          strcat(elephant[i],fs->seqs[fsoffsets[i]]+last[i]);
+          fs->seqs_l[fsoffsets[i]] = strlen(elephant[i]);
+          delete [] fs->seqs[i];
+          fs->seqs[i] = elephant[i];
+        }
       }
 
       ploidymap::iterator it = fs->pldmap.find(last_fid);
       assert(it!=fs->pldmap.end());
       fsoffsets = it->second;
       for(int i=0;i<ploidy;i++)
-	last[i] = 0;
+	      last[i] = 0;
       reset = 0;
     }
 
@@ -177,10 +176,10 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
     for(int i=0;i<ploidy;i++){
       //first copy contigous block from last operator
       if(last[i]>it->first.pos)
-	last[i] = it->first.pos;
+      	last[i] = it->first.pos;
 
       int nitems2copy = brec->pos-last[i];
-      fprintf(stderr,"nitesm2copy: %d\n",nitems2copy);
+      //fprintf(stderr,"nitesm2copy: %d\n",nitems2copy); // QA TK, hvordan giver det her mening. 
       assert(strlen(elephant[i])+brec->pos-last[i]< maxsize );//funky assert
       strncat(elephant[i],fs->seqs[fsoffsets[i]]+last[i],nitems2copy);
       char *allele = NULL;
@@ -190,36 +189,46 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
       
       //its a deletion if strlen(d.allele[0])>1 
       int isdel = 0;
-      if(it->first.gt[i]==0&&strlen(allele)>1)
-	isdel = strlen(allele);
-
+      fprintf(stderr,"Position: %lld length of allele: %zu\n",it->first.pos,strlen(allele));
+      if(it->first.gt[i]==1&&strlen(allele)>1){
+      	isdel = strlen(allele);
+        fprintf(stderr,"ISDEL 1 is %d\n",isdel);
+      }
       if(ploidy==1){
-	if(strlen(it->second->d.allele[0])&&it->first.gt[i]==1&&strlen(allele)==1)
-	  isdel = strlen(it->second->d.allele[0])-strlen(allele);
+        if(strlen(it->second->d.allele[0])&&it->first.gt[i]==1&&strlen(allele)==1){
+          isdel = strlen(it->second->d.allele[0])-strlen(allele);
+          fprintf(stderr,"ISDEL 2 is %d\n",isdel);
+        }
       }
       
-      
-#if 1
-      if(isdel)
-	fprintf(stderr,"site: %d,%lld is deletion allele:%s isdel: %d\n",it->first.pos,it->second->pos,allele,isdel);
-      if(isdel==0)
-	fprintf(stderr,"site: %d,%lld is insertion allele:%s\n",it->first.pos,it->second->pos,allele);
-#endif
+  #if 0
+      if(isdel){
+	      fprintf(stderr,"site: %d,%lld is deletion allele:%s isdel: %d\n",it->first.pos,it->second->pos,allele,isdel);
+      }
+      if(isdel==0){
+      	fprintf(stderr,"site: %d,%lld is insertion allele:%s\n",it->first.pos,it->second->pos,allele);
+      }
+  #endif
 
       
       if(isdel){
-	//is deletion then we just skip the number of bases
-	fprintf(stderr,"In deletion, will skip reference position: %lld length of allele: %zu\n",it->first.pos,strlen(allele));
-	last[i] = brec->pos+ isdel;
-	//	fprintf(stderr,"last[]: %d\n",last[i]);
+        //is deletion then we just skip the number of bases
+        fprintf(stderr,"In deletion, will skip reference position: %lld length of allele: %zu\n",it->first.pos,strlen(allele));
+        last[i] = brec->pos+isdel;
+        fprintf(stderr,"last[]: %d\n",brec->pos-isdel);
+        fprintf(stderr,"last[]: %d\n",brec->pos);
+        fprintf(stderr,"last[]: %d\n",brec->pos+isdel+1);
+        fprintf(stderr,"last[]: %d\n",brec->pos+isdel);
+        fprintf(stderr,"last[]: %d\n",brec->pos+isdel+1);
+        fprintf(stderr,"last[]: %d\n",last[i]);
       }
       if(isdel==0){
-	//	fprintf(stderr,"before:\t%s\n",elephant[i]);
-	assert(strlen(elephant[i])+strlen(allele)<strlen(elephant[i])+maxsize);
-	//fprintf(stderr,"inserting allele: %s\n",allele);
-	strncat(elephant[i],allele,strlen(allele));
-	//fprintf(stderr,"after:\t%s\n",elephant[i]);
-	last[i] = brec->pos+1;
+        //	fprintf(stderr,"before:\t%s\n",elephant[i]);
+        assert(strlen(elephant[i])+strlen(allele)<strlen(elephant[i])+maxsize);
+        //fprintf(stderr,"inserting allele: %s\n",allele);
+        strncat(elephant[i],allele,strlen(allele));
+        //fprintf(stderr,"after:\t%s\n",elephant[i]);
+        last[i] = brec->pos+1;
       }
     }
   }
@@ -271,6 +280,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
   // So this could be the parameter to change for which individual, but im not actually sure how it works if there isn't any individuals?? check TK's vcf file.
   int whichsample=HeaderIndiv; //;//if minus one then ref and alt fields are used, if nonnegative then it is used as offset to which genotype to use from the GT fields
   //map chromosomenames in bcf to index in fastafile
+  fprintf(stderr,"--------\nTHE SAMPLE INDEX IS %d and sample name is %s\n",whichsample,bcf_head->samples[whichsample]);
   int max_l;
   int *bcf_idx_2_fasta_idx = mapper(bcf_head,fs->char2idx,max_l);
   int ret = -1;
@@ -331,8 +341,10 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
 	isindel =1;
       
     }
-    if(isindel==0)
+    if(isindel==0){
       add_variant(fs,fai_chr,brec->pos,brec->d.allele,mygt,inferred_ploidy);
+      fprintf(stderr,"\t-> Found an variant as rid: %d pos:%lld\n",brec->rid,brec->pos+1);
+    }
     else{
       fprintf(stderr,"\t-> Found an indel as rid: %d pos:%lld\n",brec->rid,brec->pos+1);
       key.rid=fai_chr;

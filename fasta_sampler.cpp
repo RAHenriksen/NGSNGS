@@ -132,8 +132,9 @@ void dump_internal(fasta_sampler *fs,const char* filename){
   bgzf_mt(bgzf_fp[0],mt_cores,bgzf_buf); //
   
   for(int i=0;i<fs->nref;i++){
+    fprintf(stderr,"number of reference genome %d and name %s and length %zu\n",i,fs->seqs_names[i],fs->seqs_l[i]);
     ksprintf(fa_s[0],">%s\n%s\n",fs->seqs_names[i],fs->seqs[i]);//make this into read
-    assert(bgzf_write(bgzf_fp[0],fa_s[0]->s,fa_s[0]->l)!=0);
+    assert(bgzf_write(bgzf_fp[0],fa_s[i]->s,fa_s[i]->l)!=0);
   }
 
   free(fa_s[0]->s);

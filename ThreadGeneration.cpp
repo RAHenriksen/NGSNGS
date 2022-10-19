@@ -64,11 +64,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     fprintf(stderr,"specific chr %s \n",Specific_Chr);
     fprintf(stderr,"Variant file %s and individual in Header %d \n",VariantFile,HeaderIndiv);
     add_variants(reffasta,VariantFile,HeaderIndiv);
-  }
-
-  //const char* file = "FileDump.txt";
-  if (VariantFile && FileDump != NULL){
-    fprintf(stderr,"BEFORE \n");
     char dumpfile1[80];
     const char* dumpfile1prefix = FileDump;
     const char* dumpfile1suffix = ".fa";
@@ -77,8 +72,13 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     strcat(dumpfile1,dumpfile1suffix);
     const char* dumpfilefull = dumpfile1;
     dump_internal(reffasta,dumpfilefull);
-    fprintf(stderr,"AFTER \n");
   }
+
+  /*
+  if (VariantFile && FileDump != NULL){
+    fprintf(stderr,"BEFORE \n");
+    fprintf(stderr,"AFTER \n");
+  }*/
  
   //fasta_sampler_print(stderr,reffasta);
   
