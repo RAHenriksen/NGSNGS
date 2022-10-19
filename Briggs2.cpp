@@ -7,6 +7,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <cassert>
+#include <math.h>
 
 #define LENS 4096
 #define MAXBINS 100
@@ -71,7 +72,7 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
     // 1 pos 3' (so last position in fragment)
     // r means right overhan (ss)
     rasmus[i] = ori[i];
-    thorfinn[i] = NtComp[refToInt[(unsigned char) rasmus[i]]];//REVCOMPL
+    thorfinn[i] = NtComp[refToInt[(unsigned char) rasmus[i]]];
     
     if (thorfinn[i] == 'C' || thorfinn[L-i-1] == 'c'){
       double u = mrand_pop(mr);
@@ -82,48 +83,94 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
         rasmus[i] = 'A';
       }
     }
+  }
     
-    //assumptions, only one nick in double stranded part
-    double u_nick_m = mrand_pop(mr);
-    
-    double P_m = nv/((L-l-r-1)*nv+1-nv);
-    int p_nick_m = l;
-    double CumPm = P_m;
+  // Insert joint distribution for selecting a nick position in both strands simultaneously, assuming only one nick can occur at both strands
 
-    while ((u_nick_m > CumPm) && (p_nick_m < L-r-1)){
-      CumPm += P_m;
-      p_nick_m +=1;
+  // Position m for nick
+  double u_nick_m = mrand_pop(mr);
+    
+  double P_m = nv/((L-l-r-1)*nv+1-nv);
+  int p_nick_m = l;
+  double CumPm = P_m;
+
+  while ((u_nick_m > CumPm) && (p_nick_m < L-r-1)){
+    CumPm += P_m;
+    p_nick_m +=1;
+  }
+
+  double P_n;
+  int q_nick_n = L-r-l-p_nick_m; //m
+  double u_nick_n = mrand_pop(mr); 
+  double CumPn = 0;
+
+  // m  is fixed but position n for nick will change, therefore we need to define P_n given m inside while loop
+  if (l+1 <= p_nick_m <= L-r-1){
+    while ((u_nick_n > CumPn) && (q_nick_n < L-r-1)){
+      P_n = nv*pow((1-nv),(p_nick_m+q_nick_n-L-l-r));
+      CumPn += P_n; 
+      q_nick_n +=1; 
     }
-    
-    /*
-    double u_nick_n = mrand_pop(mr);
-    
-    int p_nick_n = l;
-    double P_n = nv*pow((1-v), double p_nick_m-p_nick_n-L-r-1);
-    double CumPn = P_n;
+  }
+  else if(p_nick_m = L-r){
+    while ((u_nick_n > CumPn) && (q_nick_n < L-r-1)){
+      P_n = nv*pow((1-nv),(q_nick_n-1));
+      CumPn += P_n; 
+      q_nick_n +=1; 
+    }
+  }
 
-    while ((u_nick_n > CumPn) && (u_nick_n < L-r-1)){
-      CumPm += P_n;
-      p_nick_m +=1;
-    }*/
-
-    /*for (int i = l; i < L-r; i++){
-      if ((ori[i] == 'C' || ori[i] == 'c') && i<=p_nick){
-        double urasmus = mrand_pop(mr);
-        double uthorfinn = mrand_pop(mr);
-        if (urasmus < delta){
-          IsDeam = 1;
-          rasmus[i] = 'T';
-        }
-        if (uthorfinn < delta){
-          IsDeam = 1;
-          thorfinn[i] = 'T';
-        }
+  // Nick in Rasmus strand
+  for (int i = l; i < L-r; i++){
+    double urasmus = mrand_pop(mr);
+    double uthorfinn = mrand_pop(mr);
+    if ((rasmus[i] == 'C' || rasmus[i] == 'c') && i<=p_nick_m){
+      if (urasmus < delta){
+        IsDeam = 1;
+        rasmus[i] = 'T';
       }
-    }*/
+      if (uthorfinn < delta){
+        IsDeam = 1;
+        thorfinn[i] = 'T';
+      }
+    }
+    else if ((thorfinn[i] == 'C' || thorfinn[i] == 'C') && i>p_nick_m){
+      //Extending the rasmus strand using thorfinn as a template
+      if (urasmus < delta){
+        IsDeam = 1;
+        rasmus[i] = 'A';
+      }
+      if (uthorfinn < delta){
+        IsDeam = 1;
+        thorfinn[i] = 'T';
+      }
+    }
+  }
 
-    // Insert joint distribution for selecting a nick position in both strands simultaneously 
-
+  for (int i =L-r; i<L; i++){
+    double urasmus = mrand_pop(mr);
+    double uthorfinn = mrand_pop(mr);
+    if ((thorfinn[i] == 'C' || thorfinn[i] == 'c') && i<=q_nick_n){
+      if (urasmus < delta){
+        IsDeam = 1;
+        rasmus[i] = 'T';
+      }
+      if (uthorfinn < delta){
+        IsDeam = 1;
+        thorfinn[i] = 'T';
+      }
+    }
+    else if ((rasmus[i] == 'C' || rasmus[i] == 'C') && i>q_nick_n){
+      //Extending the thorfinn strand using rasmus as a template
+      if (urasmus < delta){
+        IsDeam = 1;
+        rasmus[i] = 'T';
+      }
+      if (uthorfinn < delta){
+        IsDeam = 1;
+        thorfinn[i] = 'A';
+      }
+    }
   }
   
   char seq_intermediate[1024] = {0};
