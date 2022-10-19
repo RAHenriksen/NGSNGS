@@ -82,13 +82,18 @@ int SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, 
     dtemp1 = mrand_pop(mr);//drand48_r(&buffer, &dtemp1);
     double u_nick = dtemp1; //((double) rand_r(&seed)/ RAND_MAX);
     //fprintf(stderr,"Double u_nick %f\n",u_nick);
-    double d = nv/((L-l-r-1)*nv+1-nv);
-    int p_nick = l;
-    double cumd = d;
+    double d = nv/((L-l-r-1)*nv+1-nv); // P(m)
+    int p_nick = l; //m
+    double cumd = d; // P(m)
+
     while ((u_nick > cumd) && (p_nick < L-r-1)){
-        cumd += d;
-        p_nick +=1;
+      // p_nick cannot be larger than L-r-1, so once p_nick is equal then we 
+      // go out of this loop. So at that time p_nick = L-r-1. So positions within
+      // the full fragment
+      cumd += d; 
+      p_nick +=1; 
     }
+
     for (int i = l; i < L-r; i++){
       // The double strand part, the left and right hand overhang are probably cut, so only the midlle part of our DNA fragments (ds)
       //fprintf(stderr,"THIRD FOR LOOP \n");
