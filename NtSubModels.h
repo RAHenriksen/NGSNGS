@@ -4,6 +4,6 @@
 
 void ErrorSub(double randval,char seqchar[], int pos);
 double* MisMatchFileArray(double* freqval,const char* filename,int &mismatchcyclelength);
-void MisMatchFile(char seq[],mrand_t *mr,double* freqval,int LEN);
+int MisMatchFile(char seq[],mrand_t *mr,double* freqval,int LEN);
 
 #endif

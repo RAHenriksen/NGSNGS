@@ -50,7 +50,8 @@ double* MisMatchFileArray(double* freqval,const char* filename,int &mismatchcycl
   return freqval;
 }
 
-void MisMatchFile(char seq[],mrand_t *mr,double* freqval,int LEN){
+int MisMatchFile(char seq[],mrand_t *mr,double* freqval,int LEN){
+  int IsMis = 0;
   //fprintf(stderr,"MisMatchFileArray\n");
   char ntdeam[4] = {'A', 'T', 'G', 'C'};//{'R', 'Q', 'S', 'U'};//{'X', 'Y', 'Z', 'W'}; //{'A', 'T', 'G', 'C'};
   double dtemp1;
@@ -71,56 +72,146 @@ void MisMatchFile(char seq[],mrand_t *mr,double* freqval,int LEN){
   for (int row_idx = 0; row_idx < LEN;row_idx++){
     dtemp1 = mrand_pop(mr);//0.99;// mrand_pop(mr);
     if (seq[row_idx] == 'A' || seq[row_idx] == 'a'){
-      if (dtemp1 <= freqval[Astart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}
-      else if (freqval[Astart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Astart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
-      else if (freqval[Astart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Astart+(row_idx*4)+2]){seq[row_idx] = ntdeam[2];}
-      else if (freqval[Astart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Astart+(row_idx*4)+3]){seq[row_idx] = ntdeam[3];}
+      if (dtemp1 <= freqval[Astart+(row_idx*4)]){
+        seq[row_idx] = ntdeam[0];
+      }
+      else if (freqval[Astart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Astart+(row_idx*4)+1]){
+        seq[row_idx] = ntdeam[1];
+        IsMis++;
+      }
+      else if (freqval[Astart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Astart+(row_idx*4)+2]){
+        seq[row_idx] = ntdeam[2];
+        IsMis++;
+      }
+      else if (freqval[Astart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Astart+(row_idx*4)+3]){
+        seq[row_idx] = ntdeam[3];
+        IsMis++;
+      }
     }
     else if (seq[row_idx] == 'T' || seq[row_idx] == 't'){
-      if (dtemp1 <= freqval[Tstart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}
-      else if (freqval[Tstart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Tstart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
-      else if (freqval[Tstart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Tstart+(row_idx*4)+2]){seq[row_idx] = ntdeam[2];}
-      else if (freqval[Tstart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Tstart+(row_idx*4)+3]){seq[row_idx] = ntdeam[3];}
+      if (dtemp1 <= freqval[Tstart+(row_idx*4)]){
+        seq[row_idx] = ntdeam[0];
+        IsMis++;
+      }
+      else if (freqval[Tstart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Tstart+(row_idx*4)+1]){
+        seq[row_idx] = ntdeam[1];
+      }
+      else if (freqval[Tstart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Tstart+(row_idx*4)+2]){
+        seq[row_idx] = ntdeam[2];
+        IsMis++;
+      }
+      else if (freqval[Tstart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Tstart+(row_idx*4)+3]){
+        seq[row_idx] = ntdeam[3];
+        IsMis++;
+      }
     }
     else if (seq[row_idx] == 'G' || seq[row_idx] == 'g'){
-      if (dtemp1 <= freqval[Gstart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}
-      else if (freqval[Gstart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Gstart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
-      else if (freqval[Gstart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Gstart+(row_idx*4)+2]){seq[row_idx] = ntdeam[2];}
-      else if (freqval[Gstart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Gstart+(row_idx*4)+3]){seq[row_idx] = ntdeam[3];}
+      if (dtemp1 <= freqval[Gstart+(row_idx*4)]){
+        seq[row_idx] = ntdeam[0];
+        IsMis++;
+      }
+      else if (freqval[Gstart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Gstart+(row_idx*4)+1]){
+        seq[row_idx] = ntdeam[1];
+        IsMis++;
+      }
+      else if (freqval[Gstart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Gstart+(row_idx*4)+2]){
+        seq[row_idx] = ntdeam[2];
+      }
+      else if (freqval[Gstart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Gstart+(row_idx*4)+3]){
+        seq[row_idx] = ntdeam[3];
+        IsMis++;
+      }
     }
     else if (seq[row_idx] == 'C' || seq[row_idx] == 'c'){
-      if (dtemp1 <= freqval[Cstart+(row_idx*4)]){seq[row_idx] = ntdeam[0];}
-      else if (freqval[Cstart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Cstart+(row_idx*4)+1]){seq[row_idx] = ntdeam[1];}
-      else if (freqval[Cstart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Cstart+(row_idx*4)+2]){seq[row_idx] = ntdeam[2];}
-      else if (freqval[Cstart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Cstart+(row_idx*4)+3]){seq[row_idx] = ntdeam[3];}
+      if (dtemp1 <= freqval[Cstart+(row_idx*4)]){
+        seq[row_idx] = ntdeam[0];
+        IsMis++;
+      }
+      else if (freqval[Cstart+(row_idx*4)] < dtemp1 && dtemp1 <= freqval[Cstart+(row_idx*4)+1]){
+        seq[row_idx] = ntdeam[1];
+        IsMis++;
+      }
+      else if (freqval[Cstart+(row_idx*4)+1] < dtemp1 && dtemp1 <= freqval[Cstart+(row_idx*4)+2]){
+        seq[row_idx] = ntdeam[2];
+        IsMis++;
+      }
+      else if (freqval[Cstart+(row_idx*4)+2] < dtemp1 && dtemp1 <= freqval[Cstart+(row_idx*4)+3]){
+        seq[row_idx] = ntdeam[3];
+      }
     }
   }
   //3'
   for (int row_idx = 0; row_idx < LEN;row_idx++){
     int row_idx_3p = seqlen-(LEN-row_idx);
     if (seq[row_idx_3p] == 'A' || seq[row_idx_3p] == 'a'){
-      if (dtemp1 <= freqval[Aend3-((row_idx)*4)-4]){seq[row_idx_3p] = ntdeam[0];}
-      else if (freqval[Aend3-((row_idx)*4)-4] < dtemp1 && dtemp1 <= freqval[Aend3-((row_idx)*4)-3]){seq[row_idx_3p] = ntdeam[1];}
-      else if (freqval[Aend3-((row_idx)*4)-3] < dtemp1 && dtemp1 <= freqval[Aend3-((row_idx)*4)-2]){seq[row_idx_3p] = ntdeam[2];}
-      else if (freqval[Aend3-((row_idx)*4)-2] < dtemp1 && dtemp1 <= freqval[Aend3-((row_idx)*4)-1]){seq[row_idx_3p] = ntdeam[3];}
+      if (dtemp1 <= freqval[Aend3-((row_idx)*4)-4]){
+        seq[row_idx_3p] = ntdeam[0];
+        IsMis++;
+      }
+      else if (freqval[Aend3-((row_idx)*4)-4] < dtemp1 && dtemp1 <= freqval[Aend3-((row_idx)*4)-3]){
+        seq[row_idx_3p] = ntdeam[1];
+        IsMis++;
+      }
+      else if (freqval[Aend3-((row_idx)*4)-3] < dtemp1 && dtemp1 <= freqval[Aend3-((row_idx)*4)-2]){
+        seq[row_idx_3p] = ntdeam[2];
+        IsMis++;
+      }
+      else if (freqval[Aend3-((row_idx)*4)-2] < dtemp1 && dtemp1 <= freqval[Aend3-((row_idx)*4)-1]){
+        seq[row_idx_3p] = ntdeam[3];
+        IsMis++;
+      }
     }
     else if (seq[row_idx_3p] == 'T' || seq[row_idx_3p] == 't'){
-      if (dtemp1 <= freqval[Tend3-((row_idx)*4)-4]){seq[row_idx_3p] = ntdeam[0];}
-      else if (freqval[Tend3-((row_idx)*4)-4] < dtemp1 && dtemp1 <= freqval[Tend3-((row_idx)*4)-3]){seq[row_idx_3p] = ntdeam[1];}
-      else if (freqval[Tend3-((row_idx)*4)-3] < dtemp1 && dtemp1 <= freqval[Tend3-((row_idx)*4)-2]){seq[row_idx_3p] = ntdeam[2];}
-      else if (freqval[Tend3-((row_idx)*4)-2] < dtemp1 && dtemp1 <= freqval[Tend3-((row_idx)*4)-1]){seq[row_idx_3p] = ntdeam[3];}
+      if (dtemp1 <= freqval[Tend3-((row_idx)*4)-4]){
+        seq[row_idx_3p] = ntdeam[0];
+        IsMis++;
+      }
+      else if (freqval[Tend3-((row_idx)*4)-4] < dtemp1 && dtemp1 <= freqval[Tend3-((row_idx)*4)-3]){
+        seq[row_idx_3p] = ntdeam[1];
+        IsMis++;
+      }
+      else if (freqval[Tend3-((row_idx)*4)-3] < dtemp1 && dtemp1 <= freqval[Tend3-((row_idx)*4)-2]){
+        seq[row_idx_3p] = ntdeam[2];
+        IsMis++;
+      }
+      else if (freqval[Tend3-((row_idx)*4)-2] < dtemp1 && dtemp1 <= freqval[Tend3-((row_idx)*4)-1]){
+        seq[row_idx_3p] = ntdeam[3];
+        IsMis++;
+      }
     }
     else if (seq[row_idx_3p] == 'G' || seq[row_idx_3p] == 'g'){
       if (dtemp1 <= freqval[Gend3-((row_idx)*4)-4]){seq[row_idx_3p] = ntdeam[0];}
-      else if (freqval[Gend3-((row_idx)*4)-4] < dtemp1 && dtemp1 <= freqval[Gend3-((row_idx)*4)-3]){seq[row_idx_3p] = ntdeam[1];}
-      else if (freqval[Gend3-((row_idx)*4)-3] < dtemp1 && dtemp1 <= freqval[Gend3-((row_idx)*4)-2]){seq[row_idx_3p] = ntdeam[2];}
-      else if (freqval[Gend3-((row_idx)*4)-2] < dtemp1 && dtemp1 <= freqval[Gend3-((row_idx)*4)-1]){seq[row_idx_3p] = ntdeam[3];}
+      else if (freqval[Gend3-((row_idx)*4)-4] < dtemp1 && dtemp1 <= freqval[Gend3-((row_idx)*4)-3]){
+        seq[row_idx_3p] = ntdeam[1];
+        IsMis++;
+      }
+      else if (freqval[Gend3-((row_idx)*4)-3] < dtemp1 && dtemp1 <= freqval[Gend3-((row_idx)*4)-2]){
+        seq[row_idx_3p] = ntdeam[2];
+        IsMis++;
+      }
+      else if (freqval[Gend3-((row_idx)*4)-2] < dtemp1 && dtemp1 <= freqval[Gend3-((row_idx)*4)-1]){
+        seq[row_idx_3p] = ntdeam[3];
+        IsMis++;
+      }
     }
     else if (seq[row_idx_3p] == 'C' || seq[row_idx_3p] == 'c'){
-      if (dtemp1 <= freqval[Cend3-((row_idx)*4)-4]){seq[row_idx_3p] = ntdeam[0];}
-      else if (freqval[Cend3-((row_idx)*4)-4] < dtemp1 && dtemp1 <= freqval[Cend3-((row_idx)*4)-3]){seq[row_idx_3p] = ntdeam[1];}
-      else if (freqval[Cend3-((row_idx)*4)-3] < dtemp1 && dtemp1 <= freqval[Cend3-((row_idx)*4)-2]){seq[row_idx_3p] = ntdeam[2];}
-      else if (freqval[Cend3-((row_idx)*4)-2] < dtemp1 && dtemp1 <= freqval[Cend3-((row_idx)*4)-1]){seq[row_idx_3p] = ntdeam[3];}
+      if (dtemp1 <= freqval[Cend3-((row_idx)*4)-4]){
+        seq[row_idx_3p] = ntdeam[0];
+        IsMis++;
+      }
+      else if (freqval[Cend3-((row_idx)*4)-4] < dtemp1 && dtemp1 <= freqval[Cend3-((row_idx)*4)-3]){
+        seq[row_idx_3p] = ntdeam[1];
+        IsMis++;
+      }
+      else if (freqval[Cend3-((row_idx)*4)-3] < dtemp1 && dtemp1 <= freqval[Cend3-((row_idx)*4)-2]){
+        seq[row_idx_3p] = ntdeam[2];
+        IsMis++;
+      }
+      else if (freqval[Cend3-((row_idx)*4)-2] < dtemp1 && dtemp1 <= freqval[Cend3-((row_idx)*4)-1]){
+        seq[row_idx_3p] = ntdeam[3];
+        IsMis++;
+      }
     }
   }
+  return IsMis;
 }
