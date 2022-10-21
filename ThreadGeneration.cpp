@@ -21,6 +21,7 @@
 #include "NGSNGS_cli.h"
 #include "fasta_sampler.h"
 #include "add_variants.h"
+#include "add_indels.h"
 
 #define LENS 4096
 
@@ -60,31 +61,20 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   //allocate for reference file
   fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
   
+  char dumpfile1[80];
+  const char* dumpfile1prefix = FileDump;
+  const char* dumpfile1suffix = ".fa";
+  strcpy(dumpfile1,dumpfile1prefix);
+  strcat(dumpfile1,dumpfile1suffix);
+  const char* dumpfilefull = dumpfile1;
   if(VariantFile){
     fprintf(stderr,"specific chr %s \n",Specific_Chr);
     fprintf(stderr,"Variant file %s and individual in Header %d \n",VariantFile,HeaderIndiv);
     add_variants(reffasta,VariantFile,HeaderIndiv);
-    char dumpfile1[80];
-    const char* dumpfile1prefix = FileDump;
-    const char* dumpfile1suffix = ".fa";
-
-    strcpy(dumpfile1,dumpfile1prefix);
-    strcat(dumpfile1,dumpfile1suffix);
-    const char* dumpfilefull = dumpfile1;
     dump_internal(reffasta,dumpfilefull);
   }
-
-  /*
-  if (VariantFile && FileDump != NULL){
-    fprintf(stderr,"BEFORE \n");
-    fprintf(stderr,"AFTER \n");
-  }*/
- 
-  //fasta_sampler_print(stderr,reffasta);
-  
   fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome\n",reffasta->nref);
   fprintf(stderr,"\t-> Chromosome name first %s and length %d and full length %zu\n",reffasta->seqs_names[0],reffasta->seqs_l[0],reffasta->seq_l_total);
-
 
   if (reffasta->seqs != NULL){
   
