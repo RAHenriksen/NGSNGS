@@ -146,8 +146,9 @@ void* Sampling_threads(void *arg){
     // Stochastic structural variation model    
     if(struct_obj->DoIndel){
       double pars[4] = {struct_obj->IndelFuncParam[0],struct_obj->IndelFuncParam[1],struct_obj->IndelFuncParam[2],struct_obj->IndelFuncParam[3]};
-      has_indels = add_indel(rand_alloc,FragmentSequence,struct_obj->maxreadlength,pars);
-    } 
+      fprintf(stderr,"DO INDELS");
+      //has_indels = add_indel(rand_alloc,FragmentSequence,struct_obj->maxreadlength,pars);
+    }
 
     // Mismatch matrix input file
     if(struct_obj->doMisMatchErr){

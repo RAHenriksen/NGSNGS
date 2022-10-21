@@ -300,6 +300,7 @@ int main(int argc,char **argv){
       IndelFuncParam[2] = myatof(strtok(NULL,"\", \t"));
       IndelFuncParam[3] = myatof(strtok(NULL,"\", \t"));
       DoIndel = 1;
+      free(IndelInputParam); 
     }
 
     int doMisMatchErr = 0;
