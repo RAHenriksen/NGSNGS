@@ -147,7 +147,7 @@ void* Sampling_threads(void *arg){
     if(struct_obj->DoIndel){
       double pars[4] = {struct_obj->IndelFuncParam[0],struct_obj->IndelFuncParam[1],struct_obj->IndelFuncParam[2],struct_obj->IndelFuncParam[3]};
       fprintf(stderr,"DO INDELS");
-      //has_indels = add_indel(rand_alloc,FragmentSequence,struct_obj->maxreadlength,pars);
+      has_indels = add_indel(rand_alloc,FragmentSequence,struct_obj->maxreadlength,pars);
     }
 
     // Mismatch matrix input file

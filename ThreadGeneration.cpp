@@ -61,20 +61,24 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   //allocate for reference file
   fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
   
-  char dumpfile1[80];
-  const char* dumpfile1prefix = FileDump;
-  const char* dumpfile1suffix = ".fa";
-  strcpy(dumpfile1,dumpfile1prefix);
-  strcat(dumpfile1,dumpfile1suffix);
-  const char* dumpfilefull = dumpfile1;
   if(VariantFile){
     fprintf(stderr,"specific chr %s \n",Specific_Chr);
     fprintf(stderr,"Variant file %s and individual in Header %d \n",VariantFile,HeaderIndiv);
     add_variants(reffasta,VariantFile,HeaderIndiv);
-    dump_internal(reffasta,dumpfilefull);
+    if(FileDump!=NULL){
+      char dumpfile1[80];
+      const char* dumpfile1prefix = FileDump;
+      const char* dumpfile1suffix = ".fa";
+      strcpy(dumpfile1,dumpfile1prefix);
+      strcat(dumpfile1,dumpfile1suffix);
+      const char* dumpfilefull = dumpfile1;
+      dump_internal(reffasta,dumpfilefull);
+    }
   }
+
   fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome\n",reffasta->nref);
   fprintf(stderr,"\t-> Chromosome name first %s and length %d and full length %zu\n",reffasta->seqs_names[0],reffasta->seqs_l[0],reffasta->seq_l_total);
+
 
   if (reffasta->seqs != NULL){
   
