@@ -16,22 +16,23 @@ extern int refToInt[256];
 extern char NtComp[5];
 extern const char *bass;
 
+ 
 int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, double delta, mrand_t *mr,char **res) {
   int IsDeam = 0;
   assert(L<1024);
-
+ 
   int l = 0;
   int r = L-1;
-  
+ 
   char *rasmus = res[0];
   char *thorfinn = res[2];
-  
+ 
   while (l+r > L-2){
     l = 0;
     r = 0;
-    double u_l = mrand_pop(mr); // between 0 and 1
-    double u_r = mrand_pop(mr); // between 0 and 1
-    
+    double u_l = mrand_pop(mr);
+    double u_r = mrand_pop(mr);
+   
     if (u_l > 0.5){
       l = (int) Random_geometric_k(lambda,mr);
     }
@@ -39,136 +40,125 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
       r = (int) Random_geometric_k(lambda,mr);
     }
   }
-  
-  strncpy(rasmus,ori+l,L-l-r);
+
+  //Please do a check in the following part, since it may shift by 1
+ 
+  strncpy(rasmus,ori,L);
   //fprintf(stderr,"SEQUNEC %s\n",rasmus);
-
-  strncpy(thorfinn,ori+l,L-l-r); //Thorfinn equals Rasmus
+  
+  //fprintf(stderr,"SEQUNEC %s\n",rasmus)
+  strncpy(thorfinn,ori,L); //Thorfinn equals Rasmus
   //fprintf(stderr,"SEQUNEC %s\n",thorfinn);
-
+ 
   ReversComplement(thorfinn); // revers complement of rasmus;
   //fprintf(stderr,"SEQUNEC %s\n",thorfinn);
-  
+
+  // Contain everything strncpy(rasmus,ori,L);
+
+ 
   /*for(int i = 0; i < strlen(rasmus);i++){
     fprintf(stderr,"i value %d\n",i);
   }*/
-
+ 
   for (int i = 0; i<l; i++){
-      // l means left overhang (ss)
-    rasmus[i] = ori[i];
-    thorfinn[i] = NtComp[refToInt[(unsigned char) rasmus[i]]]; //Since its a single nucleotide then i can just create the complementary of rasmus
-    
+    // left 5' overhangs, Thorfinn's DMG pattern is fully dependent on that of Rasmus.
+
     if (rasmus[i] == 'C' || rasmus[i] == 'c' ){
       double u = mrand_pop(mr);
       if (u < delta_s){
         IsDeam = 1;
-        rasmus[i] = 'T'; //X
+        rasmus[i] = 'T'; 
         thorfinn[i] = 'A';
+      }
+    }
+  }
+   
+  for (int i = 0; i < r; i++){
+    // right 5' overhangs, Rasmus's DMG pattern is fully dependent on that of Thorfinn.
+    if (thorfinn[L-i-1] == 'C' || thorfinn[L-i-1] == 'c'){
+      double u = mrand_pop(mr);
+      if (u < delta_s){
+        IsDeam = 1;
+        thorfinn[L-i-1] = 'T';
+        rasmus[L-i-1] = 'A';
       }
     }
   }
   
-  for (int i =L-r; i<L ; i++){
-    // 1 pos 3' (so last position in fragment)
-    // r means right overhan (ss)
-    rasmus[i] = ori[i];
-    thorfinn[i] = NtComp[refToInt[(unsigned char) rasmus[i]]];
-    
-    if (thorfinn[i] == 'C' || thorfinn[L-i-1] == 'c'){
-      double u = mrand_pop(mr);
-      
-      if (u < delta_s){
-        IsDeam = 1;
-        thorfinn[i] = 'T'; //'Y';
-        rasmus[i] = 'A';
-      }
-    }
-  }
-    
-  // Insert joint distribution for selecting a nick position in both strands simultaneously, assuming only one nick can occur at both strands
-
-  // Position m for nick
+  
+  // The nick positions on both strands are denoted as (m,n). m (The nick position on Rasmus) is sampled as the previous way, while n (The nick position on thorfinn) is sampled according to a 
+  // conditional probability given m.
   double u_nick_m = mrand_pop(mr);
-    
+   
+	// the counting starts from 0 rather than one so we shift
   double P_m = nv/((L-l-r-1)*nv+1-nv);
   int p_nick_m = l;
   double CumPm = P_m;
-
+ 
   while ((u_nick_m > CumPm) && (p_nick_m < L-r-1)){
     CumPm += P_m;
     p_nick_m +=1;
   }
+  
 
-  double P_n;
-  int q_nick_n = L-r-l-p_nick_m; //m
-  double u_nick_n = mrand_pop(mr); 
-  double CumPn = 0;
-
-  // m  is fixed but position n for nick will change, therefore we need to define P_n given m inside while loop
-  if (l+1 <= p_nick_m <= L-r-1){
-    while ((u_nick_n > CumPn) && (q_nick_n < L-r-1)){
-      P_n = nv*pow((1-nv),(p_nick_m+q_nick_n-L-l-r));
-      CumPn += P_n; 
-      q_nick_n +=1; 
-    }
+  int p_nick_n;
+  double u_nick_n = mrand_pop(mr);
+  double CumPn;
+ 
+  // Given m, sampling n
+  if (p_nick_m < L-r-1){
+      p_nick_n = L-p_nick_m-2; //we shift both n and m
+      CumPn = nv;
+      while((u_nick_n > CumPn) && (p_nick_n < L-l-1)){
+         p_nick_n +=1;
+         CumPn += nv*pow(1-nv,p_nick_m+p_nick_n-L+2);
+      }
+  }else if(p_nick_m == L-r-1){
+      p_nick_n = r;
+      CumPn = nv;
+      while((u_nick_n > CumPn) && (p_nick_n < L-l-1)){
+         p_nick_n +=1;
+         CumPn += nv*pow(1-nv,p_nick_n-r);
+      }
   }
-  else if(p_nick_m = L-r){
-    while ((u_nick_n > CumPn) && (q_nick_n < L-r-1)){
-      P_n = nv*pow((1-nv),(q_nick_n-1));
-      CumPn += P_n; 
-      q_nick_n +=1; 
-    }
-  }
-
-  // Nick in Rasmus strand
+  
+  
+  // Way 2 Complicated Way (should be a little bit faster)
   for (int i = l; i < L-r; i++){
-    double urasmus = mrand_pop(mr);
-    double uthorfinn = mrand_pop(mr);
-    if ((rasmus[i] == 'C' || rasmus[i] == 'c') && i<=p_nick_m){
-      if (urasmus < delta){
+
+    if (i<L-p_nick_n-1 && (rasmus[i] == 'C' || rasmus[i] == 'c')){
+      //left of nick on thorfinn strand we change thorfinn according to rasmus
+      double u = mrand_pop(mr);
+      if (u < delta){
         IsDeam = 1;
         rasmus[i] = 'T';
-      }
-      if (uthorfinn < delta){
-        IsDeam = 1;
-        thorfinn[i] = 'T';
+        thorfinn[i] = 'A'; //Downstream nick one DMG pattern depends on the other strand
       }
     }
-    else if ((thorfinn[i] == 'C' || thorfinn[i] == 'C') && i>p_nick_m){
-      //Extending the rasmus strand using thorfinn as a template
-      if (urasmus < delta){
+    else if (i>p_nick_m && (thorfinn[i] == 'C' || thorfinn[i] == 'c')){
+      // right side of rasmus nick we change rasmus according to thorfinn
+      double u = mrand_pop(mr);
+      if (u < delta){
         IsDeam = 1;
         rasmus[i] = 'A';
-      }
-      if (uthorfinn < delta){
-        IsDeam = 1;
-        thorfinn[i] = 'T';
+        thorfinn[i] = 'T'; //Downstream nick one DMG pattern depends on the other strand
       }
     }
-  }
-
-  for (int i =L-r; i<L; i++){
-    double urasmus = mrand_pop(mr);
-    double uthorfinn = mrand_pop(mr);
-    if ((thorfinn[i] == 'C' || thorfinn[i] == 'c') && i<=q_nick_n){
-      if (urasmus < delta){
+	
+    // between the nick with rasmus showing DMG
+    else if(i>=L-p_nick_n-1 && i<=p_nick_m && (rasmus[i] == 'C' || rasmus[i] == 'c')){
+      double u = mrand_pop(mr);
+      if (u < delta){
         IsDeam = 1;
-        rasmus[i] = 'T';
-      }
-      if (uthorfinn < delta){
-        IsDeam = 1;
-        thorfinn[i] = 'T';
+        rasmus[i] = 'T'; //Upstream both nicks, DMG patterns are independent
       }
     }
-    else if ((rasmus[i] == 'C' || rasmus[i] == 'C') && i>q_nick_n){
-      //Extending the thorfinn strand using rasmus as a template
-      if (urasmus < delta){
+    // between the nick with Thorfinn showing DMG
+    else if(i>=L-p_nick_n-1 && i<=p_nick_m && (thorfinn[i] == 'C' || thorfinn[i] == 'c')){
+      double u = mrand_pop(mr);
+      if (u < delta){
         IsDeam = 1;
-        rasmus[i] = 'T';
-      }
-      if (uthorfinn < delta){
-        IsDeam = 1;
-        thorfinn[i] = 'A';
+        thorfinn[i] = 'T'; //Upstream both nicks, DMG patterns are independent
       }
     }
   }
@@ -179,14 +169,14 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
   memset(seq_intermediate2, 0, sizeof seq_intermediate2);
   strcpy(seq_intermediate,rasmus);
   strcpy(seq_intermediate2,thorfinn);
-
+ 
   res[0] = seq_intermediate;
   ReversComplement(rasmus);
   res[1] = rasmus;
   res[2] = seq_intermediate2;
   ReversComplement(thorfinn);
   res[3] = thorfinn;
-  
+ 
   return IsDeam;
 }
   
