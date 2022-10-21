@@ -139,7 +139,6 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
   
   for(bcfmap::iterator it=mybcfmap.begin();0&&it!=mybcfmap.end();it++){
     fprintf(stderr,"%d %d\n",it->first.rid,it->first.pos);
-   
   }
 
   for(bcfmap::iterator it=mybcfmap.begin();it!=mybcfmap.end();it++){
@@ -177,58 +176,53 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
       //first copy contigous block from last operator
       if(last[i]>it->first.pos)
       	last[i] = it->first.pos;
-
+      
       int nitems2copy = brec->pos-last[i];
       //fprintf(stderr,"nitesm2copy: %d\n",nitems2copy); // QA TK, hvordan giver det her mening. 
       assert(strlen(elephant[i])+brec->pos-last[i]< maxsize );//funky assert
       strncat(elephant[i],fs->seqs[fsoffsets[i]]+last[i],nitems2copy);
       char *allele = NULL;
       allele = it->second->d.allele[it->first.gt[i]];
-      fprintf(stderr,"allele: %s\n",allele);
       assert(allele!=NULL);
       
       //its a deletion if strlen(d.allele[0])>1 
       int isdel = 0;
-      fprintf(stderr,"Position: %lld length of allele: %zu\n",it->first.pos,strlen(allele));
-      if(it->first.gt[i]==1&&strlen(allele)>1){
-      	isdel = strlen(allele);
-        fprintf(stderr,"ISDEL 1 is %d\n",isdel);
+      int isins = 0;
+      int isSNP = 0;
+      // strlen(it->second->d.allele[0]) -> reference 
+      // allele -> alternatie
+      fprintf(stderr,"Position: %lld ref %s alt %s and length of ref %zu and alt: %zu\n",it->first.pos,it->second->d.allele[0],allele,strlen(it->second->d.allele[0]),strlen(allele));
+      if(it->first.gt[i]==1 && (strlen(it->second->d.allele[0]) > strlen(allele))){
+        isdel = strlen(it->second->d.allele[0])-strlen(allele);
+        fprintf(stderr,"WHAT IS THE DELETION %d \n",isdel);
       }
-      if(ploidy==1){
-        if(strlen(it->second->d.allele[0])&&it->first.gt[i]==1&&strlen(allele)==1){
-          isdel = strlen(it->second->d.allele[0])-strlen(allele);
-          fprintf(stderr,"ISDEL 2 is %d\n",isdel);
-        }
+      else if(it->first.gt[i]==1 && (strlen(it->second->d.allele[0]) < strlen(allele))){
+        isins = strlen(allele)-strlen(it->second->d.allele[0]);
+        fprintf(stderr,"WHAT IS THE INSERTION %d \n",isdel);
       }
-      
-  #if 0
-      if(isdel){
-	      fprintf(stderr,"site: %d,%lld is deletion allele:%s isdel: %d\n",it->first.pos,it->second->pos,allele,isdel);
-      }
-      if(isdel==0){
-      	fprintf(stderr,"site: %d,%lld is insertion allele:%s\n",it->first.pos,it->second->pos,allele);
-      }
-  #endif
 
-      
-      if(isdel){
+      if(isdel>0){
         //is deletion then we just skip the number of bases
-        fprintf(stderr,"In deletion, will skip reference position: %lld length of allele: %zu\n",it->first.pos,strlen(allele));
+        //memmove(elephant[i]+it->first.pos,str+it->first.pos+1,strlen(str));
+        //memmove(elephant[i]+brec->pos+1,elephant[i]+brec->pos+isdel+1,strlen(elephant[i]));
+        fprintf(stderr,"BEFORE SEQ LENGTH:\t%zu\n",strlen(elephant[i]));
+        fprintf(stderr,"POSITIONS before del %zu\n",last[i]);
         last[i] = brec->pos+isdel;
-        fprintf(stderr,"last[]: %d\n",brec->pos-isdel);
-        fprintf(stderr,"last[]: %d\n",brec->pos);
-        fprintf(stderr,"last[]: %d\n",brec->pos+isdel+1);
-        fprintf(stderr,"last[]: %d\n",brec->pos+isdel);
-        fprintf(stderr,"last[]: %d\n",brec->pos+isdel+1);
-        fprintf(stderr,"last[]: %d\n",last[i]);
+        fprintf(stderr,"POSITIONS after del %zu\n",last[i]);
+        fprintf(stderr,"AFTER SEQ LENGTH:\t%zu\n",strlen(elephant[i]));
+        //last[i] = brec->pos+1;
       }
-      if(isdel==0){
-        //	fprintf(stderr,"before:\t%s\n",elephant[i]);
+      else if(isins>0){
+        fprintf(stderr,"before:\t%zu\n",strlen(elephant[i]));
         assert(strlen(elephant[i])+strlen(allele)<strlen(elephant[i])+maxsize);
-        //fprintf(stderr,"inserting allele: %s\n",allele);
+        fprintf(stderr,"inserting allele: %s\n",allele);
         strncat(elephant[i],allele,strlen(allele));
+        fprintf(stderr,"after:\t%zu\n",strlen(elephant[i]));
         //fprintf(stderr,"after:\t%s\n",elephant[i]);
         last[i] = brec->pos+1;
+      }
+      else{
+        last[i] = brec->pos;
       }
     }
   }
@@ -336,9 +330,9 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
     for(int i=0;i<inferred_ploidy;i++){
       key.gt[i] = bcf_gt_allele(mygt[i]);
       if(strlen(brec->d.allele[bcf_gt_allele(mygt[i])])>1) 
-	isindel =1;
+	      isindel =1;
       if(strlen(brec->d.allele[0])>1)//this is confusion
-	isindel =1;
+	      isindel =1;
       
     }
     if(isindel==0){
@@ -357,6 +351,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
   if(mybcfmap.size()>0){
     fprintf(stderr,"\t-> Found some indels, these will now be added to internal datastructures\n");
     add_indels(fs,mybcfmap,bcf_head,inferred_ploidy);
+
   } //hvorfor en internal datastructure? er det for først at tilføje alle snps? og dernæst tilføje indels? 
   // så tilføj -v snp så kun linje 311 uanset hvad, -v indel kun linje 323, hvis ingenting så bare lad det være.
   fasta_sampler_setprobs(fs);
