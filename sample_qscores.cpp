@@ -82,7 +82,8 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
   //fprintf(stderr,"\t-> Before return in READQUAL FUNC\n");
   return dists;
 }
-void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *NtQuals,mrand_t *mr,int simError, int ntcharoffset){
+int sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *NtQuals,mrand_t *mr,int simError, int ntcharoffset){
+  int seq_err = 0;
   for(int i = 0;i<len;i++){
     double dtemp1 = mrand_pop(mr);
     double dtemp2 = mrand_pop(mr);
@@ -111,10 +112,12 @@ void sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *N
         int outbase=(int)floor(4.0*phred2Prob[qscores[i]-ntcharoffset]*tmprand);//DRAGON
         while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
 	      bases[i] = intToRef[outbase];
+        seq_err = 1;
         //std::cout << bases[i] << std::endl;
       }
     }
   }
+  return seq_err;
 }
 
 

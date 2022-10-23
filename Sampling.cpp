@@ -146,10 +146,9 @@ void* Sampling_threads(void *arg){
     
     // Sequence alteration integers
     int FragDeam = 0;
-    int has_indels = 0;
     int FragMisMatch = 0;
-
-    // Nucleotide alteration models
+    int has_seqerr = 0;    
+    int has_indels = 0;
 
     // Stochastic structural variation model    
     if(struct_obj->DoIndel){
@@ -159,9 +158,20 @@ void* Sampling_threads(void *arg){
         fprintf(stderr,"FILE DUMP TEST %s \n",struct_obj->IndelDumpFile);
       }*/
       //fprintf(stderr,"BEFORE FUNCTION %s\n",INDEL_INFO);
-      fprintf(stderr,"\n1) %s len: %lu\n",FragmentSequence,strlen(FragmentSequence));
-      has_indels = add_indel(rand_alloc,FragmentSequence,struct_obj->maxreadlength,pars,INDEL_INFO);
-      fprintf(stderr,"\n2) %s len: %lu\n",FragmentSequence,strlen(FragmentSequence));
+      //fprintf(stderr,"\n1) %s len: %lu\n",FragmentSequence,strlen(FragmentSequence));
+      int ops[2] ={0,0};
+      add_indel(rand_alloc,FragmentSequence,struct_obj->maxreadlength,pars,INDEL_INFO,ops);
+      if (ops[0] > 0 && ops[1] == 0){
+        has_indels = 1;
+      }
+      else if (ops[0] == 0 && ops[1] > 0){
+        has_indels = 2;
+      }
+      else if (ops[0] > 0 && ops[1] > 0){
+        has_indels = 3;
+      }
+      //fprintf(stderr,"\n2) %s len: %lu\n",FragmentSequence,strlen(FragmentSequence));
+      //fprintf(stderr,"INDEL OPERATIONS %d \t %d \t %d\n",ops[0],ops[1],has_indels);
       int IndelFragLen = strlen(FragmentSequence);
       maxbases = std::min(IndelFragLen,struct_obj->maxreadlength);
       //fprintf(stderr,"AFTER FUNCTION\n%s",INDEL_INFO);
@@ -308,7 +318,7 @@ void* Sampling_threads(void *arg){
       }
     } 
       
-    snprintf(READ_ID,1024,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,0,0);
+    snprintf(READ_ID,1024,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
 
     if (struct_obj->DoIndel && struct_obj->IndelDumpFile != NULL){
       //ksprintf(indel,"%s\t%s\n",READ_ID,INDEL_INFO);
@@ -372,6 +382,7 @@ void* Sampling_threads(void *arg){
     //now seq_r1 and seq_r2 is completely populated let is build qualscore if
     //saving both fasta and adapter to fasta format
     if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
+      sprintf(READ_ID+strlen(READ_ID),"%d",0);
       ksprintf(fqs[0],">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
       if (PE==struct_obj->SeqType)
 	    ksprintf(fqs[1],">%s R2\n%s\n",READ_ID,seq_r2);
@@ -379,11 +390,12 @@ void* Sampling_threads(void *arg){
     else{
       // Fastq and Sam needs quality scores
       //if(strandR1==0){fprintf(stderr,"----------\nSEQUENCE \n%s\n",seq_r1);}//int ntcharoffset
-      sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
+      has_seqerr = sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
       //if(strandR1==0){fprintf(stderr,"%s\n",seq_r1);}
       if (PE==struct_obj->SeqType)
-      	sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
+      	has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
       
+      sprintf(READ_ID+strlen(READ_ID),"%d",has_seqerr);
       //write fq if requested
       if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){
         ksprintf(fqs[0],"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);

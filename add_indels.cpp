@@ -3,10 +3,10 @@
 const char *bas = "ACGTN";
 const char *bas2 = "QWERY";
 
-int add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_INFO){
+void add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_INFO,int* ops){
   int beg = 0;
   int end = strlen(frag);//remember this is the length, not the index of the last element.
-  int ops[2] ={0,0};
+  //int ops[2] ={0,0};
   int fragbefore = strlen(frag);
   
   char DelOps[512];
@@ -37,7 +37,7 @@ int add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_INF
       }
       for(int i=0;i<len;i++){
         frag[beg+i] = bas[mrand_pop_long(mr) %5]; //bas[mrand_pop_long(mr) %5];
-        fprintf(stderr,"Setting insertion: %d %d\n",beg+i,cumlen);
+        //fprintf(stderr,"Setting insertion: %d %d\n",beg+i,cumlen);
       }
       beg += len;
       end += len;
@@ -74,9 +74,18 @@ int add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_INF
     //fprintf(stderr,"Nothing happens[%d]\n",beg);
     beg++;
   }
-  snprintf(INDEL_INFO,1024,"INS:%d\t%s\tDEL:%d\t%s\tBefore:%d\tAfter:%d",ops[0],InsOps,ops[1],DelOps,fragbefore,strlen(frag));
-  fprintf(stderr,"INS:%d\t%s\tDEL:%d\t%s\tBefore:%d\tAfter:%d",ops[0],InsOps,ops[1],DelOps,fragbefore,strlen(frag));
-  return ops[0]+ops[1];
+  if (ops[0] == 0){
+    snprintf(INDEL_INFO,1024,"%d\tNA\t%d\t%s\t%d\t%d",ops[0],ops[1],DelOps,fragbefore,strlen(frag));
+  }
+  else if (ops[1] == 0){
+    snprintf(INDEL_INFO,1024,"%d\t%s\t%d\tNA\t%d\t%d",ops[0],InsOps,ops[1],fragbefore,strlen(frag));
+  }
+  else
+  {
+    snprintf(INDEL_INFO,1024,"%d\t%s\t%d\t%s\t%d\t%d",ops[0],InsOps,ops[1],DelOps,fragbefore,strlen(frag));
+  }
+  //fprintf(stderr,"INS:%d\t%s\tDEL:%d\t%s\tBefore:%d\tAfter:%d",ops[0],InsOps,ops[1],DelOps,fragbefore,strlen(frag));
+  //ops[0]+ops[1];
 }
 
 #ifdef __WITH_MAIN__
