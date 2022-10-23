@@ -18,6 +18,7 @@ typedef struct{
   outputformat_e OutFormat ; //fq, fq.gz, fa, fa.gz, sam, bam, cram, ultrafancy
   char *OutName; //prefix for output, final will be determined by [OutName.OutFormat]
   char *DumpFile; // prefix for internal file recording potential variations to reference genome
+  char *IndelDumpFile; //prefix for internal file recording of sequencing errors specific for indels
   char *Reference; //full filename for reference fasta
   seqtype_e seq_type; // singleend or paired end.
   char *Adapter1; //actual adapterseq, R1, not flipped, reversed or completemented
