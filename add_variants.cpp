@@ -165,20 +165,22 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
       assert(it!=fs->pldmap.end());
       fsoffsets = it->second;
       for(int i=0;i<ploidy;i++)
-	      last[i] = 0;
+	last[i] = 0;
       reset = 0;
     }
-
+    for(int i=0;i<ploidy;i++)
+      fprintf(stderr,"last[%d]: %d\n",i,last[i]);
     bcf1_t *brec = it->second;
     bcf_unpack(brec, BCF_UN_ALL);
     //we now loop over mother, father and other parental chromosomes
     for(int i=0;i<ploidy;i++){
       //first copy contigous block from last operator
-      if(last[i]>it->first.pos)
-      	last[i] = it->first.pos;
-      
-      int nitems2copy = brec->pos-last[i];
-      //fprintf(stderr,"nitesm2copy: %d\n",nitems2copy); // QA TK, hvordan giver det her mening. 
+      if(last[i]>it->first.pos){
+	fprintf(stderr,"why why? should never happen\n");
+	last[i] = it->first.pos;
+      }
+      int nitems2copy = brec->pos-last[i]+1;
+      fprintf(stderr,"nitesm2copy: %d last: %d brec->pos: %d\n",nitems2copy,last[i],brec->pos);
       assert(strlen(elephant[i])+brec->pos-last[i]< maxsize );//funky assert
       strncat(elephant[i],fs->seqs[fsoffsets[i]]+last[i],nitems2copy);
       char *allele = NULL;
@@ -200,15 +202,15 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
         isins = strlen(allele)-strlen(it->second->d.allele[0]);
         fprintf(stderr,"WHAT IS THE INSERTION %d \n",isdel);
       }
-
+      fprintf(stderr,"\t\tlast[]: %d\n",last[i]);
       if(isdel>0){
         //is deletion then we just skip the number of bases
         //memmove(elephant[i]+it->first.pos,str+it->first.pos+1,strlen(str));
         //memmove(elephant[i]+brec->pos+1,elephant[i]+brec->pos+isdel+1,strlen(elephant[i]));
         fprintf(stderr,"BEFORE SEQ LENGTH:\t%zu\n",strlen(elephant[i]));
-        fprintf(stderr,"POSITIONS before del %zu\n",last[i]);
-        last[i] = brec->pos+isdel;
-        fprintf(stderr,"POSITIONS after del %zu\n",last[i]);
+        fprintf(stderr,"POSITIONS before del %d\n",last[i]);
+        last[i] = brec->pos+isdel+1;
+        fprintf(stderr,"POSITIONS after del %d\n",last[i]);
         fprintf(stderr,"AFTER SEQ LENGTH:\t%zu\n",strlen(elephant[i]));
         //last[i] = brec->pos+1;
       }
@@ -302,8 +304,8 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
       assert((ngt %nsamples)==0);
       inferred_ploidy = ngt/nsamples;
     }
-#if 0
-    fprintf(stderr,"brec->pos: %d nallele: %d\n",brec->pos+1,brec->n_allele);
+#if 1
+    fprintf(stderr,"brec->pos: %d nallele: %d\n",brec->pos,brec->n_allele);
     for(int i=0;i<brec->n_allele;i++)
       fprintf(stderr,"nal:%d %s %zu\n",i,brec->d.allele[i],strlen(brec->d.allele[i]));
 #endif
