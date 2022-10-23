@@ -52,7 +52,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
-                        char CommandArray[1024],const char* version,int HeaderIndiv,int NoAlign,size_t BufferLength,const char* FileDump){
+                        char CommandArray[1024],const char* version,int HeaderIndiv,int NoAlign,size_t BufferLength,const char* FileDump,const char* IndelDumpFile){
   //creating an array with the arguments to create multiple threads;
 
   int nthreads=thread_no;
@@ -85,7 +85,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     Parsarg_for_Sampling_thread *struct_for_threads = new Parsarg_for_Sampling_thread[nthreads]; //Parsarg_for_Sampling_thread struct_for_threads[nthreads];
 
     // declare files and headers
-    BGZF **bgzf_fp = (BGZF **) calloc(2,sizeof(BGZF *));
+    BGZF **bgzf_fp = (BGZF **) calloc(3,sizeof(BGZF *));
 
     samFile *SAMout = NULL;
     sam_hdr_t *SAMHeader = NULL;
@@ -255,6 +255,18 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       MisMatchFreqArray = MisMatchFileArray(MisMatchFreqArray,SubProfile,mismatchcyclelength);
     }
 
+    if(IndelDumpFile!=NULL){
+      char IndelFile[80];
+      const char* IndelSuffix = ".txt";
+      const char* IndelPrefix = IndelDumpFile; //"chr22_out";
+      strcpy(IndelFile,IndelPrefix);
+      strcat(IndelFile,IndelSuffix);
+      const char* modefp2 = "wu";
+      //fprintf(stderr," THE INDEL DUMP FILE IS %s \n",IndelFile);
+      bgzf_fp[2] = bgzf_open(IndelFile,modefp2); //w
+      bgzf_mt(bgzf_fp[2],threadwriteno,256); //
+    }
+
     for (int i = 0; i < nthreads; i++){
       struct_for_threads[i].reffasta = reffasta;
 
@@ -288,6 +300,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].maxreadlength = (int) readcycle;
       struct_for_threads[i].IndelFuncParam = IndelFuncParam;
       struct_for_threads[i].DoIndel = DoIndel;
+      struct_for_threads[i].IndelDumpFile = IndelDumpFile;
       
       // 2) briggs model
       struct_for_threads[i].MisMatch = MisMatchFreqArray;
@@ -342,11 +355,16 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 	    pthread_join(mythreads[i],NULL);
       }
     }
-    if(bgzf_fp[0]!=NULL)
+    if(bgzf_fp[0]!=NULL){
       bgzf_close(bgzf_fp[0]);
-     if(bgzf_fp[1]!=NULL)
+    }
+    if(bgzf_fp[1]!=NULL){
       bgzf_close(bgzf_fp[1]);
-     free(bgzf_fp); //free the calloc
+    }
+    if(bgzf_fp[2]!=NULL){
+      bgzf_close(bgzf_fp[2]);
+    }
+    free(bgzf_fp); //free the calloc
      
      if(SAMHeader)
       sam_hdr_destroy(SAMHeader);

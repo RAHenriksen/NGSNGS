@@ -19,6 +19,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->OutFormat = unknownT;
   mypars->OutName = NULL; //"output";
   mypars->DumpFile = NULL; //"output";
+  mypars->IndelDumpFile = NULL; //"output";
   mypars->HeaderIndiv=-1;
   mypars->NoAlign=1;
 
@@ -202,6 +203,9 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-—dump-internal",*argv)==0){
       mypars->DumpFile = strdup(*(++argv));
     }
+    else if(strcasecmp("-—dump-indel",*argv)==0){
+      mypars->IndelDumpFile = strdup(*(++argv));
+    }  
     else{
       fprintf(stderr,"Unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
       return NULL;
@@ -217,6 +221,7 @@ void argStruct_destroy(argStruct *mypars){
   free(mypars->Reference); //-i
   free(mypars->OutName);
   free(mypars->DumpFile);
+  free(mypars->IndelDumpFile);
   free(mypars->LengthFile);
   free(mypars->LengthDist);
   free(mypars->Indel);

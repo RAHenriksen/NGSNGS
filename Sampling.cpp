@@ -71,6 +71,14 @@ void* Sampling_threads(void *arg){
     fqs[i]->l = fqs[i]->m = 0;
   }
   
+  //generating kstring for potential records of the stochastic indels
+  char INDEL_INFO[512];
+  char INDEL_DUMP[1024];
+  kstring_t *indel;
+  indel =(kstring_t*) calloc(1,sizeof(kstring_t));
+  indel->s = NULL;
+  indel->l = indel->m = 0;
+
   size_t localread = 0;
   int iter = 0;
   size_t current_reads_atom = 0;
@@ -138,16 +146,35 @@ void* Sampling_threads(void *arg){
     
     // Sequence alteration integers
     int FragDeam = 0;
-    int has_indels = 0;
     int FragMisMatch = 0;
-
-    // Nucleotide alteration models
+    int has_seqerr = 0;    
+    int has_indels = 0;
 
     // Stochastic structural variation model    
     if(struct_obj->DoIndel){
       double pars[4] = {struct_obj->IndelFuncParam[0],struct_obj->IndelFuncParam[1],struct_obj->IndelFuncParam[2],struct_obj->IndelFuncParam[3]};
-      fprintf(stderr,"DO INDELS");
-      has_indels = add_indel(rand_alloc,FragmentSequence,struct_obj->maxreadlength,pars);
+      //fprintf(stderr,"DO INDELS");
+      /*if (struct_obj->DoIndel && struct_obj->IndelDumpFile != NULL){
+        fprintf(stderr,"FILE DUMP TEST %s \n",struct_obj->IndelDumpFile);
+      }*/
+      //fprintf(stderr,"BEFORE FUNCTION %s\n",INDEL_INFO);
+      //fprintf(stderr,"\n1) %s len: %lu\n",FragmentSequence,strlen(FragmentSequence));
+      int ops[2] ={0,0};
+      add_indel(rand_alloc,FragmentSequence,struct_obj->maxreadlength,pars,INDEL_INFO,ops);
+      if (ops[0] > 0 && ops[1] == 0){
+        has_indels = 1;
+      }
+      else if (ops[0] == 0 && ops[1] > 0){
+        has_indels = 2;
+      }
+      else if (ops[0] > 0 && ops[1] > 0){
+        has_indels = 3;
+      }
+      //fprintf(stderr,"\n2) %s len: %lu\n",FragmentSequence,strlen(FragmentSequence));
+      //fprintf(stderr,"INDEL OPERATIONS %d \t %d \t %d\n",ops[0],ops[1],has_indels);
+      int IndelFragLen = strlen(FragmentSequence);
+      maxbases = std::min(IndelFragLen,struct_obj->maxreadlength);
+      //fprintf(stderr,"AFTER FUNCTION\n%s",INDEL_INFO);
     }
 
     // Mismatch matrix input file
@@ -167,10 +194,6 @@ void* Sampling_threads(void *arg){
 
     INSERT NYE BRIGGS HER, LAV CHAR** OGSÅ FOR GAMLE BRIGGS OG SÅ GEM LÆNGDEN OG SÅ LAV ET TIL
     SVARENDE FOR LOOP SOM I DIN GAMLE SAMPLING OG LØB IGENNEM DEM ALLESAMMEN
-
-
-
-
     */
 
 
@@ -295,8 +318,23 @@ void* Sampling_threads(void *arg){
       }
     } 
       
-    snprintf(READ_ID,1024,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,0,0);
+    snprintf(READ_ID,1024,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
 
+    if (struct_obj->DoIndel && struct_obj->IndelDumpFile != NULL){
+      //ksprintf(indel,"%s\t%s\n",READ_ID,INDEL_INFO);
+      snprintf(INDEL_DUMP,1024,"%s\t%s\n",READ_ID,INDEL_INFO);
+      //fprintf(stderr,"INFO INDEL ID %s",INDEL_DUMP);
+      ksprintf(indel,"%s",INDEL_DUMP);
+      if (struct_obj->bgzf_fp[2]){
+        if (indel->l > 0){
+          pthread_mutex_lock(&write_mutex);
+          assert(bgzf_write(struct_obj->bgzf_fp[2],indel->s,indel->l)!=0);
+          pthread_mutex_unlock(&write_mutex);
+          indel->l = indel->l = 0;
+        }
+      }
+    }
+    
     int nsofts[2] = {0,0};//this will contain the softclip information to be used by sam/bam/cram out
     //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail
     int naligned[2] = {(int)strlen(seq_r1),-1};
@@ -344,6 +382,7 @@ void* Sampling_threads(void *arg){
     //now seq_r1 and seq_r2 is completely populated let is build qualscore if
     //saving both fasta and adapter to fasta format
     if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
+      sprintf(READ_ID+strlen(READ_ID),"%d",0);
       ksprintf(fqs[0],">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
       if (PE==struct_obj->SeqType)
 	    ksprintf(fqs[1],">%s R2\n%s\n",READ_ID,seq_r2);
@@ -351,11 +390,12 @@ void* Sampling_threads(void *arg){
     else{
       // Fastq and Sam needs quality scores
       //if(strandR1==0){fprintf(stderr,"----------\nSEQUENCE \n%s\n",seq_r1);}//int ntcharoffset
-      sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
+      has_seqerr = sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
       //if(strandR1==0){fprintf(stderr,"%s\n",seq_r1);}
       if (PE==struct_obj->SeqType)
-      	sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
+      	has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
       
+      sprintf(READ_ID+strlen(READ_ID),"%d",has_seqerr);
       //write fq if requested
       if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){
         ksprintf(fqs[0],"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
@@ -489,7 +529,7 @@ void* Sampling_threads(void *arg){
           assert(bgzf_write(struct_obj->bgzf_fp[1],fqs[1]->s,fqs[1]->l)!=0);
         }
         pthread_mutex_unlock(&write_mutex);
-	fqs[0]->l = fqs[1]->l = 0;
+	      fqs[0]->l = fqs[1]->l = 0;
       }
     }
 
@@ -513,7 +553,16 @@ void* Sampling_threads(void *arg){
       assert(bgzf_write(struct_obj->bgzf_fp[0],fqs[0]->s,fqs[0]->l)!=0);
       if (PE==struct_obj->SeqType){assert(bgzf_write(struct_obj->bgzf_fp[1],fqs[1]->s,fqs[1]->l)!=0);}
       pthread_mutex_unlock(&write_mutex);
-	fqs[0]->l = fqs[1]->l = 0;
+	    fqs[0]->l = fqs[1]->l = 0;
+    } 
+  }
+
+  if (struct_obj->bgzf_fp[2]){
+    if (indel->l > 0){
+      pthread_mutex_lock(&write_mutex);
+      assert(bgzf_write(struct_obj->bgzf_fp[0],indel->s,indel->l)!=0);
+      pthread_mutex_unlock(&write_mutex);
+	    indel->l = indel->l = 0;
     } 
   }
 
@@ -530,6 +579,9 @@ void* Sampling_threads(void *arg){
   free(fqs[0]);
   free(fqs[1]);
   
+  free(indel->s);
+  free(indel);
+
   free(rand_alloc);
   
   fprintf(stderr,"\t-> Number of reads generated by thread %d is %zu \n",struct_obj->threadno,localread);
