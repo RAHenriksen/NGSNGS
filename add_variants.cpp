@@ -119,6 +119,13 @@ int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
   return 0;
 }
 
+/*
+  Assumption, input map is sorted according to chr and position.
+  reset is set to one when change of chromosome is detected. This will flush remainder of chrosomes.
+  Everytime a new indel is found, program will write all bp from previous event until (including) the current position.
+  event is then updated by incrementing reference bp for indel. 
+*/
+
 void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
   int last[ploidy];
   int last_fid = -1;
@@ -173,7 +180,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
     bcf1_t *brec = it->second;
     bcf_unpack(brec, BCF_UN_ALL);
     //we now loop over mother, father and other parental chromosomes
-    for(int i=0;i<ploidy;i++){
+    for(int i=0;i<ploidy;i++) {
       //first copy contigous block from last operator
       if(last[i]>it->first.pos){
 	fprintf(stderr,"why why? should never happen\n");
@@ -188,43 +195,49 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
       assert(allele!=NULL);
       
       //its a deletion if strlen(d.allele[0])>1 
+      
+      int turbocharge =0;
+#if 0
       int isdel = 0;
       int isins = 0;
-      int isSNP = 0;
-      // strlen(it->second->d.allele[0]) -> reference 
       // allele -> alternatie
       fprintf(stderr,"Position: %lld ref %s alt %s and length of ref %zu and alt: %zu\n",it->first.pos,it->second->d.allele[0],allele,strlen(it->second->d.allele[0]),strlen(allele));
-      if(it->first.gt[i]==1 && (strlen(it->second->d.allele[0]) > strlen(allele))){
+      if(it->first.gt[i]>0 && (strlen(it->second->d.allele[0]) > strlen(allele))){
         isdel = strlen(it->second->d.allele[0])-strlen(allele);
-        fprintf(stderr,"WHAT IS THE DELETION %d \n",isdel);
+        fprintf(stderr,"This is the DELETION of length: %d \n",isdel);
       }
-      else if(it->first.gt[i]==1 && (strlen(it->second->d.allele[0]) < strlen(allele))){
+      else if(it->first.gt[i]>0 && (strlen(it->second->d.allele[0]) < strlen(allele))){
         isins = strlen(allele)-strlen(it->second->d.allele[0]);
         fprintf(stderr,"WHAT IS THE INSERTION %d \n",isdel);
       }
-      fprintf(stderr,"\t\tlast[]: %d\n",last[i]);
-      if(isdel>0){
+#endif
+      if(it->first.gt[i]>0)
+	turbocharge =  strlen(allele)-strlen(it->second->d.allele[0]);
+	
+      
+      fprintf(stderr,"\t\tlast[]: %d TURBOCHARGE2000: %d\n",last[i],turbocharge);
+      if(turbocharge<0){
         //is deletion then we just skip the number of bases
         //memmove(elephant[i]+it->first.pos,str+it->first.pos+1,strlen(str));
         //memmove(elephant[i]+brec->pos+1,elephant[i]+brec->pos+isdel+1,strlen(elephant[i]));
         fprintf(stderr,"BEFORE SEQ LENGTH:\t%zu\n",strlen(elephant[i]));
         fprintf(stderr,"POSITIONS before del %d\n",last[i]);
-        last[i] = brec->pos+isdel+1;
+        last[i] = brec->pos+abs(turbocharge)+1;
         fprintf(stderr,"POSITIONS after del %d\n",last[i]);
         fprintf(stderr,"AFTER SEQ LENGTH:\t%zu\n",strlen(elephant[i]));
         //last[i] = brec->pos+1;
       }
-      else if(isins>0){
-        fprintf(stderr,"before:\t%zu\n",strlen(elephant[i]));
+      else if(turbocharge>0){
+        fprintf(stderr,"before:\t%zu elephanten er: %s\n",strlen(elephant[i]),elephant[i]);
         assert(strlen(elephant[i])+strlen(allele)<strlen(elephant[i])+maxsize);
         fprintf(stderr,"inserting allele: %s\n",allele);
-        strncat(elephant[i],allele,strlen(allele));
-        fprintf(stderr,"after:\t%zu\n",strlen(elephant[i]));
+        strncat(elephant[i],allele+1,strlen(allele));
+        fprintf(stderr,"after:\t%zu elephentan er: %s\n",strlen(elephant[i]),elephant[i]);
         //fprintf(stderr,"after:\t%s\n",elephant[i]);
         last[i] = brec->pos+1;
       }
       else{
-        last[i] = brec->pos;
+        last[i] = brec->pos+1;
       }
     }
   }
