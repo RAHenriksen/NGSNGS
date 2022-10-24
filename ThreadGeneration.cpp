@@ -62,8 +62,8 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
   
   if(VariantFile){
-    fprintf(stderr,"specific chr %s \n",Specific_Chr);
-    fprintf(stderr,"Variant file %s and individual in Header %d \n",VariantFile,HeaderIndiv);
+    //fprintf(stderr,"specific chr %s \n",Specific_Chr);
+    //fprintf(stderr,"Variant file %s and individual in Header %d \n",VariantFile,HeaderIndiv);
     add_variants(reffasta,VariantFile,HeaderIndiv);
     if(FileDump!=NULL){
       char dumpfile1[80];
