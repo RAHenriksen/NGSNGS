@@ -3,6 +3,7 @@
 ##reference=ftp://ftp.1000genomes.ebi.ac.uk//vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
 ##source=1000GenomesPhase3Pipeline
 ##contig=<ID=MT,assembly=b37,length=16569>
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 ##INFO=<ID=DP,Number=1,Type=Integer,Description="Total read depth">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	HG00096	HG00097	HG00099
 MT	10	.	T	TGTCC	100	PASS	.	GT	1	0	0
