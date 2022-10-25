@@ -52,7 +52,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
-                        char CommandArray[1024],const char* version,int HeaderIndiv,int NoAlign,size_t BufferLength,const char* FileDump,const char* IndelDumpFile){
+                        char CommandArray[1024],const char* version,int HeaderIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile){
   //creating an array with the arguments to create multiple threads;
 
   int nthreads=thread_no;
@@ -329,7 +329,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].Adapter_1 = Adapter_1;
       struct_for_threads[i].Adapter_2 = Adapter_2;
       struct_for_threads[i].PolyNt = polynucleotide;
-      struct_for_threads[i].NoAlign = NoAlign;
+      struct_for_threads[i].Align = Align;
     }
 
     size_t ThreadReads = (size_t) floor( reads / (double) thread_no);

@@ -20,6 +20,7 @@
 
 #include "mrand.h"
 #include "Briggs.h"
+#include "Briggs2.h"
 #include "NtSubModels.h"
 #include "RandSampling.h"
 #include "getFragmentLength.h"
@@ -110,7 +111,6 @@ void* Sampling_threads(void *arg){
   
   while (current_reads_atom < reads && SIG_COND){
     //lets start by resetting out datastructures to NULL, nill, nothing.
-    qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0'; //Disse skal jo rykkes hvis vi bruger et char** til fragmenter
     int posB = 0; int posE = 0;//this is the first and last position of our fragment
 
     //sample fragmentlength
@@ -190,362 +190,369 @@ void* Sampling_threads(void *arg){
       ReversComplement(FragmentSequence);
     }
 
-    /*
-
-    INSERT NYE BRIGGS HER, LAV CHAR** OGSÅ FOR GAMLE BRIGGS OG SÅ GEM LÆNGDEN OG SÅ LAV ET TIL
-    SVARENDE FOR LOOP SOM I DIN GAMLE SAMPLING OG LØB IGENNEM DEM ALLESAMMEN
-    */
-
-
-    //fprintf(stderr,"chr %s \t idx %d \n",chr,chr_idx);
-    //now copy the actual sequence into seq_r1 and seq_r2 if PE 
-    strncpy(seq_r1,FragmentSequence,maxbases);
-    //fprintf(stderr,"sequence %s\n",seq_r1);
-    //simulate indels for the fragment
-
-    if(PE==struct_obj->SeqType)
-      strncpy(seq_r2,FragmentSequence+(fraglength-maxbases),maxbases);
-      //fprintf(stderr,"sequence pos is %d \t %s\n",strlen(FragmentSequence)-maxbases,seq_r2);
-
-    //fprintf(stderr,"CHECKING THE LENGTH ISSUES %d \t %d \t %d \t %d \n",fraglength,struct_obj->maxreadlength,maxbases,strlen(seq_r1));
-
-    /*
-      ||------R1------>,,,,,,,,,,|-------R2----->||
-    */
-    
-    //fprintf(stderr,"Current read %zu and max bases %d and fraglent %d  and coordinates %d \t %d \t seq length %d\n",current_reads_atom,maxbases,fraglength,posB,posE,strlen(seq_r1));
-    //Selecting strand, 0-> forward strand (+) 5'->3', 1 -> reverse strand (-) 3'->5'
-    //rename to strand to strandR1
-    
-    //Remove reads which are all N? In this code we remove both pairs if both reads are all N
-    int skipread = 1;
-    for(int i=0;skipread&&i<(int)strlen(seq_r1);i++)
-      if(seq_r1[i]!='N')
-	      skipread = 0;
-
-    for(int i=0; skipread && i<(int)strlen(seq_r2);i++)
-      if(seq_r2[i]!='N')
-	    skipread = 0;
-    
-    if(skipread==1)
-      continue;
-    // NB SKAL RYKKES NED TIL AT PASSE MED DE NYE CHAR ARRAYS EFTER BRIGGS ER LAVET
-    
-    // generating sam output information
-    int seqlen = strlen(seq_r1);
-
-    if(strlen(seq_r1) < 20)
-      continue;
-
-    int SamFlags[2] = {-1,-1}; //flag[0] is for read1, flag[1] is for read2
-    
-    //now everything is the same strand as reference, which we call plus/+
-    //lets flip to 5 to 3
-    if (SE==struct_obj->SeqType){
-      if (strandR1 == 0){
-	      SamFlags[0] = 0;
-        if (seq_r1[0]=='C'||seq_r1[0]=='c'){C_total++;}
-        if (seq_r1[seqlen-1]=='G'||seq_r1[seqlen-1]=='g'){G_total++;}
-      }
-      else if (strandR1 == 1){
-        SamFlags[0] = 16;
-        ReversComplement(seq_r1);
-        if (seq_r1[0]=='C'||seq_r1[0]=='c'){C_total_rev++;}
-        if (seq_r1[seqlen-1]=='G'||seq_r1[seqlen-1]=='g'){G_total_rev++;}
-      }
-    }
-    if (PE==struct_obj->SeqType){
-      if (strandR1 == 0){
-        SamFlags[0] = 97;
-        SamFlags[1] = 145;
-        ReversComplement(seq_r2);
-      }
-      else if (strandR1 == 1){
-        SamFlags[0] = 81;
-        SamFlags[1] = 161;
-        ReversComplement(seq_r1);
-      }
-    }
-    //so now everything is on 5->3 and some of them will be reverse complement to referene
+    char **FragRes;
 
     //Nucleotide alteration models only on the sequence itself which holds for fa,fq,sam
     int ReadDeam = 0;
-    if(struct_obj->DoBriggs || struct_obj->DoBriggsBiotin){
-      /*fprintf(stderr,"-----------\nDO Briggs model %d \n",struct_obj->DoBriggs);
-      fprintf(stderr,"-----------\nDO Briggs Biotin model %d \n",struct_obj->DoBriggsBiotin);
-      fprintf(stderr,"BRIGGS PARAMETERS %f\n",struct_obj->BriggsParam[0]);*/
+    int FragTotal = 0;
+    int Fragshitft = 0; 
+    if(struct_obj->DoBriggs){
+      //fprintf(stderr,"INSIDE NONE BRIGGS BIOTIN MODEL\n");
+      FragTotal = 4;
+      FragRes = new char *[FragTotal];
+      for(int i=0;i<FragTotal;i++){
+        FragRes[i] = new char[1024];
+        memset(FragRes[i],'\0',1024);
+      }
+      ReadDeam=SimBriggsModel2(FragmentSequence, fragmentLength, 
+        struct_obj->BriggsParam[0],
+        struct_obj->BriggsParam[1],
+        struct_obj->BriggsParam[2],
+        struct_obj->BriggsParam[3],rand_alloc,FragRes,strandR1);
+      
+      if(ReadDeam==0){
+        // no deaminated sequence, as such we will only keep the first sequence
+        FragTotal = 1;
+      }
+      // Choose which group to select
+      Fragshitft = mrand_pop(rand_alloc)>0.5?0:1;
+      fprintf(stderr,"Fragment Shift %d\n",Fragshitft);
+    }
+    else if(struct_obj->DoBriggsBiotin){
+      //fprintf(stderr,"INSIDE BRIGGS BIOTIN MODEL\n");
+      FragTotal = 1;
+      FragRes = new char *[FragTotal];
+      FragRes[0] = FragmentSequence;
       ReadDeam=0;
-      ReadDeam = SimBriggsModel(seq_r1,fraglength,struct_obj->BriggsParam[0],
-		     struct_obj->BriggsParam[1],
-		     struct_obj->BriggsParam[2], 
-		     struct_obj->BriggsParam[3],rand_alloc,strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
-      
-      if (struct_obj->DoBriggs){
-        int RevBriggs = mrand_pop(rand_alloc)>0.5?0:1;
-        //fprintf(stderr,"INSIDE DO BRIGGS LOOP %d\n",RevBriggs);
-        // we consider the different strands using the meyer 2010 article in 50% of the cases
-        if(RevBriggs == 1){
-          //fprintf(stderr,"INSIDE REVBRIGGS IF with strand %d\n",strandR1);
-          if (strandR1 == 0){
-            if(struct_obj->SAMout){
-              //fprintf(stderr,"INSIDE SAM FOR STRAND 0 IF\n");
-              //in the sam output we shouldn't change the direction to be 3'->5', so we only change the flag
-              SamFlags[0] = 16;
-            }
-            else{
-              //fprintf(stderr,"INSIDE FQ FOR STRAND 0 IF\n");
-              // Here we need to change the orientation
-              ReversComplement(seq_r1);
-            }
-          }
-          else if (strandR1 == 1){
-            if(struct_obj->SAMout){
-              SamFlags[0] = 0;
-            }
-            else{
-              ReversComplement(seq_r1);
-            }         
-          }
-        }
-        //otherwise we continue with the same strand orientation such that the forward reads aren't affected, and the reverse reads are only reversecomplemented for the sam output structure
-      }
-      
-      if (PE==struct_obj->SeqType){
-        ReadDeam = SimBriggsModel(seq_r2, fraglength,struct_obj->BriggsParam[0], 
-		       struct_obj->BriggsParam[1], 
-		       struct_obj->BriggsParam[2], 
-		       struct_obj->BriggsParam[3],rand_alloc,strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
-      }
-    } 
-      
-    snprintf(READ_ID,1024,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
-
-    if (struct_obj->DoIndel && struct_obj->IndelDumpFile != NULL){
-      //ksprintf(indel,"%s\t%s\n",READ_ID,INDEL_INFO);
-      snprintf(INDEL_DUMP,1024,"%s\t%s\n",READ_ID,INDEL_INFO);
-      //fprintf(stderr,"INFO INDEL ID %s",INDEL_DUMP);
-      ksprintf(indel,"%s",INDEL_DUMP);
-      if (struct_obj->bgzf_fp[2]){
-        if (indel->l > 0){
-          pthread_mutex_lock(&write_mutex);
-          assert(bgzf_write(struct_obj->bgzf_fp[2],indel->s,indel->l)!=0);
-          pthread_mutex_unlock(&write_mutex);
-          indel->l = indel->l = 0;
-        }
-      }
+      ReadDeam = SimBriggsModel(FragRes[0],fragmentLength,struct_obj->BriggsParam[0],
+		    struct_obj->BriggsParam[1],
+		    struct_obj->BriggsParam[2], 
+		    struct_obj->BriggsParam[3],rand_alloc,
+        strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
     }
-    
-    int nsofts[2] = {0,0};//this will contain the softclip information to be used by sam/bam/cram out
-    //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail
-    int naligned[2] = {(int)strlen(seq_r1),-1};
-    if(PE==struct_obj->SeqType)
-      naligned[1] = strlen(seq_r2);
-    
-    
-    //add adapters
-    if(struct_obj->AddAdapt){
-      // Because i have reverse complemented the correct sequences and adapters depending on the strand origin (or flags), i know all adapters will be in 3' end
-      nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
-      //fprintf(stderr,"The minimum values are %d \t %d \t %d \n",maxbases,struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
-      strncpy(seq_r1+strlen(seq_r1),struct_obj->Adapter_1,nsofts[0]);
-      if(PE==struct_obj->SeqType){
-        nsofts[1] = std::min(struct_obj->maxreadlength-strlen(seq_r2),strlen(struct_obj->Adapter_2));
-        strncpy(seq_r2+strlen(seq_r2),struct_obj->Adapter_2,nsofts[1]);
-      }
-    }
-
-    //add polytail
-    if (struct_obj->PolyNt != 'F') {
-      int nitems = struct_obj->maxreadlength-strlen(seq_r1);
-      memset(seq_r1+strlen(seq_r1),struct_obj->PolyNt,nitems);
-      nsofts[0] += nitems;
-      if(PE==struct_obj->SeqType){
-        nitems = struct_obj->maxreadlength-strlen(seq_r2);
-        memset(seq_r2+strlen(seq_r2),struct_obj->PolyNt,nitems);
-        nsofts[1] += nitems;
-      }
-    }
-
-    if(struct_obj->SAMout){
-      //sanity check
-      //fprintf(stderr,"SANITY CHECK seq_R1 %d \t %d \t %d \n seq_R2  %d \t %d \t %d \n",strlen(seq_r1),naligned[0],nsofts[0],strlen(seq_r2),naligned[1],nsofts[1]);
-      if(strlen(seq_r1)!=naligned[0]+nsofts[0]){
-        fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
-        exit(0);
-      }
-      //below only runs for PE that is when nalign[1] is not -1
-      if(naligned[1]!=-1 && strlen(seq_r2)!=naligned[1]+nsofts[1]){
-        fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
-        exit(0);
-      }
-    }
-    //now seq_r1 and seq_r2 is completely populated let is build qualscore if
-    //saving both fasta and adapter to fasta format
-    if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
-      sprintf(READ_ID+strlen(READ_ID),"%d",0);
-      ksprintf(fqs[0],">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
-      if (PE==struct_obj->SeqType)
-	    ksprintf(fqs[1],">%s R2\n%s\n",READ_ID,seq_r2);
-    } 
     else{
-      // Fastq and Sam needs quality scores
-      //if(strandR1==0){fprintf(stderr,"----------\nSEQUENCE \n%s\n",seq_r1);}//int ntcharoffset
-      has_seqerr = sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
-      //if(strandR1==0){fprintf(stderr,"%s\n",seq_r1);}
-      if (PE==struct_obj->SeqType)
-      	has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
+      FragTotal = 1;
+      FragRes = new char *[FragTotal];
+      FragRes[0] = FragmentSequence;
+    }
+    
+    int iter = 1;
+    if (FragTotal > 1){
+      iter = 2;
+    }
+    
+    // Iterate through the possible fragments
+    for (int FragNo = 0+Fragshitft; FragNo < FragTotal; FragNo+=iter){
+      //fprintf(stderr,"FragNo %d \t FragTotal %d \n",FragNo,FragTotal);
+      qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0'; //Disse skal jo rykkes hvis vi bruger et char** til fragmenter
+
+      //now copy the actual sequence into seq_r1 and seq_r2 if PE 
+      strncpy(seq_r1,FragRes[FragNo],maxbases);
+
+      if(PE==struct_obj->SeqType)
+        strncpy(seq_r2,FragRes[FragNo]+(fraglength-maxbases),maxbases);
+    
+      //Remove reads which are all N? In this code we remove both pairs if both reads are all N
+      int skipread = 1;
+      for(int i=0;skipread&&i<(int)strlen(seq_r1);i++)
+        if(seq_r1[i]!='N')
+          skipread = 0;
+
+      for(int i=0; skipread && i<(int)strlen(seq_r2);i++)
+        if(seq_r2[i]!='N')
+        skipread = 0;
       
-      sprintf(READ_ID+strlen(READ_ID),"%d",has_seqerr);
-      //write fq if requested
-      if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){
-        ksprintf(fqs[0],"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
-        if (PE==struct_obj->SeqType)
-          ksprintf(fqs[1],"@%s R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);
-      }
+      if(skipread==1)
+        continue;
+    
+      // generating sam output information
+      int seqlen = strlen(seq_r1);
 
-      //now only sam family needs to be done, lets revcomplement the bases, and reverse the quality scores so everything is back to forward/+ strand
-      if(struct_obj->SAMout){
-        uint32_t AlignCigar[2][10];//cigs[0] is read1 cigs[1] is read2
-        size_t n_cigar[2] = {1,1};
-
-      if (struct_obj->NoAlign){
-        AlignCigar[0][0] = bam_cigar_gen(naligned[0], BAM_CMATCH);
-        if(nsofts[0]>0){
-          AlignCigar[0][1] = bam_cigar_gen(nsofts[0], BAM_CSOFT_CLIP);
-          n_cigar[0] = 2;
-        }
-        if(strandR1==1){
-          ReversComplement(seq_r1);
-          reverseChar(qual_r1,strlen(seq_r1));
-          if(n_cigar[0]>1){
-            //swap softclip and match
-            uint32_t tmp= AlignCigar[0][0];
-            AlignCigar[0][0] = AlignCigar[0][1];
-            AlignCigar[0][1] = tmp;
+      if(strlen(seq_r1) < 20)
+        continue;
+      
+      int SamFlags[2] = {-1,-1}; //flag[0] is for read1, flag[1] is for read2
+      if(struct_obj->DoBriggs){
+        // Frag[0] is equal to reference, i.e. rasmus
+        // Frag[3] is the reverse complement of (the reverse complement of rasmus (thorfinn))
+        if (FragNo==0||FragNo==3){
+          //The sequences are equal to the reference
+          if (SE==struct_obj->SeqType){
+            // R1  5' |---R1-->|--FWD------------> 3'
+            //     3' |-----------REV------------> 3'
+            SamFlags[0] = 0; // Forward strand
           }
-        }
-        if (PE==struct_obj->SeqType){
-          AlignCigar[1][0] = bam_cigar_gen(naligned[1], BAM_CMATCH);
-          if(nsofts[1]>0){
-            AlignCigar[1][1] = bam_cigar_gen(nsofts[1], BAM_CSOFT_CLIP);
-            n_cigar[1] = 2;
-          }
-          if(strandR1==0){
+          else if (PE==struct_obj->SeqType){
+            // R1  5' |---R1-->|--FWD------------> 3'
+            // R2  3' ------------REV---|<--R2---| 5'
+            SamFlags[0] = 97; // Read paired, mate reverse strand, first in pair
+            SamFlags[1] = 145; // Read paired, read reverse strand, second in pair
             ReversComplement(seq_r2);
-            reverseChar(qual_r2,strlen(seq_r2));
-            if(n_cigar[1]>1){
-              //swap softclip and match
-              uint32_t tmp= AlignCigar[1][0];
-              AlignCigar[1][0] = AlignCigar[1][1];
-              AlignCigar[1][1] = tmp;
-            } 
+          }
+        }
+        if (FragNo==1||FragNo==2){
+          //The sequences are reverse complementary of the original reference orientation
+          if (SE==struct_obj->SeqType){
+            // R1  5' |-----------FWD------------> 3'
+            //     3' |---R1-->|--REV------------> 3'
+            SamFlags[0] = 16;
+          }
+          else if (PE==struct_obj->SeqType){
+            //R2  5' ------------FWD---|<--R2---| 3'  
+            //R1  3' |---R1-->|--REV------------> 5'
+            SamFlags[0] = 81;
+            SamFlags[1] = 161;
+            ReversComplement(seq_r2);
           }
         }
       }
       else{
-        //this is unaligned part
-        AlignCigar[0][0] = bam_cigar_gen(strlen(seq_r1), BAM_CSOFT_CLIP);
-        AlignCigar[1][0] = bam_cigar_gen(strlen(seq_r2), BAM_CSOFT_CLIP);
-      }
-      //now reads, cigards and quals are correct 
-
-      //generating id, position and the remaining sam field information
-      size_t l_aux = 2; uint8_t mapq = 60;
-      hts_pos_t min_beg, max_end, insert; //max_end, insert;
-      min_beg = posB;
-      max_end = posE;
-      hts_pos_t min_beg_mate, max_end_mate;
-      insert = max_end - min_beg;
-      /*if (PE==struct_obj->SeqType)
-        insert = max_end - min_beg + 1;
-      else
-        insert = max_end - min_beg + 1;
-        //insert = max_end = min_beg = -1;*/
-
-      const char* suffR1 = " R1";
-      const char* suffR2 = " R2";
-
-      char READ_ID2[1024];
-      strcpy(READ_ID2,READ_ID);
-      
-      strcat(READ_ID,suffR1);
-      //fprintf(stderr,"CHR IDX %d\n",chr_idx);
-      //fprintf(stderr,"BEGIN %d AND END %d\n",min_beg,max_end);
-      int chr_idx_mate = -1; // RNEXT 0 -> "=" -1 -> "*s"
-      int chr_max_end_mate = 0; //PNEXT 0-> unavailable for SE
-      int insert_mate = 0; //TLEN
-      if(PE==struct_obj->SeqType){
-        strcat(READ_ID2,suffR2);
-        if (struct_obj->NoAlign == 0){
-          mapq = 255;
-          SamFlags[0] = SamFlags[1] = 4;
-          chr_idx = -1;
-          chr_max_end_mate = 0;
+        if (SE==struct_obj->SeqType){
+          if (strandR1 == 0)
+            SamFlags[0] = 0;
+          else if (strandR1 == 1){
+            SamFlags[0] = 16;
+          }
         }
-        else{
-          chr_idx_mate = chr_idx;
-          chr_max_end_mate = max_end;
-          insert_mate = insert;
-          //fprintf(stderr,"CHR IDX %d\n",chr_idx_mate);
-        }        
-      }
-      if (struct_obj->NoAlign == 0){
-        mapq = 255;
-        SamFlags[0] = SamFlags[1] = 4;
-        chr_idx = -1;
-        min_beg = -1;
-        max_end = 0;
-      }
-
-      //we have set the parameters accordingly above for no align and PE
-      //fprintf(stderr,"chr idx %d \t chr_max %d \t chr_insert %d\n",chr_idx_mate,chr_max_end_mate,insert_mate);
-      bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx,min_beg,mapq,
-            n_cigar[0],AlignCigar[0],chr_idx_mate,chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
-      //exit(0);
-      //write PE also
-      if (PE==struct_obj->SeqType){
-        bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx,max_end-1,mapq,
-          n_cigar[1],AlignCigar[1],chr_idx,min_beg,0-insert_mate,strlen(seq_r2),seq_r2,qual_r2,l_aux);
-      }
-    
-      if (struct_obj->LengthData < struct_obj->MaximumLength){   
-        pthread_mutex_lock(&write_mutex);
-        for (int k = 0; k < struct_obj->LengthData; k++){
-          assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) >=0 );
-        }
-        pthread_mutex_unlock(&write_mutex);
-        struct_obj->LengthData = 0;
-      }
-      fqs[0]->l = fqs[1]->l = 0;
-      }
-      
-    }
-    
-    if (struct_obj->bgzf_fp[0]){
-      if (fqs[0]->l > BufferLength){
-        pthread_mutex_lock(&write_mutex);
-        assert(bgzf_write(struct_obj->bgzf_fp[0],fqs[0]->s,fqs[0]->l)!=0);
         if (PE==struct_obj->SeqType){
-          assert(bgzf_write(struct_obj->bgzf_fp[1],fqs[1]->s,fqs[1]->l)!=0);
+          if (strandR1 == 0){
+            SamFlags[0] = 97;
+            SamFlags[1] = 145;
+          }
+          else if (strandR1 == 1){
+            SamFlags[0] = 81;
+            SamFlags[1] = 161;
+          }
+          ReversComplement(seq_r2);
         }
-        pthread_mutex_unlock(&write_mutex);
-	      fqs[0]->l = fqs[1]->l = 0;
       }
+      
+      //so now everything is on 5->3 and some of them will be reverse complement to referene
+      //now everything is the same strand as reference, which we call plus/+
+    
+      snprintf(READ_ID,1024,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
+
+      if (struct_obj->DoIndel && struct_obj->IndelDumpFile != NULL){
+        //ksprintf(indel,"%s\t%s\n",READ_ID,INDEL_INFO);
+        snprintf(INDEL_DUMP,1024,"%s\t%s\n",READ_ID,INDEL_INFO);
+        //fprintf(stderr,"INFO INDEL ID %s",INDEL_DUMP);
+        ksprintf(indel,"%s",INDEL_DUMP);
+        if (struct_obj->bgzf_fp[2]){
+          if (indel->l > 0){
+            pthread_mutex_lock(&write_mutex);
+            assert(bgzf_write(struct_obj->bgzf_fp[2],indel->s,indel->l)!=0);
+            pthread_mutex_unlock(&write_mutex);
+            indel->l = indel->l = 0;
+          }
+        }
+      }
+
+      int nsofts[2] = {0,0};//this will contain the softclip information to be used by sam/bam/cram out
+      //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail
+      int naligned[2] = {(int)strlen(seq_r1),-1};
+      if(PE==struct_obj->SeqType)
+        naligned[1] = strlen(seq_r2);
+      
+      //add adapters
+      if(struct_obj->AddAdapt){
+        // Because i have reverse complemented the correct sequences and adapters depending on the strand origin (or flags), i know all adapters will be in 3' end
+        nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
+        //fprintf(stderr,"The minimum values are %d \t %d \t %d \n",maxbases,struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
+        strncpy(seq_r1+strlen(seq_r1),struct_obj->Adapter_1,nsofts[0]);
+        if(PE==struct_obj->SeqType){
+          nsofts[1] = std::min(struct_obj->maxreadlength-strlen(seq_r2),strlen(struct_obj->Adapter_2));
+          strncpy(seq_r2+strlen(seq_r2),struct_obj->Adapter_2,nsofts[1]);
+        }
+      }
+
+      //add polytail
+      if (struct_obj->PolyNt != 'F') {
+        int nitems = struct_obj->maxreadlength-strlen(seq_r1);
+        memset(seq_r1+strlen(seq_r1),struct_obj->PolyNt,nitems);
+        nsofts[0] += nitems;
+        if(PE==struct_obj->SeqType){
+          nitems = struct_obj->maxreadlength-strlen(seq_r2);
+          memset(seq_r2+strlen(seq_r2),struct_obj->PolyNt,nitems);
+          nsofts[1] += nitems;
+        }
+      }
+
+      if(struct_obj->SAMout){
+        //sanity check
+        //fprintf(stderr,"SANITY CHECK seq_R1 %d \t %d \t %d \n seq_R2  %d \t %d \t %d \n",strlen(seq_r1),naligned[0],nsofts[0],strlen(seq_r2),naligned[1],nsofts[1]);
+        if(strlen(seq_r1)!=naligned[0]+nsofts[0]){
+          fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
+          exit(0);
+        }
+        //below only runs for PE that is when nalign[1] is not -1
+        if(naligned[1]!=-1 && strlen(seq_r2)!=naligned[1]+nsofts[1]){
+          fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
+          exit(0);
+        }
+      }
+      //now seq_r1 and seq_r2 is completely populated let is build qualscore if
+      //saving both fasta and adapter to fasta format
+      if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
+        sprintf(READ_ID+strlen(READ_ID),"%d",0);
+        ksprintf(fqs[0],">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
+        if (PE==struct_obj->SeqType)
+        ksprintf(fqs[1],">%s R2\n%s\n",READ_ID,seq_r2);
+      } 
+      else{
+        // Fastq and Sam needs quality scores
+        //if(strandR1==0){fprintf(stderr,"----------\nSEQUENCE \n%s\n",seq_r1);}//int ntcharoffset
+        has_seqerr = sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
+        //if(strandR1==0){fprintf(stderr,"%s\n",seq_r1);}
+        if (PE==struct_obj->SeqType)
+          has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
+        
+        sprintf(READ_ID+strlen(READ_ID),"%d",has_seqerr);
+        
+        //write fq if requested
+        if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){
+          ksprintf(fqs[0],"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
+          if (PE==struct_obj->SeqType)
+            ksprintf(fqs[1],"@%s R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);
+        }
+
+        //now only sam family needs to be done, lets revcomplement the bases, and reverse the quality scores so everything is back to forward/+ strand
+        if(struct_obj->SAMout){
+          uint32_t AlignCigar[2][10];//cigs[0] is read1 cigs[1] is read2
+          size_t n_cigar[2] = {1,1};
+
+          if (struct_obj->Align){
+            AlignCigar[0][0] = bam_cigar_gen(naligned[0], BAM_CMATCH);
+            if(nsofts[0]>0){
+              AlignCigar[0][1] = bam_cigar_gen(nsofts[0], BAM_CSOFT_CLIP);
+              n_cigar[0] = 2;
+            }
+            if(SamFlags[0]==16||SamFlags[0]==81){
+              ReversComplement(seq_r1);
+              reverseChar(qual_r1,strlen(seq_r1));
+              if(n_cigar[0]>1){
+                //swap softclip and match
+                uint32_t tmp= AlignCigar[0][0];
+                AlignCigar[0][0] = AlignCigar[0][1];
+                AlignCigar[0][1] = tmp;
+              }
+            }
+            if (PE==struct_obj->SeqType){
+              AlignCigar[1][0] = bam_cigar_gen(naligned[1], BAM_CMATCH);
+              if(nsofts[1]>0){
+                AlignCigar[1][1] = bam_cigar_gen(nsofts[1], BAM_CSOFT_CLIP);
+                n_cigar[1] = 2;
+              }
+              if(SamFlags[0] == 97){
+                ReversComplement(seq_r2);
+                reverseChar(qual_r2,strlen(seq_r2));
+                if(n_cigar[1]>1){
+                  //swap softclip and match
+                  uint32_t tmp= AlignCigar[1][0];
+                  AlignCigar[1][0] = AlignCigar[1][1];
+                  AlignCigar[1][1] = tmp;
+                } 
+              }
+            }
+          }
+          else{
+            //this is unaligned part
+            AlignCigar[0][0] = bam_cigar_gen(strlen(seq_r1), BAM_CSOFT_CLIP);
+            AlignCigar[1][0] = bam_cigar_gen(strlen(seq_r2), BAM_CSOFT_CLIP);
+          }
+          //now reads, cigards and quals are correct 
+
+          //generating id, position and the remaining sam field information
+          size_t l_aux = 2; uint8_t mapq = 60;
+          hts_pos_t min_beg, max_end, insert; //max_end, insert;
+          min_beg = posB;
+          max_end = posE;
+          hts_pos_t min_beg_mate, max_end_mate;
+          insert = max_end - min_beg;
+
+          const char* suffR1 = " R1";
+          const char* suffR2 = " R2";
+
+          char READ_ID2[1024];
+          strcpy(READ_ID2,READ_ID);
+          
+          strcat(READ_ID,suffR1);
+          //fprintf(stderr,"CHR IDX %d\n",chr_idx);
+          //fprintf(stderr,"BEGIN %d AND END %d\n",min_beg,max_end);
+          int chr_idx_mate = -1; // RNEXT 0 -> "=" -1 -> "*s"
+          int chr_max_end_mate = 0; //PNEXT 0-> unavailable for SE
+          int insert_mate = 0; //TLEN
+          if(PE==struct_obj->SeqType){
+            strcat(READ_ID2,suffR2);
+            if (struct_obj->Align == 0){
+              mapq = 255;
+              SamFlags[0] = SamFlags[1] = 4;
+              chr_idx = -1;
+              chr_max_end_mate = 0;
+            }
+            else{
+              chr_idx_mate = chr_idx;
+              chr_max_end_mate = max_end;
+              insert_mate = insert;
+              //fprintf(stderr,"CHR IDX %d\n",chr_idx_mate);
+            }        
+          }
+          if (struct_obj->Align == 0){
+            mapq = 255;
+            SamFlags[0] = SamFlags[1] = 4;
+            chr_idx = -1;
+            min_beg = -1;
+            max_end = 0;
+          }
+
+          //we have set the parameters accordingly above for no align and PE
+          //fprintf(stderr,"chr idx %d \t chr_max %d \t chr_insert %d\n",chr_idx_mate,chr_max_end_mate,insert_mate);
+          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx,min_beg,mapq,
+                n_cigar[0],AlignCigar[0],chr_idx_mate,chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
+          //exit(0);
+          //write PE also
+          if (PE==struct_obj->SeqType){
+            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx,max_end-1,mapq,
+              n_cigar[1],AlignCigar[1],chr_idx,min_beg,0-insert_mate,strlen(seq_r2),seq_r2,qual_r2,l_aux);
+          }
+        
+          if (struct_obj->LengthData < struct_obj->MaximumLength){   
+            pthread_mutex_lock(&write_mutex);
+            for (int k = 0; k < struct_obj->LengthData; k++){
+              assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) >=0 );
+            }
+            pthread_mutex_unlock(&write_mutex);
+            struct_obj->LengthData = 0;
+          }
+          fqs[0]->l = fqs[1]->l = 0;
+        }
+      }
+      
+      if (struct_obj->bgzf_fp[0]){
+        if (fqs[0]->l > BufferLength){
+          pthread_mutex_lock(&write_mutex);
+          assert(bgzf_write(struct_obj->bgzf_fp[0],fqs[0]->s,fqs[0]->l)!=0);
+          if (PE==struct_obj->SeqType){
+            assert(bgzf_write(struct_obj->bgzf_fp[1],fqs[1]->s,fqs[1]->l)!=0);
+          }
+          pthread_mutex_unlock(&write_mutex);
+          fqs[0]->l = fqs[1]->l = 0;
+        }
+      }
+
+      memset(qual_r1, 0, sizeof qual_r1); 
+      memset(qual_r2, 0, sizeof qual_r2);
+      memset(FragmentSequence,0,sizeof FragmentSequence);  
+      memset(seq_r1, 0, sizeof seq_r1);
+      memset(seq_r2, 0, sizeof seq_r2);
+
+      chr_idx = -1;
+      iter++;
+      localread++;
+      current_reads_atom++;
+      //printing out every tenth of the runtime
+      if (current_reads_atom > 1 && current_reads_atom%moduloread == 0)
+        fprintf(stderr,"\t-> Thread %d produced %zu reads with a current total of %zu\n",struct_obj->threadno,moduloread,current_reads_atom);
     }
-
-    memset(qual_r1, 0, sizeof qual_r1); 
-    memset(qual_r2, 0, sizeof qual_r2);
-    memset(FragmentSequence,0,sizeof FragmentSequence);  
-    memset(seq_r1, 0, sizeof seq_r1);
-    memset(seq_r2, 0, sizeof seq_r2);
-
-    chr_idx = -1;
-    iter++;
-    localread++;
-    current_reads_atom++;
-    //printing out every tenth of the runtime
-    if (current_reads_atom > 1 && current_reads_atom%moduloread == 0)
-      fprintf(stderr,"\t-> Thread %d produced %zu reads with a current total of %zu\n",struct_obj->threadno,moduloread,current_reads_atom);
   }
   if (struct_obj->bgzf_fp[0]){
     if (fqs[0]->l > 0){
@@ -585,11 +592,6 @@ void* Sampling_threads(void *arg){
   free(rand_alloc);
   
   fprintf(stderr,"\t-> Number of reads generated by thread %d is %zu \n",struct_obj->threadno,localread);
-
-  if(struct_obj->DoBriggs || struct_obj->DoBriggsBiotin){
-    fprintf(stdout,"C>T and G>A frequency at position 1 5' and 1 3' for forward strand\t%f\t%f\n",(double)C_to_T_counter/(double)C_total,(double)G_to_A_counter/(double)G_total);
-    fprintf(stdout,"C>T and G>A frequency at position 1 5' and 1 3' for reverse strand\t%f\t%f\n",(double)C_to_T_counter_rev/(double)C_total_rev,(double)G_to_A_counter_rev/(double)G_total_rev);
-  }
 
   if(struct_obj->totalThreads>1)
     pthread_exit(NULL);

@@ -48,8 +48,8 @@ int SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, 
         if (u < delta_s){
           IsDeam = 1;
           seq[i] = 'T'; //X
-          //if (i == 0&& strand == 0){C_to_T_counter++;}
-          //else if(i == 0 && strand==1){C_to_T_counter_rev++;}
+          if (i == 0&& strand == 0){C_to_T_counter++;}
+          else if(i == 0 && strand==1){C_to_T_counter_rev++;}
         }
         else{
           seq[i] = seq_intermediate[i]; //C
@@ -69,8 +69,8 @@ int SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, 
         if (u < delta_s){
           IsDeam = 1;
           seq[L-i-1] = 'A'; //'Y';
-          //if (i == 0&& strand == 0){G_to_A_counter++;}
-          //else if(i == 0 && strand==1){G_to_A_counter_rev++;}
+          if (i == 0&& strand == 0){G_to_A_counter++;}
+          else if(i == 0 && strand==1){G_to_A_counter_rev++;}
         }
         else{
           seq[L-i-1] = seq_intermediate[L-i-1];
@@ -104,8 +104,8 @@ int SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, 
           if (u < delta){
               IsDeam = 1;
               seq[i] = 'T'; //Q
-              //if (i == 0 && strand == 0){C_to_T_counter++;}
-              //else if(i == 0 && strand==1){C_to_T_counter_rev++;}
+              if (i == 0 && strand == 0){C_to_T_counter++;}
+              else if(i == 0 && strand==1){C_to_T_counter_rev++;}
           }
           else{
             seq[i] = seq_intermediate[i]; //C
@@ -118,8 +118,8 @@ int SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, 
             IsDeam = 1;
             seq[i] = 'A'; //W
             if (i == 0){
-              //if (i == 0 && strand==0){G_to_A_counter++;}
-              //else if(i == 0 && strand==1){G_to_A_counter_rev++;}
+              if (i == 0 && strand==0){G_to_A_counter++;}
+              else if(i == 0 && strand==1){G_to_A_counter_rev++;}
             }
           }
           else{

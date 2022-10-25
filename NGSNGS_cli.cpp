@@ -21,7 +21,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->DumpFile = NULL; //"output";
   mypars->IndelDumpFile = NULL; //"output";
   mypars->HeaderIndiv=-1;
-  mypars->NoAlign=1;
+  mypars->Align=1;
 
   // Thread generation and sampling specific information
   mypars->Chromosomes = NULL;
@@ -125,7 +125,7 @@ argStruct *getpars(int argc,char ** argv){
       mypars->DoSeqErr = 0;//"F";
     }
     else if(strcasecmp("-na",*argv)==0 || strcasecmp("--noalign",*argv)==0){
-      mypars->NoAlign = 0;
+      mypars->Align = 0;
     }
     else if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
       ++argv;

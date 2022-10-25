@@ -3,10 +3,10 @@
   program models briggs errors found in aDNA. Method assumes that seqlen>30 and that seq is 5->3
 */
 
-#ifndef BRIGGS_H
-#define BRIGGS_H
+#ifndef BRIGGS2_H
+#define BRIGGS2_H
 #include "mrand.h"
-#include "Briggs.h"
+#include "Briggs2.h"
 /*
   orginal is a contiguous subsequence of our reference genome which we will call forward or + strand.
   We also assume that original is 5 to 3 prime.
@@ -22,6 +22,6 @@
  */
 
 
-int SimBriggsModel2(char *original, int L, double nv, double lambda, double delta_s, double delta,mrand_t *mr,char **results);
+int SimBriggsModel2(char *original, int L, double nv, double lambda, double delta_s, double delta,mrand_t *mr,char **results, int strandR1);
 
 #endif /* NGSNGSFUNC_H */

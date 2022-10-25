@@ -17,7 +17,7 @@ extern char NtComp[5];
 extern const char *bass;
 
  
-int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, double delta, mrand_t *mr,char **res) {
+int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, double delta, mrand_t *mr,char **res,int strandR1) {
   int IsDeam = 0;
   assert(L<1024);
  
@@ -49,8 +49,15 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
   //fprintf(stderr,"SEQUNEC %s\n",rasmus)
   strncpy(thorfinn,ori,L); //Thorfinn equals Rasmus
   //fprintf(stderr,"SEQUNEC %s\n",thorfinn);
- 
-  ReversComplement(thorfinn); // revers complement of rasmus;
+  
+  if (strandR1 == 0){
+      ReversComplement(thorfinn);
+  }
+  else if (strandR1 == 1){
+    //if input sequence are reverse comp, then rasmus needs to be corresponding to the input *
+    // reference genome and its orientation, whereas thorfinn remains reverse complemented
+    ReversComplement(rasmus);
+  }
   //fprintf(stderr,"SEQUNEC %s\n",thorfinn);
 
   // Contain everything strncpy(rasmus,ori,L);
@@ -172,10 +179,10 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
  
   res[0] = seq_intermediate;
   ReversComplement(rasmus);
-  res[1] = rasmus;
-  res[2] = seq_intermediate2;
+  res[3] = rasmus;
+  res[1] = seq_intermediate2;
   ReversComplement(thorfinn);
-  res[3] = thorfinn;
+  res[2] = thorfinn;
  
   return IsDeam;
 }
