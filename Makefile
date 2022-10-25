@@ -45,6 +45,7 @@ HTS_INCDIR=$(realpath $(HTSSRC))
 HTS_LIBDIR=$(realpath $(HTSSRC))/libhts.a
 else
 $(info HTSSRC not defined, assuming systemwide installation -lhts)
+LIBS += -lhts
 endif
 
 
