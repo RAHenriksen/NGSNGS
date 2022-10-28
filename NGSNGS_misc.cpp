@@ -79,6 +79,20 @@ void ReversComplement(char seq[]){
   memset(seq_intermediate, 0, sizeof seq_intermediate);
 }
 
+void Complement(char seq[]){
+  // generates the reverse complementary sequence from an input sequence
+  char seq_intermediate[1024] = {0};
+  strcpy(seq_intermediate,seq);
+  //fprintf(stderr,"SEQUENCE \t\t%s\n",seq_intermediate);
+  int seqlen = strlen(seq);
+  //Complementing sequence
+  for(int i=0;i<seqlen;i++){
+    seq_intermediate[i] = NtComp[refToInt[(unsigned char) seq_intermediate[i]]]; //warning: array subscript has type 'char' [-Wchar-subscripts]
+  }
+  //just to ensure no issues arise in case of not clearing out the intermediate sequence
+  memset(seq_intermediate, 0, sizeof seq_intermediate);
+}
+
 void reverseChar(char* str,int length) {
     std::reverse(str, str + length);
 }

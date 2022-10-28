@@ -5,6 +5,8 @@
 
 void ReversComplement(char seq[]);
 
+void Complement(char seq[]);
+
 void reverseChar(char* str,int length);
 
 #endif

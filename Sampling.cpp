@@ -184,7 +184,8 @@ void* Sampling_threads(void *arg){
     //./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 10 -s 1 -l 2000 -seq SE -indel 0.05,0.1,0.1,0.2 -q1 Test_Examples/AccFreqL150R1.txt -f fq -o MycoBactBamSEOut
     //./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 1 -s 1 -l 100 -seq SE -indel 0.05,0.1,0.1,0.2 -q1 Test_Examples/AccFreqL150R1.txt -f fq -o MycoBactBamSEOut
     //generates insertions and deletions to the original fragment, before extracting R1 and R2
-    
+    //fprintf(stderr,"SEQUENCE %s \n",FragmentSequence);
+
     if (strandR1 == 1){
       // 5' -------> REV -------> 3'
       ReversComplement(FragmentSequence);
@@ -195,7 +196,7 @@ void* Sampling_threads(void *arg){
     //Nucleotide alteration models only on the sequence itself which holds for fa,fq,sam
     int ReadDeam = 0;
     int FragTotal = 0;
-    int Fragshitft = 0; 
+    int Groupshift = 0; 
     if(struct_obj->DoBriggs){
       //fprintf(stderr,"INSIDE NONE BRIGGS BIOTIN MODEL\n");
       FragTotal = 4;
@@ -204,19 +205,23 @@ void* Sampling_threads(void *arg){
         FragRes[i] = new char[1024];
         memset(FragRes[i],'\0',1024);
       }
+      
       ReadDeam=SimBriggsModel2(FragmentSequence, fragmentLength, 
         struct_obj->BriggsParam[0],
         struct_obj->BriggsParam[1],
         struct_obj->BriggsParam[2],
         struct_obj->BriggsParam[3],rand_alloc,FragRes,strandR1);
       
+      //for (int i = 0; i < 4; i++){fprintf(stderr,"SEQUENCE %s \n",FragRes[i]);}
+      //fprintf(stderr,"----------------\n");
+
       if(ReadDeam==0){
         // no deaminated sequence, as such we will only keep the first sequence
         FragTotal = 1;
       }
       // Choose which group to select
-      Fragshitft = mrand_pop(rand_alloc)>0.5?0:1;
-      fprintf(stderr,"Fragment Shift %d\n",Fragshitft);
+      Groupshift = mrand_pop(rand_alloc)>0.5?0:1;
+      //fprintf(stderr,"Fragment Shift %d\n",Groupshift);
     }
     else if(struct_obj->DoBriggsBiotin){
       //fprintf(stderr,"INSIDE BRIGGS BIOTIN MODEL\n");
@@ -241,9 +246,14 @@ void* Sampling_threads(void *arg){
       iter = 2;
     }
     
+    /*fprintf(stderr,"---------------\n");
+    for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
+      fprintf(stderr,"FragNo %d \t FragTotal %d \t group shift %d \t iter %d\n",FragNo,FragTotal,Groupshift,iter);
+    }*/
+
     // Iterate through the possible fragments
-    for (int FragNo = 0+Fragshitft; FragNo < FragTotal; FragNo+=iter){
-      //fprintf(stderr,"FragNo %d \t FragTotal %d \n",FragNo,FragTotal);
+    for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
+      //fprintf(stderr,"FragNo %d \t FragTotal %d \t group shift %d \t iter %d\n",FragNo,FragTotal,Groupshift,iter);
       qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0'; //Disse skal jo rykkes hvis vi bruger et char** til fragmenter
 
       //now copy the actual sequence into seq_r1 and seq_r2 if PE 
@@ -393,7 +403,7 @@ void* Sampling_threads(void *arg){
       //now seq_r1 and seq_r2 is completely populated let is build qualscore if
       //saving both fasta and adapter to fasta format
       if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
-        sprintf(READ_ID+strlen(READ_ID),"%d",0);
+        sprintf(READ_ID+strlen(READ_ID),"%d F%d",0,FragNo);
         ksprintf(fqs[0],">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
         if (PE==struct_obj->SeqType)
         ksprintf(fqs[1],">%s R2\n%s\n",READ_ID,seq_r2);
@@ -406,7 +416,7 @@ void* Sampling_threads(void *arg){
         if (PE==struct_obj->SeqType)
           has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
         
-        sprintf(READ_ID+strlen(READ_ID),"%d",has_seqerr);
+        sprintf(READ_ID+strlen(READ_ID),"%d F%d",has_seqerr,FragNo);
         
         //write fq if requested
         if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){
@@ -546,7 +556,6 @@ void* Sampling_threads(void *arg){
       memset(seq_r2, 0, sizeof seq_r2);
 
       chr_idx = -1;
-      iter++;
       localread++;
       current_reads_atom++;
       //printing out every tenth of the runtime

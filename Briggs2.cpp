@@ -43,20 +43,48 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
 
   //Please do a check in the following part, since it may shift by 1
  
-  strncpy(rasmus,ori,L);
-  //fprintf(stderr,"SEQUNEC %s\n",rasmus);
   
-  //fprintf(stderr,"SEQUNEC %s\n",rasmus)
+  strncpy(rasmus,ori,L);
   strncpy(thorfinn,ori,L); //Thorfinn equals Rasmus
+
+  /*
+  RASMUS = THORFINN = AGACT 5'--->3'
+  */
+
+  //fprintf(stderr,"SEQUNEC %s\n",rasmus);
+  //fprintf(stderr,"SEQUNEC %s\n",rasmus)
   //fprintf(stderr,"SEQUNEC %s\n",thorfinn);
   
+  // All of the positions are counting from 5' of Rasmus. 
+  
+  /*
+  RASMUS = AGACT
+  THORFINN = AGTCT
+  */
+
   if (strandR1 == 0){
-      ReversComplement(thorfinn);
+    /*
+    RASMUS = AGACT (CORRECT)
+    THORFINN = AGACT
+    */
+    Complement(thorfinn);
+    /*
+    THORFINN = TCTGA
+    */
   }
   else if (strandR1 == 1){
     //if input sequence are reverse comp, then rasmus needs to be corresponding to the input *
     // reference genome and its orientation, whereas thorfinn remains reverse complemented
+    /*
+    RASMUS = AGTCT 
+    THORFINN = AGTCT (CORRECT)
+    */
     ReversComplement(rasmus);
+    reverseChar(thorfinn,strlen(thorfinn));
+    /*
+    RASMUS = AGACT (CORRECT)
+    THORFINN = TCTGA 
+    */
   }
   //fprintf(stderr,"SEQUNEC %s\n",thorfinn);
 
@@ -74,8 +102,10 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
       double u = mrand_pop(mr);
       if (u < delta_s){
         IsDeam = 1;
+        //fprintf(stderr,"%d i %c %c\n",i,rasmus[i],thorfinn[i]);
         rasmus[i] = 'T'; 
         thorfinn[i] = 'A';
+        //fprintf(stderr,"%d i %c %c\n",i,rasmus[i],thorfinn[i]);
       }
     }
   }
@@ -170,19 +200,29 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
     }
   }
   
+  /*
+  RASMUS = AGACT (CORRECT) + PMD
+  THORFINN = TCTGA + PMD
+
+  reverse(thorfinn)
+
+  THORFINN = AGTCT + PMD (CORRECT)
+  */
+
+  reverseChar(thorfinn,strlen(thorfinn));
+
   char seq_intermediate[1024] = {0};
   char seq_intermediate2[1024] = {0};
   memset(seq_intermediate, 0, sizeof seq_intermediate);
   memset(seq_intermediate2, 0, sizeof seq_intermediate2);
   strcpy(seq_intermediate,rasmus);
-  strcpy(seq_intermediate2,thorfinn);
- 
   res[0] = seq_intermediate;
-  ReversComplement(rasmus);
-  res[3] = rasmus;
+  strcpy(seq_intermediate2,thorfinn);
   res[1] = seq_intermediate2;
   ReversComplement(thorfinn);
   res[2] = thorfinn;
+  ReversComplement(rasmus);
+  res[3] = rasmus;
  
   return IsDeam;
 }
