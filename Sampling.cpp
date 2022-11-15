@@ -48,11 +48,11 @@ void* Sampling_threads(void *arg){
   mrand_t *rand_alloc = mrand_alloc(struct_obj->rng_type,loc_seed);
 
   char *seq;//actual sequence, this is unallocated
-  int fraglength;
+  int maxfraglength=4096;
 
   // sequence reads, original, modified, with adapters, pe
   char READ_ID[1024];
-  char FragmentSequence[4096];
+  char *FragmentSequence = (char*) calloc(maxfraglength,1);
   char seq_r1[1024] = {0};
   char seq_r2[1024] = {0};
   char qual_r1[1024] = "\0";
@@ -114,7 +114,12 @@ void* Sampling_threads(void *arg){
     int posB = 0; int posE = 0;//this is the first and last position of our fragment
 
     //sample fragmentlength
-    int fraglength = getFragmentLength(sf); //fraglength = abs(mrand_pop_long(drand_alloc)) % 1000;
+    int fraglength = getFragmentLength(sf);
+	if(fraglength>maxfraglength){
+		free(FragmentSequence);
+		  maxfraqlength = fraqlength;
+		  FragmentSequence = (char*) calloc(maxfraglength,1);
+	  }
     
     // Selecting genomic start position across the generated contiguous contigs for which to extract 
     int chr_idx = -1;
@@ -142,8 +147,8 @@ void* Sampling_threads(void *arg){
     //fprintf(stderr,"beg %d end %d len: %lu frag %lu \n",posB,posE,strlen(chrseq),fraglength);
 
     strncpy(FragmentSequence,chrseq+(posB),(posE-posB)); // same orientation as reference genome 5' -------> FWD -------> 3'
-    int fragmentLength = strlen(FragmentSequence);
-    
+    int fragmentLength = posE-posB;
+    assert(posE>posB&&fragmentlength>20);
     // Sequence alteration integers
     int FragDeam = 0;
     int FragMisMatch = 0;
