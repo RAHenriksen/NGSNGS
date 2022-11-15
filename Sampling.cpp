@@ -609,6 +609,6 @@ void* Sampling_threads(void *arg){
 
   if(struct_obj->totalThreads>1)
     pthread_exit(NULL);
-  
+  free(FragmentSequence);
   return 0;
 }
