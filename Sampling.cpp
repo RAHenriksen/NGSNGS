@@ -115,7 +115,7 @@ void* Sampling_threads(void *arg){
 
     //sample fragmentlength
     int fraglength = getFragmentLength(sf); //fraglength = abs(mrand_pop_long(drand_alloc)) % 1000;
-    fprintf(stderr,"sample fragment length %d \n",fraglength);
+    //fprintf(stderr,"sample fragment length %d \n",fraglength);
     // Selecting genomic start position across the generated contiguous contigs for which to extract 
     int chr_idx = -1;
 
@@ -129,6 +129,7 @@ void* Sampling_threads(void *arg){
     //get shallow copy of chromosome, offset into, is defined by posB, and posE
     //fprintf(stderr,"new read \n beg %d end %d fragleng %d max %d \n",posB,posE,fraglength,maxbases);
     char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength);
+    fprintf(stderr,"Chromosome index %d \n",chr_idx);
     //extracting a biological fragment of the reference genome
     //fprintf(stderr,"beg %d end %d len: %lu frag %lu \n",posB,posE,strlen(chrseq),fraglength);
     memset(FragmentSequence,0,strlen(FragmentSequence));  //tænk lige over om denne kan laves om, således at du bare kan lave offset både når der er seq_r1 og seq_r2 på trods af at sekvensen er for lang grundet et længere fragment før.
@@ -141,9 +142,10 @@ void* Sampling_threads(void *arg){
         strncpy(FragmentSequence,chrseq+(posB),fraglength);
         strncpy(FragmentSequence,chrseq,fraglength-(posE-posB));         
     */
+
     int fragmentLength =posE-posB; // strlen(FragmentSequence);
-    fprintf(stderr," FRAG LENGTH %d \t %d \t %d \t %d \t %d \t %s \n",maxbases,fraglength,fragmentLength,(posE-posB),strlen(FragmentSequence),FragmentSequence);
-    
+    //fprintf(stderr," FRAG LENGTH %d \t %d \t %d \t %d \t %d \t %s \n",maxbases,fraglength,fragmentLength,(posE-posB),strlen(FragmentSequence),FragmentSequence);
+    assert(posE>=posB&&fragmentLength>20);
     //Generating random ID unique for each read output
     double rand_val_id = mrand_pop(rand_alloc);//<- SHIT
     //fprintf(stderr,"RAndom values for ID %lf \t %lf\n",rand_val_id,mrand_pop(drand_alloc));
@@ -259,9 +261,14 @@ void* Sampling_threads(void *arg){
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
       fprintf(stderr,"FragNo %d \t FragTotal %d \t group shift %d \t iter %d\n",FragNo,FragTotal,Groupshift,iter);
     }*/
-
+    fprintf(stderr,"FragTotal %d\n",FragTotal);
+    int chr_idx_array[FragTotal];
+    for (int i = 0; i < FragTotal; i++){chr_idx_array[FragTotal]=chr_idx;}
+    
+    fprintf(stderr,"Chromosome index 2 %d \t %d \t %d \n",chr_idx,chr_idx_array[0],chr_idx_array[1]);
     // Iterate through the possible fragments
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
+      fprintf(stderr,"FragNo %d \t Chromosome index %d array %d \n",FragNo,chr_idx,chr_idx_array[FragTotal]);
       //fprintf(stderr,"FragNo %d \t FragTotal %d \t group shift %d \t iter %d\n",FragNo,FragTotal,Groupshift,iter);
       qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0'; //Disse skal jo rykkes hvis vi bruger et char** til fragmenter
 
@@ -497,7 +504,6 @@ void* Sampling_threads(void *arg){
           strcat(READ_ID,suffR1);
           //fprintf(stderr,"CHR IDX %d\n",chr_idx);
           //fprintf(stderr,"BEGIN %d AND END %d\n",min_beg,max_end);
-          int chr_idx_mate = -1; // RNEXT 0 -> "=" -1 -> "*s"
           int chr_max_end_mate = 0; //PNEXT 0-> unavailable for SE
           int insert_mate = 0; //TLEN
           if(PE==struct_obj->SeqType){
@@ -505,34 +511,31 @@ void* Sampling_threads(void *arg){
             if (struct_obj->Align == 0){
               mapq = 255;
               SamFlags[0] = SamFlags[1] = 4;
-              chr_idx = -1;
+              chr_idx_array[FragTotal] = -1;
               chr_max_end_mate = 0;
             }
             else{
-              chr_idx_mate = chr_idx;
               chr_max_end_mate = max_end;
               insert_mate = insert;
-              //fprintf(stderr,"CHR IDX %d\n",chr_idx_mate);
             }        
           }
           if (struct_obj->Align == 0){
+            fprintf(stderr,"struct_obj->Align loop");
             mapq = 255;
             SamFlags[0] = SamFlags[1] = 4;
-            chr_idx = -1;
+            chr_idx_array[FragTotal] = -1;
             min_beg = -1;
             max_end = 0;
           }
 
           //we have set the parameters accordingly above for no align and PE
-          //fprintf(stderr,"chr idx %d \t chr_max %d \t chr_insert %d\n",chr_idx_mate,chr_max_end_mate,insert_mate);
-          chr_idx = 0;
-          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx,min_beg,mapq,
-                n_cigar[0],AlignCigar[0],chr_idx_mate,chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
+          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx_array[FragTotal],min_beg,mapq,
+                n_cigar[0],AlignCigar[0],chr_idx_array[FragTotal],chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
           //exit(0);
           //write PE also
           if (PE==struct_obj->SeqType){
-            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx,max_end-1,mapq,
-              n_cigar[1],AlignCigar[1],chr_idx,min_beg,0-insert_mate,strlen(seq_r2),seq_r2,qual_r2,l_aux);
+            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx_array[FragTotal],max_end-1,mapq,
+              n_cigar[1],AlignCigar[1],chr_idx_array[FragTotal],min_beg,0-insert_mate,strlen(seq_r2),seq_r2,qual_r2,l_aux);
           }
         
           if (struct_obj->LengthData < struct_obj->MaximumLength){   
@@ -564,13 +567,13 @@ void* Sampling_threads(void *arg){
       memset(seq_r1, 0, sizeof seq_r1);
       memset(seq_r2, 0, sizeof seq_r2);
 
-      chr_idx = -1;
       localread++;
       current_reads_atom++;
       //printing out every tenth of the runtime
       if (current_reads_atom > 1 && current_reads_atom%moduloread == 0)
         fprintf(stderr,"\t-> Thread %d produced %zu reads with a current total of %zu\n",struct_obj->threadno,moduloread,current_reads_atom);
     }
+    chr_idx = -1;
   }
   if (struct_obj->bgzf_fp[0]){
     if (fqs[0]->l > 0){
