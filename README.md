@@ -1,5 +1,5 @@
- # [![make](https://github.com/RAHenriksen/SimulAncient/actions/workflows/make.yml/badge.svg)](https://github.com/RAHenriksen/NGSNGS/actions/workflows/make.yml) 
-[![DOI](https://zenodo.org/badge/292509601.svg)](https://zenodo.org/badge/latestdoi/292509601)
+ # [![make](https://github.com/RAHenriksen/SimulAncient/actions/workflows/make.yml/badge.svg)](https://github.com/RAHenriksen/NGSNGS/actions/workflows/make.yml) [![DOI](https://zenodo.org/badge/292509601.svg)](https://zenodo.org/badge/latestdoi/292509601)
+
 
 # NEXT GENERATION SIMULATOR FOR NEXT GENERATION SEQUENCING DATA
 Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen \
