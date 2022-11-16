@@ -107,9 +107,11 @@ char *sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &p
   *chromoname = fs->seqs_names[chr_idx];
   posB = abs(mrand_pop_long(mr)) % fs->seqs_l[chr_idx];
   posE = posB +fraglength;
-  if(posE>fs->seqs_l[chr_idx]){
+  
+  if(posE>=fs->seqs_l[chr_idx]){
     posE=fs->seqs_l[chr_idx];
-    fraglength = posE-posB;
+    posB=posE-fraglength;
+    //fraglength = posE-posB;
   }
   char *ret =fs->seqs[chr_idx]; 
   chr_idx = fs->realnameidx[chr_idx];

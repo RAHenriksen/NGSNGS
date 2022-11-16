@@ -114,13 +114,8 @@ void* Sampling_threads(void *arg){
     int posB = 0; int posE = 0;//this is the first and last position of our fragment
 
     //sample fragmentlength
-    int fraglength = getFragmentLength(sf);
-	if(fraglength>maxfraglength){
-		free(FragmentSequence);
-		  maxfraqlength = fraqlength;
-		  FragmentSequence = (char*) calloc(maxfraglength,1);
-	  }
-    
+    int fraglength = getFragmentLength(sf); //fraglength = abs(mrand_pop_long(drand_alloc)) % 1000;
+    fprintf(stderr,"sample fragment length %d \n",fraglength);
     // Selecting genomic start position across the generated contiguous contigs for which to extract 
     int chr_idx = -1;
 
@@ -131,6 +126,24 @@ void* Sampling_threads(void *arg){
     if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT)
       maxbases = fraglength;
 
+    //get shallow copy of chromosome, offset into, is defined by posB, and posE
+    //fprintf(stderr,"new read \n beg %d end %d fragleng %d max %d \n",posB,posE,fraglength,maxbases);
+    char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength);
+    //extracting a biological fragment of the reference genome
+    //fprintf(stderr,"beg %d end %d len: %lu frag %lu \n",posB,posE,strlen(chrseq),fraglength);
+    memset(FragmentSequence,0,strlen(FragmentSequence));  //tænk lige over om denne kan laves om, således at du bare kan lave offset både når der er seq_r1 og seq_r2 på trods af at sekvensen er for lang grundet et længere fragment før.
+    strncpy(FragmentSequence,chrseq+(posB),fraglength); // same orientation as reference genome 5' -------> FWD -------> 3'
+    
+    /*
+    if circ
+      if (posE < posB+fraglenth) 
+        memset(FragmentSequence,'0',strlen(FragmentSequence));
+        strncpy(FragmentSequence,chrseq+(posB),fraglength);
+        strncpy(FragmentSequence,chrseq,fraglength-(posE-posB));         
+    */
+    int fragmentLength =posE-posB; // strlen(FragmentSequence);
+    fprintf(stderr," FRAG LENGTH %d \t %d \t %d \t %d \t %d \t %s \n",maxbases,fraglength,fragmentLength,(posE-posB),strlen(FragmentSequence),FragmentSequence);
+    
     //Generating random ID unique for each read output
     double rand_val_id = mrand_pop(rand_alloc);//<- SHIT
     //fprintf(stderr,"RAndom values for ID %lf \t %lf\n",rand_val_id,mrand_pop(drand_alloc));
@@ -139,16 +152,6 @@ void* Sampling_threads(void *arg){
 
     int strandR1 = mrand_pop(rand_alloc)>0.5?0:1; //int strand = (int) (rand_start%2);
 
-    //get shallow copy of chromosome, offset into, is defined by posB, and posE
-    //fprintf(stderr,"NEW READ \n");
-    //fprintf(stderr,"beg %d end %d fragleng %d max %d \n",posB,posE,fraglength,maxbases);
-    char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength);
-    //extracting a biological fragment of the reference genome
-    //fprintf(stderr,"beg %d end %d len: %lu frag %lu \n",posB,posE,strlen(chrseq),fraglength);
-
-    strncpy(FragmentSequence,chrseq+(posB),(posE-posB)); // same orientation as reference genome 5' -------> FWD -------> 3'
-    int fragmentLength = posE-posB;
-    assert(posE>posB&&fragmentlength>20);
     // Sequence alteration integers
     int FragDeam = 0;
     int FragMisMatch = 0;
@@ -215,7 +218,8 @@ void* Sampling_threads(void *arg){
         struct_obj->BriggsParam[0],
         struct_obj->BriggsParam[1],
         struct_obj->BriggsParam[2],
-        struct_obj->BriggsParam[3],rand_alloc,FragRes,strandR1);
+        struct_obj->BriggsParam[3],rand_alloc,FragRes,
+        strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
       
       //for (int i = 0; i < 4; i++){fprintf(stderr,"SEQUENCE %s \n",FragRes[i]);}
       //fprintf(stderr,"----------------\n");
@@ -521,6 +525,7 @@ void* Sampling_threads(void *arg){
 
           //we have set the parameters accordingly above for no align and PE
           //fprintf(stderr,"chr idx %d \t chr_max %d \t chr_insert %d\n",chr_idx_mate,chr_max_end_mate,insert_mate);
+          chr_idx = 0;
           bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx,min_beg,mapq,
                 n_cigar[0],AlignCigar[0],chr_idx_mate,chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
           //exit(0);
@@ -556,7 +561,6 @@ void* Sampling_threads(void *arg){
 
       memset(qual_r1, 0, sizeof qual_r1); 
       memset(qual_r2, 0, sizeof qual_r2);
-      memset(FragmentSequence,0,sizeof FragmentSequence);  
       memset(seq_r1, 0, sizeof seq_r1);
       memset(seq_r2, 0, sizeof seq_r2);
 
