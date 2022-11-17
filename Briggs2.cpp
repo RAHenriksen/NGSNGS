@@ -20,7 +20,14 @@ extern const char *bass;
 int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, double delta, mrand_t *mr,char **res,int strandR1,int& C_to_T_counter,int& G_to_A_counter,int& C_total,int& G_total) {
   int IsDeam = 0;
   assert(L<1024);
- 
+
+  //fprintf(stderr,"------\nori pre %d \t%s\n",strandR1,ori);
+  // The input reference should always be equal to the 5' ---> fwrd ---> 3' orientation similar to the reference genome
+  if (strandR1 == 1){
+    ReversComplement(ori);
+  }
+  //fprintf(stderr,"ori post\t%s\n",ori);
+
   int l = 0;
   int r = L-1;
  
@@ -45,9 +52,16 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
   
   strncpy(rasmus,ori,L);
   strncpy(thorfinn,ori,L); //Thorfinn equals Rasmus
-
+  //fprintf(stderr,"rasmus orig\t%s\n",thorfinn);
+  //fprintf(stderr,"thorfinn orig\t%s\n",thorfinn);
   /*
-  RASMUS = THORFINN = AGACT 5'--->3'
+  RASMUS   = AGACT
+  THORFINN = AGACT
+  */
+  Complement(thorfinn);
+  //fprintf(stderr,"thorfinn compl\t%s\n",thorfinn);
+  /*
+  THORFINN = TCTGA
   */
 
   //fprintf(stderr,"SEQUNEC %s\n",rasmus);
@@ -55,36 +69,7 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
   //fprintf(stderr,"SEQUNEC %s\n",thorfinn);
   
   // All of the positions are counting from 5' of Rasmus. 
-  
-  /*
-  RASMUS = AGACT
-  THORFINN = AGTCT
-  */
 
-  if (strandR1 == 0){
-    /*
-    RASMUS = AGACT (CORRECT)
-    THORFINN = AGACT
-    */
-    Complement(thorfinn);
-    /*
-    THORFINN = TCTGA
-    */
-  }
-  else if (strandR1 == 1){
-    //if input sequence are reverse comp, then rasmus needs to be corresponding to the input *
-    // reference genome and its orientation, whereas thorfinn remains reverse complemented
-    /*
-    RASMUS = AGTCT 
-    THORFINN = AGTCT (CORRECT)
-    */
-    ReversComplement(rasmus);
-    reverseChar(thorfinn,strlen(thorfinn));
-    /*
-    RASMUS = AGACT (CORRECT)
-    THORFINN = TCTGA 
-    */
-  }
   //fprintf(stderr,"SEQUNEC %s\n",thorfinn);
 
   // Contain everything strncpy(rasmus,ori,L);
@@ -96,8 +81,8 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
  
 
   /*
-    5' CGTATACATAGGCACTATATCGACCACACT 3' RASMUS 
-    3'        TATCCGTGATATAGCTGGTGTGA 5' THORFINN
+    5' CGTATACATAGGCACTATATCGACCACACT 3'
+    3'        TATCCGTGATATAGCTGGTGTGA 5'
   */
   for (int i = 0; i<l; i++){
     // left 5' overhangs, Thorfinn's DMG pattern is fully dependent on that of Rasmus.
@@ -117,8 +102,8 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
   }
   
   /*
-    5' CGTATACATAGGCACTATATCGACC       3' RASMUS
-    3' GCATATGTATCCGTGATATAGCTGGTGTGAC 5' THORFINN
+    5' CGTATACATAGGCACTATATCGACC       3' 
+    3' GCATATGTATCCGTGATATAGCTGGTGTGAC 5' 
   */
   for (int i = 0; i < r; i++){
     // right 5' overhangs, Rasmus's DMG pattern is fully dependent on that of Thorfinn.
@@ -244,30 +229,38 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
     }
   }
   
-  /*
-  RASMUS = AGACT (CORRECT) + PMD
-  THORFINN = TCTGA + PMD
-
-  reverse(thorfinn)
-
-  THORFINN = AGTCT + PMD (CORRECT)
-  */
-
+  //fprintf(stderr,"thorfinn deam\t%s\n",thorfinn);
+  //Change orientation of Thorfinn to reverse strand
   reverseChar(thorfinn,strlen(thorfinn));
+  //fprintf(stderr,"thorfinn rev\t%s\n",thorfinn);
+  char RasmusTmp[1024] = {0};
+  char ThorfinnTmp[1024] = {0};
+  memset(RasmusTmp, 0, sizeof RasmusTmp);
+  memset(ThorfinnTmp, 0, sizeof ThorfinnTmp);
+  strcpy(RasmusTmp,rasmus);
+  res[0] = RasmusTmp;
+  strcpy(ThorfinnTmp,thorfinn);
+  res[1] = ThorfinnTmp;
 
-  char seq_intermediate[1024] = {0};
-  char seq_intermediate2[1024] = {0};
-  memset(seq_intermediate, 0, sizeof seq_intermediate);
-  memset(seq_intermediate2, 0, sizeof seq_intermediate2);
-  strcpy(seq_intermediate,rasmus);
-  res[0] = seq_intermediate;
-  strcpy(seq_intermediate2,thorfinn);
-  res[1] = seq_intermediate2;
+  //fprintf(stderr,"pre T'\t%s\n",thorfinn);
   ReversComplement(thorfinn);
-  res[2] = thorfinn;
+  //fprintf(stderr,"post T'\t%s\n",thorfinn);
+  res[2] = thorfinn; // rev strand
   ReversComplement(rasmus);
-  res[3] = rasmus;
- 
+  res[3] = rasmus; // rev strand
+  /*char RasmusCompRev[1024] = {0};
+  char ThorfinnCompRev[1024] = {0};
+  memset(RasmusCompRev, 0, sizeof RasmusCompRev);
+  memset(ThorfinnCompRev, 0, sizeof ThorfinnCompRev);
+  strcpy(RasmusCompRev,rasmus);
+  strcpy(ThorfinnCompRev,thorfinn);
+  ReversComplement(ThorfinnCompRev);
+  res[2] = ThorfinnCompRev; // rev strand
+  ReversComplement(RasmusCompRev);
+  res[3] = RasmusCompRev; // rev strand*/
+  
+  //fprintf(stderr,"R and T'\t%s\n\t\t%s\n",res[0],res[2]);
+  //fprintf(stderr,"T and R'\t%s\n\t\t%s\n",res[1],res[3]);
   return IsDeam;
 }
   

@@ -129,7 +129,6 @@ void* Sampling_threads(void *arg){
     //get shallow copy of chromosome, offset into, is defined by posB, and posE
     //fprintf(stderr,"new read \n beg %d end %d fragleng %d max %d \n",posB,posE,fraglength,maxbases);
     char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength);
-    fprintf(stderr,"Chromosome index %d \n",chr_idx);
     //extracting a biological fragment of the reference genome
     //fprintf(stderr,"beg %d end %d len: %lu frag %lu \n",posB,posE,strlen(chrseq),fraglength);
     memset(FragmentSequence,0,strlen(FragmentSequence));  //tænk lige over om denne kan laves om, således at du bare kan lave offset både når der er seq_r1 og seq_r2 på trods af at sekvensen er for lang grundet et længere fragment før.
@@ -261,15 +260,12 @@ void* Sampling_threads(void *arg){
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
       fprintf(stderr,"FragNo %d \t FragTotal %d \t group shift %d \t iter %d\n",FragNo,FragTotal,Groupshift,iter);
     }*/
-    fprintf(stderr,"FragTotal %d\n",FragTotal);
     int chr_idx_array[FragTotal];
     for (int i = 0; i < FragTotal; i++){chr_idx_array[FragTotal]=chr_idx;}
     
-    fprintf(stderr,"Chromosome index 2 %d \t %d \t %d \n",chr_idx,chr_idx_array[0],chr_idx_array[1]);
     // Iterate through the possible fragments
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
-      fprintf(stderr,"FragNo %d \t Chromosome index %d array %d \n",FragNo,chr_idx,chr_idx_array[FragTotal]);
-      //fprintf(stderr,"FragNo %d \t FragTotal %d \t group shift %d \t iter %d\n",FragNo,FragTotal,Groupshift,iter);
+      //fprintf(stderr,"FragNo %d \t FragTotal %d \t group shift %d \t iter %d\t%s\n",FragNo,FragTotal,Groupshift,iter,FragRes[FragNo]);
       qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0'; //Disse skal jo rykkes hvis vi bruger et char** til fragmenter
 
       //now copy the actual sequence into seq_r1 and seq_r2 if PE 
@@ -297,11 +293,12 @@ void* Sampling_threads(void *arg){
       if(strlen(seq_r1) < 20)
         continue;
       
+      
       int SamFlags[2] = {-1,-1}; //flag[0] is for read1, flag[1] is for read2
       if(struct_obj->DoBriggs){
         // Frag[0] is equal to reference, i.e. rasmus
         // Frag[3] is the reverse complement of (the reverse complement of rasmus (thorfinn))
-        if (FragNo==0||FragNo==3){
+        if (FragNo==0||FragNo==2){
           //The sequences are equal to the reference
           if (SE==struct_obj->SeqType){
             // R1  5' |---R1-->|--FWD------------> 3'
@@ -316,7 +313,7 @@ void* Sampling_threads(void *arg){
             ReversComplement(seq_r2);
           }
         }
-        if (FragNo==1||FragNo==2){
+        if (FragNo==1||FragNo==3){
           //The sequences are reverse complementary of the original reference orientation
           if (SE==struct_obj->SeqType){
             // R1  5' |-----------FWD------------> 3'
@@ -506,6 +503,7 @@ void* Sampling_threads(void *arg){
           //fprintf(stderr,"BEGIN %d AND END %d\n",min_beg,max_end);
           int chr_max_end_mate = 0; //PNEXT 0-> unavailable for SE
           int insert_mate = 0; //TLEN
+          int chr_idx_mate = -1;
           if(PE==struct_obj->SeqType){
             strcat(READ_ID2,suffR2);
             if (struct_obj->Align == 0){
@@ -517,6 +515,7 @@ void* Sampling_threads(void *arg){
             else{
               chr_max_end_mate = max_end;
               insert_mate = insert;
+              chr_idx_mate = chr_idx_array[FragTotal];
             }        
           }
           if (struct_obj->Align == 0){
@@ -530,7 +529,7 @@ void* Sampling_threads(void *arg){
 
           //we have set the parameters accordingly above for no align and PE
           bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx_array[FragTotal],min_beg,mapq,
-                n_cigar[0],AlignCigar[0],chr_idx_array[FragTotal],chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
+                n_cigar[0],AlignCigar[0],chr_idx_mate,chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
           //exit(0);
           //write PE also
           if (PE==struct_obj->SeqType){

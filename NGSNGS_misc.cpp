@@ -88,7 +88,9 @@ void Complement(char seq[]){
   //Complementing sequence
   for(int i=0;i<seqlen;i++){
     seq_intermediate[i] = NtComp[refToInt[(unsigned char) seq_intermediate[i]]]; //warning: array subscript has type 'char' [-Wchar-subscripts]
+    seq[i] = seq_intermediate[i];
   }
+
   //just to ensure no issues arise in case of not clearing out the intermediate sequence
   memset(seq_intermediate, 0, sizeof seq_intermediate);
 }
