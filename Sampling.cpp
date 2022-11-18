@@ -99,7 +99,8 @@ void* Sampling_threads(void *arg){
   
   int C_total = 0;int C_to_T_counter = 0;int C_to_T_counter_rev = 0;int C_total_rev=0;
   int G_total = 0;int G_to_A_counter = 0;int G_to_A_counter_rev = 0;int G_total_rev=0;
-  
+  int refCp1 = 0;int refCTp1 = 0;int refCp2 = 0;int refCTp2 = 0;
+
   int modulovalue;
   if (reads > 1000000){
     modulovalue = 10;
@@ -110,6 +111,7 @@ void* Sampling_threads(void *arg){
   size_t moduloread = reads/modulovalue;
   
   while (current_reads_atom < reads && SIG_COND){
+    fprintf(stderr,"-------------------\n");
     //lets start by resetting out datastructures to NULL, nill, nothing.
     int posB = 0; int posE = 0;//this is the first and last position of our fragment
 
@@ -219,8 +221,9 @@ void* Sampling_threads(void *arg){
         struct_obj->BriggsParam[0],
         struct_obj->BriggsParam[1],
         struct_obj->BriggsParam[2],
-        struct_obj->BriggsParam[3],rand_alloc,FragRes,
-        strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
+        struct_obj->BriggsParam[3],rand_alloc,FragRes,strandR1,
+        C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev,
+        refCp1,refCTp1,refCp2,refCTp2);
       
       //for (int i = 0; i < 4; i++){fprintf(stderr,"SEQUENCE %s \n",FragRes[i]);}
       //fprintf(stderr,"----------------\n");
@@ -265,11 +268,11 @@ void* Sampling_threads(void *arg){
     
     // Iterate through the possible fragments
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
-      //fprintf(stderr,"FragNo %d \t FragTotal %d \t group shift %d \t iter %d\t%s\n",FragNo,FragTotal,Groupshift,iter,FragRes[FragNo]);
       qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0'; //Disse skal jo rykkes hvis vi bruger et char** til fragmenter
 
       //now copy the actual sequence into seq_r1 and seq_r2 if PE 
       strncpy(seq_r1,FragRes[FragNo],maxbases);
+      fprintf(stderr,"FragNo %d \t FragTotal %d \t group shift %d \t iter %d\t%s\n%s\n",FragNo,FragTotal,Groupshift,iter,FragRes[FragNo],seq_r1);
 
       if(PE==struct_obj->SeqType)
         strncpy(seq_r2,FragRes[FragNo]+(fraglength-maxbases),maxbases);
@@ -306,6 +309,7 @@ void* Sampling_threads(void *arg){
             SamFlags[0] = 0; // Forward strand
           }
           else if (PE==struct_obj->SeqType){
+            fprintf(stderr,"PE if\n");
             // R1  5' |---R1-->|--FWD------------> 3'
             // R2  3' ------------REV---|<--R2---| 5'
             SamFlags[0] = 97; // Read paired, mate reverse strand, first in pair
@@ -321,6 +325,7 @@ void* Sampling_threads(void *arg){
             SamFlags[0] = 16;
           }
           else if (PE==struct_obj->SeqType){
+            fprintf(stderr,"PE if\n");
             //R2  5' ------------FWD---|<--R2---| 3'  
             //R1  3' |---R1-->|--REV------------> 5'
             SamFlags[0] = 81;
@@ -354,7 +359,7 @@ void* Sampling_threads(void *arg){
       //now everything is the same strand as reference, which we call plus/+
     
       snprintf(READ_ID,1024,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
-
+      fprintf(stderr,"READ_ID %s\n",READ_ID);
       if (struct_obj->DoIndel && struct_obj->IndelDumpFile != NULL){
         //ksprintf(indel,"%s\t%s\n",READ_ID,INDEL_INFO);
         snprintf(INDEL_DUMP,1024,"%s\t%s\n",READ_ID,INDEL_INFO);
