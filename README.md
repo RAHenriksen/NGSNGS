@@ -6,7 +6,7 @@ Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen \
 Contact: rasmus.henriksen@sund.ku.dk
 
 ## VERSION
-The master branch represent a stable version of NGSNGS, and the development branch represent a newer and faster branch which eventually will become the master branch.
+The best master branch represent a stable version of NGSNGS, and the development branch represent a newer and faster branch which eventually will become the master branch.
 
 ## INSTALLATION & REQUIREMENTS
 * Use local installation of htslib
