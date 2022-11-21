@@ -108,34 +108,121 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
     }
   }
 
+  if (nv > 0){
+    //fprintf(stderr,"nick if %f \t delta %f\n",nv,delta);
+    // The nick positions on both strands are denoted as (m,n). m (The nick position on Rasmus) is sampled as the previous way, while n (The nick position on thorfinn) is sampled according to a 
+    // conditional probability given m.
+
+    double u_nick_m = mrand_pop(mr);
+    
+    // the counting starts from 0 rather than one so we shift
+    double P_m = nv/((L-l-r-1)*nv+1-nv);
+    int p_nick_m = l;
+    double CumPm = P_m;
+    //fprintf(stderr,"Pm %f \t CumPm %f \n",P_m,CumPm);
+    while ((u_nick_m > CumPm) && (p_nick_m < L-r-1)){
+      CumPm += P_m;
+      p_nick_m +=1;
+    }
+
+    int p_nick_n;
+    double u_nick_n = mrand_pop(mr);
+    double CumPn;
+  
+    // Given m, sampling n
+    if (p_nick_m < L-r-1){
+        p_nick_n = L-p_nick_m-2; //we shift both n and m
+        CumPn = nv;
+        while((u_nick_n > CumPn) && (p_nick_n < L-l-1)){
+          p_nick_n +=1;
+          CumPn += nv*pow(1-nv,p_nick_m+p_nick_n-L+2);
+        }
+    }
+    else if(p_nick_m == L-r-1){
+        p_nick_n = r;
+        CumPn = nv;
+        while((u_nick_n > CumPn) && (p_nick_n < L-l-1)){
+          p_nick_n +=1;
+          CumPn += nv*pow(1-nv,p_nick_n-r);
+        }
+    }
+    // Way 2 Complicated Way (should be a little bit faster)
+    for (int i = l; i < L-r; i++){
+      if (i<L-p_nick_n-1 && (rasmus[i] == 'C' || rasmus[i] == 'c')){
+        if (i == 0){C_total++;G_total++;}
+        //left of nick on thorfinn strand we change thorfinn according to rasmus
+
+        /*
+          5' CGTATACATAGGCACTATATCGACCACACT 3'
+          3' GCATATGTA CCGTGATATAGCTGGTGTGA 5'
+                        |
+                        v
+          5' CGTATACATAGGCACTATATCGACCACACT 3'
+          3'           CCGTGATATAGCTGGTGTGA 5'                
+        */
+      
+        double u = mrand_pop(mr);
+        if (u < delta){
+          //fprintf(stderr,"Inside delta loop %f\n",delta);
+          IsDeam = 1;
+          rasmus[i] = 'T';
+          thorfinn[i] = 'A'; //Downstream nick one DMG pattern depends on the other strand
+          if (i == 0){C_to_T_counter++;G_to_A_counter++;}
+        }
+      }
+      else if (i>p_nick_m && (thorfinn[i] == 'C' || thorfinn[i] == 'c')){
+        if (i == (L-1)){C_total++;G_total++;}
+        // right side of rasmus nick we change rasmus according to thorfinn
+
+        /*++
+          5' CGTATACAT GGCACTATATCGACCACACT 3'
+          3' GCATATGTATCCGTGATATAGCTGGTGTGA 5'
+                        |
+                        v
+          5' CGTATACAT                       3'
+          3' GCATATGTATCCGTGATATAGCTGGTGTGA  5'                
+        */
+
+        double u = mrand_pop(mr);
+        if (u < delta){
+          //fprintf(stderr,"Inside delta loop %f\n",delta);
+          IsDeam = 1;
+          rasmus[i] = 'A';
+          thorfinn[i] = 'T'; //Downstream nick one DMG pattern depends on the other strand
+          if (i == (L-1)){C_to_T_counter++;G_to_A_counter++;}
+        }
+      }
+    
+      // between the nick with rasmus showing DMG
+      else if(i>=L-p_nick_n-1 && i<=p_nick_m && (rasmus[i] == 'C' || rasmus[i] == 'c')){
+        if (i == 0){C_total++;G_total++;}
+        double u = mrand_pop(mr);
+        if (u < delta){
+          IsDeam = 1;
+          rasmus[i] = 'T'; //Upstream both nicks, DMG patterns are independent
+          if (i == 0){C_to_T_counter++;}
+        }
+      }
+      // between the nick with Thorfinn showing DMG
+      else if(i>=L-p_nick_n-1 && i<=p_nick_m && (thorfinn[i] == 'C' || thorfinn[i] == 'c')){
+        if (i == (L-1)){C_total++;G_total++;}
+        //fprintf(stderr,"i value %d\n",i);
+        double u = mrand_pop(mr);
+        if (u < delta){
+          IsDeam = 1;
+          thorfinn[i] = 'T'; //Upstream both nicks, DMG patterns are independent
+          if (i == (L-1)){C_to_T_counter++;}
+        }
+      }
+    }
+  }
+
   //Change orientation of Thorfinn to reverse strand
-  //fprintf(stderr,"thorfinn\t\t%s\n",thorfinn);
-  //fprintf(stderr,"thorfinn rev\t%s\n",thorfinn_rev_comp);
   reverseChar(thorfinn,strlen(thorfinn)); // TTTTACACACTATACGTTGAGGGCCAGTTCCACTGTC
-  //fprintf(stderr,"thorfinn\t\t%s\n",thorfinn);
-  //fprintf(stderr,"thorfinn rev\t%s\n",thorfinn_rev_comp);
-  //fprintf(stderr,"rasmus\t\t%s\n",rasmus);
-  //fprintf(stderr,"rasmus rev\t%s\n",rasmus_rev_comp);
   strcpy(rasmus_rev_comp,rasmus); // GACAGTGGAACTGGCCCTCAACGTATAGTGTGTAAAA
-  //fprintf(stderr,"rasmus\t\t%s\n",rasmus);
-  //fprintf(stderr,"rasmus rev\t%s\n",rasmus_rev_comp);
   strcpy(thorfinn_rev_comp,thorfinn); //TTTTACACACTATACGTTGAGGGCCAGTTCCACTGTC
-  //fprintf(stderr,"thorfinn\t\t%s\n",thorfinn);
-  //fprintf(stderr,"thorfinn rev\t%s\n",thorfinn_rev_comp);
   ReversComplement(rasmus_rev_comp); //TTTTACACACTATACGTTGAGGGCCAGTTCCACTGTC
-  //fprintf(stderr,"rasmus\t\t%s\n",rasmus);
-  //fprintf(stderr,"rasmus rev\t%s\n------------\n",rasmus_rev_comp);
   ReversComplement(thorfinn_rev_comp); //GACAGTGGAACTGGCCCTCAACGTATAGTGTGTAAAA
-  //fprintf(stderr,"thorfinn\t\t%s\n",thorfinn);
-  //fprintf(stderr,"thorfinn rev\t%s\n----------\n",thorfinn_rev_comp);
-  /*char RasmusTmp[1024] = {0};
-  char ThorfinnTmp[1024] = {0};
-  memset(RasmusTmp, 0, sizeof RasmusTmp);
-  memset(ThorfinnTmp, 0, sizeof ThorfinnTmp);
-  strcpy(RasmusTmp,rasmus);
-  res[0] = RasmusTmp;
-  strcpy(ThorfinnTmp,thorfinn);
-  res[1] = ThorfinnTmp;*/
 
   res[0] = rasmus;
   res[1] = thorfinn;

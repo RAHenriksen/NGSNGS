@@ -111,7 +111,7 @@ void* Sampling_threads(void *arg){
   size_t moduloread = reads/modulovalue;
   
   while (current_reads_atom < reads && SIG_COND){
-    fprintf(stderr,"-------------------\n");
+    //fprintf(stderr,"-------------------\n");
     //lets start by resetting out datastructures to NULL, nill, nothing.
     int posB = 0; int posE = 0;//this is the first and last position of our fragment
 
@@ -266,13 +266,15 @@ void* Sampling_threads(void *arg){
     int chr_idx_array[FragTotal];
     for (int i = 0; i < FragTotal; i++){chr_idx_array[FragTotal]=chr_idx;}
     
+    // test a single fragment 
+    // for (int FragNo = 0+Groupshift; FragNo < Groupshift+1; FragNo+=iter){
     // Iterate through the possible fragments
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
       qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0'; //Disse skal jo rykkes hvis vi bruger et char** til fragmenter
 
       //now copy the actual sequence into seq_r1 and seq_r2 if PE 
       strncpy(seq_r1,FragRes[FragNo],maxbases);
-      fprintf(stderr,"FragNo %d \t FragTotal %d \t group shift %d \t iter %d\t%s\n%s\n",FragNo,FragTotal,Groupshift,iter,FragRes[FragNo],seq_r1);
+      //fprintf(stderr,"FragNo %d \t FragTotal %d \t group shift %d \t iter %d\t%s\n%s\n",FragNo,FragTotal,Groupshift,iter,FragRes[FragNo],seq_r1);
 
       if(PE==struct_obj->SeqType)
         strncpy(seq_r2,FragRes[FragNo]+(fraglength-maxbases),maxbases);
@@ -359,7 +361,7 @@ void* Sampling_threads(void *arg){
       //now everything is the same strand as reference, which we call plus/+
     
       snprintf(READ_ID,1024,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
-      fprintf(stderr,"READ_ID %s\n",READ_ID);
+      //fprintf(stderr,"READ_ID %s\n",READ_ID);
       if (struct_obj->DoIndel && struct_obj->IndelDumpFile != NULL){
         //ksprintf(indel,"%s\t%s\n",READ_ID,INDEL_INFO);
         snprintf(INDEL_DUMP,1024,"%s\t%s\n",READ_ID,INDEL_INFO);
