@@ -1,0 +1,12 @@
+*.d
+*.o
+*.fa
+*.fasta
+*.fastq
+*.fq
+*.sam
+*.bam
+*.cram
+results_*/
+*.txt
+a.out
