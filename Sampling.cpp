@@ -243,8 +243,10 @@ void* Sampling_threads(void *arg){
     }
     else if(struct_obj->DoBriggsBiotin){
       //fprintf(stderr,"INSIDE BRIGGS BIOTIN MODEL\n");
-      FragRes = new char *[struct_obj->Duplicates];
+      FragRes = new char *[1];
       FragRes[0] = FragmentSequence;
+      Groupshift = 0;
+      FragTotal = 1;
       ReadDeam=0;
       ReadDeam = SimBriggsModel(FragRes[0],fragmentLength,struct_obj->BriggsParam[0],
 		    struct_obj->BriggsParam[1],
@@ -260,7 +262,7 @@ void* Sampling_threads(void *arg){
       }
       if (struct_obj->Duplicates == 1){
         // keep one fragment out of the 4 possible
-        FragTotal = Groupshift+1;
+        FragTotal = 1;
       }
       else if (struct_obj->Duplicates == 2){
         //only if we want two duplicates we have to select a pair and iterate through the pair
@@ -284,9 +286,9 @@ void* Sampling_threads(void *arg){
     // test a single fragment 
     // for (int FragNo = 0+Groupshift; FragNo < Groupshift+1; FragNo+=iter){
     // Iterate through the possible fragments
-    fprintf(stderr,"OUTSIDE for - FragTotal %d \t duplicates %d\t group shift %d \t iter %d\n",FragTotal,struct_obj->Duplicates,Groupshift,iter);
+    //fprintf(stderr,"OUTSIDE for - FragTotal %d \t duplicates %d\t group shift %d \t iter %d\n",FragTotal,struct_obj->Duplicates,Groupshift,iter);
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
-      fprintf(stderr,"INSIDE for - FragTotal %d \t duplicates %d \t Frag Number %d \t group shift %d \t iter %d\n",FragTotal,struct_obj->Duplicates,FragNo,Groupshift,iter);
+      //fprintf(stderr,"INSIDE for - FragTotal %d \t duplicates %d \t Frag Number %d \t group shift %d \t iter %d\n",FragTotal,struct_obj->Duplicates,FragNo,Groupshift,iter);
       qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0'; //Disse skal jo rykkes hvis vi bruger et char** til fragmenter
 
       //now copy the actual sequence into seq_r1 and seq_r2 if PE 
@@ -317,7 +319,7 @@ void* Sampling_threads(void *arg){
       
       
       int SamFlags[2] = {-1,-1}; //flag[0] is for read1, flag[1] is for read2
-      if(struct_obj->DoBriggs && ReadDeam == 1){
+      if(struct_obj->DoBriggs){
         // Frag[0] is equal to reference, i.e. rasmus
         // Frag[3] is the reverse complement of (the reverse complement of rasmus (thorfinn))
         if (FragNo==0||FragNo==2){

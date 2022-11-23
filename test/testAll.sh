@@ -86,8 +86,8 @@ echo "--------------------------------------------------------------------------
 for file in $(ls ${VCFDIR}/*Diploid*); do for indiv in {0,1,2}; do 
     echo ${file} indiv ${indiv}; 
     Type=$(ls ${file}| sed 's/.*Sub//'|sed 's/Diploid.vcf//');
-    ${PRG} -i ${IN} -r 100 -t 1 -s 1 -l 150 -seq SE -ne -vcf ${file} -id ${indiv} -q1 ${Q1} -chr MT -—dump-internal VCF_temp_diploid_${Type}_${indiv} -f fq -o VCFtest;
-    md5sum VCF_temp_diploid_${Type}_${indiv}.fa >> VCF.md5; done; done
+    ${PRG} -i ${VCFIN} -r 100 -t 1 -s 1 -l 150 -seq SE -ne -vcf ${file} -id ${indiv} -q1 ${Q1} -chr MT -—dump-internal VCF_temp_diploid_${Type}_${indiv} -f fq -o VCF_diploid_${Type}_${indiv};
+    md5sum VCF_diploid_${Type}_${indiv}.fq >> MycoBactTest.md5; done; done
 
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "8) Testing Single-end, simulating stochastic variations, insertion or deletions, no error, length file "
