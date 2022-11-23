@@ -52,7 +52,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
-                        char CommandArray[1024],const char* version,int HeaderIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile){
+                        char CommandArray[1024],const char* version,int HeaderIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile,int Duplicates){
   //creating an array with the arguments to create multiple threads;
 
   int nthreads=thread_no;
@@ -311,7 +311,8 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].DoBriggs = DoBriggs;
       struct_for_threads[i].DoBriggsBiotin = DoBriggsBiotin;
       struct_for_threads[i].BriggsParam = BriggsParam;
-      
+      struct_for_threads[i].Duplicates = Duplicates;
+
       // Fragment lengths 
       struct_for_threads[i].FragLen = Frag_len;
       struct_for_threads[i].FragFreq = Frag_freq;

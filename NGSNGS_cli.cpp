@@ -38,6 +38,7 @@ argStruct *getpars(int argc,char ** argv){
   // 2) briggs model
   mypars->Briggs = NULL; //"0.024,0.36,0.68,0.0097";
   mypars->BriggsBiotin = NULL; //"0.024,0.36,0.68,0.0097";
+  mypars->Duplicates = 1;
   // 3) misincorporation matrix
   mypars->SubProfile = NULL;
   // 4) Bcf file and variation incorporation
@@ -165,6 +166,9 @@ argStruct *getpars(int argc,char ** argv){
 	      mypars->BriggsBiotin = ModelParam; //double nv, double lambda, double delta_s, double delta -> 0.024,0.36,0.68,0.0097
       // -m || --model b7,0.024,0.36,0.68,0.0097 b10,0.024,0.36,0.68,0.0097 bCpG,0.024,0.36,0.68,0.0097
       free(ModelString);
+    }
+    else if(strcasecmp("-dup",*argv)==0 || strcasecmp("--duplicates",*argv)==0){
+      mypars->Duplicates = atoi(*(++argv));
     }
     else if(strcasecmp("-cl",*argv)==0 || strcasecmp("--cycle",*argv)==0){
       mypars->CycleLength = atoi(*(++argv));

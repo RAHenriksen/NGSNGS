@@ -58,7 +58,6 @@ void* Sampling_threads(void *arg){
   char qual_r1[1024] = "\0";
   char qual_r2[1024] = "\0"; // {0};
  
-  
   size_t reads = struct_obj -> reads;
   //fprintf(stderr,"INSIDE EACH THREAD NUMBER OF READS %zu \n",reads);
   size_t BufferLength = struct_obj -> BufferLength;
@@ -206,11 +205,13 @@ void* Sampling_threads(void *arg){
 
     //Nucleotide alteration models only on the sequence itself which holds for fa,fq,sam
     int ReadDeam = 0;
-    int FragTotal = 0;
-    int Groupshift = 0; 
+    int Groupshift = mrand_pop(rand_alloc)>0.5?0:1; 
+    int FragTotal = 4;
+  
+    int iter = 1; //iterating through all fragments
     if(struct_obj->DoBriggs){
       //fprintf(stderr,"INSIDE NONE BRIGGS BIOTIN MODEL\n");
-      FragTotal = 4;
+      //For the none-biotin briggs model we need to store 4 fragments with slightly different deaminations patterns
       FragRes = new char *[FragTotal];
       for(int i=0;i<FragTotal;i++){
         FragRes[i] = new char[1024];
@@ -224,22 +225,25 @@ void* Sampling_threads(void *arg){
         struct_obj->BriggsParam[3],rand_alloc,FragRes,strandR1,
         C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev,
         refCp1,refCTp1,refCp2,refCTp2);
-      
-      //for (int i = 0; i < 4; i++){fprintf(stderr,"SEQUENCE %s \n",FragRes[i]);}
-      //fprintf(stderr,"----------------\n");
 
-      if(ReadDeam==0){
-        // no deaminated sequence, as such we will only keep the first sequence
-        FragTotal = 1;
+      if (struct_obj->Duplicates == 1){
+        // keep one fragment out of the 4 possible
+        Groupshift = mrand_pop_long(rand_alloc) % 4;
+        FragTotal = Groupshift+1;
       }
-      // Choose which group to select
-      Groupshift = mrand_pop(rand_alloc)>0.5?0:1;
-      //fprintf(stderr,"Fragment Shift %d\n",Groupshift);
+      else if (struct_obj->Duplicates == 2){
+        iter = 2;
+      }
+      else if (struct_obj->Duplicates == 4){
+        // Keep all 4 fragments
+        Groupshift = 0;
+        FragTotal = 4;
+      }
+      
     }
     else if(struct_obj->DoBriggsBiotin){
       //fprintf(stderr,"INSIDE BRIGGS BIOTIN MODEL\n");
-      FragTotal = 1;
-      FragRes = new char *[FragTotal];
+      FragRes = new char *[struct_obj->Duplicates];
       FragRes[0] = FragmentSequence;
       ReadDeam=0;
       ReadDeam = SimBriggsModel(FragRes[0],fragmentLength,struct_obj->BriggsParam[0],
@@ -249,27 +253,40 @@ void* Sampling_threads(void *arg){
         strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
     }
     else{
-      FragTotal = 1;
-      FragRes = new char *[FragTotal];
-      FragRes[0] = FragmentSequence;
+      // for the none-deaminated sequences we likewise need to generate PCR duplicates
+      FragRes = new char *[struct_obj->Duplicates];
+      for (int i = 0; i < struct_obj->Duplicates; i++){
+        FragRes[i] = FragmentSequence;
+      }
+      if (struct_obj->Duplicates == 1){
+        // keep one fragment out of the 4 possible
+        FragTotal = Groupshift+1;
+      }
+      else if (struct_obj->Duplicates == 2){
+        //only if we want two duplicates we have to select a pair and iterate through the pair
+        FragTotal = 2;
+        Groupshift = 0;
+      }
+      else if (struct_obj->Duplicates == 4){
+        //only if we want two duplicates we have to select a pair and iterate through the pair
+        Groupshift = 0;
+      } 
     }
     
-    int iter = 1;
-    if (FragTotal > 1){
-      iter = 2;
-    }
-    
+
+    //fprintf(stderr,"Fragment Shift %d\n",Groupshift);
     /*fprintf(stderr,"---------------\n");
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
-      fprintf(stderr,"FragNo %d \t FragTotal %d \t group shift %d \t iter %d\n",FragNo,FragTotal,Groupshift,iter);
     }*/
-    int chr_idx_array[FragTotal];
-    for (int i = 0; i < FragTotal; i++){chr_idx_array[FragTotal]=chr_idx;}
+    int chr_idx_array[struct_obj->Duplicates];
+    for (int i = 0; i < struct_obj->Duplicates; i++){chr_idx_array[struct_obj->Duplicates]=chr_idx;}
     
     // test a single fragment 
     // for (int FragNo = 0+Groupshift; FragNo < Groupshift+1; FragNo+=iter){
     // Iterate through the possible fragments
+    fprintf(stderr,"OUTSIDE for - FragTotal %d \t duplicates %d\t group shift %d \t iter %d\n",FragTotal,struct_obj->Duplicates,Groupshift,iter);
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
+      fprintf(stderr,"INSIDE for - FragTotal %d \t duplicates %d \t Frag Number %d \t group shift %d \t iter %d\n",FragTotal,struct_obj->Duplicates,FragNo,Groupshift,iter);
       qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0'; //Disse skal jo rykkes hvis vi bruger et char** til fragmenter
 
       //now copy the actual sequence into seq_r1 and seq_r2 if PE 
@@ -300,7 +317,7 @@ void* Sampling_threads(void *arg){
       
       
       int SamFlags[2] = {-1,-1}; //flag[0] is for read1, flag[1] is for read2
-      if(struct_obj->DoBriggs){
+      if(struct_obj->DoBriggs && ReadDeam == 1){
         // Frag[0] is equal to reference, i.e. rasmus
         // Frag[3] is the reverse complement of (the reverse complement of rasmus (thorfinn))
         if (FragNo==0||FragNo==2){
@@ -516,32 +533,32 @@ void* Sampling_threads(void *arg){
             if (struct_obj->Align == 0){
               mapq = 255;
               SamFlags[0] = SamFlags[1] = 4;
-              chr_idx_array[FragTotal] = -1;
+              chr_idx_array[struct_obj->Duplicates] = -1;
               chr_max_end_mate = 0;
             }
             else{
               chr_max_end_mate = max_end;
               insert_mate = insert;
-              chr_idx_mate = chr_idx_array[FragTotal];
+              chr_idx_mate = chr_idx_array[struct_obj->Duplicates];
             }        
           }
           if (struct_obj->Align == 0){
             fprintf(stderr,"struct_obj->Align loop");
             mapq = 255;
             SamFlags[0] = SamFlags[1] = 4;
-            chr_idx_array[FragTotal] = -1;
+            chr_idx_array[struct_obj->Duplicates] = -1;
             min_beg = -1;
             max_end = 0;
           }
 
           //we have set the parameters accordingly above for no align and PE
-          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx_array[FragTotal],min_beg,mapq,
+          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx_array[struct_obj->Duplicates],min_beg,mapq,
                 n_cigar[0],AlignCigar[0],chr_idx_mate,chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
           //exit(0);
           //write PE also
           if (PE==struct_obj->SeqType){
-            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx_array[FragTotal],max_end-1,mapq,
-              n_cigar[1],AlignCigar[1],chr_idx_array[FragTotal],min_beg,0-insert_mate,strlen(seq_r2),seq_r2,qual_r2,l_aux);
+            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx_array[struct_obj->Duplicates],max_end-1,mapq,
+              n_cigar[1],AlignCigar[1],chr_idx_array[struct_obj->Duplicates],min_beg,0-insert_mate,strlen(seq_r2),seq_r2,qual_r2,l_aux);
           }
         
           if (struct_obj->LengthData < struct_obj->MaximumLength){   
