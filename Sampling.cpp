@@ -256,8 +256,9 @@ void* Sampling_threads(void *arg){
     }
     else{
       // for the none-deaminated sequences we likewise need to generate PCR duplicates
-      FragRes = new char *[struct_obj->Duplicates];
-      for (int i = 0; i < struct_obj->Duplicates; i++){
+      FragTotal = struct_obj->Duplicates;
+      FragRes = new char *[FragTotal];
+      for (int i = 0; i < FragTotal; i++){
         FragRes[i] = FragmentSequence;
       }
       if (struct_obj->Duplicates == 1){
@@ -274,9 +275,6 @@ void* Sampling_threads(void *arg){
         Groupshift = 0;
       } 
     }
-    
-
-    //fprintf(stderr,"Fragment Shift %d\n",Groupshift);
     /*fprintf(stderr,"---------------\n");
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
     }*/
@@ -599,6 +597,12 @@ void* Sampling_threads(void *arg){
         fprintf(stderr,"\t-> Thread %d produced %zu reads with a current total of %zu\n",struct_obj->threadno,moduloread,current_reads_atom);
     }
     chr_idx = -1;
+    
+    if(struct_obj->DoBriggs){
+      for(int i=0;i<4;i++)
+        delete[] FragRes[i];
+    }
+    delete[] FragRes;
   }
   if (struct_obj->bgzf_fp[0]){
     if (fqs[0]->l > 0){

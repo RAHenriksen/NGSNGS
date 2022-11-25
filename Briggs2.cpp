@@ -39,6 +39,7 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
   char *thorfinn_rev_comp = res[2];
   char *rasmus_rev_comp = res[3];
 
+  //fprintf(stderr,"The pointer adress %p \t %p \t %p \t %p \n",rasmus,thorfinn,thorfinn_rev_comp,rasmus_rev_comp);
   int l = 0;
   int r = L-1;
  
