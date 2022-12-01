@@ -106,7 +106,7 @@ int main(int argc,char **argv){
         assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL);
         char buf[LENS];
         while(gzgets(gz,buf,LENS))
-	  nlines++;
+	        nlines++;
         gzclose(gz);
       }
       readcycle = (nlines-2)/5;
@@ -143,6 +143,7 @@ int main(int argc,char **argv){
           }
         }
         else{
+          fprintf(stderr,"ELSE STATEMENT WITH SIZE LENGTH\n");
           sum += Length_tmp*Frequency_tmp;
           n = n+1;
         }
@@ -150,6 +151,7 @@ int main(int argc,char **argv){
       gzclose(gz);
       
       MeanFragLen = sum/n;
+      fprintf(stderr,"MeanFragLen %f\n",MeanFragLen);
       if (mypars->Length <0){fprintf(stderr,"FIXED SIZE %d",mypars->Length);ErrMsg(5.0);}
       SizeDistType=1;
     }
@@ -189,6 +191,7 @@ int main(int argc,char **argv){
     //now compute the number of reads required acroos all threads
 
     if (readcov > 0.0){
+      fprintf(stderr,"read cov if\n");
       size_t genome_size = 0;
 
       for (int i = 0; i < chr_total; i++){
@@ -197,14 +200,16 @@ int main(int argc,char **argv){
         genome_size += chr_len;
       }
 
-      if (MeanFragLen > readcycle){MeanFragLen = readcycle;}
-      
+      if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
+        if (MeanFragLen > readcycle){MeanFragLen = readcycle;}
+      }
       
       if (mypars->seq_type == PE){
-        mypars->nreads =  ((readcov*genome_size)/MeanFragLen)/2;
+        mypars->nreads = ((readcov*genome_size)/MeanFragLen)/2;
       }
       else{
         mypars->nreads = (readcov*genome_size)/MeanFragLen;
+        fprintf(stderr,"lol reads %zu \n",mypars->nreads);
       }
     }
 
