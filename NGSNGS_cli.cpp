@@ -207,7 +207,7 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-—dump-internal",*argv)==0){
       mypars->DumpFile = strdup(*(++argv));
     }
-    else if(strcasecmp("-—dump-indel",*argv)==0){
+    else if(strcasecmp("--DumpIndel",*argv)==0){
       mypars->IndelDumpFile = strdup(*(++argv));
     }  
     else{
