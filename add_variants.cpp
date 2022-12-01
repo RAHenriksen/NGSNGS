@@ -165,7 +165,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
 
           strcat(elephant[i],fs->seqs[fsoffsets[i]]+last[i]);
           fs->seqs_l[fsoffsets[i]] = strlen(elephant[i]);
-          delete [] fs->seqs[i];
+          free(fs->seqs[i]);
           fs->seqs[i] = elephant[i];
         }
       }
@@ -250,7 +250,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
       
       strcat(elephant[i],fs->seqs[fsoffsets[i]]+last[i]);
       fs->seqs_l[fsoffsets[i]] = strlen(elephant[i]);
-      delete [] fs->seqs[i];
+      free(fs->seqs[i]);
       fs->seqs[i] = elephant[i];
     }
   }
