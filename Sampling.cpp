@@ -543,7 +543,6 @@ void* Sampling_threads(void *arg){
             }        
           }
           if (struct_obj->Align == 0){
-            fprintf(stderr,"struct_obj->Align loop");
             mapq = 255;
             SamFlags[0] = SamFlags[1] = 4;
             chr_idx_array[struct_obj->Duplicates] = -1;

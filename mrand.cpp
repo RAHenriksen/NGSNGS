@@ -19,10 +19,8 @@ mrand_t *mrand_alloc(int type_a,long int seedval){
     srand48_r(seedval,(struct drand48_data *) &ret->buf0);
 #endif
   if(ret->type==1){
-    fprintf(stderr,"REAL UNI DIST\n");
     ret->eng = std::default_random_engine(seedval);
     ret->distr = std::uniform_real_distribution<double>(0, 1);
-    fprintf(stderr,"UNI DIST\n");
     ret->distrInt = std::uniform_int_distribution<>(0,INT_MAX);
   }
   if(ret->type==2)
