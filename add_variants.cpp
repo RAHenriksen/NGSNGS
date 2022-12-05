@@ -39,9 +39,10 @@ int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
     }else{
       res[i] = it->second;
       if(i>max_l)
-	max_l = i;
+	    max_l = i;
     }
   }
+  free(bcf_chrom_names);
   max_l = max_l +1;
   fprintf(stderr,"\t-> From header in bcf we observe %lu different scaffolds/chromosomes we will allocate lookup table with dim: %d\n",res.size(),max_l);
   if(res.size()==0)
@@ -62,8 +63,8 @@ int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
   if(ploidy ==1){
     //fprintf(stderr,"ploidy is haploid, will perform updownstream sorting of the reverse positions\n");
     int *pldmap = new int[5];
-    pldmap[0] = fs_chr_idx;
-    pldmap[1]=    pldmap[2]=    pldmap[3]=    pldmap[4]=-1;
+    pldmap[0]=fs_chr_idx;
+    pldmap[1]=pldmap[2]=pldmap[3]=pldmap[4]=-1;
     fs->pldmap[fs_chr_idx] = pldmap;
     return 0;
   }
@@ -115,6 +116,7 @@ int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
     fs->pldmap[fs_chr_idx]  = pldmap;
     fs->nref = nref;
     //fprintf(stderr,"\t[%s] Done duplicating chromosomes to emulate parental chromosomes\n",__FUNCTION__);
+    
   }
   return 0;
 }
@@ -143,11 +145,11 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
   for(int i=0;i<ploidy;i++)
     elephant[i] =(char*) calloc(maxsize,sizeof(char));
 
-#if 0  
+  #if 0  
   for(bcfmap::iterator it=mybcfmap.begin();0&&it!=mybcfmap.end();it++){
     fprintf(stderr,"%d %d\n",it->first.rid,it->first.pos);
   }
-#endif
+  #endif
   for(bcfmap::iterator it=mybcfmap.begin();it!=mybcfmap.end();it++){
     #if 0
     for(int i=0;0&&i<ploidy;i++)
@@ -243,6 +245,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
         last[i] = brec->pos+1;
       }
     }
+    bcf_destroy(brec);
   }
   if(fsoffsets!=NULL){
     for(int i=0;i<ploidy;i++){
@@ -254,8 +257,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
       fs->seqs[i] = elephant[i];
     }
   }
-
- 
+  delete[] elephant;
 }
 
 //fasta sampler struct, index for chromosomenaem, position, the alleles, the genotypes and the ploidy. 
@@ -322,11 +324,11 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
       assert((ngt %nsamples)==0);
       inferred_ploidy = ngt/nsamples;
     }
-#if 0
-    fprintf(stderr,"brec->pos: %d nallele: %d\n",brec->pos,brec->n_allele);
-    for(int i=0;i<brec->n_allele;i++)
-      fprintf(stderr,"nal:%d %s %zu\n",i,brec->d.allele[i],strlen(brec->d.allele[i]));
-#endif
+    #if 0
+      fprintf(stderr,"brec->pos: %d nallele: %d\n",brec->pos,brec->n_allele);
+      for(int i=0;i<brec->n_allele;i++)
+        fprintf(stderr,"nal:%d %s %zu\n",i,brec->d.allele[i],strlen(brec->d.allele[i]));
+    #endif
     if(brec->n_allele==1){
       fprintf(stderr,"\t-> Only Reference allele defined for pos: %lld will skip\n",brec->pos+1);
       continue;
@@ -353,7 +355,6 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
 	      isindel =1;
       if(strlen(brec->d.allele[0])>1)//this is confusion
 	      isindel =1;
-      
     }
     if(isindel==0){
       add_variant(fs,fai_chr,brec->pos,brec->d.allele,mygt,inferred_ploidy);
@@ -374,6 +375,9 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
 
   } //hvorfor en internal datastructure? er det for først at tilføje alle snps? og dernæst tilføje indels? 
   // så tilføj -v snp så kun linje 311 uanset hvad, -v indel kun linje 323, hvis ingenting så bare lad det være.
+  
+  free(gt_arr);
+  delete[] bcf_idx_2_fasta_idx;
   fasta_sampler_setprobs(fs);
   bcf_hdr_destroy(bcf_head);
   bcf_destroy(brec); 
