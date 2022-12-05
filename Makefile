@@ -2,8 +2,9 @@
 CC  ?= gcc
 CXX ?= g++
 
+ALWAYS_FLAGS=-std=c++11
 
-FLAGS=-ggdb -std=c++11 -O3
+FLAGS=-O3
 
 LIBS = -lz -lm -lbz2 -llzma -lpthread -lcurl
 
@@ -17,8 +18,8 @@ $(info Crypto library is not available to link; will not use -lcrypto)
 endif
 
 
-CFLAGS += $(FLAGS)
-CXXFLAGS += $(FLAGS)
+CFLAGS += $(FLAGS) $(ALWAYS_FLAGS) 
+CXXFLAGS += $(FLAGS) $(ALWAYS_FLAGS) 
 
 CSRC = $(wildcard *.c) 
 CXXSRC = $(wildcard *.cpp)

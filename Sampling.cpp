@@ -14,7 +14,7 @@
 #include <htslib/bgzf.h>
 #include <htslib/kstring.h>
 #include <zlib.h>
-#include <htslib/thread_pool.h>
+//#include <htslib/thread_pool.h>
 
 #include <pthread.h>
 
