@@ -77,10 +77,10 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
     int at = 0;
     for(int i=0;i<SubsetChr.size();i++){
       if( faidx_has_seq(fs->fai, SubsetChr[i])){
-	fs->seqs_names[at] = strdup(SubsetChr[i]);
-	fs->seqs[at] = fai_fetch(fs->fai,fs->seqs_names[i],fs->seqs_l+at);
-	fs->char2idx[fs->seqs_names[i]] = at;
-	at++;
+        fs->seqs_names[at] = strdup(SubsetChr[i]);
+        fs->seqs[at] = fai_fetch(fs->fai,fs->seqs_names[i],fs->seqs_l+at);
+        fs->char2idx[fs->seqs_names[i]] = at;
+        at++;
       }
     }
     fs->nref = at;
@@ -124,7 +124,7 @@ void dump_internal(fasta_sampler *fs,const char* filename){
   fa_s[0]->s = NULL;
   fa_s[0]->l = fa_s[0]->m = 0;
 
-  BGZF **bgzf_fp = (BGZF **) calloc(2,sizeof(BGZF *));
+  BGZF **bgzf_fp = (BGZF **) calloc(1,sizeof(BGZF *));
 
   int mt_cores = 1;
   int bgzf_buf = 256;
@@ -134,10 +134,10 @@ void dump_internal(fasta_sampler *fs,const char* filename){
   bgzf_mt(bgzf_fp[0],mt_cores,bgzf_buf); //
   
   for(int i=0;i<fs->nref;i++){
-    //fprintf(stderr,"number of reference genome %d and name %s and length %zu\n",i,fs->seqs_names[i],fs->seqs_l[i]);
     ksprintf(fa_s[0],">%s\n%s\n",fs->seqs_names[i],fs->seqs[i]);//make this into read
-    assert(bgzf_write(bgzf_fp[0],fa_s[i]->s,fa_s[i]->l)!=0);
   }
+  
+  assert(bgzf_write(bgzf_fp[0],fa_s[0]->s,fa_s[0]->l)!=0);
 
   free(fa_s[0]->s);
   free(fa_s[0]);
