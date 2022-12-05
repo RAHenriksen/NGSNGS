@@ -156,6 +156,11 @@ void fasta_sampler_destroy(fasta_sampler *fs){
   delete [] fs->seqs_l;
   delete [] fs->seqs;
   delete [] fs->realnameidx;
+  //  fprintf(stderr,"size.of ploidmap: %lu",fs->pldmap.size());
+  for(ploidymap::iterator it=fs->pldmap.begin();it!=fs->pldmap.end();it++){
+    //fprintf(stderr,"asdfasdfasdfasddfdasdfasdfas");
+    delete [] it->second;
+  }
   ransampl_free(fs->ws);
   delete fs;
 }

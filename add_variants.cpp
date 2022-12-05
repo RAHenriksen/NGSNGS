@@ -59,9 +59,14 @@ int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
 }
 
 int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
-  //fprintf(stderr,"Extend fasta sampler:%d\n",ploidy);
+  //  fprintf(stderr,"Extend fasta sampler:%d\n",ploidy);
   if(ploidy ==1){
     //fprintf(stderr,"ploidy is haploid, will perform updownstream sorting of the reverse positions\n");
+    ploidymap::iterator it = fs->pldmap.find(fs_chr_idx);
+    if(it!=fs->pldmap.end()){
+      //fprintf(stderr,"Have already been added will skip\n");
+      return 0;
+    }
     int *pldmap = new int[5];
     pldmap[0]=fs_chr_idx;
     pldmap[1]=pldmap[2]=pldmap[3]=pldmap[4]=-1;
@@ -246,6 +251,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
       }
     }
     bcf_destroy(brec);
+    delete [] it->first.gt;
   }
   if(fsoffsets!=NULL){
     for(int i=0;i<ploidy;i++){
