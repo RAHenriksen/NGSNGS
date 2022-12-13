@@ -66,7 +66,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     //fprintf(stderr,"Variant file %s and individual in Header %d \n",VariantFile,HeaderIndiv);
     add_variants(reffasta,VariantFile,HeaderIndiv);
     if(FileDump!=NULL){
-      char dumpfile1[80];
+      char dumpfile1[512];
       const char* dumpfile1prefix = FileDump;
       const char* dumpfile1suffix = ".fa";
       strcpy(dumpfile1,dumpfile1prefix);
@@ -92,8 +92,8 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     htsFormat *fmt_hts =(htsFormat*) calloc(1,sizeof(htsFormat));
     htsThreadPool p = {NULL, 0};
 
-    char file1[80];
-    char file2[80];
+    char file1[512];
+    char file2[512];
     const char* fileprefix = OutputName; //"chr22_out";
     strcpy(file1,fileprefix);
     strcpy(file2,fileprefix);
@@ -256,7 +256,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     }
 
     if(IndelDumpFile!=NULL){
-      char IndelFile[80];
+      char IndelFile[512];
       const char* IndelSuffix = ".txt";
       const char* IndelPrefix = IndelDumpFile; //"chr22_out";
       strcpy(IndelFile,IndelPrefix);
