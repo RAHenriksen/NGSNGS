@@ -35,60 +35,78 @@ Usage
 ./ngsngs [options] -i <input_reference.fa> -r/-c <Number of reads or depth of coverage> -l/-lf/-ld <fixed length, length file or length distribution> -seq <SE/PE> -f <output format> -o <output name prefix>
 
 Example 
-./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 2 -s 1 -lf Test_Examples/Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut
+./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 2 -s 1 -lf Test_Examples/Size_dist_sampling.txt -seq SE -m b,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut
 
-./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/Qual_profiles/AccFreqL150R1.txt -q2 Test_Examples/Qual_profiles/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut
+./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut
 
 ./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/MisincorpFile.txt -f fa -o MycoBactFaSEOut
 
+./ngsngs -i Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 100 -l 150 -seq SE -ne -vcf Test_Examples/ChrMtSubDeletionDiploid.vcf -id 0 -q1 Test_Examples/AccFreqL150R1.txt -chr MT -—DumpVCF DeltionInfo -f fq -o MtDeletionOut 
+
 -h   | --help: 			 Print help page.
 
-Required: 
+----- Required -----
 
 -i   | --input: 		 Reference file in fasta format (.fa,.fasta) to sample reads.
+
+Sequence reads: 
 -r   | --reads: 		 Number of reads to simulate, conflicts with -c option.
 -c   | --coverage: 		 Depth of Coverage to simulate, conflics with -r option.
 
+Fragment Length:
 -l   | --length: 		 Fixed length of simulated fragments, conflicts with -lf & -ld option.
 -lf  | --lengthfile: 		 CDF of a length distribution, conflicts with -l & -ld option.
 -ld  | --lengthdist: 		 Discrete or continuous probability distributions, given their Probability density function, conflicts with -l & -lf option.
-	<Uni,Min,Max> 		 Uniform distribution from a closed interval given a minimum and maximum positive integer, e.g. Uni,40,180.
-	<Norm,Mean,Variance> 	 Normal Distribution, given a mean and variance, e.g. Norm,80,30.
-	<LogNorm,Mean,Variance>  Log-normal Distribution, given a mean and variance, e.g. LogNorm,4,1.
-	<Pois,Rate> 		 Poisson distribution, given a rate, e.g. Pois,165.
-	<Exp,Rate> 		 Exponential distribution, given a rate, e.g. Exp,0.025.
-	<Gamma,Shape,Scale> 	 Gamma distribution, given a shape and scale, e.g. Gam,20,2.
+	 <Uni,Min,Max> 		 Uniform distribution from a closed interval given a minimum and maximum positive integer, e.g. Uni,40,180.
+	 <Norm,Mean,Variance> 	 Normal Distribution, given a mean and variance, e.g. Norm,80,30.
+	 <LogNorm,Mean,Variance>  Log-normal Distribution, given a mean and variance, e.g. LogNorm,4,1.
+	 <Pois,Rate> 		 Poisson distribution, given a rate, e.g. Pois,165.
+	 <Exp,Rate> 		 Exponential distribution, given a rate, e.g. Exp,0.025.
+	 <Gamma,Shape,Scale> 	 Gamma distribution, given a shape and scale, e.g. Gam,20,2.
 
+Output characteristics:
 -seq | --sequencing: 		 Simulate single-end or paired-end reads.
 	 <SE>	 single-end 
  	 <PE>	 paired-end.
 -f   | --format: 		 File format of the simulated output reads.
-	 Nucletide sequence w. different compression levels. 
+	Nucletide sequence w. different compression levels. 
 	 <fa||fasta> 
-	 <fa.gz||fasta.gz>	
-	 Nucletide sequence with corresponding quality score w. different compression levels. 
-	 <fq||fastq> 
-	 <fq.gz||fastq.gz>	
-	 Sequence Alignment Map w. different compression levels. 
-	 <sam||bam||cram>
+	 <fa.gz||fasta.gz>
+  	Nucletide sequence with corresponding quality score w. different compression levels.
+	 <fq||fastq>
+	 <fq.gz||fastq.gz>
+  	Sequence Alignment Map w. different compression levels.
+	 <sam||bam||cram> 
+
 -o   | --output: 		 Prefix of output file name.
 
-Optional: 
+----- Optional -----
 
 Nucleotide Alterations: 
--bcf:| -vcf 			 Variant Calling Format (.vcf) or binary format (.bcf)
--id: | --indiv: 		 Integer value for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).
--b   | --briggs: 		 Parameters for the damage patterns using the Briggs model.
-	 <nv,Lambda,Delta_s,Delta_d> : 0.024,0.36,0.68,0.0097 (from Briggs et al., 2007).
-	 nv: Nick rate pr site. 
- 	 Lambda: Geometric distribution parameter for overhang length.
- 	 Delta_s: PMD rate in single-strand regions.
- 	 Delta_d: PMD rate in double-strand regions.
--mf  | --mismatch: 		 Nucleotide substitution frequency file.
--ne  | --noerror: 		 Disabling the nucleotide subsitutions based on nucleotide qualities.
--na  | --noalign: 		 Using the SAM output as a sequence containing without alignment information.
+-bcf | -vcf 			 Variant Calling Format (.vcf) or binary format (.bcf)
+-id  | --indiv: 		 Integer value for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).
+-DumpVCF:				 The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided vcf file (-vcf|-bcf), for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.
 
-Read Specific: 
+-indel: Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.
+	 <InsProb,DelProb,LambdaIns,LambdaDel>
+	 e.g. 0.05,0.1,0.1,0.2
+-DumpIndel:			 The prefix of an internally generated txt file, containing the the read id, number of indels, the number of indel operations saving the position before and after and length of the indel, simulated read length before and after, see supplementary material for detailed example and description.
+	 <ReadID,Number of Insertions, Insertion operations, Number of deletions, Deletion operations, Read length before indel, Read length after indel>
+
+-m | --model:			 Choice of deamination model.
+  <b,nv,Lambda,Delta_s,Delta_d>  || <briggs,nv,Lambda,Delta_s,Delta_d> \t Parameters for the damage patterns using the Briggs model altered to suit modern day library preparation.
+  \t\t <b7,nv,Lambda,Delta_s,Delta_d> || <briggs07,nv,Lambda,Delta_s,Delta_d>  Parameters for the damage patterns using the Briggs model 2007.
+  \t\t nv: Nick rate pr site. \n \t\t Lambda: Geometric distribution parameter for overhang length.\n \t\t Delta_s: PMD rate in single-strand regions.\n \t\t Delta_d: PMD rate in double-strand regions.
+  \t\t e.g -m b,0.024,0.36,0.68,0.0097
+-dup | --duplicates:	 Number of PCR duplicates, used in conjunction with briggs modern library prep -m <b,nv,Lambda,Delta_s,Delta_d>
+<1,2,4>, Default = 1.
+-mf  | --mismatch: 		 Nucleotide substitution frequency file.
+-ne  | --noerror: 		 Disabling the nucleotide substitutions based on nucleotide qualities.
+
+Read Specific:
+-na  | --noalign: 		 Using the SAM output as a sequence containing without alignment information.
+-cl  | --cycle:			 Read cycle length, the maximum length of sequence reads, if not provided the cycle length will be inferred from quality profiles (q1,q2).
+-bl  | --bufferlength:	 Buffer length for generated sequence reads stored in the output files, default = 30000000.
 -chr | --chromosomes: 		 Specific chromosomes from input reference file.
 -a1  | --adapter1: 		 Adapter sequence to add for simulated reads (SE) or first read pair (PE).
 	 e.g. Illumina TruSeq Adapter 1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG 
@@ -99,9 +117,9 @@ Read Specific:
 -p   | --poly: 			 Create Poly(X) tails for reads, containing adapters with lengths below the inferred readcycle length. 
  	 e.g -p G or -p A 
 -q1  | --quality1: 		 Read Quality profile for single-end reads (SE) or first read pair (PE).
--q2  | --quality2: 		 Read Quality profile for for second read pair (PE).
+-q2  | --quality2: 		 Read Quality profile for second read pair (PE).
 
-Other: 
+Simulation Specific: 
 -t   | --threads: 		 Number of sampling threads, default = 1.
 -t2  | --threads2: 		 Number of compression threads, default = 0.
 -s   | --seed: 			 Random seed, default = current calendar time (s).
@@ -116,14 +134,14 @@ Other:
 ## Read ID
 All formats shares a similar read ID structure
 ~~~~bash
-T<ThreadNumber>_RID<RandomID>_S<Read1StrandInfo>_<Chromosome>:<Start>-<End>_length:<Fragmentlength> R<PairNumber>
+T<ThreadNumber>_RID<RandomID>_S<Read1StrandInfo>_<Chromosome>:<Start>-<End>
+_length:<Fragmentlength>_<modVal1Val2Val3Val4> F<FragmentNumber> R<PairNumber>
 ~~~~
-e.g. in .fq format
-~~~~bash
-@T1_RID25_S1_chr22:21441362-21441421_length:60 R1
-~~~~
-S0 is the forward strand and S1 is the reverse strand
 
+e.g.
+@T0_RID49_S0_NZ_CP029543.1:2236795-2236942_length:148_mod1000 F0 R1
+
+S0 is the forward strand and S1 is the reverse strand, mod1000 equals read with sequence error, F0 signifies the first fragment out of 4 possible PCR duplicates, R1 indicate the sequence is read 1 (See supplementary material for detailed description).
 ## Nucleotide substitution models
 ### Nucleotide quality scores (-q1 and -q2)
 Simulating a .fq or .sam format requires a provided nucleotide quality profile (-q1, -q2) with one example (Test_Examples/AccFreqL150R1.txt) and its structure: 

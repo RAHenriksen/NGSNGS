@@ -131,13 +131,13 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
       ++argv;
       char *tok = *argv;
-      if(strcasecmp("fa",tok)==0)
+      if(strcasecmp("fa",tok)==0 || strcasecmp("fasta",tok)==0)
 	      mypars->OutFormat = faT;
-      if(strcasecmp("fa.gz",tok)==0)
+      if(strcasecmp("fa.gz",tok)==0 || strcasecmp("fasta.gz",tok)==0)
 	      mypars->OutFormat = fagzT;
-      if(strcasecmp("fq",tok)==0)
+      if(strcasecmp("fq",tok)==0 || strcasecmp("fastq",tok)==0)
 	      mypars->OutFormat = fqT;
-      if(strcasecmp("fq.gz",tok)==0)
+      if(strcasecmp("fq.gz",tok)==0 || strcasecmp("fastq.gz",tok)==0)
 	      mypars->OutFormat = fqgzT;
       if(strcasecmp("sam",tok)==0)
 	      mypars->OutFormat = samT;
@@ -201,13 +201,13 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-rng",*argv)==0 || strcasecmp("--rand",*argv)==0){
       mypars->rng_type = atoi(*(++argv));
     }
-    else if(strcasecmp("-indel",*argv)==0 || strcasecmp("--indel",*argv)==0){
+    else if(strcasecmp("-indel",*argv)==0){
       mypars->Indel = strdup(*(++argv));
     }
-    else if(strcasecmp("-—dump-internal",*argv)==0){
+    else if(strcasecmp("—DumpVCF",*argv)==0){
       mypars->DumpFile = strdup(*(++argv));
     }
-    else if(strcasecmp("--DumpIndel",*argv)==0){
+    else if(strcasecmp("-DumpIndel",*argv)==0){
       mypars->IndelDumpFile = strdup(*(++argv));
     }  
     else{

@@ -32,13 +32,8 @@ echo "--------------------------------------------------------------------------
 echo "2) Testing Paired-end, fixed length, coverage, no sequencing error, adapters, sampling threads, fq"
 echo "---------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -c 3 -t 1 -s 1 -l 100 -seq PE -ne -a1 ${A1} -a2 ${A2} -q1 ${Q1} -q2 ${Q2} -f fq -o MycoBactFqPEOut
-sort MycoBactFqPEOut_R1.fq > MycoBactFqPEOut_R1_sort.fq
-sort MycoBactFqPEOut_R2.fq > MycoBactFqPEOut_R2_sort.fq
-rm MycoBactFqPEOut_R1.fq
-rm MycoBactFqPEOut_R2.fq
-
-md5sum MycoBactFqPEOut_R1_sort.fq >> MycoBactTest.md5
-md5sum MycoBactFqPEOut_R2_sort.fq >> MycoBactTest.md5
+md5sum MycoBactFqPEOut_R1.fq >> MycoBactTest.md5
+md5sum MycoBactFqPEOut_R2.fq >> MycoBactTest.md5
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
@@ -73,10 +68,12 @@ echo "6) Testing Single-end, simulating genetic variations, SNP, Insertion and d
 echo "---------------------------------------------------------------------------------------------------------------"
 
 for file in $(ls ${VCFDIR}/*Haploid*); do for indiv in {0,1,2}; do 
-    echo ${file} indiv ${indiv}; 
     Type=$(ls ${file}| sed 's/.*Sub//'|sed 's/Haploid.vcf//');
-    ${PRG} -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne -vcf ${file} -id ${indiv} -q1 ${Q1} -chr MT -—dump-internal VCF_temp_haploid_${Type}_${indiv} -f fq -o VCF_${Type}_${indiv};
-    md5sum VCF_${Type}_${indiv}.fq >> MycoBactTest.md5; done; done
+    echo ${file} Type ${Type} indiv ${indiv}; 
+    ../ngsngs -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne -vcf ${file} -id ${indiv} —DumpVCF DumpHa${indiv}_${Type} -q1 ${Q1} -chr MT -f fq -o Haploid_${Type}_${indiv}    
+    md5sum DumpHa${indiv}_${Type}.fa >> MycoBactTest.md5;
+    md5sum Haploid_${Type}_${indiv}.fq >> MycoBactTest.md5;
+    done; done
 
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "7) Testing Single-end, simulating genetic variations, SNP, Insertion and deletions from Diploid vcf files, 
@@ -84,21 +81,23 @@ echo "7) Testing Single-end, simulating genetic variations, SNP, Insertion and d
 echo "---------------------------------------------------------------------------------------------------------------"
 
 for file in $(ls ${VCFDIR}/*Diploid*); do for indiv in {0,1,2}; do 
-    echo ${file} indiv ${indiv}; 
+    echo ${file} Type ${Type} indiv ${indiv}; 
     Type=$(ls ${file}| sed 's/.*Sub//'|sed 's/Diploid.vcf//');
-    ${PRG} -i ${VCFIN} -r 100 -t 1 -s 1 -l 150 -seq SE -ne -vcf ${file} -id ${indiv} -q1 ${Q1} -chr MT -—dump-internal VCF_temp_diploid_${Type}_${indiv} -f fq -o VCF_diploid_${Type}_${indiv};
-    md5sum VCF_diploid_${Type}_${indiv}.fq >> MycoBactTest.md5; done; done
+    ../ngsngs -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne -vcf ${file} -id ${indiv} —DumpVCF DumpDi${indiv}_${Type} -q1 ${Q1} -chr MT -f fq -o Diploid_${Type}_${indiv}    
+    md5sum DumpDi${indiv}_${Type}.fa >> MycoBactTest.md5;
+    md5sum Diploid_${Type}_${indiv}.fq >> MycoBactTest.md5; done; done
 
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "8) Testing Single-end, simulating stochastic variations, insertion or deletions, no error, length file "
 echo "---------------------------------------------------------------------------------------------------------------"
 
-${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.0,0.05,0.0,0.9 -q1 ${Q1} -—dump-indel DelTmp -f fq -o DelOut
-${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.05,0.0,0.9,0.0 -q1 ${Q1} -—dump-indel InsTmp -f fq -o InsOut
+${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.0,0.05,0.0,0.9 -q1 ${Q1} -DumpIndel DelTmp -f fq -o DelOut
+${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.05,0.0,0.9,0.0 -q1 ${Q1} -DumpIndel InsTmp -f fq -o InsOut
 
 md5sum DelOut.fq >> MycoBactTest.md5
 md5sum InsOut.fq >> MycoBactTest.md5
-
+md5sum DelTmp.txt >> MycoBactTest.md5
+md5sum InsTmp.txt >> MycoBactTest.md5
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "--------------------------------------------------- MD5SUM ----------------------------------------------------"
@@ -109,3 +108,4 @@ rm DelTmp.txt
 rm InsTmp.txt
 rm *.fq
 rm *.fa
+rm *.bam
