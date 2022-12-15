@@ -66,7 +66,7 @@ Fragment Length:
 
 Output characteristics:
 -seq | --sequencing: 		 Simulate single-end or paired-end reads.
-	 <SE>	 single-end 
+	 <SE>	 single-end. 
  	 <PE>	 paired-end.
 -f   | --format: 		 File format of the simulated output reads.
 	Nucletide sequence w. different compression levels. 
@@ -83,7 +83,7 @@ Output characteristics:
 ----- Optional -----
 
 Nucleotide Alterations: 
--bcf | -vcf 			 Variant Calling Format (.vcf) or binary format (.bcf)
+-bcf | -vcf: 			 Variant Calling Format (.vcf) or binary format (.bcf)
 -id  | --indiv: 		 Integer value for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).
 -DumpVCF:			 The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided
 				 vcf file, for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.

@@ -42,8 +42,8 @@ int HelpPage(FILE *fp){
 
   fprintf(fp,"\n----- Optional ----- \n");
   fprintf(fp,"\nNucleotide Alterations: \n\n");
-  fprintf(fp,"\t-bcf:| -vcf \t\t\t Variant Calling Format (.vcf) or binary format (.bcf)\n");
-  fprintf(fp,"\t-id: | --indiv: \t\t Integer value for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).\n");
+  fprintf(fp,"\t-bcf | -vcf: \t\t\t Variant Calling Format (.vcf) or binary format (.bcf)\n");
+  fprintf(fp,"\t-id  | --indiv: \t\t Integer value for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).\n");
   fprintf(fp,"\t-DumpVCF:	\t\t The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided vcf file (-vcf|-bcf), for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.\n");
   fprintf(fp,"\t-indel: \t\t Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.\n");
   fprintf(fp,"\t\t <InsProb,DelProb,LambdaIns,LambdaDel> \t e.g. 0.05,0.1,0.1,0.2 \n\n");
