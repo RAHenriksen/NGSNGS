@@ -163,9 +163,9 @@ Line751: 1.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0
 Line752: 1.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00
 ~~~~
 * The first two lines signifies the possible quality scores to be simulated and their corresponding error probability.
-* The remaining lines are seperated into 5 equal regions, i.e 750/5 -> 150. Signifying the number of positions for which a fragment can have simulated nucleotide quality scores. The first 150 lines -> A, next T, then G, then C and finally N.
-* When quality profiles are provided (-q1,-q2), NGSNGS infers the maximum read length given the number of position with corresponding quality scores (number of lines) and creates a readlength limitation (e.g. (752-2)/5 = 150) independent of the fragment length options (-l,-lf,-ld). 
-* To simulate .Fastq the quality profiles needs to be provided. For Sequence-Alignment-Map formats if no quality profile have been provided, then all the quality scores in the nucleotide quality string will be the lowest quality.
+* The remaining lines are seperated into 5 equal regions, i.e 750/5 -> 150. Signifying the number of positions for which a read can have simulated nucleotide quality scores. The first 150 lines -> A, next T, then G, then C and finally N.
+* When quality profiles are provided (-q1,-q2), NGSNGS infers the cycle length given the number of position with corresponding quality scores (number of lines) and creates a read length limitation (e.g. (752-2)/5 = 150) independent of the fragment length options (-l,-lf,-ld). 
+* To simulate .fastq outputs, the quality profiles needs to be provided. For Sequence-Alignment-Map formats if no quality profile have been provided, then all the quality scores in the nucleotide quality string will be the lowest quality.
 * From the error probability depending on the simulated quality score, sequencing errors will be simulated by equally substituting between the remaining three nucleotides. When providing the '-ne' option sequencing error substitution is disabled.
 ### Misincorporation file (-mf)
 This misincorporation file represent the type specific probabilities of any of the bases transitioning to any other nucleotide or not transitioning for every cycle or position of the sequence.
@@ -184,7 +184,7 @@ Line120: 0.003241 	0.015273 	0.019467 	1.000000
 ~~~~
 * The substitution pattern from the misincorporation file, represent the substitution of all four nucleotide with the first half being from from both the 5’ termini and the second half being the 3’ termini of a given fragment. 
 * With a dimension of 120 lines, the first 60 represent substitution frequencies of the first 15 positions within the read given the nucleotide belonging to A,T,G or C and the latter half being the last 15 nucleotides.
-### Fragment length distribution file  (-)
+### Fragment length distribution file (-lf)
 The CDF of the fragment lengths of Ancient DNA.
 ~~~~bash
 35	0.00540914
@@ -201,7 +201,7 @@ The CDF of the fragment lengths of Ancient DNA.
 190	0.9999406784
 191	1
 ~~~~
-* Given the above nucleotide quality profile, those reads with a fragment length above the inferred upper limit of the read length, will have an discrepancy between the read id and the simulated output sequence length. 
+* Given the above nucleotide quality profile, those reads with a fragment length above the inferred the cycle length (150 bp), will have an discrepancy between the read id "length:&lt;Fragmentlength&gt;" and the simulated output sequence length. 
 
 ## MISC
 ### Example of adding an MD tag directly to the simulated bam files which can be added after simulations
