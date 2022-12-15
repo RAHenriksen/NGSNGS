@@ -86,13 +86,13 @@ Nucleotide Alterations:
 -bcf | -vcf 			 Variant Calling Format (.vcf) or binary format (.bcf)
 -id  | --indiv: 		 Integer value for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).
 -DumpVCF:			 The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided
-					 vcf file (-vcf|-bcf), for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.
+				 vcf file, for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.
 
 -indel:				 Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.
 	 <InsProb,DelProb,LambdaIns,LambdaDel>
 	 e.g. 0.05,0.1,0.1,0.2
--DumpIndel:			 The prefix of an internally generated txt file, containing the the read id, number of indels, the number of indel operations saving the position
-					 before and after and length of the indel, simulated read length before and after, see supplementary material for detailed example and description.
+-DumpIndel:			 The prefix of an internally generated text file, containing the the read id, number of indels, the number of indel operations saving the position
+				 before and after and length of the indel, simulated read length before and after, see supplementary material for detailed example and description.
 
 -m | --model:			 Choice of deamination model.
 	 <b,nv,Lambda,Delta_s,Delta_d>  || <briggs,nv,Lambda,Delta_s,Delta_d>	Parameters for the damage patterns using the Briggs model altered to suit modern day library preparation.
@@ -102,7 +102,7 @@ Nucleotide Alterations:
 	 Delta_s: PMD rate in single-strand regions.
 	 Delta_d: PMD rate in double-strand regions.
 	 e.g -m b,0.024,0.36,0.68,0.0097
--dup | --duplicates:	 	Number of PCR duplicates, used in conjunction with briggs modern library prep -m <b,nv,Lambda,Delta_s,Delta_d>
+-dup | --duplicates:	 	 Number of PCR duplicates, used in conjunction with briggs modern library prep -m <b,nv,Lambda,Delta_s,Delta_d>
 <1,2,4>, Default = 1.
 -mf  | --mismatch: 		 Nucleotide substitution frequency file.
 -ne  | --noerror: 		 Disabling the nucleotide substitutions based on nucleotide qualities.
