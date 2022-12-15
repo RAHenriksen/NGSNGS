@@ -59,7 +59,7 @@ Fragment Length:
 -ld  | --lengthdist: 		 Discrete or continuous probability distributions, given their Probability density function, conflicts with -l & -lf option.
 	 <Uni,Min,Max> 		 Uniform distribution from a closed interval given a minimum and maximum positive integer, e.g. Uni,40,180.
 	 <Norm,Mean,Variance> 	 Normal Distribution, given a mean and variance, e.g. Norm,80,30.
-	 <LogNorm,Mean,Variance>  Log-normal Distribution, given a mean and variance, e.g. LogNorm,4,1.
+	 <LogNorm,Mean,Variance> Log-normal Distribution, given a mean and variance, e.g. LogNorm,4,1.
 	 <Pois,Rate> 		 Poisson distribution, given a rate, e.g. Pois,165.
 	 <Exp,Rate> 		 Exponential distribution, given a rate, e.g. Exp,0.025.
 	 <Gamma,Shape,Scale> 	 Gamma distribution, given a shape and scale, e.g. Gam,20,2.
@@ -85,12 +85,12 @@ Output characteristics:
 Nucleotide Alterations: 
 -bcf | -vcf 			 Variant Calling Format (.vcf) or binary format (.bcf)
 -id  | --indiv: 		 Integer value for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).
--DumpVCF:				 The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided vcf file (-vcf|-bcf), for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.
+-DumpVCF:			The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided\n \t\tvcf file (-vcf|-bcf), for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.
 
--indel: Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.
+-indel:			Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.
 	 <InsProb,DelProb,LambdaIns,LambdaDel>
 	 e.g. 0.05,0.1,0.1,0.2
--DumpIndel:			 The prefix of an internally generated txt file, containing the the read id, number of indels, the number of indel operations saving the position before and after and length of the indel, simulated read length before and after, see supplementary material for detailed example and description.
+-DumpIndel:			The prefix of an internally generated txt file, containing the the read id, number of indels, the number of indel operations saving the position\n \t\t before and after and length of the indel, simulated read length before and after, see supplementary material for detailed example and description.
 	 <ReadID,Number of Insertions, Insertion operations, Number of deletions, Deletion operations, Read length before indel, Read length after indel>
 
 -m | --model:			 Choice of deamination model.
@@ -106,7 +106,7 @@ Nucleotide Alterations:
 Read Specific:
 -na  | --noalign: 		 Using the SAM output as a sequence containing without alignment information.
 -cl  | --cycle:			 Read cycle length, the maximum length of sequence reads, if not provided the cycle length will be inferred from quality profiles (q1,q2).
--bl  | --bufferlength:	 Buffer length for generated sequence reads stored in the output files, default = 30000000.
+-bl  | --bufferlength:		Buffer length for generated sequence reads stored in the output files, default = 30000000.
 -chr | --chromosomes: 		 Specific chromosomes from input reference file.
 -a1  | --adapter1: 		 Adapter sequence to add for simulated reads (SE) or first read pair (PE).
 	 e.g. Illumina TruSeq Adapter 1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG 
@@ -142,12 +142,30 @@ e.g.
 @T0_RID49_S0_NZ_CP029543.1:2236795-2236942_length:148_mod1000 F0 R1
 
 S0 is the forward strand and S1 is the reverse strand, mod1000 equals read with sequence error, F0 signifies the first fragment out of 4 possible PCR duplicates, R1 indicate the sequence is read 1 (See supplementary material for detailed description).
+## Fragment length distribution file  (-lf)
+The CDF of the fragment lengths of Ancient DNA.
+~~~~bash
+35	0.00540914
+36	0.01326621
+37	0.02248544
+38	0.03442894
+39	0.04907704
+.
+.
+.
+187	0.9997630062
+188	0.9998814542
+189	0.999920937
+190	0.9999406784
+191	1
+~~~~
+* Given the above nucleotide quality profile, those reads with a fragment length above the inferred upper limit of the read length, will have an discrepancy between the read id and the simulated output sequence length. 
 ## Nucleotide substitution models
 ### Nucleotide quality scores (-q1 and -q2)
 Simulating a .fq or .sam format requires a provided nucleotide quality profile (-q1, -q2) with one example (Test_Examples/AccFreqL150R1.txt) and its structure: 
 ~~~~bash
-Line1: 3	7	16	23	28	34	38	41
-Line2: 0.501187	0.199526	0.025119	0.005012	0.001585	0.000398	0.000158	0.000079
+Line1: 3		7		16		23		28		34		38		41
+Line2: 0.501187		0.199526	0.025119	0.005012	0.001585	0.000398	0.000158	0.000079
 Line3: 5.848056e-07 	5.853904e-04 	2.188810e-02 	2.653555e-02 	1.208910e-01 	1.000000e+00 	0.000000e+00 	0.000000 	
 Line4: 3.960783e-07 	4.626195e-04 	1.261628e-02 	1.813564e-02 	7.776444e-02 	1.000000e+00 	0.000000e+00 	0.000000 
 Line5: 3.450651e-07 	8.071072e-04 	5.794989e-02 	8.024696e-02 	1.755377e-01 	1.000000e+00 	0.000000e+00 	0.000000 	
@@ -167,7 +185,7 @@ Line752: 1.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0
 This misincorporation file represent the type specific probabilities of any of the bases transitioning to any other nucleotide or not transitioning for every cycle or position of the sequence.
 The structure (Test_Examples/MisincorpFile.txt) is similar to that of the nucleotide quality profiles, with the number of bases for which nucleotide substitutions can occur being inferred from the dimension.
 ~~~~bash
-	A				T			G			C
+	A 	 	T 	 	G  		C
 Line1: 0.865434 	0.888339 	0.953086 	1.000000
 Line2: 0.882001 	0.894563 	0.979380 	1.000000
 Line3: 0.915281 	0.932903 	0.983310 	1.000000
@@ -180,37 +198,6 @@ Line120: 0.003241 	0.015273 	0.019467 	1.000000
 ~~~~
 * The substitution pattern from the misincorporation file, represent the substitution of all four nucleotide with the first half being from from both the 5’ termini and the second half being the 3’ termini of a given fragment. 
 * With a dimension of 120 lines, the first 60 represent substitution frequencies of the first 15 positions within the read given the nucleotide belonging to A,T,G or C and the latter half being the last 15 nucleotides.
-### FRAGMENT LENGTH DISTRIBUTIONS
-The CDF of the fragment lengths of Ancient DNA.
-~~~~bash
-35	0.00540914
-36	0.01326621
-37	0.02248544
-38	0.03442894
-39	0.04907704
-.
-.
-.
-187	0.9997630062
-188	0.9998814542
-189	0.999920937
-190	0.9999406784
-191	1
-~~~~
-* Given the above nucleotide quality profile, those reads with a fragment length above the inferred upper limit of the read length, will have an discrepancy between the read id and the simulated output sequence length. 
-## EXAMPLE OF USAGE
-### Simulate Single-end reads, using a provided number of reads, deamination and fragment length distribution using several threads in a .bam format
-~~~~bash
-../ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 2 -s 1 -lf Test_Examples/Size_dist/Size_dist_sampling.txt -seq SE -b 0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut
-~~~~
-### Simulate Paired-end reads, with a desired coverage, without sequencing errors, a fixed fragment length using several threads in a .fq format
-~~~~bash
-./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t1 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut
-~~~~
-### Simulate Single-end reads, using a provided number of reads, a fragment length poisson distribution generating nucleotide substitutions from a misincorporation file in a .fa format 
-~~~~bash
-./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t1 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/MisincorpFile.txt -f fa -o MycoBactFaSEOut
-~~~~
 ## MISC
 ### Example of adding an MD tag directly to the simulated bam files which can be added after simulations
 ~~~~bash
