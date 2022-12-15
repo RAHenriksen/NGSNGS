@@ -85,20 +85,24 @@ Output characteristics:
 Nucleotide Alterations: 
 -bcf | -vcf 			 Variant Calling Format (.vcf) or binary format (.bcf)
 -id  | --indiv: 		 Integer value for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).
--DumpVCF:			The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided\n \t\tvcf file (-vcf|-bcf), for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.
+-DumpVCF:			 The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided
+					 vcf file (-vcf|-bcf), for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.
 
--indel:			Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.
+-indel:				 Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.
 	 <InsProb,DelProb,LambdaIns,LambdaDel>
 	 e.g. 0.05,0.1,0.1,0.2
--DumpIndel:			The prefix of an internally generated txt file, containing the the read id, number of indels, the number of indel operations saving the position\n \t\t before and after and length of the indel, simulated read length before and after, see supplementary material for detailed example and description.
-	 <ReadID,Number of Insertions, Insertion operations, Number of deletions, Deletion operations, Read length before indel, Read length after indel>
+-DumpIndel:			 The prefix of an internally generated txt file, containing the the read id, number of indels, the number of indel operations saving the position
+					 before and after and length of the indel, simulated read length before and after, see supplementary material for detailed example and description.
 
 -m | --model:			 Choice of deamination model.
-  <b,nv,Lambda,Delta_s,Delta_d>  || <briggs,nv,Lambda,Delta_s,Delta_d> \t Parameters for the damage patterns using the Briggs model altered to suit modern day library preparation.
-  \t\t <b7,nv,Lambda,Delta_s,Delta_d> || <briggs07,nv,Lambda,Delta_s,Delta_d>  Parameters for the damage patterns using the Briggs model 2007.
-  \t\t nv: Nick rate pr site. \n \t\t Lambda: Geometric distribution parameter for overhang length.\n \t\t Delta_s: PMD rate in single-strand regions.\n \t\t Delta_d: PMD rate in double-strand regions.
-  \t\t e.g -m b,0.024,0.36,0.68,0.0097
--dup | --duplicates:	 Number of PCR duplicates, used in conjunction with briggs modern library prep -m <b,nv,Lambda,Delta_s,Delta_d>
+	 <b,nv,Lambda,Delta_s,Delta_d>  || <briggs,nv,Lambda,Delta_s,Delta_d>	Parameters for the damage patterns using the Briggs model altered to suit modern day library preparation.
+	 <b7,nv,Lambda,Delta_s,Delta_d> || <briggs07,nv,Lambda,Delta_s,Delta_d>  Parameters for the damage patterns using the Briggs model 2007.
+	 nv: Nick rate pr site.
+	 Lambda: Geometric distribution parameter for overhang length.
+	 Delta_s: PMD rate in single-strand regions.
+	 Delta_d: PMD rate in double-strand regions.
+	 e.g -m b,0.024,0.36,0.68,0.0097
+-dup | --duplicates:	 	Number of PCR duplicates, used in conjunction with briggs modern library prep -m <b,nv,Lambda,Delta_s,Delta_d>
 <1,2,4>, Default = 1.
 -mf  | --mismatch: 		 Nucleotide substitution frequency file.
 -ne  | --noerror: 		 Disabling the nucleotide substitutions based on nucleotide qualities.
@@ -106,7 +110,7 @@ Nucleotide Alterations:
 Read Specific:
 -na  | --noalign: 		 Using the SAM output as a sequence containing without alignment information.
 -cl  | --cycle:			 Read cycle length, the maximum length of sequence reads, if not provided the cycle length will be inferred from quality profiles (q1,q2).
--bl  | --bufferlength:		Buffer length for generated sequence reads stored in the output files, default = 30000000.
+-bl  | --bufferlength:		 Buffer length for generated sequence reads stored in the output files, default = 30000000.
 -chr | --chromosomes: 		 Specific chromosomes from input reference file.
 -a1  | --adapter1: 		 Adapter sequence to add for simulated reads (SE) or first read pair (PE).
 	 e.g. Illumina TruSeq Adapter 1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG 
@@ -142,24 +146,6 @@ e.g.
 @T0_RID49_S0_NZ_CP029543.1:2236795-2236942_length:148_mod1000 F0 R1
 
 S0 is the forward strand and S1 is the reverse strand, mod1000 equals read with sequence error, F0 signifies the first fragment out of 4 possible PCR duplicates, R1 indicate the sequence is read 1 (See supplementary material for detailed description).
-## Fragment length distribution file  (-lf)
-The CDF of the fragment lengths of Ancient DNA.
-~~~~bash
-35	0.00540914
-36	0.01326621
-37	0.02248544
-38	0.03442894
-39	0.04907704
-.
-.
-.
-187	0.9997630062
-188	0.9998814542
-189	0.999920937
-190	0.9999406784
-191	1
-~~~~
-* Given the above nucleotide quality profile, those reads with a fragment length above the inferred upper limit of the read length, will have an discrepancy between the read id and the simulated output sequence length. 
 ## Nucleotide substitution models
 ### Nucleotide quality scores (-q1 and -q2)
 Simulating a .fq or .sam format requires a provided nucleotide quality profile (-q1, -q2) with one example (Test_Examples/AccFreqL150R1.txt) and its structure: 
@@ -198,6 +184,25 @@ Line120: 0.003241 	0.015273 	0.019467 	1.000000
 ~~~~
 * The substitution pattern from the misincorporation file, represent the substitution of all four nucleotide with the first half being from from both the 5’ termini and the second half being the 3’ termini of a given fragment. 
 * With a dimension of 120 lines, the first 60 represent substitution frequencies of the first 15 positions within the read given the nucleotide belonging to A,T,G or C and the latter half being the last 15 nucleotides.
+### Fragment length distribution file  (-)
+The CDF of the fragment lengths of Ancient DNA.
+~~~~bash
+35	0.00540914
+36	0.01326621
+37	0.02248544
+38	0.03442894
+39	0.04907704
+.
+.
+.
+187	0.9997630062
+188	0.9998814542
+189	0.999920937
+190	0.9999406784
+191	1
+~~~~
+* Given the above nucleotide quality profile, those reads with a fragment length above the inferred upper limit of the read length, will have an discrepancy between the read id and the simulated output sequence length. 
+
 ## MISC
 ### Example of adding an MD tag directly to the simulated bam files which can be added after simulations
 ~~~~bash
