@@ -41,25 +41,29 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t-o   | --output: \t\t Prefix of output file name.\n");
 
   fprintf(fp,"\n----- Optional ----- \n");
-  fprintf(fp,"\nNucleotide Alterations: \n\n");
+  fprintf(fp,"\nGenetic Variations: \n\n");
   fprintf(fp,"\t-bcf | -vcf: \t\t\t Variant Calling Format (.vcf) or binary format (.bcf)\n");
-  fprintf(fp,"\t-id  | --indiv: \t\t Integer value for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).\n");
+  fprintf(fp,"\t-id  | --indiv: \t\t Integer value (0 - index) for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).\n");
+  fprintf(fp,"\t\t e.g -id 0\t\t First individual in the provided vcf file.\n");
   fprintf(fp,"\t-DumpVCF:	\t\t The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided vcf file (-vcf|-bcf), for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.\n");
-  fprintf(fp,"\t-indel: \t\t Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.\n");
-  fprintf(fp,"\t\t <InsProb,DelProb,LambdaIns,LambdaDel> \t e.g. 0.05,0.1,0.1,0.2 \n\n");
+  fprintf(fp,"\nStochastic Variations: \n\n");
+  fprintf(fp,"\t-indel: \t\t\t Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.\n");
+  fprintf(fp,"\t\t <InsProb,DelProb,LambdaIns,LambdaDel> \t \n");
+  fprintf(fp,"\t\t Insertions and deletions \t-indel 0.05,0.1,0.1,0.2 \n");
+  fprintf(fp,"\t\t Only Insertions \t\t-indel 0.05,0.0,0.1,0.0 \n");
+  fprintf(fp,"\t\t Only Deletions \t\t-indel 0.0,0.5,0.0,0.9 \n");
   fprintf(fp,"\t-DumpIndel: \t\t The prefix of an internally generated txt file, containing the the read id, number of indels, the number of indel operations saving the position before and after and length of the indel, simulated read length before and after, see supplementary material for detailed example and description.\n");
-  fprintf(fp,"\t\t <ReadID,Number of Insertions, Insertion operations, Number of deletions, Deletion operations, Read length before indel, Read length after indel>\n\n");
-
+  fprintf(fp,"\nPostmortem damage (PMD) - Deamination: \n\n");
   fprintf(fp,"\t-m   | --model: \t\t Choice of deamination model.\n");
   fprintf(fp,"\t\t <b,nv,Lambda,Delta_s,Delta_d>  || <briggs,nv,Lambda,Delta_s,Delta_d> \t Parameters for the damage patterns using the Briggs model altered to suit modern day library preparation.\n");
   fprintf(fp,"\t\t <b7,nv,Lambda,Delta_s,Delta_d> || <briggs07,nv,Lambda,Delta_s,Delta_d>  Parameters for the damage patterns using the Briggs model 2007.\n");
-  fprintf(fp,"\t\t nv: Nick rate pr site. \n \t\t Lambda: Geometric distribution parameter for overhang length.\n \t\t Delta_s: PMD rate in single-strand regions.\n \t\t Delta_d: PMD rate in double-strand regions.\n");
+  fprintf(fp,"\t\t nv: Nick rate per site. \n \t\t Lambda: Geometric distribution parameter for overhang length.\n \t\t Delta_s: PMD rate in single-strand regions.\n \t\t Delta_d: PMD rate in double-strand regions.\n");
   fprintf(fp,"\t\t e.g -m b,0.024,0.36,0.68,0.0097\n\n");
   fprintf(fp,"\t-dup | --duplicates: \t\t Number of PCR duplicates, used in conjunction with briggs modern library prep -m <b,nv,Lambda,Delta_s,Delta_d>\n");
   fprintf(fp,"\t\t <1,2,4> \t\t Default = 1\n"); 
-
+  fprintf(fp,"\nNucleotide Alterations: \n\n");
   fprintf(fp,"\t-mf  | --mismatch: \t\t Nucleotide substitution frequency file.\n");
-  fprintf(fp,"\t-ne  | --noerror: \t\t Disabling the nucleotide substitutions based on nucleotide qualities.\n");
+  fprintf(fp,"\t-ne  | --noerror: \t\t Disabling the sequencing error substitutions based on nucleotide qualities.\n");
   
   fprintf(fp,"\nRead Specific: \n\n");
   fprintf(fp,"\t-na  | --noalign: \t\t Using the SAM output as a sequence container without alignment information.\n");
@@ -73,7 +77,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t-p   | --poly: \t\t\t Create Poly(X) tails for reads, containing adapters with lengths below the inferred readcycle length. \n \t\t e.g -p G or -p A \n");
   fprintf(fp,"\t-q1  | --quality1: \t\t Read Quality profile for single-end reads (SE) or first read pair (PE).\n");
   fprintf(fp,"\t-q2  | --quality2: \t\t Read Quality profile for for second read pair (PE).\n");
-  fprintf(fp,"\nSimulation Specific: \n");
+  fprintf(fp,"\nSimulation Specific: \n\n");
   fprintf(fp,"\t-t   | --threads: \t\t Number of sampling threads, default = 1.\n");
   fprintf(fp,"\t-t2  | --threads2: \t\t Number of compression threads, default = 0.\n");
   fprintf(fp,"\t-s   | --seed: \t\t\t Random seed, default = current calendar time (s).\n");
