@@ -14,7 +14,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\nExample \n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 2 -s 1 -lf Test_Examples/Size_dist_sampling.txt -seq SE -m b,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut\n");
   fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut\n");  
   fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/MisincorpFile.txt -f fa -o MycoBactFaSEOut\n");  
-  fprintf(fp,"\n./ngsngs -i Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 100 -l 150 -seq SE -ne -vcf Test_Examples/ChrMtSubDeletionDiploid.vcf -id 0 -q1 Test_Examples/AccFreqL150R1.txt -chr MT —DumpVCF DeltionInfo -f fq -o MtDeletionOut \n");  
+  fprintf(fp,"\n./ngsngs -i Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 100 -l 150 -seq SE -ne -vcf Test_Examples/ChrMtSubDeletionDiploid.vcf -id 0 -q1 Test_Examples/AccFreqL150R1.txt -chr MT -DumpVCF DeltionInfo -f fq -o MtDeletionOut \n");  
   fprintf(fp,"\n-h   | --help: \t\t\t Print help page.\n");
   fprintf(fp,"\n----- Required ----- \n\n");
   fprintf(fp,"\t-i   | --input: \t\t Reference file in fasta format (.fa,.fasta) to sample reads.\n");
@@ -48,7 +48,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t-DumpVCF:	\t\t The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided vcf file (-vcf|-bcf), for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.\n");
   fprintf(fp,"\nStochastic Variations: \n\n");
   fprintf(fp,"\t-indel: \t\t\t Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.\n");
-  fprintf(fp,"\t\t <InsProb,DelProb,LambdaIns,LambdaDel> \t \n");
+  fprintf(fp,"\t\t <InsProb,DelProb,InsLenProb,InsLenProb> \t \n");
   fprintf(fp,"\t\t Insertions and deletions \t-indel 0.05,0.1,0.1,0.2 \n");
   fprintf(fp,"\t\t Only Insertions \t\t-indel 0.05,0.0,0.1,0.0 \n");
   fprintf(fp,"\t\t Only Deletions \t\t-indel 0.0,0.5,0.0,0.9 \n");

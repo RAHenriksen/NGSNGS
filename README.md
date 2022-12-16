@@ -93,7 +93,7 @@ Genetic Variations:
 Stochastic Variations:
 
 -indel:				 Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.
-	 <InsProb,DelProb,LambdaIns,LambdaDel>
+	 <InsProb,DelProb,InsLenProb,InsLenProb>
 	 Insertions and deletions -indel 0.05,0.1,0.1,0.2
 	 Only Insertions          -indel 0.05,0.0,0.1,0.0
 	 Only Deletions           -indel 0.0,0.5,0.0,0.9 

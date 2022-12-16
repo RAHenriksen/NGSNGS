@@ -204,7 +204,7 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-indel",*argv)==0){
       mypars->Indel = strdup(*(++argv));
     }
-    else if(strcasecmp("—DumpVCF",*argv)==0){
+    else if(strcasecmp("-DumpVCF",*argv)==0){
       mypars->DumpFile = strdup(*(++argv));
     }
     else if(strcasecmp("-DumpIndel",*argv)==0){

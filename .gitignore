@@ -2,8 +2,12 @@
 *.o
 *.fa
 *.fasta
+*.fa.gz
+*.fasta.gz
 *.fastq
 *.fq
+*.fq.gz
+*.fastq.gz
 *.sam
 *.bam
 *.cram
