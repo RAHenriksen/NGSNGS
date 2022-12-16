@@ -48,7 +48,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t-DumpVCF:	\t\t The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided vcf file (-vcf|-bcf), for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.\n");
   fprintf(fp,"\nStochastic Variations: \n\n");
   fprintf(fp,"\t-indel: \t\t\t Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.\n");
-  fprintf(fp,"\t\t <InsProb,DelProb,InsLenProb,InsLenProb> \t \n");
+  fprintf(fp,"\t\t <InsProb,DelProb,InsLenProb,DelLenProb> \t \n");
   fprintf(fp,"\t\t Insertions and deletions \t-indel 0.05,0.1,0.1,0.2 \n");
   fprintf(fp,"\t\t Only Insertions \t\t-indel 0.05,0.0,0.1,0.0 \n");
   fprintf(fp,"\t\t Only Deletions \t\t-indel 0.0,0.5,0.0,0.9 \n");
