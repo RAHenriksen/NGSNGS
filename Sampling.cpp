@@ -207,7 +207,6 @@ void* Sampling_threads(void *arg) {
     int ReadDeam = 0;
     int Groupshift = mrand_pop(rand_alloc)>0.5?0:1; 
     int FragTotal = 4;
-    fprintf(stderr,"Groupshift mrand_pop %d\n",Groupshift);
     int iter = 1; //iterating through all fragments
     if(struct_obj->DoBriggs){
       //fprintf(stderr,"INSIDE NONE BRIGGS BIOTIN MODEL\n");
@@ -328,7 +327,6 @@ void* Sampling_threads(void *arg) {
             SamFlags[0] = 0; // Forward strand
           }
           else if (PE==struct_obj->SeqType){
-            fprintf(stderr,"PE if\n");
             // R1  5' |---R1-->|--FWD------------> 3'
             // R2  3' ------------REV---|<--R2---| 5'
             SamFlags[0] = 97; // Read paired, mate reverse strand, first in pair
@@ -344,7 +342,6 @@ void* Sampling_threads(void *arg) {
             SamFlags[0] = 16;
           }
           else if (PE==struct_obj->SeqType){
-            fprintf(stderr,"PE if\n");
             //R2  5' ------------FWD---|<--R2---| 3'  
             //R1  3' |---R1-->|--REV------------> 5'
             SamFlags[0] = 81;
