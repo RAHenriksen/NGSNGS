@@ -76,7 +76,7 @@ long mrand_pop_long(mrand_t *mr){
     res = rand_r(&mr->rand_r_seed) ;
   }
   else if(mr->type==3){
-    res = jrand48(mr->xsubi);
+    res = abs(jrand48(mr->xsubi));
   }
   else{
     fprintf(stderr,"Random parameter %d is not supported\n",mr->type);
