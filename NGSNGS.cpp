@@ -151,7 +151,7 @@ int main(int argc,char **argv){
       gzclose(gz);
       
       MeanFragLen = sum/n;
-      fprintf(stderr,"MeanFragLen %f\n",MeanFragLen);
+      fprintf(stderr,"\t-> MeanFragLen %f\n",MeanFragLen);
       if (mypars->Length <0){fprintf(stderr,"FIXED SIZE %d",mypars->Length);ErrMsg(5.0);}
       SizeDistType=1;
     }
@@ -320,7 +320,7 @@ int main(int argc,char **argv){
 
     int DeamLength = 0;
     //mypars->nreads/mypars->SamplThreads
-    fprintf(stderr,"Default duplicate value %d\n",mypars->Duplicates);
+    fprintf(stderr,"\t-> Default PCR duplicate value %d\n",mypars->Duplicates);
     ThreadInitialization(mypars->Reference,mypars->SamplThreads,mypars->Glob_seed,mypars->nreads,mypars->OutName,
                       AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->OutFormat,mypars->seq_type,
                       Param,DoBriggs,DoBriggsBiotin,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,readcycle,

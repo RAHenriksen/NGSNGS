@@ -207,7 +207,7 @@ void* Sampling_threads(void *arg) {
     int ReadDeam = 0;
     int Groupshift = mrand_pop(rand_alloc)>0.5?0:1; 
     int FragTotal = 4;
-  
+    fprintf(stderr,"Groupshift mrand_pop %d\n",Groupshift);
     int iter = 1; //iterating through all fragments
     if(struct_obj->DoBriggs){
       //fprintf(stderr,"INSIDE NONE BRIGGS BIOTIN MODEL\n");

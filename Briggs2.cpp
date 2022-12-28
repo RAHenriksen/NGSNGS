@@ -78,9 +78,11 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
   */
 
   for (int i = 0; i<l; i++){
+    //fprintf(stderr,"i<l\n");
     // left 5' overhangs, Thorfinn's DMG pattern is fully dependent on that of Rasmus.
     if (rasmus[i] == 'C' || rasmus[i] == 'c' ){
       double u = mrand_pop(mr);
+      //fprintf(stderr,"Left overhang double u %f\n",u);
       if (u < delta_s){
         IsDeam = 1;
         //fprintf(stderr,"%d i %c %c\n",i,rasmus[i],thorfinn[i]);
@@ -97,9 +99,11 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
     3' GCATATGTATCCGTGATATAGCTGGTGTGAC 5' 
   */
   for (int j = 0; j < r; j++){
+    //fprintf(stderr,"j<r\n");
     // right 5' overhangs, Rasmus's DMG pattern is fully dependent on that of Thorfinn.
     if (thorfinn[L-j-1] == 'C' || thorfinn[L-j-1] == 'c'){
       double u = mrand_pop(mr);
+      //fprintf(stderr,"Rigth overhang double u %f\n",u);
       if (u < delta_s){
         IsDeam = 1;
         thorfinn[L-j-1] = 'T';
@@ -115,7 +119,7 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
     // conditional probability given m.
 
     double u_nick_m = mrand_pop(mr);
-    
+    //fprintf(stderr,"Nick m value %f\n",u_nick_m);
     // the counting starts from 0 rather than one so we shift
     double P_m = nv/((L-l-r-1)*nv+1-nv);
     int p_nick_m = l;
@@ -128,6 +132,7 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
 
     int p_nick_n;
     double u_nick_n = mrand_pop(mr);
+    //fprintf(stderr,"Nick n value %f\n",u_nick_n);
     double CumPn;
   
     // Given m, sampling n
@@ -163,6 +168,7 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
         */
       
         double u = mrand_pop(mr);
+        //fprintf(stderr,"Complicated way %f\n",u);
         if (u < delta){
           //fprintf(stderr,"Inside delta loop %f\n",delta);
           IsDeam = 1;
@@ -185,6 +191,7 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
         */
 
         double u = mrand_pop(mr);
+        //fprintf(stderr,"Complicated way u 2 %f\n",u);
         if (u < delta){
           //fprintf(stderr,"Inside delta loop %f\n",delta);
           IsDeam = 1;
@@ -193,11 +200,12 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
           if (i == (L-1)){C_to_T_counter++;G_to_A_counter++;}
         }
       }
-    
+
       // between the nick with rasmus showing DMG
       else if(i>=L-p_nick_n-1 && i<=p_nick_m && (rasmus[i] == 'C' || rasmus[i] == 'c')){
         if (i == 0){C_total++;G_total++;}
         double u = mrand_pop(mr);
+        //fprintf(stderr,"Complicated way u 3 %f\n",u);
         if (u < delta){
           IsDeam = 1;
           rasmus[i] = 'T'; //Upstream both nicks, DMG patterns are independent
@@ -209,6 +217,7 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
         if (i == (L-1)){C_total++;G_total++;}
         //fprintf(stderr,"i value %d\n",i);
         double u = mrand_pop(mr);
+        //fprintf(stderr,"Complicated way u 4 %f\n",u);
         if (u < delta){
           IsDeam = 1;
           thorfinn[i] = 'T'; //Upstream both nicks, DMG patterns are independent
@@ -216,6 +225,7 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
         }
       }
     }
+    //fprintf(stderr,"For loop done \n");
   }
 
   //Change orientation of Thorfinn to reverse strand
@@ -225,6 +235,7 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
   ReversComplement(rasmus_rev_comp); //TTTTACACACTATACGTTGAGGGCCAGTTCCACTGTC
   ReversComplement(thorfinn_rev_comp); //GACAGTGGAACTGGCCCTCAACGTATAGTGTGTAAAA
 
+  //fprintf(stderr,"SEquences done \n");
   res[0] = rasmus;
   res[1] = thorfinn;
   res[2] = thorfinn_rev_comp;
@@ -248,7 +259,7 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
       if(rasmus_rev_comp[L-1]=='T' || thorfinn[L-1]=='T'){refCTp2++;}
     }
   }
-
+  //fprintf(stderr,"Done with deam\n",pair);
   return IsDeam;
 }
   
