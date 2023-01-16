@@ -19,6 +19,7 @@ typedef struct{
   const char *Ref_input;
   int seed;
   size_t VarNumber;
+  size_t ModulusNo;
   const char* PosFile;
   const char *RefVar_out;
 }argStruct;
@@ -32,7 +33,8 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-v   | --version: \t\t Print help page.\n\n");
   fprintf(fp,"-i   | --input: \t\t Reference genome .fa format\n");
   fprintf(fp,"-s   | --seed: \t\t\t seed for random generators\n");
-  fprintf(fp,"-n   | --number: \t\t Number of stochastic variations to be included in the input reference\n");
+  fprintf(fp,"-n   | --number: \t\t Number of stochastic variations to be included in the input reference, conflicts with -m|--modulus\n");
+  fprintf(fp,"-m   | --modulus: \t\t Every N'th position to be altered, conflicts with -n|--number\n");
   fprintf(fp,"-p   | --pos: \t\t\t Internal txt file with chromomsomal coordinate for the incorporated variations\n");
   fprintf(fp,"-o   | --output: \t\t Altered reference genomes saved as .fa\n");
   exit(1);
@@ -45,6 +47,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Ref_input = NULL;
   mypars->seed = 0;
   mypars->VarNumber = 0;
+  mypars->ModulusNo = 0;
   mypars->PosFile = NULL;
   mypars->RefVar_out = NULL;
   ++argv;
@@ -58,6 +61,9 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-n",*argv)==0 || strcasecmp("--number",*argv)==0){
       mypars->VarNumber = atol(*(++argv));
+    }
+    else if(strcasecmp("-m",*argv)==0 || strcasecmp("--modulus",*argv)==0){
+      mypars->ModulusNo = atol(*(++argv));
     }
     else if(strcasecmp("-p",*argv)==0 || strcasecmp("--pos",*argv)==0){
       mypars->PosFile = strdup(*(++argv));
@@ -88,6 +94,7 @@ int Reference_Variant(int argc,char **argv){
       const char* RefVar_out = mypars->RefVar_out;
       int seed = mypars->seed;
       size_t var_operations = mypars->VarNumber;
+      size_t ModulusNo = mypars->ModulusNo;
       const char* Coord_file = mypars->PosFile;
       const char* SubsetChr = NULL;
       
@@ -103,22 +110,60 @@ int Reference_Variant(int argc,char **argv){
       FILE *fp;
 	    fp = fopen(Coord_file, "w");
 
-      for (int i = 0; i < var_operations;){
-        rand_val = mrand_pop_long(mr);
-        int pos = (int)(abs(rand_val) % fs->seqs_l[chr_idx]);
-        //fprintf(stderr,"Random value %d with seed %d \t %ld \t and position %d\n",i,seed,rand_val,pos);
-        if (fs->seqs[chr_idx][pos] != 'N'){  
-          char previous = fs->seqs[chr_idx][pos];
-          fs->seqs[chr_idx][pos] = bases[(int)(mrand_pop_long(mr) %4)];
-          char altered = fs->seqs[chr_idx][pos];
-          fprintf(fp,"Chromosome \t %s \t length %d \t position \t %d \t original \t %c \t altered \t %c\n",fs->seqs_names[chr_idx],fs->seqs_l[chr_idx],pos,previous,altered);
-          i++;
-        }
-        else
-        {
-          continue;
+      if(var_operations > 0){
+        for (int i = 0; i < var_operations;){
+          rand_val = mrand_pop_long(mr);
+          int pos = (int)(abs(rand_val) % fs->seqs_l[chr_idx]);
+          //fprintf(stderr,"Random value %d with seed %d \t %ld \t and position %d\n",i,seed,rand_val,pos);
+          if (fs->seqs[chr_idx][pos] != 'N'){  
+            char previous; 
+            previous = fs->seqs[chr_idx][pos];
+            char altered;
+            altered = bases[(int)(mrand_pop_long(mr) %4)];
+            
+            while(previous == altered){
+              altered = bases[(int)(mrand_pop_long(mr) %4)];
+            }
+            fs->seqs[chr_idx][pos] = altered;
+
+            fprintf(fp,"Chromosome \t %s \t length %d \t position \t %d \t original \t %c \t altered \t %c\n",fs->seqs_names[chr_idx],fs->seqs_l[chr_idx],pos,previous,altered);
+            i++;
+          }
+          else
+          {
+            continue;
+          }
         }
       }
+      else if(ModulusNo > 0){
+        for (size_t moduluspos = 0; moduluspos <= fs->seqs_l[fs->nref-1];moduluspos++){
+          if (moduluspos % ModulusNo == 0){
+            //fprintf(stderr,"check %lu \t %c\n",moduluspos,fs->seqs[chr_idx][moduluspos]);
+            if (fs->seqs[chr_idx][moduluspos] != 'N'){
+              char previous; 
+              previous = fs->seqs[chr_idx][moduluspos];
+              char altered;
+              altered = bases[(int)(mrand_pop_long(mr) %4)];
+              
+              while(previous == altered){
+                //fprintf(stderr,"Chromosome \t %s \t length %d \t position \t %d \t original \t %c \t altered \t %c\n",fs->seqs_names[chr_idx],fs->seqs_l[chr_idx],moduluspos,previous,altered);
+                altered = bases[(int)(mrand_pop_long(mr) %4)];
+                //fprintf(stderr,"Chromosome \t %s \t length %d \t position \t %d \t original \t %c \t altered \t %c\n",fs->seqs_names[chr_idx],fs->seqs_l[chr_idx],moduluspos,previous,altered);
+              }
+              fs->seqs[chr_idx][moduluspos] = altered;
+              fprintf(fp,"Chromosome \t %s \t length %d \t position \t %d \t original \t %c \t altered \t %c\n",fs->seqs_names[chr_idx],fs->seqs_l[chr_idx],moduluspos,previous,altered);
+            }
+          }
+          else
+          {
+            continue;
+          }
+        }
+      }
+      else if(ModulusNo > 0 && var_operations > 0){
+        fprintf(stderr,"Only use either -n or -m");exit(0);
+      }
+
       fclose(fp);
       snprintf(buf,1024,"%s_ngsngs",fs->seqs_names[chr_idx]);
       fs->seqs_names[fs->nref-1] = strdup(buf);
