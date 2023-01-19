@@ -128,7 +128,7 @@ void* Sampling_threads(void *arg) {
       maxbases = fraglength;
 
     //get shallow copy of chromosome, offset into, is defined by posB, and posE
-    //fprintf(stderr,"new read \n beg %d end %d fragleng %d max %d \n",posB,posE,fraglength,maxbases);
+    //fprintf(stderr,"------------ \nnew read \n beg %d end %d fragleng %d max %d \n",posB,posE,fraglength,maxbases);
     char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength);
     //extracting a biological fragment of the reference genome
     //fprintf(stderr,"beg %d end %d len: %lu frag %lu \n",posB,posE,strlen(chrseq),fraglength);
@@ -295,7 +295,11 @@ void* Sampling_threads(void *arg) {
       if(PE==struct_obj->SeqType)
         strncpy(seq_r2,FragRes[FragNo]+(fraglength-maxbases),maxbases);
     
+      //fprintf(stderr,"FRAGMENT SEQUENCE %s  length %d \n ADN READ SEQUENCE %s   %d\n",FragmentSequence,strlen(FragmentSequence),seq_r1,strlen(seq_r1));
       //Remove reads which are all N? In this code we remove both pairs if both reads are all N
+      // generating sam output information
+      int seqlen = strlen(seq_r1);
+
       int skipread = 1;
       for(int i=0;skipread&&i<(int)strlen(seq_r1);i++)
         if(seq_r1[i]!='N')
@@ -305,11 +309,14 @@ void* Sampling_threads(void *arg) {
         if(seq_r2[i]!='N')
         skipread = 0;
       
-      if(skipread==1)
+      if(skipread==1){
+        memset(qual_r1, 0, sizeof qual_r1); 
+        memset(qual_r2, 0, sizeof qual_r2);
+        memset(seq_r1, 0, sizeof seq_r1);
+        memset(seq_r2, 0, sizeof seq_r2);
         continue;
+      }
     
-      // generating sam output information
-      int seqlen = strlen(seq_r1);
 
       if(strlen(seq_r1) < 20)
         continue;
@@ -436,6 +443,7 @@ void* Sampling_threads(void *arg) {
       }
       //now seq_r1 and seq_r2 is completely populated let is build qualscore if
       //saving both fasta and adapter to fasta format
+      //fprintf(stderr,"READ ID %s \nSEQUENCE \n%s\n and strlen %d \n",READ_ID,seq_r1,strlen(seq_r1));
       if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
         sprintf(READ_ID+strlen(READ_ID),"%d F%d",0,FragNo);
         ksprintf(fqs[0],">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
@@ -445,13 +453,15 @@ void* Sampling_threads(void *arg) {
       else{
         // Fastq and Sam needs quality scores
         //if(strandR1==0){fprintf(stderr,"----------\nSEQUENCE \n%s\n",seq_r1);}//int ntcharoffset
+        //fprintf(stderr,"INSIDE FQ AND SAM \nREAD ID %s \nSEQUENCE \n%s\n and strlen %d \n",READ_ID,seq_r1,strlen(seq_r1));
         has_seqerr = sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
         //if(strandR1==0){fprintf(stderr,"%s\n",seq_r1);}
         if (PE==struct_obj->SeqType)
           has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
         
         sprintf(READ_ID+strlen(READ_ID),"%d F%d",has_seqerr,FragNo);
-        
+        //fprintf(stderr,"----------\nREAD ID %s \nSEQUENCE \n%s\n",READ_ID,seq_r1);
+
         //write fq if requested
         if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){
           ksprintf(fqs[0],"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);

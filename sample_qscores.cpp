@@ -106,8 +106,8 @@ int sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *Nt
       //std::cout << phred2Prob[qscore] << " X " << " qscore i " << qscores[i] << " " << phred2Prob[qscores[i]-33] << std::endl;
       //phred2Prob[qscores[i]-33]
       if ( tmprand < phred2Prob[qscores[i]-ntcharoffset]){
-        /*fprintf(stderr,"SIMULATION ERROR \n");
-        std::cout << phred2Prob[qscore]<< std::endl;
+        /*fprintf(stderr,"SIMULATION ERROR sequence length %d\n",len);
+        std::cout << phred2Prob[qscores[i]]<< std::endl;
         std::cout << bases[i] << std::endl;*/
         int outbase=(int)floor(4.0*phred2Prob[qscores[i]-ntcharoffset]*tmprand);//DRAGON
         while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
@@ -123,11 +123,11 @@ int sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *Nt
 
 #ifdef __WITH_MAIN__
 int main(int argc, char **argv){
-  const char *profile_fname = "Test_Examples/Qual_profiles/AccFreqL150R1.txt";
+  const char *profile_fname = "Test_Examples/AccFreqL150R1.txt";
   char ntquals[1024];
   double errorArray[1024];
-  int maxreadcycles;
-  ransampl_ws ***ws = ReadQuality(ntquals,errorArray,33,profile_fname,maxreadcycles);
+  int maxreadcycles = 150;
+  ransampl_ws ***ws = ReadQuality(ntquals,errorArray,33,profile_fname);
   mrand_t *mr = mrand_alloc(3,88);
   char bases[30];
   char qscores[30];
@@ -138,8 +138,10 @@ int main(int argc, char **argv){
     bases[i] = intToRef[(int)floor(drand48()*4)];
     std::cout << " i " << i << " bases " << bases[i] << std::endl;
   }
-  sample_qscores(bases,qscores,30,ws,ntquals,mr,0);
+  sample_qscores(bases,qscores,30,ws,ntquals,mr,0,0);
+  //sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
   fprintf(stderr,"@readname\n%s\n+\n%s\n",bases,qscores);
+  //gtggTAGAGATAAAGCACATTCTTTAGGAGTGAATATGGNNTNNCTGCNCGCANANTGNNATTGNNTTGCNNNTNNANCGNNNCNNTNNNGNTTNGCNACAGCNANGNNA
   return 0;
 }
 #endif
