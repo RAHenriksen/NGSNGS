@@ -1,4 +1,4 @@
- # [![make](https://github.com/RAHenriksen/NGSNGS/actions/workflows/make.yml/badge.svg)](https://github.com/RAHenriksen/NGSNGS/actions/workflows/make.yml) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7558513.svg)](https://doi.org/10.5281/zenodo.7558513) [![DOI:<10.1093/bioinformatics/btad041>](http://img.shields.io/badge/DOI-<10.1093/bioinformatics/btad041>-B31B1B.svg)](https://doi.org/10.1093/bioinformatics/btad041) https://img.shields.io/badge/<version>-<0.9.0, 20th Jan 2023>-<9cf>
+ # [![make](https://github.com/RAHenriksen/NGSNGS/actions/workflows/make.yml/badge.svg)](https://github.com/RAHenriksen/NGSNGS/actions/workflows/make.yml) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7558513.svg)](https://doi.org/10.5281/zenodo.7558513) [![DOI:<10.1093/bioinformatics/btad041>](http://img.shields.io/badge/DOI-<10.1093/bioinformatics/btad041>-B31B1B.svg)](https://doi.org/10.1093/bioinformatics/btad041)
 
 # NEXT GENERATION SIMULATOR FOR NEXT GENERATION SEQUENCING DATA
 Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen \
