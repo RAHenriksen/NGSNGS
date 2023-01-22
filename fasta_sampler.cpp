@@ -22,7 +22,6 @@ void fasta_sampler_setprobs(fasta_sampler *fs){
   fs->seq_l_total =0;
   for(int i=0;i<fs->nref;i++){
     fs->seq_l_total += fs->seqs_l[i];
-    //    fprintf(stderr,"Total length %d\t%zu\n",i,fs->seq_l_total);
   }
   for(int i=0;i<fs->nref;i++)
     p[i] = ((double) fs->seqs_l[i])/fs->seq_l_total;
@@ -69,9 +68,7 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
     for(int i=0;i<fs->nref;i++){
       fs->seqs_names[i] = strdup(faidx_iseq(fs->fai,i));
       fs->char2idx[fs->seqs_names[i]] = i;
-      // fs->seqs_l[i] = faidx_seq_len(fs->fai,fs->seqs_names[i]);
       fs->seqs[i] = fai_fetch(fs->fai,fs->seqs_names[i],fs->seqs_l+i);
-      //  fprintf(stderr,"%d)\tchr:%s\tlen:%d\n",i,fs->seqs_names[i],fs->seqs_l[i]);
     }
   else{
     int at = 0;
@@ -111,7 +108,6 @@ char *sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &p
   if(posE>=fs->seqs_l[chr_idx]){
     posE=fs->seqs_l[chr_idx];
     posB=posE-fraglength;
-    //fraglength = posE-posB;
   }
   char *ret =fs->seqs[chr_idx]; 
   chr_idx = fs->realnameidx[chr_idx];
@@ -130,11 +126,11 @@ void dump_internal(fasta_sampler *fs,const char* filename){
   int bgzf_buf = 256;
   const char* mode = "wu";
 
-  bgzf_fp[0] = bgzf_open(filename,mode); //w
-  bgzf_mt(bgzf_fp[0],mt_cores,bgzf_buf); //
+  bgzf_fp[0] = bgzf_open(filename,mode);
+  bgzf_mt(bgzf_fp[0],mt_cores,bgzf_buf);
   
   for(int i=0;i<fs->nref;i++){
-    ksprintf(fa_s[0],">%s\n%s\n",fs->seqs_names[i],fs->seqs[i]);//make this into read
+    ksprintf(fa_s[0],">%s\n%s\n",fs->seqs_names[i],fs->seqs[i]);
   }
   
   assert(bgzf_write(bgzf_fp[0],fa_s[0]->s,fa_s[0]->l)!=0);
@@ -156,9 +152,7 @@ void fasta_sampler_destroy(fasta_sampler *fs){
   delete [] fs->seqs_l;
   delete [] fs->seqs;
   delete [] fs->realnameidx;
-  //  fprintf(stderr,"size.of ploidmap: %lu",fs->pldmap.size());
   for(ploidymap::iterator it=fs->pldmap.begin();it!=fs->pldmap.end();it++){
-    //fprintf(stderr,"asdfasdfasdfasddfdasdfasdfas");
     delete [] it->second;
   }
   ransampl_free(fs->ws);
@@ -168,14 +162,13 @@ void fasta_sampler_destroy(fasta_sampler *fs){
 #ifdef __WITH_MAIN__
 int main(int argc,char**argv){
 
-  const char* SubsetChr = NULL;// = "chr12,chr14,chr15";
+  const char* SubsetChr = NULL;
       
 
   int seed = 101;
   mrand_t *mr = mrand_alloc(3,seed);
-  char ref[] = "/willerslev/users-shared/science-snm-willerslev-wql443/WP1/NGSNGS/Test_Examples/Mycobacterium_leprae.fa.gz";//"/projects/lundbeck/scratch/wql443/reference_files/Hg19/chr10_15.fa";
+  char ref[] = "Test_Examples/Mycobacterium_leprae.fa.gz";
   fasta_sampler *fs = fasta_sampler_alloc(ref,SubsetChr);
-  //fasta_sampler *fs = fasta_sampler_alloc("Test_Examples/fire.fa");
   
   char *chr; //this is an unallocated pointer to a chromosome name, eg chr1, chrMT etc
   int chr_idx;
@@ -196,4 +189,4 @@ int main(int argc,char**argv){
   return 0;
 }
 #endif
-//g++ fasta_sampler.cpp mrand.o RandSampling.o /projects/lundbeck/scratch/wql443/WP1/htslib/libhts.a -std=c++11 -lz -lm -lbz2 -llzma -lpthread -lcurl -lcrypto -D__WITH_MAIN__ -o Fatest
+//g++ fasta_sampler.cpp mrand.o RandSampling.o htslib/libhts.a -std=c++11 -lz -lm -lbz2 -llzma -lpthread -lcurl -lcrypto -D__WITH_MAIN__ -o fasta

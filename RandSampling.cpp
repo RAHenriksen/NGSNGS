@@ -34,7 +34,7 @@ ransampl_ws* ransampl_alloc( int n )
          !(ws->alias = (int*) malloc( n*sizeof(int) )) ||
          !(ws->prob = (double*) malloc( n*sizeof(double) )) ) {
         fprintf( stderr, "ransampl: workspace allocation failed\n" );
-        exit(ENOMEM); // ENOMEM
+        exit(ENOMEM);
     }
     ws->n = n;
     return ws;
@@ -111,7 +111,6 @@ void ransampl_set( ransampl_ws *ws, const double* p )
 int ransampl_draw2( ransampl_ws *ws,double r1, double r2)
 {   
     int i = (int) (ws->n * r1);
-    //fprintf(stdout,"inside ransampl draw %lf\t%lf \t %d\n",r1,r2,i);
     //fflush(stdout);
     return r2 < ws->prob[i] ? i : ws->alias[i];
 }

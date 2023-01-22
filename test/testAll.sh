@@ -70,7 +70,7 @@ echo "--------------------------------------------------------------------------
 for file in $(ls ${VCFDIR}/*Haploid*); do for indiv in {0,1,2}; do 
     Type=$(ls ${file}| sed 's/.*Sub//'|sed 's/Haploid.vcf//');
     echo ${file} Type ${Type} indiv ${indiv}; 
-    ../ngsngs -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne -vcf ${file} -id ${indiv} —DumpVCF DumpHa${indiv}_${Type} -q1 ${Q1} -chr MT -f fq -o Haploid_${Type}_${indiv}    
+    ../ngsngs -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne -vcf ${file} -id ${indiv} -DumpVCF DumpHa${indiv}_${Type} -q1 ${Q1} -chr MT -f fq -o Haploid_${Type}_${indiv}    
     md5sum DumpHa${indiv}_${Type}.fa >> MycoBactTest.md5;
     md5sum Haploid_${Type}_${indiv}.fq >> MycoBactTest.md5;
     done; done
@@ -83,7 +83,7 @@ echo "--------------------------------------------------------------------------
 for file in $(ls ${VCFDIR}/*Diploid*); do for indiv in {0,1,2}; do 
     echo ${file} Type ${Type} indiv ${indiv}; 
     Type=$(ls ${file}| sed 's/.*Sub//'|sed 's/Diploid.vcf//');
-    ../ngsngs -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne -vcf ${file} -id ${indiv} —DumpVCF DumpDi${indiv}_${Type} -q1 ${Q1} -chr MT -f fq -o Diploid_${Type}_${indiv}    
+    ../ngsngs -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne -vcf ${file} -id ${indiv} -DumpVCF DumpDi${indiv}_${Type} -q1 ${Q1} -chr MT -f fq -o Diploid_${Type}_${indiv}    
     md5sum DumpDi${indiv}_${Type}.fa >> MycoBactTest.md5;
     md5sum Diploid_${Type}_${indiv}.fq >> MycoBactTest.md5; done; done
 

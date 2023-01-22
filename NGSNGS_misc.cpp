@@ -63,27 +63,24 @@ void ReversComplement(char seq[]){
 
   char seq_intermediate[1024] = {0};
   strcpy(seq_intermediate,seq);
-  //fprintf(stderr,"SEQUENCE \t\t%s\n",seq_intermediate);
   int seqlen = strlen(seq);
   //Complementing sequence
   for(int i=0;i<seqlen;i++){
     seq_intermediate[i] = NtComp[refToInt[(unsigned char) seq_intermediate[i]]]; //warning: array subscript has type 'char' [-Wchar-subscripts]
   }
-  //fprintf(stderr,"COMP SEQUENCE \t\t%s\n",seq_intermediate);
 
   //reverse complement
   for(int i=seqlen-1;i>-1;i--){
     seq[seqlen-i-1] = seq_intermediate[i];
   }
-  //just to ensure no issues arise in case of not clearing out the intermediate sequence
+  //Clearing out the intermediate sequence
   memset(seq_intermediate, 0, sizeof seq_intermediate);
 }
 
 void Complement(char seq[]){
-  // generates the reverse complementary sequence from an input sequence
+  // generates the complementary sequence from an input sequence
   char seq_intermediate[1024] = {0};
   strcpy(seq_intermediate,seq);
-  //fprintf(stderr,"SEQUENCE \t\t%s\n",seq_intermediate);
   int seqlen = strlen(seq);
   //Complementing sequence
   for(int i=0;i<seqlen;i++){
@@ -91,7 +88,7 @@ void Complement(char seq[]){
     seq[i] = seq_intermediate[i];
   }
 
-  //just to ensure no issues arise in case of not clearing out the intermediate sequence
+  //Clearing out the intermediate sequence
   memset(seq_intermediate, 0, sizeof seq_intermediate);
 }
 

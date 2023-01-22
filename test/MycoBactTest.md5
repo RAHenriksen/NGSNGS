@@ -1,4 +1,4 @@
-eca66aac7ec328a992fa446bd49bbde8  MycoBactBamSEOutSort.bam
+fd1ee7a56b700d402c49f066e567620a  MycoBactBamSEOutSort.bam
 40782bc97374e6791d25155abe1df8b2  MycoBactFqPEOut_R1.fq
 013d684e914290eeda8a965f0b0b2b6c  MycoBactFqPEOut_R2.fq
 f26ae195a885b81f47ab729cae867132  MycoBactFaSEOut.fa
@@ -42,5 +42,5 @@ ab7e078436515323dcd317c8e34752aa  DumpDi2_SNP.fa
 d53f48b796177d0f71c2eabc0fe9e6f5  Diploid_SNP_2.fq
 428e7d76270ec18c5d9b59cc60d1bd3f  DelOut.fq
 f1506b26b05ad8b29f93748fd67c6251  InsOut.fq
-fcbf53b813f9b9d42ad7b028ac0fab6e  DelTmp.txt
-b39365240cec0a6c71a255f139bbd6f1  InsTmp.txt
+9b0d4b5cace80c5b669f0d87d4562b9b  DelTmp.txt
+b4de9b6c09542d8f6e2773a897cc1518  InsTmp.txt

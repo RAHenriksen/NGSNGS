@@ -19,8 +19,6 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
   for(int qscore =0 ;qscore<256;qscore++){
     double d = qscore;
     phred2Prob[qscore] = pow(10,((-d)/10));
-    //fprintf(stderr,"qscore prob cal %lf \t %lf\n",qscore,phred2Prob[qscore]);
-    //std::cout << qscore << " " << phred2Prob[qscore] << std::endl;
   }
   ransampl_ws ***dists = new ransampl_ws**[5];
 
@@ -32,9 +30,7 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
     all_lines.push_back(strdup(buf));
   gzclose(gz);
 
-  //fprintf(stderr,"All lines: %lu\n",all_lines.size());
-
-  int readcycle = (all_lines.size()-2)/5; //all_lines.size()-1
+  int readcycle = (all_lines.size()-2)/5;
 
   //loop over inputdata
   int nbins = -1;
@@ -43,7 +39,7 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
     dists[b] = new ransampl_ws *[readcycle];
     for(int pos = 0 ; pos<readcycle;pos++){
       int at = 0;
-      probs[at++] = atof(strtok(all_lines[2+b*readcycle+pos],"\n\t ")); //1+b*readcyclelength+pos
+      probs[at++] = atof(strtok(all_lines[2+b*readcycle+pos],"\n\t "));
       char *tok = NULL;
       while(((tok=strtok(NULL,"\n\t ")))){
 	      probs[at++] = atof(tok);
@@ -51,7 +47,6 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
       }
       if(nbins==-1){
 	      nbins = at;
-	      //fprintf(stderr,"Number of qualities/bins in inputfile: %d\n",nbins);
       }
       if(nbins!=at){
 	      fprintf(stderr,"Problems, number of columns is different nbins: %d at: %d\n",nbins,at);
@@ -61,25 +56,20 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
       ransampl_set(dists[b][pos],probs);
     }
   }
-  //fprintf(stderr,"\t-> ransampl_ws done\n");
 
-  //printf(all_lines[0]);
   int qualidx = 1;
   //extract the first token
   ntqual[0] = (char) (atoi(strtok(all_lines[0],"\n\t "))+ntcharoffset);
   char *qualtok = NULL;
   //extract the next
   while(((qualtok=strtok(NULL,"\n\t ")))){ntqual[qualidx++] = (char) (atoi(qualtok)+ntcharoffset);}
-  //std::cout << "nt qual" << ntqual[1] << std::endl;
   int Err_idx = 1;
   ErrProb[0] = atof(strtok(all_lines[1],"\n\t"));
   char *Errtok = NULL;
   while ((Errtok=strtok (NULL,"\n\t"))){ErrProb[Err_idx++] = (double) atof(Errtok);}
-  //std::cout << "error prob " << ErrProb[1] << std::endl;
 
   //strdup function allocate necessary memory to store the sourcing string implicitly, i need to free the returned string
   for (unsigned long i = 0; i < all_lines.size(); i++){free(all_lines[i]);}
-  //fprintf(stderr,"\t-> Before return in READQUAL FUNC\n");
   return dists;
 }
 int sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *NtQuals,mrand_t *mr,int simError, int ntcharoffset){
@@ -89,31 +79,19 @@ int sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *Nt
     double dtemp2 = mrand_pop(mr);
     
     char inbase = refToInt[bases[i]];
-    //fprintf(stdout,"dtemp %lf\t%lf\n",dtemp1,dtemp2);
-    //fflush(stdout);
+
     int qscore_idx =  ransampl_draw2(ws[inbase][i],dtemp1,dtemp2);//ransampl_draw2(ws[inbase][i],1,1); //ransampl_draw2(ws[inbase][i],dtemp1,dtemp2);
-    //fprintf(stderr,"qscore_idx %d \n",qscore_idx);
-    //fprintf(stderr,"DID NOT FAIL HURRA TK HAPPY \n");
-    //std::cout << qscore << std::endl;
+
     qscores[i] = NtQuals[qscore_idx];
-    //std::cout << " qscore" << qscore_idx << " " << qscores[i]<<std::endl;
-    //std::cout << " qscore " << qscores << " qscore i " << qscores[i] << " phred2prob " << phred2Prob[qscore] << std::endl; 
     if (simError){
-      //fprintf(stderr,"PERFORMING SEQUENCING SUBSITUTIONS\n");
-      //fprintf(stderr,"ntcharoffset %d\n",ntcharoffset);
+
       double tmprand = mrand_pop(mr);
-      //std::cout << phred2Prob[qscore] << std::endl;
-      //std::cout << phred2Prob[qscore] << " X " << " qscore i " << qscores[i] << " " << phred2Prob[qscores[i]-33] << std::endl;
-      //phred2Prob[qscores[i]-33]
       if ( tmprand < phred2Prob[qscores[i]-ntcharoffset]){
-        /*fprintf(stderr,"SIMULATION ERROR sequence length %d\n",len);
-        std::cout << phred2Prob[qscores[i]]<< std::endl;
-        std::cout << bases[i] << std::endl;*/
+
         int outbase=(int)floor(4.0*phred2Prob[qscores[i]-ntcharoffset]*tmprand);//DRAGON
         while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
 	      bases[i] = intToRef[outbase];
         seq_err = 1;
-        //std::cout << bases[i] << std::endl;
       }
     }
   }
@@ -139,7 +117,6 @@ int main(int argc, char **argv){
     std::cout << " i " << i << " bases " << bases[i] << std::endl;
   }
   sample_qscores(bases,qscores,30,ws,ntquals,mr,0,0);
-  //sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
   fprintf(stderr,"@readname\n%s\n+\n%s\n",bases,qscores);
   //gtggTAGAGATAAAGCACATTCTTTAGGAGTGAATATGGNNTNNCTGCNCGCANANTGNNATTGNNTTGCNNNTNNANCGNNNCNNTNNNGNTTNGCNACAGCNANGNNA
   return 0;

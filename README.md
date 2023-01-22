@@ -6,7 +6,11 @@ Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen \
 Contact: rasmus.henriksen@sund.ku.dk
 
 ## VERSION
-Master branch represent a stable version of NGSNGS, and the development branch represent a newer and faster branch which eventually will become the master branch.
+Next Generation Simulator for Next Generator Sequencing Data version 0.9.0, 
+
+This article was [published](https://academic.oup.com/bioinformatics/advance-article/doi/10.1093/bioinformatics/btad041/6994180) in Oxford Academics as an application note the 20th of January 2023.
+
+NGSNGS is a new program, therefore we are very interested in feedback to solve potential problems, as well as ideas for improvements or additions to specific and relevant features.
 
 ## INSTALLATION & REQUIREMENTS
 * Use local installation of htslib
@@ -25,11 +29,35 @@ cd NGSNGS; make
 
 **NOTE:** Newer version of htslib which includes bam_set1 is required
 
+## QUICK TUTORIAL
+Examples of which parameters to include depending on the desired simulations
+### simulate 1000 reads (-r) from human hg19.fa (-i), generate compressed fq.gz (-f), single end (-seq), make program use 2 threads (-t)
+~~~~bash
+./ngsngs -i hg19.fa -r 1000 -f fq -l 100 -seq se -t 1 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
+~~~~
+### generate bam (-f), paired end (-seq), variable fragment length (-ld norm,350,20) but fixed readlength (-cl 100)
+~~~~bash
+./ngsngs -i hg19.fa -r 1000 -f bam -ld norm,350,20 -cl 100 -seq pe -t 1 -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -o HgSim
+~~~~
+### Disable platform specific errors (-ne), adding deamination pattern with Briggs 2007 model (-m b7,...), with ancient fragment length distribution (-lf), using seed 4 (-s)
+~~~~bash
+./ngsngs -i hg19.fa -r 1000 -f fq -s 4 -ne -lf Test_Examples/Size_dist_sampling.txt -seq se -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
+~~~~
+### Paired end reads, inferred cycle length from (-q1) to be 150, fragment length (-l) 400, inner distance of 100 (400-150*2)  
+~~~~bash
+./ngsngs -i hg19.fa -r 1000 -f fq -l 400 -seq pe -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R1.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -o HgSim
+~~~~
+### Single end reads, adapter sequence (-a1) and poly-G tail (-p)
+~~~~bash
+./ngsngs -i hg19.fa -r 1000 -f fq -l 80 -seq se -q1 Test_Examples/AccFreqL150R1.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -p G -o HgSim
+~~~~
+NB! the adapter sequences are only concatenated to the reads, if the inferred cycle length from quality profiles is greater than the fragment length, the poly-X tail is only added if the sequence with adapter length is still below the cycle length (Cycle length - fragment length - adapter length = 150 - 80 - 65 = 5).
+
 ## GENERAL
-Next Generation Simulator for Next Generator Sequencing Data version 0.5.0 
+Next Generation Simulator for Next Generator Sequencing Data version 0.9.0 
 
 ~~~~bash
-Next Generation Simulator for Next Generator Sequencing Data version 0.5.0 
+Next Generation Simulator for Next Generator Sequencing Data version 0.9.0 
 
 Usage
 ./ngsngs [options] -i <input_reference.fa> -r/-c <Number of reads or depth of coverage> -l/-lf/-ld <fixed length, length file or length distribution> -seq <SE/PE> -f <output format> -o <output name prefix>
@@ -214,10 +242,27 @@ The CDF of the fragment lengths of Ancient DNA.
 ~~~~
 * Given the above nucleotide quality profile, those reads with a fragment length above the inferred the cycle length (150 bp), will have an discrepancy between the read id "length:&lt;Fragmentlength&gt;" and the simulated output sequence length. 
 
+## CITATION
+Bibtex citation
+~~~~bash
+@article{10.1093/bioinformatics/btad041,
+    author = {Henriksen, Rasmus Amund and Zhao, Lei and Korneliussen, Thorfinn Sand},
+    title = "{NGSNGS: Next generation simulator for next generation sequencing data}",
+    journal = {Bioinformatics},
+    year = {2023},
+    month = {01},
+    issn = {1367-4811},
+    doi = {10.1093/bioinformatics/btad041},
+    url = {https://doi.org/10.1093/bioinformatics/btad041},
+    note = {btad041},
+    eprint = {https://academic.oup.com/bioinformatics/advance-article-pdf/doi/10.1093/bioinformatics/btad041/48800233/btad041.pdf},
+}
+~~~~
+
 ## MISC
 ### Example of adding an MD tag directly to the simulated bam files which can be added after simulations
 ~~~~bash
 samtools sort -@ 10 -m 2G MycoBactBamSEOut.bam -o MycoBactBamSEOut_sort.bam; 
 samtools index MycoBactBamSEOut_sort.bam; 
-samtools calmd -@ 10 -e -r -b MycoBactBamSEOut_sort.bam Test_Examples/Mycobacterium_leprae.fa.gz > MycoBactBamSEOut_sort_MD.bam; 
+samtools calmd -@ 10 -r -b MycoBactBamSEOut_sort.bam Test_Examples/Mycobacterium_leprae.fa.gz > MycoBactBamSEOut_sort_MD.bam; 
 ~~~~

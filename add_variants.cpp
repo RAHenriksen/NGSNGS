@@ -18,9 +18,8 @@ struct bcfkey_cmp
   }
 };
 
-//NBNB notice that proper rid is NOT bcf1_t->rid but bcfkey->rid which has been shifted relative to fs
+//NB notice that proper rid is NOT bcf1_t->rid but bcfkey->rid which has been shifted relative to fs
 typedef std::map<bcfkey,bcf1_t*,bcfkey_cmp> bcfmap;
-//jeg kan ikke lige se hvordan structen eller bcfkey_cmp er shifted ift fs
 
 int verbose2000 = 0;
 int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
@@ -59,12 +58,10 @@ int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
 }
 
 int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
-  //  fprintf(stderr,"Extend fasta sampler:%d\n",ploidy);
   if(ploidy ==1){
-    //fprintf(stderr,"ploidy is haploid, will perform updownstream sorting of the reverse positions\n");
+    //ploidy is haploid, will perform updownstream sorting of the reverse positions
     ploidymap::iterator it = fs->pldmap.find(fs_chr_idx);
     if(it!=fs->pldmap.end()){
-      //fprintf(stderr,"Have already been added will skip\n");
       return 0;
     }
     int *pldmap = new int[5];
@@ -81,9 +78,8 @@ int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
     if(it==fs->char2idx.end())
       isThere  = 0;
   }
-  //its not there lets add it
   if(isThere == 0){
-    //fprintf(stderr,"\t[%s] Will duplicate chromosomes to emulate parental chromosomes\n",__FUNCTION__);
+    // Will duplicate chromosomes to emulate parental chromosomes
     int nref = fs->nref+ploidy-1;
     char **seqs = (char**) new char*[nref];
     char **seqs_names = (char**) new char*[nref];
@@ -110,7 +106,6 @@ int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
     pldmap[0] = fs_chr_idx;
     for(int i=1;i<ploidy;i++) {
       snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[fs_chr_idx],i);
-      //fprintf(stderr,"\t-> Allocating extra chromsome for %s\n",buf);
       fs->seqs[fs->nref+i-1] = strdup(seqs[fs_chr_idx]);
       fs->seqs_names[fs->nref+i-1] = strdup(buf);
       fs->seqs_l[fs->nref+i-1] = fs->seqs_l[fs_chr_idx];
@@ -120,7 +115,6 @@ int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
     }
     fs->pldmap[fs_chr_idx]  = pldmap;
     fs->nref = nref;
-    //fprintf(stderr,"\t[%s] Done duplicating chromosomes to emulate parental chromosomes\n",__FUNCTION__);
     
   }
   return 0;
@@ -144,7 +138,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
     if(fs->seqs_l[i]>maxsize)
       maxsize= fs->seqs_l[i];
 
-  maxsize += 1000;//this should be enough and never need to reallocate;
+  maxsize += 1000;
 
   char **elephant =new char*[ploidy];
   for(int i=0;i<ploidy;i++)
@@ -168,7 +162,6 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
     if(reset){
       if(fsoffsets!=NULL){
         for(int i=0;i<ploidy;i++){
-          //fprintf(stderr,"flushing [%d] last:%d elephant: %s\n",i,last[i],elephant[i]);
 
           strcat(elephant[i],fs->seqs[fsoffsets[i]]+last[i]);
           fs->seqs_l[fsoffsets[i]] = strlen(elephant[i]);
@@ -197,15 +190,12 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
           last[i] = it->first.pos;
       }
       int nitems2copy = brec->pos-last[i]+1;
-      //fprintf(stderr,"nitesm2copy: %d last: %d brec->pos: %d\n",nitems2copy,last[i],brec->pos);
       assert(strlen(elephant[i])+brec->pos-last[i]< maxsize );//funky assert
       strncat(elephant[i],fs->seqs[fsoffsets[i]]+last[i],nitems2copy);
       char *allele = NULL;
       allele = it->second->d.allele[it->first.gt[i]];
       assert(allele!=NULL);
-      
-      //its a deletion if strlen(d.allele[0])>1 
-      
+            
       int turbocharge =0;
       #if 0
       int isdel = 0;
@@ -214,36 +204,23 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
       fprintf(stderr,"Position: %lld ref %s alt %s and length of ref %zu and alt: %zu\n",it->first.pos,it->second->d.allele[0],allele,strlen(it->second->d.allele[0]),strlen(allele));
       if(it->first.gt[i]>0 && (strlen(it->second->d.allele[0]) > strlen(allele))){
         isdel = strlen(it->second->d.allele[0])-strlen(allele);
-        fprintf(stderr,"This is the DELETION of length: %d \n",isdel);
+        fprintf(stderr,"Deletion of length: %d \n",isdel);
       }
       else if(it->first.gt[i]>0 && (strlen(it->second->d.allele[0]) < strlen(allele))){
         isins = strlen(allele)-strlen(it->second->d.allele[0]);
-        fprintf(stderr,"WHAT IS THE INSERTION %d \n",isdel);
+        fprintf(stderr,"Insertion of length: %d \n",isdel);
       }
       #endif
       if(it->first.gt[i]>0)
 	      turbocharge =  strlen(allele)-strlen(it->second->d.allele[0]);
-	
-      
-      //fprintf(stderr,"\t\tlast[]: %d TURBOCHARGE2000: %d\n",last[i],turbocharge);
+	      
       if(turbocharge<0){
         //is deletion then we just skip the number of bases
-        //memmove(elephant[i]+it->first.pos,str+it->first.pos+1,strlen(str));
-        //memmove(elephant[i]+brec->pos+1,elephant[i]+brec->pos+isdel+1,strlen(elephant[i]));
-        //fprintf(stderr,"BEFORE SEQ LENGTH:\t%zu\n",strlen(elephant[i]));
-        //fprintf(stderr,"POSITIONS before del %d\n",last[i]);
         last[i] = brec->pos+abs(turbocharge)+1;
-        //fprintf(stderr,"POSITIONS after del %d\n",last[i]);
-        //fprintf(stderr,"AFTER SEQ LENGTH:\t%zu\n",strlen(elephant[i]));
-        //last[i] = brec->pos+1;
       }
       else if(turbocharge>0){
-        //fprintf(stderr,"before:\t%zu elephanten er: %s\n",strlen(elephant[i]),elephant[i]);
         assert(strlen(elephant[i])+strlen(allele)<strlen(elephant[i])+maxsize);
-        //fprintf(stderr,"inserting allele: %s\n",allele);
         strncat(elephant[i],allele+1,strlen(allele));
-        //fprintf(stderr,"after:\t%zu elephentan er: %s\n",strlen(elephant[i]),elephant[i]);
-        //fprintf(stderr,"after:\t%s\n",elephant[i]);
         last[i] = brec->pos+1;
       }
       else{
@@ -255,7 +232,6 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
   }
   if(fsoffsets!=NULL){
     for(int i=0;i<ploidy;i++){
-      //      fprintf(stderr,"flushing [%d] last:%d\n",i,last[i]);
       
       strcat(elephant[i],fs->seqs[fsoffsets[i]]+last[i]);
       fs->seqs_l[fsoffsets[i]] = strlen(elephant[i]);
@@ -268,7 +244,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
 
 //fasta sampler struct, index for chromosomenaem, position, the alleles, the genotypes and the ploidy. 
 void add_variant(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32_t *gts, int ploidy){
-  //fprintf(stderr,"Adding genotype informaiton for chromosome:pos: %d ploidy: %d\n",pos,ploidy);
+  // Adding genotype information for chromosome,pos,ploidy
   char buf[1024];
   char ref = fs->seqs[fs_chr_idx][pos];
   #if 0
@@ -299,10 +275,8 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
   htsFile *bcf = bcf_open(bcffilename, "r");
   bcf_hdr_t *bcf_head = bcf_hdr_read(bcf);
   bcf1_t *brec = bcf_init();
-  // So this could be the parameter to change for which individual, but im not actually sure how it works if there isn't any individuals?? check TK's vcf file.
-  int whichsample=HeaderIndiv; //;//if minus one then ref and alt fields are used, if nonnegative then it is used as offset to which genotype to use from the GT fields
-  //map chromosomenames in bcf to index in fastafile
-  //fprintf(stderr,"--------\nTHE SAMPLE INDEX IS %d and sample name is %s\n",whichsample,bcf_head->samples[whichsample]);
+  // So this could be the parameter to change for which individual
+  int whichsample=HeaderIndiv; //if minus one then ref and alt fields are used, if nonnegative then it is used as offset to which genotype to use from the GT fields
   int max_l;
   int *bcf_idx_2_fasta_idx = mapper(bcf_head,fs->char2idx,max_l);
   int ret = -1;
@@ -311,8 +285,8 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
   int32_t *gt_arr = NULL;
   int ngt;
   int inferred_ploidy =5;//assume max ploidy is five, this will be adjusted when parsing data
-  int32_t nodatagt[5] = {0,1,0,0,0}; // im not entirely sure why its 0,1,0,0,0
-  inferred_ploidy = 2; //then this should be removed based on comment above?
+  int32_t nodatagt[5] = {0,1,0,0,0};
+  inferred_ploidy = 2;
   bcfmap mybcfmap;
   
   while(((ret=bcf_read(bcf,bcf_head,brec)))==0){
@@ -320,7 +294,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
     int fai_chr = bcf_idx_2_fasta_idx[brec->rid];
     
     if(fai_chr==-1){
-      //fprintf(stderr,"chrname: %s does not exists in fasta reference\n",bcf_hdr_id2name(bcf_head,brec->rid));
+      fprintf(stderr,"chrname: %s does not exists in fasta reference\n",bcf_hdr_id2name(bcf_head,brec->rid));
       exit(0);
     }
     if(whichsample!=-1){
@@ -348,7 +322,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
     else
       mygt = gt_arr+inferred_ploidy*whichsample;
     if(bcf_gt_is_missing(mygt[0])){
-      //fprintf(stderr,"\t-> Genotype is missing for pos: %lld will skip\n",brec->pos+1);
+      fprintf(stderr,"\t-> Genotype is missing for pos: %lld will skip\n",brec->pos+1);
       continue;
     }
     //figure out if its an indel
@@ -374,13 +348,12 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
       mybcfmap[key] =duped;
     }
   }
-  //fprintf(stderr,"\t-> Done adding snp variants\n");
+  fprintf(stderr,"\t-> Done adding snp variants\n");
   if(mybcfmap.size()>0){
     //fprintf(stderr,"\t-> Found some indels, these will now be added to internal datastructures\n");
     add_indels(fs,mybcfmap,bcf_head,inferred_ploidy);
 
-  } //hvorfor en internal datastructure? er det for først at tilføje alle snps? og dernæst tilføje indels? 
-  // så tilføj -v snp så kun linje 311 uanset hvad, -v indel kun linje 323, hvis ingenting så bare lad det være.
+  }
   
   free(gt_arr);
   delete[] bcf_idx_2_fasta_idx;
@@ -400,8 +373,8 @@ int main(int argc,char **argv){
   
   int seed = 101;
   mrand_t *mr = mrand_alloc(3,seed);
-  char *ref = "/willerslev/users-shared/science-snm-willerslev-wql443/WP1/VCFDATA/chr14.fa"; // "/willerslev/users-shared/science-snm-willerslev-wql443/WP1/NGSNGS/Test_Examples/Mycobacterium_leprae.fa.gz"; //"/willerslev/datasets/reference_genomes/hs37d5/hs37d5.fa";
-  char *vcf = "/willerslev/users-shared/science-snm-willerslev-wql443/WP1/VCFDATA/Chr14_indiv4.vcf";//"DiploidTest.vcf"; //"DiploidTest.vcf";//"sub3.vcf";
+  char *ref = "chr14.fa";
+  char *vcf = "Chr14_indiv4.vcf";//"DiploidTest.vcf"; //"DiploidTest.vcf";//"sub3.vcf";
   fasta_sampler *fs = fasta_sampler_alloc(ref,subsetchr);
   fprintf(stderr,"Done adding fasta, will now add variants\n");
   fasta_sampler_print(stderr,fs);
@@ -430,7 +403,7 @@ int main(int argc,char **argv){
   fprintf(stderr,"after\n");
 
   return 0;
-  // g++ add_variants.cpp -D__WITH_MAIN__ mrand.o  fasta_sampler.o RandSampling.o /projects/lundbeck/scratch/wql443/WP1/htslib/libhts.a -std=c++11 -lz -lm -lbz2 -llzma -lpthread -lcurl -lcrypto -ggdb
+  // g++ add_variants.cpp -D__WITH_MAIN__ mrand.o  fasta_sampler.o RandSampling.o htslib/libhts.a -std=c++11 -lz -lm -lbz2 -llzma -lpthread -lcurl -lcrypto -ggdb
 }
 
 #endif

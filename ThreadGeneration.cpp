@@ -56,14 +56,12 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   //creating an array with the arguments to create multiple threads;
 
   int nthreads=thread_no;
-  pthread_t *mythreads = new pthread_t[nthreads]; //pthread_t mythreads[nthreads];
+  pthread_t *mythreads = new pthread_t[nthreads];
   
   //allocate for reference file
   fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
   
   if(VariantFile){
-    //fprintf(stderr,"specific chr %s \n",Specific_Chr);
-    //fprintf(stderr,"Variant file %s and individual in Header %d \n",VariantFile,HeaderIndiv);
     add_variants(reffasta,VariantFile,HeaderIndiv);
     if(FileDump!=NULL){
       char dumpfile1[512];
@@ -82,7 +80,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
   if (reffasta->seqs != NULL){
   
-    Parsarg_for_Sampling_thread *struct_for_threads = new Parsarg_for_Sampling_thread[nthreads]; //Parsarg_for_Sampling_thread struct_for_threads[nthreads];
+    Parsarg_for_Sampling_thread *struct_for_threads = new Parsarg_for_Sampling_thread[nthreads];
 
     // declare files and headers
     BGZF **bgzf_fp = (BGZF **) calloc(3,sizeof(BGZF *));
@@ -94,7 +92,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
     char file1[512];
     char file2[512];
-    const char* fileprefix = OutputName; //"chr22_out";
+    const char* fileprefix = OutputName;
     strcpy(file1,fileprefix);
     strcpy(file2,fileprefix);
 
@@ -147,8 +145,8 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       break;
 
     case bamT:
-      mode = "wb";//"wc";
-      suffix1 = ".bam"; //".cram";
+      mode = "wb";
+      suffix1 = ".bam";
       alnformatflag++;
       break;
     case cramT:
@@ -168,12 +166,11 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     const char* filename2 = NULL;
 
     if(alnformatflag == 0){
-      //fprintf(stderr,"not bam loop \n");
       int mt_cores = threadwriteno;
       int bgzf_buf = 256;
       
-      bgzf_fp[0] = bgzf_open(filename1,mode); //w
-      bgzf_mt(bgzf_fp[0],mt_cores,bgzf_buf); //
+      bgzf_fp[0] = bgzf_open(filename1,mode);
+      bgzf_mt(bgzf_fp[0],mt_cores,bgzf_buf);
       
       if(PE==SeqType){
         strcat(file2,suffix2);
@@ -183,7 +180,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       }
     }
     else{
-      //strlen(".fastq.gz") = longest suffix for fasta file + 2 in case of Null string terminators
       char *ref =(char*) malloc(strlen(".fasta.gz") + strlen(refSseq) + 2);
       sprintf(ref, "reference=%s", refSseq);
       
@@ -202,7 +198,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       hts_set_opt(SAMout, CRAM_OPT_REFERENCE, refSseq);
       // generate header
       Header_func(fmt_hts,filename1,SAMout,SAMHeader,reffasta,CommandArray,version);
-      //void Header_func( int chr_total,char* chr_names[],int arra[],char CommandArray[1024],const char* version){
 
       free(ref);
       // hts_opt_free((hts_opt *)fmt_hts->specific);
@@ -219,37 +214,29 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     const char *freqfile_r1; //"Qual_profiles/AccFreqL150R1.txt";
     const char *freqfile_r2;
     int outputoffset = qualstringoffset;
-    //fprintf(stderr,"\t-> FRAG ARRAY LE\n");
     ransampl_ws ***QualDist = NULL;
     char nt_qual_r1[1024];
     ransampl_ws ***QualDist2 = NULL;
     char nt_qual_r2[1024];
-    //fprintf(stderr,"\t-> QUAL POINTER POINTER POINTER\n");
     double ErrArray_r1[1024];
     double ErrArray_r2[1024];
-    //fprintf(stderr,"\t-> BEFORE QUAL STRING IF\n");
-    if(strcasecmp("true",QualStringFlag)==0){ //|| strcasecmp("bam",OutputFormat)==0
+    if(strcasecmp("true",QualStringFlag)==0){
       freqfile_r1 = QualProfile1;
       QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1);
-      //fprintf(stderr,"\t-> CREATING QUALDIST\n");
       if(PE==SeqType){
-        //fprintf(stderr,"\t-> PE LOOP\n");
         freqfile_r2 = QualProfile2;
         QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2);
       }
     }
-    //fprintf(stderr,"\t-> AFTER QUAL STRING IF\n");
     
     int maxsize = 20;
     char polynucleotide;
 
-    //std::string Polystr = std::string(1000, (char) Polynt[0]);
-    //fprintf(stderr,"AGAGAGA%s\n",(const char*) Polystr.substr(0, 8).c_str());
     if (Polynt != NULL && strlen(Polynt) == 1){polynucleotide = (char) Polynt[0];}
     else{polynucleotide = 'F';}
 
     //generating mismatch matrix to parse for each string
-    double* MisMatchFreqArray = new double[LENS]; //moved new up here
+    double* MisMatchFreqArray = new double[LENS];
     int mismatchcyclelength = 0;
     if (SubProfile != NULL){
       MisMatchFreqArray = MisMatchFileArray(MisMatchFreqArray,SubProfile,mismatchcyclelength);
@@ -258,11 +245,10 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     if(IndelDumpFile!=NULL){
       char IndelFile[512];
       const char* IndelSuffix = ".txt";
-      const char* IndelPrefix = IndelDumpFile; //"chr22_out";
+      const char* IndelPrefix = IndelDumpFile;
       strcpy(IndelFile,IndelPrefix);
       strcat(IndelFile,IndelSuffix);
       const char* modefp2 = "wu";
-      //fprintf(stderr," THE INDEL DUMP FILE IS %s \n",IndelFile);
       bgzf_fp[2] = bgzf_open(IndelFile,modefp2); //w
       bgzf_mt(bgzf_fp[2],threadwriteno,256); //
     }
@@ -338,9 +324,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].reads = ThreadReads;
     }
     struct_for_threads[nthreads-1].reads = reads - (ThreadReads*(nthreads-1));
-    
-    //for (int i = 0; i < nthreads; i++){fprintf(stderr,"The number of threads reads for threads %zu \n",struct_for_threads[i].reads);}    
-    //fprintf(stderr,"The number of threads %d and the number of reads %zu\n",thread_no,reads);
 
     pthread_attr_t attr;
     pthread_attr_init(&attr);
@@ -408,9 +391,9 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       delete[] Frag_len;
     }
 
-    delete[] struct_for_threads; //Parsarg_for_Sampling_thread *struct_for_threads = new Parsarg_for_Sampling_thread[nthreads];
+    delete[] struct_for_threads;
 
-    delete[] MisMatchFreqArray; //if(SubProfile != NULL){delete[] MisMatchFreqArray;}
+    delete[] MisMatchFreqArray;
     
     fflush(stderr);
   }

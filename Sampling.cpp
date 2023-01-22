@@ -56,10 +56,9 @@ void* Sampling_threads(void *arg) {
   char seq_r1[1024] = {0};
   char seq_r2[1024] = {0};
   char qual_r1[1024] = "\0";
-  char qual_r2[1024] = "\0"; // {0};
+  char qual_r2[1024] = "\0";
  
   size_t reads = struct_obj -> reads;
-  //fprintf(stderr,"INSIDE EACH THREAD NUMBER OF READS %zu \n",reads);
   size_t BufferLength = struct_obj -> BufferLength;
 
   int ErrProbTypeOffset = 0;
@@ -110,32 +109,28 @@ void* Sampling_threads(void *arg) {
   size_t moduloread = reads/modulovalue;
   
   while (current_reads_atom < reads && SIG_COND){
-    //fprintf(stderr,"-------------------\n");
-    //lets start by resetting out datastructures to NULL, nill, nothing.
-    int posB = 0; int posE = 0;//this is the first and last position of our fragment
+    int posB = 0; int posE = 0;
 
     //sample fragmentlength
-    int fraglength = getFragmentLength(sf); //fraglength = abs(mrand_pop_long(drand_alloc)) % 1000;
-    //fprintf(stderr,"sample fragment length %d \n",fraglength);
+    int fraglength = getFragmentLength(sf); 
     // Selecting genomic start position across the generated contiguous contigs for which to extract 
     int chr_idx = -1;
 
     //maxbases is the number of nucleotides we will work with.
     //set this to minimum of bases sequenced or fragment length.
-    //if output is fasta then legnth is simply the entire fragment
+    //if output is fasta then length is simply the entire fragment
     int maxbases = std::min(fraglength,struct_obj->maxreadlength);
     if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT)
       maxbases = fraglength;
 
     //get shallow copy of chromosome, offset into, is defined by posB, and posE
-    //fprintf(stderr,"------------ \nnew read \n beg %d end %d fragleng %d max %d \n",posB,posE,fraglength,maxbases);
     char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength);
     //extracting a biological fragment of the reference genome
-    //fprintf(stderr,"beg %d end %d len: %lu frag %lu \n",posB,posE,strlen(chrseq),fraglength);
-    memset(FragmentSequence,0,strlen(FragmentSequence));  //tænk lige over om denne kan laves om, således at du bare kan lave offset både når der er seq_r1 og seq_r2 på trods af at sekvensen er for lang grundet et længere fragment før.
+    memset(FragmentSequence,0,strlen(FragmentSequence));
     strncpy(FragmentSequence,chrseq+(posB),fraglength); // same orientation as reference genome 5' -------> FWD -------> 3'
     
     /*
+    // not implemented yet - nor to be included within the near future as off december 2022
     if circ
       if (posE < posB+fraglenth) 
         memset(FragmentSequence,'0',strlen(FragmentSequence));
@@ -143,16 +138,22 @@ void* Sampling_threads(void *arg) {
         strncpy(FragmentSequence,chrseq,fraglength-(posE-posB));         
     */
 
-    int fragmentLength =posE-posB; // strlen(FragmentSequence);
-    //fprintf(stderr," FRAG LENGTH %d \t %d \t %d \t %d \t %d \t %s \n",maxbases,fraglength,fragmentLength,(posE-posB),strlen(FragmentSequence),FragmentSequence);
+    int skipread = 1;
+    if(FragmentSequence[0]!='N' && FragmentSequence[(int)strlen(FragmentSequence)-1]!='N')
+      skipread = 0;
+
+    if(skipread==1){
+      memset(FragmentSequence,0,strlen(FragmentSequence));
+      continue;
+    }
+
+    int fragmentLength =posE-posB;
     assert(posE>=posB&&fragmentLength>20);
     //Generating random ID unique for each read output
-    double rand_val_id = mrand_pop(rand_alloc);//<- SHIT
-    //fprintf(stderr,"RAndom values for ID %lf \t %lf\n",rand_val_id,mrand_pop(drand_alloc));
-    int rand_id = (rand_val_id * fraglength-1)+(rand_val_id*current_reads_atom); //100
-    //why above? just to get random unique?
+    double rand_val_id = mrand_pop(rand_alloc);
+    int rand_id = (rand_val_id * fraglength-1)+(rand_val_id*current_reads_atom);
 
-    int strandR1 = mrand_pop(rand_alloc)>0.5?0:1; //int strand = (int) (rand_start%2);
+    int strandR1 = mrand_pop(rand_alloc)>0.5?0:1;
 
     // Sequence alteration integers
     int FragDeam = 0;
@@ -163,12 +164,7 @@ void* Sampling_threads(void *arg) {
     // Stochastic structural variation model    
     if(struct_obj->DoIndel){
       double pars[4] = {struct_obj->IndelFuncParam[0],struct_obj->IndelFuncParam[1],struct_obj->IndelFuncParam[2],struct_obj->IndelFuncParam[3]};
-      //fprintf(stderr,"DO INDELS");
-      /*if (struct_obj->DoIndel && struct_obj->IndelDumpFile != NULL){
-        fprintf(stderr,"FILE DUMP TEST %s \n",struct_obj->IndelDumpFile);
-      }*/
-      //fprintf(stderr,"BEFORE FUNCTION %s\n",INDEL_INFO);
-      //fprintf(stderr,"\n1) %s len: %lu\n",FragmentSequence,strlen(FragmentSequence));
+
       int ops[2] ={0,0};
       add_indel(rand_alloc,FragmentSequence,struct_obj->maxreadlength,pars,INDEL_INFO,ops);
       if (ops[0] > 0 && ops[1] == 0){
@@ -180,21 +176,14 @@ void* Sampling_threads(void *arg) {
       else if (ops[0] > 0 && ops[1] > 0){
         has_indels = 3;
       }
-      //fprintf(stderr,"\n2) %s len: %lu\n",FragmentSequence,strlen(FragmentSequence));
-      //fprintf(stderr,"INDEL OPERATIONS %d \t %d \t %d\n",ops[0],ops[1],has_indels);
       int IndelFragLen = strlen(FragmentSequence);
       maxbases = std::min(IndelFragLen,struct_obj->maxreadlength);
-      //fprintf(stderr,"AFTER FUNCTION\n%s",INDEL_INFO);
     }
 
     // Mismatch matrix input file
     if(struct_obj->doMisMatchErr){
       FragMisMatch = MisMatchFile(FragmentSequence,rand_alloc,struct_obj->MisMatch,struct_obj->MisLength);
     }
-    //./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 10 -s 1 -l 2000 -seq SE -indel 0.05,0.1,0.1,0.2 -q1 Test_Examples/AccFreqL150R1.txt -f fq -o MycoBactBamSEOut
-    //./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 1 -s 1 -l 100 -seq SE -indel 0.05,0.1,0.1,0.2 -q1 Test_Examples/AccFreqL150R1.txt -f fq -o MycoBactBamSEOut
-    //generates insertions and deletions to the original fragment, before extracting R1 and R2
-    //fprintf(stderr,"SEQUENCE %s \n",FragmentSequence);
 
     if (strandR1 == 1){
       // 5' -------> REV -------> 3'
@@ -209,7 +198,6 @@ void* Sampling_threads(void *arg) {
     int FragTotal = 4;
     int iter = 1; //iterating through all fragments
     if(struct_obj->DoBriggs){
-      //fprintf(stderr,"INSIDE NONE BRIGGS BIOTIN MODEL\n");
       //For the none-biotin briggs model we need to store 4 fragments with slightly different deaminations patterns
       FragRes = new char *[FragTotal];
       for(int i=0;i<FragTotal;i++){
@@ -226,7 +214,7 @@ void* Sampling_threads(void *arg) {
         refCp1,refCTp1,refCp2,refCTp2);
 
       if (struct_obj->Duplicates == 1){
-        // keep one fragment out of the 4 possible
+        //keep one fragment out of the 4 possible
         Groupshift = mrand_pop_long(rand_alloc) % 4;
         FragTotal = Groupshift+1;
       }
@@ -241,7 +229,6 @@ void* Sampling_threads(void *arg) {
       
     }
     else if(struct_obj->DoBriggsBiotin){
-      //fprintf(stderr,"INSIDE BRIGGS BIOTIN MODEL\n");
       FragRes = new char *[1];
       FragRes[0] = FragmentSequence;
       Groupshift = 0;
@@ -274,40 +261,31 @@ void* Sampling_threads(void *arg) {
         Groupshift = 0;
       } 
     }
-    /*fprintf(stderr,"---------------\n");
-    for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
-    }*/
+
     int chr_idx_array[struct_obj->Duplicates];
     for (int i = 0; i < struct_obj->Duplicates; i++){chr_idx_array[struct_obj->Duplicates]=chr_idx;}
     
-    // test a single fragment 
-    // for (int FragNo = 0+Groupshift; FragNo < Groupshift+1; FragNo+=iter){
-    // Iterate through the possible fragments
-    //fprintf(stderr,"OUTSIDE for - FragTotal %d \t duplicates %d\t group shift %d \t iter %d\n",FragTotal,struct_obj->Duplicates,Groupshift,iter);
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
-      //fprintf(stderr,"INSIDE for - FragTotal %d \t duplicates %d \t Frag Number %d \t group shift %d \t iter %d\n",FragTotal,struct_obj->Duplicates,FragNo,Groupshift,iter);
-      qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0'; //Disse skal jo rykkes hvis vi bruger et char** til fragmenter
+      qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0';
 
       //now copy the actual sequence into seq_r1 and seq_r2 if PE 
       strncpy(seq_r1,FragRes[FragNo],maxbases);
-      //fprintf(stderr,"FragNo %d \t FragTotal %d \t group shift %d \t iter %d\t%s\n%s\n",FragNo,FragTotal,Groupshift,iter,FragRes[FragNo],seq_r1);
 
       if(PE==struct_obj->SeqType)
         strncpy(seq_r2,FragRes[FragNo]+(fraglength-maxbases),maxbases);
     
-      //fprintf(stderr,"FRAGMENT SEQUENCE %s  length %d \n ADN READ SEQUENCE %s   %d\n",FragmentSequence,strlen(FragmentSequence),seq_r1,strlen(seq_r1));
-      //Remove reads which are all N? In this code we remove both pairs if both reads are all N
-      // generating sam output information
+      //Remove reads which are all N, we remove both pairs if both reads are all N
       int seqlen = strlen(seq_r1);
 
-      int skipread = 1;
       for(int i=0;skipread&&i<(int)strlen(seq_r1);i++)
         if(seq_r1[i]!='N')
           skipread = 0;
-
-      for(int i=0; skipread && i<(int)strlen(seq_r2);i++)
-        if(seq_r2[i]!='N')
-        skipread = 0;
+      
+      if(PE==struct_obj->SeqType){
+        for(int i=0; skipread && i<(int)strlen(seq_r2);i++)
+          if(seq_r2[i]!='N')
+          skipread = 0;
+      }
       
       if(skipread==1){
         memset(qual_r1, 0, sizeof qual_r1); 
@@ -317,15 +295,12 @@ void* Sampling_threads(void *arg) {
         continue;
       }
     
-
       if(strlen(seq_r1) < 20)
         continue;
       
-      
+      //generating sam output information
       int SamFlags[2] = {-1,-1}; //flag[0] is for read1, flag[1] is for read2
       if(struct_obj->DoBriggs){
-        // Frag[0] is equal to reference, i.e. rasmus
-        // Frag[3] is the reverse complement of (the reverse complement of rasmus (thorfinn))
         if (FragNo==0||FragNo==2){
           //The sequences are equal to the reference
           if (SE==struct_obj->SeqType){
@@ -382,23 +357,8 @@ void* Sampling_threads(void *arg) {
       //now everything is the same strand as reference, which we call plus/+
     
       snprintf(READ_ID,1024,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
-      //fprintf(stderr,"READ_ID %s\n",READ_ID);
-      if (struct_obj->DoIndel && struct_obj->IndelDumpFile != NULL){
-        //ksprintf(indel,"%s\t%s\n",READ_ID,INDEL_INFO);
-        snprintf(INDEL_DUMP,1024,"%s\t%s\n",READ_ID,INDEL_INFO);
-        //fprintf(stderr,"INFO INDEL ID %s",INDEL_DUMP);
-        ksprintf(indel,"%s",INDEL_DUMP);
-        if (struct_obj->bgzf_fp[2]){
-          if (indel->l > 0){
-            pthread_mutex_lock(&write_mutex);
-            assert(bgzf_write(struct_obj->bgzf_fp[2],indel->s,indel->l)!=0);
-            pthread_mutex_unlock(&write_mutex);
-            indel->l = indel->l = 0;
-          }
-        }
-      }
 
-      int nsofts[2] = {0,0};//this will contain the softclip information to be used by sam/bam/cram out
+      int nsofts[2] = {0,0}; //this will contain the softclip information to be used by sam/bam/cram output format for adapter and polytail
       //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail
       int naligned[2] = {(int)strlen(seq_r1),-1};
       if(PE==struct_obj->SeqType)
@@ -406,9 +366,8 @@ void* Sampling_threads(void *arg) {
       
       //add adapters
       if(struct_obj->AddAdapt){
-        // Because i have reverse complemented the correct sequences and adapters depending on the strand origin (or flags), i know all adapters will be in 3' end
+        //Because i have reverse complemented the correct sequences and adapters depending on the strand origin (or flags), i know all adapters will be in 3' end
         nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
-        //fprintf(stderr,"The minimum values are %d \t %d \t %d \n",maxbases,struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
         strncpy(seq_r1+strlen(seq_r1),struct_obj->Adapter_1,nsofts[0]);
         if(PE==struct_obj->SeqType){
           nsofts[1] = std::min(struct_obj->maxreadlength-strlen(seq_r2),strlen(struct_obj->Adapter_2));
@@ -429,8 +388,6 @@ void* Sampling_threads(void *arg) {
       }
 
       if(struct_obj->SAMout){
-        //sanity check
-        //fprintf(stderr,"SANITY CHECK seq_R1 %d \t %d \t %d \n seq_R2  %d \t %d \t %d \n",strlen(seq_r1),naligned[0],nsofts[0],strlen(seq_r2),naligned[1],nsofts[1]);
         if(strlen(seq_r1)!=naligned[0]+nsofts[0]){
           fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
           exit(0);
@@ -441,9 +398,8 @@ void* Sampling_threads(void *arg) {
           exit(0);
         }
       }
-      //now seq_r1 and seq_r2 is completely populated let is build qualscore if
-      //saving both fasta and adapter to fasta format
-      //fprintf(stderr,"READ ID %s \nSEQUENCE \n%s\n and strlen %d \n",READ_ID,seq_r1,strlen(seq_r1));
+
+      //now seq_r1 and seq_r2 is completely done, we can generate the quality score if the format is different for Fasta
       if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
         sprintf(READ_ID+strlen(READ_ID),"%d F%d",0,FragNo);
         ksprintf(fqs[0],">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
@@ -451,16 +407,12 @@ void* Sampling_threads(void *arg) {
         ksprintf(fqs[1],">%s R2\n%s\n",READ_ID,seq_r2);
       } 
       else{
-        // Fastq and Sam needs quality scores
-        //if(strandR1==0){fprintf(stderr,"----------\nSEQUENCE \n%s\n",seq_r1);}//int ntcharoffset
-        //fprintf(stderr,"INSIDE FQ AND SAM \nREAD ID %s \nSEQUENCE \n%s\n and strlen %d \n",READ_ID,seq_r1,strlen(seq_r1));
+        //Fastq and Sam needs quality scores
         has_seqerr = sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
-        //if(strandR1==0){fprintf(stderr,"%s\n",seq_r1);}
         if (PE==struct_obj->SeqType)
           has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
         
         sprintf(READ_ID+strlen(READ_ID),"%d F%d",has_seqerr,FragNo);
-        //fprintf(stderr,"----------\nREAD ID %s \nSEQUENCE \n%s\n",READ_ID,seq_r1);
 
         //write fq if requested
         if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){
@@ -530,8 +482,6 @@ void* Sampling_threads(void *arg) {
           strcpy(READ_ID2,READ_ID);
           
           strcat(READ_ID,suffR1);
-          //fprintf(stderr,"CHR IDX %d\n",chr_idx);
-          //fprintf(stderr,"BEGIN %d AND END %d\n",min_beg,max_end);
           int chr_max_end_mate = 0; //PNEXT 0-> unavailable for SE
           int insert_mate = 0; //TLEN
           int chr_idx_mate = -1;
@@ -560,7 +510,7 @@ void* Sampling_threads(void *arg) {
           //we have set the parameters accordingly above for no align and PE
           bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx_array[struct_obj->Duplicates],min_beg,mapq,
                 n_cigar[0],AlignCigar[0],chr_idx_mate,chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
-          //exit(0);
+
           //write PE also
           if (PE==struct_obj->SeqType){
             bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx_array[struct_obj->Duplicates],max_end-1,mapq,
@@ -579,6 +529,19 @@ void* Sampling_threads(void *arg) {
         }
       }
       
+      if (struct_obj->DoIndel && struct_obj->IndelDumpFile != NULL){
+        snprintf(INDEL_DUMP,1024,"%s\t%s\n",READ_ID,INDEL_INFO);
+        ksprintf(indel,"%s",INDEL_DUMP);
+        if (struct_obj->bgzf_fp[2]){
+          if (indel->l > 0){
+            pthread_mutex_lock(&write_mutex);
+            assert(bgzf_write(struct_obj->bgzf_fp[2],indel->s,indel->l)!=0);
+            pthread_mutex_unlock(&write_mutex);
+            indel->l = indel->l = 0;
+          }
+        }
+      }
+
       if (struct_obj->bgzf_fp[0]){
         if (fqs[0]->l > BufferLength){
           pthread_mutex_lock(&write_mutex);

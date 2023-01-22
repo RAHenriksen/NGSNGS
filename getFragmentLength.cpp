@@ -33,7 +33,7 @@ void ReadLengthFile(int& number,int*& Length, double*& Frequency,const char* fil
   assert(gz!=Z_NULL);
   Length[0] = 0; Frequency[0] = (float) 0;
   while(gzgets(gz,buf,LENS)){
-    Length[n] = atoi(strtok(buf,"\n\t ")); //before it was Frag_len[n]
+    Length[n] = atoi(strtok(buf,"\n\t "));
     Frequency[n] = atof(strtok(NULL,"\n\t "));
     n++;
   }
@@ -46,7 +46,6 @@ int getFragmentLength(sim_fragment *sf){
   double rand_val;
 
   if(sf->type == 0){
-    //fprintf(stderr,"type 0 fixed\n");
     res = sf->FixLength;
   }
   else if(sf->type == 1){
@@ -92,55 +91,36 @@ int*& FragArray,int RandType,unsigned int Thread_Seed,std::default_random_engine
   fp->rand_alloc= mrand_alloc(RandType,Thread_Seed);
   fp->type = type;
   fp->Gen =generator;
-  //free(fp->rand_alloc); //OBS IM NOT SURE IF THIS IS GOOD! WE USE THE RAND_ALLOC FURTHER
 
   if(fp->type == 0){
-    //fprintf(stderr,"FIXED TYPE \n");
-    // ./FragLen 0 80 100 100000 &> ../CodeTest/FixedLength80.txt
     fp->FixLength = par1;
-    //std::cout << "fp fixlength " << fp->FixLength << std::endl;
   }
   else if(fp->type == 1){
-    //fprintf(stderr,"LENGTH FILE \n");
-    // ./FragLen 1 80 100 100000 &> ../CodeTest/FileLength.txt
     fp->Frequency = FreqArray;
     fp->Frag_len = FragArray;
     fp->noRow = no_row;
   }
   else if(fp->type == 2){
-    //fprintf(stderr,"UNI \n");
-    // Par1, Par2 80,140 // ./FragLen 2 80 120 100000 &> ../CodeTest/Uni80120Length.txt
     std::uniform_int_distribution<int> distribution(par1,par2);
     fp->UniDist = distribution;
   }
   else if(fp->type == 3){
-    //fprintf(stderr,"NORM \n");
-    // Par1, Par2 110,20  // ./FragLen 3 110 20 100000 &> ../CodeTest/Norm11020Length.txt
     std::normal_distribution<double> distribution(par1,par2);
     fp->NormDist = distribution;
   }
   else if(fp->type == 4){
-    //fprintf(stderr,"LOGNORM \n");
-    // Par1, Par2 5,0.5 // ./FragLen 4 5 0.5 100000 &> ../CodeTest/LogNorm1505Length.txt
     std::lognormal_distribution<double> distribution(par1,par2);
     fp->LogNormDist = distribution;
   }
   else if(fp->type == 5){
-    //fprintf(stderr,"POIS \n");
-    // Par1, 130
     std::poisson_distribution<int> distribution(par1);
     fp->PoisDist = distribution;
   }
   else if(fp->type == 6){
-    //fprintf(stderr,"EXP \n");
-    // Par1, 0.01
     std::exponential_distribution<double> distribution(par1);
     fp->ExpDist = distribution;
-    //fprintf(stderr,"Done with Dist \n");
   }
   else if(fp->type == 7){
-    //fprintf(stderr,"GAMMA \n");
-    // Par1, Par2 65,2
     std::gamma_distribution<double> distribution(par1,par2);
     fp->GammaDist = distribution;
   }

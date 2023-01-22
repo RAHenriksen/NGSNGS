@@ -10,39 +10,39 @@ enum dist_e {unknownDist,Uni,Norm,LogNorm,Pois,Exp,Gam};
 enum poly_nt {unknownNt,A,G,C,T,N};
 
 typedef struct{
-  int SamplThreads; //sampling threads, used internally by pthread_create
-  int CompressThreads; //compression threads, used external by bgzf_mt and set_hts_options
-  size_t nreads; // Thorfinn made mistake
-  double coverage; // Coverage of breadth, estimated from rlen, flen, genomsize, superfancy
-  int Glob_seed; // local seeds are computed determistly from global. Only one seed needs to be supplied
-  outputformat_e OutFormat ; //fq, fq.gz, fa, fa.gz, sam, bam, cram, ultrafancy
-  char *OutName; //prefix for output, final will be determined by [OutName.OutFormat]
-  char *DumpFile; // prefix for internal file recording potential variations to reference genome
-  char *IndelDumpFile; //prefix for internal file recording of sequencing errors specific for indels
-  char *Reference; //full filename for reference fasta
-  seqtype_e seq_type; // singleend or paired end.
-  char *Adapter1; //actual adapterseq, R1, not flipped, reversed or completemented
-  char *Adapter2; //actual adapterseq, R2, not flipped, reversed or completemented
-  char *QualProfile1;// filename for quality prof, for R1 or SE
-  char *QualProfile2;// filename for quality prof, for R2 used only in PE
-  char *SubProfile;// filename for misincorperation, typespecific and position specific
-  int DoSeqErr;// should we not add errors?, {T,F}
-  char *Briggs; // the four briggs parameters
-  char *BriggsBiotin; // the four briggs parameters in relation to Biotin
-  int Duplicates;
-  int CycleLength;
-  int Length; // fragment length when fixed
-  char *LengthFile; //filename for distribution of frag lengths
-  char *LengthDist;//name of pdf used for simulating fraglengths (incl parameters)
-  char *Poly; // should poly be added possible values -p G or -p A
-  char *Chromosomes; //for subsetting chromosome of interested, -chr chrX
-  int rng_type; //RNG type, drand48 or rand or drand48_r etc
-  char *vcffile; // filename for bcf
-  char *CommandRun; // actual command run in same order
-  int HeaderIndiv; //samplename from VCF/BCF file
-  int Align;// This option is cool, but explaining it takes up to much space in comment
-  size_t KstrBuf; // Buffer size for kstring length
-  char *Indel;
+  int SamplThreads;           //sampling threads, used internally by pthread_create
+  int CompressThreads;        //compression threads, used external by bgzf_mt and set_hts_options
+  size_t nreads;              //Number of reads to simulate
+  double coverage;            //Depth of coverage across the entire genome, estimated from rlen, flen, genomsize
+  int Glob_seed;              //Local seeds are computed from the global. Only one seed needs to be supplied
+  outputformat_e OutFormat ;  //fq, fq.gz, fa, fa.gz, sam, bam, cram
+  char *OutName;              //prefix for output name
+  char *DumpFile;             //prefix for internal file recording potential variations to reference genome
+  char *IndelDumpFile;        //prefix for internal file recording of sequencing errors specific for indels
+  char *Reference;            //full filename for reference fasta
+  seqtype_e seq_type;         //singleend or paired end.
+  char *Adapter1;             //actual adapter sequence, R1, not flipped, reversed or completemented
+  char *Adapter2;             //actual adapter sequence, R2, not flipped, reversed or completemented
+  char *QualProfile1;         //filename for quality prof, for R1 or SE
+  char *QualProfile2;         //filename for quality prof, for R2 used only in PE
+  char *SubProfile;           //filename for misincorperation, typespecific and position specific
+  int DoSeqErr;               //adding potential sequencing errors
+  char *Briggs;               //the four briggs parameters for the none biotin model
+  char *BriggsBiotin;         //the four briggs parameters in relation to Biotin
+  int Duplicates;             //for the none biotin model, four potential fragments with independent deamination pattern are possible to generate, default PCR=1
+  int CycleLength;            //cycle length with the maximum number of nucleotides to be generated, independent of the fragment length
+  int Length;                 //fragment length when fixed
+  char *LengthFile;           //filename for distribution of frag lengths
+  char *LengthDist;           //name of pdf used for simulating fraglengths (incl parameters)
+  char *Poly;                 //poly-X tail, added after the adapter sequence if output reade are lower than inferred cycle length, e.g. -p G or -p A
+  char *Chromosomes;          //subsetting chromosome of interested, -chr chrX
+  int rng_type;               //pseudo-random number generator type, drand48 or rand or drand48_r etc
+  char *vcffile;              //filename for bcf
+  char *CommandRun;           //actual command run in same order
+  int HeaderIndiv;            //samplename from VCF/BCF file
+  int Align;                  //Storing sequence reads with- or without alignment information in the sequence alignment map/format
+  size_t KstrBuf;             //buffer size for kstring length
+  char *Indel;                //adding stochastic indels
 }argStruct;
 argStruct *getpars(int argc,char ** argv);
 void argStruct_destroy(argStruct *mypars);

@@ -17,9 +17,9 @@ argStruct *getpars(int argc,char ** argv){
 
   // The output format, output files, and structural elements for SAM outputs
   mypars->OutFormat = unknownT;
-  mypars->OutName = NULL; //"output";
-  mypars->DumpFile = NULL; //"output";
-  mypars->IndelDumpFile = NULL; //"output";
+  mypars->OutName = NULL;
+  mypars->DumpFile = NULL;
+  mypars->IndelDumpFile = NULL;
   mypars->HeaderIndiv=-1;
   mypars->Align=1;
 
@@ -36,8 +36,8 @@ argStruct *getpars(int argc,char ** argv){
   mypars->QualProfile2 = NULL;
   mypars->DoSeqErr = 1;
   // 2) briggs model
-  mypars->Briggs = NULL; //"0.024,0.36,0.68,0.0097";
-  mypars->BriggsBiotin = NULL; //"0.024,0.36,0.68,0.0097";
+  mypars->Briggs = NULL;
+  mypars->BriggsBiotin = NULL;
   mypars->Duplicates = 1;
   // 3) misincorporation matrix
   mypars->SubProfile = NULL;
@@ -61,11 +61,10 @@ argStruct *getpars(int argc,char ** argv){
   kstring_t kstr;kstr.s=NULL;kstr.l=kstr.m=0;
   for(int i=0;i<argc;i++)
     ksprintf(&kstr,"%s ",argv[i]);
-  mypars->CommandRun = kstr.s;//notice that this is allocated here but deallocated somewhere else
+  mypars->CommandRun = kstr.s;
 
   ++argv;
   while(*argv){
-    //fprintf(stderr,"ARGV %s\n",*argv);
     if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->Reference = strdup(*(++argv));
     }
@@ -153,18 +152,14 @@ argStruct *getpars(int argc,char ** argv){
       char *tok = *argv;
       std::cout << tok << std::endl;
       char* ModelString = strdup(tok);
-      //fprintf(stderr,"Model Choice %s\n",ModelString);
       char* BriggsModel;
       BriggsModel = strtok(ModelString,",");
-      //fprintf(stderr,"Parameter model %s\n",BriggsModel);
       char* ModelParam =  strdup(strtok (NULL, ""));
-      //fprintf(stderr,"Parameter values %s\n",ModelParam);
       if(strcasecmp("b",BriggsModel)==0 || strcasecmp("briggs",BriggsModel)==0){
 	      mypars->Briggs = ModelParam;
       }
       if(strcasecmp("b7",BriggsModel)==0 || strcasecmp("briggs07",BriggsModel)==0)
-	      mypars->BriggsBiotin = ModelParam; //double nv, double lambda, double delta_s, double delta -> 0.024,0.36,0.68,0.0097
-      // -m || --model b7,0.024,0.36,0.68,0.0097 b10,0.024,0.36,0.68,0.0097 bCpG,0.024,0.36,0.68,0.0097
+	      mypars->BriggsBiotin = ModelParam;
       free(ModelString);
     }
     else if(strcasecmp("-dup",*argv)==0 || strcasecmp("--duplicates",*argv)==0){
@@ -222,7 +217,7 @@ argStruct *getpars(int argc,char ** argv){
 
 
 void argStruct_destroy(argStruct *mypars){
-  free(mypars->Reference); //-i
+  free(mypars->Reference);
   free(mypars->OutName);
   free(mypars->DumpFile);
   free(mypars->IndelDumpFile);
@@ -234,7 +229,6 @@ void argStruct_destroy(argStruct *mypars){
   if(mypars->Chromosomes)
     free(mypars->Chromosomes);
 
-  // OPTIONAL DEALLOCATIONS
   free(mypars->vcffile);
   free(mypars->Adapter1);
   free(mypars->Adapter2);

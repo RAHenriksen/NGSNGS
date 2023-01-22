@@ -90,7 +90,6 @@ int main(int argc,char **argv){
       #   error "Unknown compiler"
       #endif
     }
-    //fprintf(stderr,"RANDOM VALUE %d \n",MacroRandType);
     
     if (mypars->Reference == NULL){ErrMsg(1.0);}
     if (mypars->OutName == NULL){ErrMsg(8.0);}
@@ -125,7 +124,6 @@ int main(int argc,char **argv){
       } 
     }
     if (mypars->LengthFile != NULL){
-      //fprintf(stderr,"SIZE FILE ARG\n");
       double sum,n;
       sum=n=0;
 
@@ -143,7 +141,6 @@ int main(int argc,char **argv){
           }
         }
         else{
-          fprintf(stderr,"ELSE STATEMENT WITH SIZE LENGTH\n");
           sum += Length_tmp*Frequency_tmp;
           n = n+1;
         }
@@ -151,8 +148,8 @@ int main(int argc,char **argv){
       gzclose(gz);
       
       MeanFragLen = sum/n;
-      fprintf(stderr,"\t-> MeanFragLen %f\n",MeanFragLen);
-      if (mypars->Length <0){fprintf(stderr,"FIXED SIZE %d",mypars->Length);ErrMsg(5.0);}
+      fprintf(stderr,"\t-> Mean fragment length of the provided length file (-lf) is %f nt\n",MeanFragLen);
+      if (mypars->Length <0){fprintf(stderr,"Fixed fragment length %d",mypars->Length);ErrMsg(5.0);}
       SizeDistType=1;
     }
     if (SizeDist != NULL){
@@ -181,17 +178,16 @@ int main(int argc,char **argv){
     
     int chr_total = faidx_nseq(seq_ref);
 
-    //first capture the awkward cases where no reads or cov has been defined or both defined
+    //first capture the cases where no reads or cov has been defined or both defined
     if(mypars->nreads == 0 && readcov == 0.0){
       fprintf(stderr,"must suply nreads or cov");exit(0);
     }
     if(mypars->nreads > 0 &&readcov > 0.0){
       fprintf(stderr,"must not suply nreads and cov");exit(0);
     }
-    //now compute the number of reads required acroos all threads
+    //now compute the number of reads required across all threads
 
     if (readcov > 0.0){
-      fprintf(stderr,"read cov if\n");
       size_t genome_size = 0;
 
       for (int i = 0; i < chr_total; i++){
@@ -209,7 +205,6 @@ int main(int argc,char **argv){
       }
       else{
         mypars->nreads = (readcov*genome_size)/MeanFragLen;
-        fprintf(stderr,"lol reads %zu \n",mypars->nreads);
       }
     }
 
@@ -229,21 +224,17 @@ int main(int argc,char **argv){
       else{Polynt = "F";}
     }
     else{
-      //fprintf(stderr,"\t-> ARGPARSE ADAPT FLAG+ POLY\n");
       if (mypars->Poly != NULL){ErrMsg(14.0);exit(0);}
       else{Polynt = "F";}
     }
     // QUALITY PROFILES
-
     const char* QualStringFlag;
     if (mypars->QualProfile1 == NULL){QualStringFlag = "false";}
     else{QualStringFlag = "true";}
-    //fprintf(stderr,"qualstring test %s",QualStringFlag);
     if (strcasecmp("true",QualStringFlag)==0){
       if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
         if (mypars->seq_type == PE && mypars->QualProfile2 == NULL){
           ErrMsg(11.0);
-          //fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
           exit(0);
         }
       }
@@ -252,13 +243,9 @@ int main(int argc,char **argv){
     {
       if(OutputFormat== fqT ||OutputFormat==fqgzT){
         ErrMsg(11.0);
-        //fprintf(stderr,"Could not parse the Nucleotide Quality profile(s), for SE provide -q1 for PE provide -q1 and -q2. see helppage (-h). \n");
         exit(0);
       }
     }
-    //fprintf(stderr,"\t-> ADAPTER FLAG IS:%s\n",Adapt_flag);
-    //fprintf(stderr,"\t-> QUAL STRING FLAG IS:%s\n",QualStringFlag);
-    
 
     //NB!
     /*if (strcasecmp("false",QualStringFlag)==0){
@@ -293,7 +280,7 @@ int main(int argc,char **argv){
       Param[2] = myatof(strtok(NULL,"\", \t"));
       Param[3] = myatof(strtok(NULL,"\", \t"));
       
-      free(BriggsParam); // Again using strdup
+      free(BriggsParam);
     }
     
     int DoIndel = 0;
@@ -319,7 +306,6 @@ int main(int argc,char **argv){
     }
 
     int DeamLength = 0;
-    //mypars->nreads/mypars->SamplThreads
     fprintf(stderr,"\t-> Default PCR duplicate value %d\n",mypars->Duplicates);
     ThreadInitialization(mypars->Reference,mypars->SamplThreads,mypars->Glob_seed,mypars->nreads,mypars->OutName,
                       AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->OutFormat,mypars->seq_type,
