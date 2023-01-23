@@ -1,4 +1,4 @@
- # [![make](https://github.com/RAHenriksen/NGSNGS/actions/workflows/make.yml/badge.svg)](https://github.com/RAHenriksen/NGSNGS/actions/workflows/make.yml) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7558513.svg)](https://doi.org/10.5281/zenodo.7558513) [![DOI:<10.1093/bioinformatics/btad041>](http://img.shields.io/badge/DOI-<10.1093/bioinformatics/btad041>-B31B1B.svg)](https://doi.org/10.1093/bioinformatics/btad041)
+ # [![make](https://github.com/RAHenriksen/NGSNGS/actions/workflows/make.yml/badge.svg)](https://github.com/RAHenriksen/NGSNGS/actions/workflows/make.yml) [![DOI:<10.1093/bioinformatics/btad041>](http://img.shields.io/badge/DOI-<10.1093/bioinformatics/btad041>-B31B1B.svg)](https://doi.org/10.1093/bioinformatics/btad041)
 
 # NEXT GENERATION SIMULATOR FOR NEXT GENERATION SEQUENCING DATA
 Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen \
@@ -30,7 +30,7 @@ cd NGSNGS; make
 
 ## QUICK TUTORIAL
 Examples of which parameters to include depending on the desired simulations
-### simulate 1000 reads (-r) from human hg19.fa (-i), generate compressed fq.gz (-f), single end (-seq), make program use 2 threads (-t)
+### simulate 1000 reads (-r) from human hg19.fa (-i), generate compressed fq.gz (-f), single end (-seq), make program use one threads (-t)
 ~~~~bash
 ./ngsngs -i hg19.fa -r 1000 -f fq -l 100 -seq se -t 1 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
 ~~~~
@@ -183,7 +183,7 @@ _length:<Fragmentlength>_<modVal1Val2Val3Val4> F<FragmentNumber> R<PairNumber>
 e.g.
 @T0_RID49_S0_NZ_CP029543.1:2236795-2236942_length:148_mod1000 F0 R1
 
-S0 is the forward strand and S1 is the reverse strand, mod1000 equals read with sequence error, F0 signifies the first fragment out of 4 possible PCR duplicates, R1 indicate the sequence is read 1 (See supplementary material for detailed description).
+S0 is the forward strand and S1 is the reverse strand, mod1000 equals read with deamination, F0 signifies the first fragment out of 4 possible PCR duplicates, R1 indicate the sequence is read 1 (See supplementary material for detailed description).
 ## Nucleotide substitution models
 ### Nucleotide quality scores (-q1 and -q2)
 Simulating a .fq or .sam format requires a provided nucleotide quality profile (-q1, -q2) with one example (Test_Examples/AccFreqL150R1.txt) and its structure: 
