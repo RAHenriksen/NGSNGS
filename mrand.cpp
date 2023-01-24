@@ -31,6 +31,17 @@ mrand_t *mrand_alloc(int type_a,long int seedval){
     ret->xsubi[1] = ret->rand_r_seed & 0xffffl;
     ret->xsubi[0] = 0x330e;
   }
+  if(ret->type==4){
+    unsigned long long tmp = -1;
+    ret->nr_inv_rec = 1/((double) tmp);//(2^64-1)^-1
+    tmp = seedval;
+    ret->nr_uvw[1] = 4101842887655102017LL;
+    ret->nr_uvw[2] = 1LL;
+    ret->nr_uvw[0] = seedval ^ ret->nr_uvw[1];ret->nr_int64();
+    ret->nr_uvw[1] =     ret->nr_uvw[0];ret->nr_int64();
+    ret->nr_uvw[2] =     ret->nr_uvw[1];ret->nr_int64();
+
+  }
   return ret;
 }
 
@@ -54,6 +65,9 @@ double mrand_pop(mrand_t *mr){
   else if(mr->type==3){
     res = erand48(mr->xsubi);
   }
+  else if(mr->type==4){
+    res = mr->nr_inv_rec * mr->nr_int64();
+  }
   else{
     fprintf(stderr,"Random parameter %d is not supported\n",mr->type);
     exit(0);
@@ -67,6 +81,7 @@ long mrand_pop_long(mrand_t *mr){
   if(mr->type==0){
     #if defined(__linux__) || defined(__unix__)
     lrand48_r((struct drand48_data*)&mr->buf0,&res);
+    res >>= 4;
     #endif
   }
   else if(mr->type==1){
@@ -77,6 +92,9 @@ long mrand_pop_long(mrand_t *mr){
   }
   else if(mr->type==3){
     res = abs(jrand48(mr->xsubi));
+  }
+  else if(mr->type==4){
+    res = (long) mr->nr_int64();
   }
   else{
     fprintf(stderr,"Random parameter %d is not supported\n",mr->type);
