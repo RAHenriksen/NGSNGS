@@ -23,7 +23,7 @@
 #include "add_variants.h"
 #include "add_indels.h"
 
-#define LENS 4096
+#define LENS 10000
 
 void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam_hdr_t *header,fasta_sampler *fs,char CommandArray[LENS],const char* version){
   // Creates a header for the bamfile. The header is initialized before the function is called //

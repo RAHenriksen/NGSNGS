@@ -5,7 +5,9 @@
 
 void ReversComplement(char seq[]);
 
-void Complement(char seq[]);
+void ReversComplement2(char seq[],size_t fraglength);
+
+void Complement(char seq[],size_t fraglength);
 
 void reverseChar(char* str,int length);
 

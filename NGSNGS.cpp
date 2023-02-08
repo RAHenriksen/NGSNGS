@@ -29,7 +29,7 @@
 #include "fasta_sampler.h"
 
 #include <signal.h>
-#define LENS 4096
+#define LENS 10000
 #define MAXBINS 100
 
 int VERBOSE = 1;
@@ -110,7 +110,7 @@ int main(int argc,char **argv){
       }
       readcycle = (nlines-2)/5;
     }
-    fprintf(stderr,"\t-> The is provided read cycle length is: %d or the inferred read cycle length is %d\n",mypars->CycleLength,readcycle);    
+    fprintf(stderr,"\t-> The read cycle length is either provided (-cl): %d or inferred from the quality profile dimension (-q1): %d\n",mypars->CycleLength,readcycle);    
 
     const char* SizeDist = mypars->LengthDist;
     double MeanFragLen = 0;

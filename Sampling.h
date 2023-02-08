@@ -1,6 +1,6 @@
 #ifndef SAMPLING_H
 #define SAMPLING_H
-#define LENS 4096
+#define LENS 10000
 #include "NGSNGS_cli.h"
 #include "fasta_sampler.h"
 

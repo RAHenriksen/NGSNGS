@@ -185,7 +185,6 @@ int main(int argc,char**argv){
     strncpy(seq_r1,seq,fraglength);
     fprintf(stdout,"nit:%lu\tchromo:%s\tposB:%d\tposE:%d\tfraglength:%d\texample:%s\n",nit,chr,posB,posE,fraglength,seq_r1);
   }
-  fprintf(stderr,"after\n");
   return 0;
 }
 #endif

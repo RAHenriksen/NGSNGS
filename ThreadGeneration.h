@@ -1,7 +1,7 @@
 #ifndef THREADGENERATION_H
 #define THREADGENERATION_H
 #include "NGSNGS_cli.h"
-#define LENS 4096
+#define LENS 10000
 
 void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
                         const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,int BriggsBiotin,

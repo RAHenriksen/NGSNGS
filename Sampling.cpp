@@ -31,7 +31,7 @@
 #include "add_indels.h"
 #include "NGSNGS_misc.h"
 
-#define LENS 4096
+#define LENS 10000
 #define MAXBINS 100
 extern int refToInt[256];
 extern char NtComp[5];
@@ -48,15 +48,14 @@ void* Sampling_threads(void *arg) {
   mrand_t *rand_alloc = mrand_alloc(struct_obj->rng_type,loc_seed);
 
   char *seq;//actual sequence, this is unallocated
-  int maxfraglength=4096;
 
   // sequence reads, original, modified, with adapters, pe
   char READ_ID[1024];
-  char *FragmentSequence = (char*) calloc(maxfraglength,1);
-  char seq_r1[1024] = {0};
-  char seq_r2[1024] = {0};
-  char qual_r1[1024] = "\0";
-  char qual_r2[1024] = "\0";
+  char *FragmentSequence = (char*) calloc(LENS,1);
+  char seq_r1[LENS] = {0};
+  char seq_r2[LENS] = {0};
+  char qual_r1[LENS] = "\0";
+  char qual_r2[LENS] = "\0";
  
   size_t reads = struct_obj -> reads;
   size_t BufferLength = struct_obj -> BufferLength;

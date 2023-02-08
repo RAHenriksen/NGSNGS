@@ -60,15 +60,13 @@ const char *bass = "ACGTN";
 
 void ReversComplement(char seq[]){
   // generates the reverse complementary sequence from an input sequence
-
-  char seq_intermediate[1024] = {0};
+  char seq_intermediate[LENS];
   strcpy(seq_intermediate,seq);
   int seqlen = strlen(seq);
   //Complementing sequence
   for(int i=0;i<seqlen;i++){
     seq_intermediate[i] = NtComp[refToInt[(unsigned char) seq_intermediate[i]]]; //warning: array subscript has type 'char' [-Wchar-subscripts]
   }
-
   //reverse complement
   for(int i=seqlen-1;i>-1;i--){
     seq[seqlen-i-1] = seq_intermediate[i];
@@ -77,9 +75,26 @@ void ReversComplement(char seq[]){
   memset(seq_intermediate, 0, sizeof seq_intermediate);
 }
 
-void Complement(char seq[]){
+void ReversComplement2(char seq[],size_t fraglength){
+  // generates the reverse complementary sequence from an input sequence
+  char seq_intermediate[fraglength];
+  strcpy(seq_intermediate,seq);
+  int seqlen = strlen(seq);
+  //Complementing sequence
+  for(int i=0;i<seqlen;i++){
+    seq_intermediate[i] = NtComp[refToInt[(unsigned char) seq_intermediate[i]]]; //warning: array subscript has type 'char' [-Wchar-subscripts]
+  }
+  //reverse complement
+  for(int i=seqlen-1;i>-1;i--){
+    seq[seqlen-i-1] = seq_intermediate[i];
+  }
+  //Clearing out the intermediate sequence
+  memset(seq_intermediate, 0, sizeof seq_intermediate);
+}
+
+void Complement(char seq[],size_t fraglength){
   // generates the complementary sequence from an input sequence
-  char seq_intermediate[1024] = {0};
+  char seq_intermediate[fraglength];
   strcpy(seq_intermediate,seq);
   int seqlen = strlen(seq);
   //Complementing sequence
