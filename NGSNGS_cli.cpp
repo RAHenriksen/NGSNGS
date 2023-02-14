@@ -99,9 +99,9 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-seq",*argv)==0 || strcasecmp("--sequencing",*argv)==0){
       char * tok = *(++argv);
       
-      if(strcasecmp("SE",tok)==0)
+      if(strcasecmp("SE",tok)==0 || strcasecmp("se",tok)==0 || strcasecmp("single",tok)==0 || strcasecmp("single-end",tok)==0)
 	      mypars->seq_type = SE;
-      else if(strcasecmp("PE",tok)==0)
+      else if(strcasecmp("PE",tok)==0 || strcasecmp("pe",tok)==0 || strcasecmp("paired",tok)==0 || strcasecmp("paired-end",tok)==0)
 	      mypars->seq_type = PE;
       if(mypars->seq_type==unknownTT)
 	      ErrMsg(6.5);
