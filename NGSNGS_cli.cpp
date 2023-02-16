@@ -150,7 +150,6 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-m",*argv)==0 || strcasecmp("--model",*argv)==0){
       ++argv;
       char *tok = *argv;
-      std::cout << tok << std::endl;
       char* ModelString = strdup(tok);
       char* BriggsModel;
       BriggsModel = strtok(ModelString,",");

@@ -113,42 +113,54 @@ int main(int argc,char **argv){
     fprintf(stderr,"\t-> The read cycle length is either provided (-cl): %d or inferred from the quality profile dimension (-q1): %d\n",mypars->CycleLength,readcycle);    
 
     const char* SizeDist = mypars->LengthDist;
-    double MeanFragLen = 0;
+    double mean_length = 0;
     int SizeDistType=-1;double val1 = 0; double val2  = 0;
 
     if (mypars->Length != 0){
       if (mypars->Length < 0){ErrMsg(3.0);}
       else{
-        MeanFragLen = mypars->Length;
+        mean_length = mypars->Length;
         SizeDistType=0;
       } 
     }
     if (mypars->LengthFile != NULL){
-      double sum,n;
-      sum=n=0;
+      
+      FILE *fp = fopen(mypars->LengthFile, "r");
+      int Len_prev; int Len_cur;
+      float CummFreq_cur, CummFreq_prev;
 
-      char buf[LENS];
-      gzFile gz = Z_NULL;
-      gz = gzopen(mypars->LengthFile,"r");
-      assert(gz!=Z_NULL);
-      while(gzgets(gz,buf,LENS)){
-        double Length_tmp = atof(strtok(buf,"\n\t "));
-        double Frequency_tmp = atof(strtok(NULL,"\n\t "));
-        if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
-          if (Length_tmp <= (double)readcycle){
-            sum += Length_tmp*Frequency_tmp;
-            n = n+1;
-          }
-        }
-        else{
-          sum += Length_tmp*Frequency_tmp;
-          n = n+1;
+      if (OutputFormat==faT|| OutputFormat== fagzT) {
+        // Calculate mean length for all lines, i.e. the fragment length determines the number of reads, given a specific coverage
+        fscanf(fp, "%d %f", &Len_prev, &CummFreq_prev);
+        mean_length += Len_prev * ((double)(CummFreq_prev));
+        while (fscanf(fp, "%d %f", &Len_cur, &CummFreq_cur) == 2) {
+          mean_length += Len_cur * ((double)(CummFreq_cur-CummFreq_prev));
+          Len_prev = Len_cur;
+          CummFreq_prev = CummFreq_cur;
         }
       }
-      gzclose(gz);
-      
-      MeanFragLen = sum/n;
-      fprintf(stderr,"\t-> Mean fragment length of the provided length file (-lf) is %f nt\n",MeanFragLen);
+      else{
+        // Calculate mean length up to a certain readcycle limit, i.e. the read length determines the number of reads, given a specific coverage
+        fscanf(fp, "%d %f", &Len_prev, &CummFreq_prev);
+        mean_length += Len_prev * ((double)(CummFreq_prev));
+        while (fscanf(fp, "%d %f", &Len_cur, &CummFreq_cur) == 2) {
+          if (Len_prev < readcycle && Len_cur > readcycle) {
+            // If the next line exceeds the limit, only consider the fraction of the current line up to the limit
+            double fraction = (CummFreq_prev + (CummFreq_cur-CummFreq_prev) *
+                              ((double)(readcycle-Len_prev)/(Len_cur-Len_prev)));
+            mean_length += readcycle * fraction;
+            break;
+          }
+          else if (Len_cur <= readcycle) {
+            // If the current line does not exceed the limit, add its full length to the mean
+            mean_length += Len_cur * ((double)(CummFreq_cur-CummFreq_prev));
+            Len_prev = Len_cur;
+            CummFreq_prev = CummFreq_cur;
+          }
+        }
+      }   
+      fclose(fp);
+      fprintf(stderr,"\t-> Mean fragment length of the provided length file (-lf) is %f nt\n",mean_length);
       if (mypars->Length <0){fprintf(stderr,"Fixed fragment length %d",mypars->Length);ErrMsg(5.0);}
       SizeDistType=1;
     }
@@ -161,12 +173,12 @@ int main(int argc,char **argv){
       if(tmp == NULL){val2 = 0;}
       else{val2 = atof(tmp);}
       
-      if (strcasecmp(Dist,"Uni")==0){SizeDistType=2;MeanFragLen=(0.5*(val1+val2));}
-      if (strcasecmp(Dist,"Norm")==0){SizeDistType=3;MeanFragLen= val1;}
-      if (strcasecmp(Dist,"LogNorm")==0){SizeDistType=4;MeanFragLen= exp((val1+((val2*val2)/2)));}
-      if (strcasecmp(Dist,"Pois")==0){SizeDistType=5;MeanFragLen= val1;}
-      if (strcasecmp(Dist,"Exp")==0){SizeDistType=6;MeanFragLen= 1/val1;}
-      if (strcasecmp(Dist,"Gam")==0){SizeDistType=7;MeanFragLen= (val1/val2);}
+      if (strcasecmp(Dist,"Uni")==0){SizeDistType=2;mean_length=(0.5*(val1+val2));}
+      if (strcasecmp(Dist,"Norm")==0){SizeDistType=3;mean_length= val1;}
+      if (strcasecmp(Dist,"LogNorm")==0){SizeDistType=4;mean_length= exp((val1+((val2*val2)/2)));}
+      if (strcasecmp(Dist,"Pois")==0){SizeDistType=5;mean_length= val1;}
+      if (strcasecmp(Dist,"Exp")==0){SizeDistType=6;mean_length= 1/val1;}
+      if (strcasecmp(Dist,"Gam")==0){SizeDistType=7;mean_length= (val1/val2);}
       if (mypars->Length >0){ErrMsg(5.0);}
       free((char *)Dist);
     }
@@ -197,14 +209,14 @@ int main(int argc,char **argv){
       }
 
       if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
-        if (MeanFragLen > readcycle){MeanFragLen = readcycle;}
+        if (mean_length > readcycle){mean_length = readcycle;}
       }
       
       if (mypars->seq_type == PE){
-        mypars->nreads = ((readcov*genome_size)/MeanFragLen)/2;
+        mypars->nreads = ((readcov*genome_size)/mean_length)/2;
       }
       else{
-        mypars->nreads = (readcov*genome_size)/MeanFragLen;
+        mypars->nreads = (readcov*genome_size)/mean_length;
       }
     }
 
