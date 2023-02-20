@@ -9,7 +9,7 @@ argStruct *getpars(int argc,char ** argv){
   argStruct *mypars = new argStruct;
   mypars->SamplThreads = 1;
   mypars->CompressThreads = 1;
-
+  int compress_t_y_n = 0; // set to no pr default
   // generating strings for which the simulated reads will be contained
   mypars->nreads = 0;
   mypars->coverage = 0.0;
@@ -65,7 +65,27 @@ argStruct *getpars(int argc,char ** argv){
 
   ++argv;
   while(*argv){
-    if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
+    if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
+      ++argv;
+      char *tok = *argv;
+      if(strcasecmp("fa",tok)==0 || strcasecmp("fasta",tok)==0)
+	      mypars->OutFormat = faT;
+      if(strcasecmp("fa.gz",tok)==0 || strcasecmp("fasta.gz",tok)==0)
+	      mypars->OutFormat = fagzT;
+      if(strcasecmp("fq",tok)==0 || strcasecmp("fastq",tok)==0)
+	      mypars->OutFormat = fqT;
+      if(strcasecmp("fq.gz",tok)==0 || strcasecmp("fastq.gz",tok)==0)
+	      mypars->OutFormat = fqgzT;
+      if(strcasecmp("sam",tok)==0)
+	      mypars->OutFormat = samT;
+      if(strcasecmp("bam",tok)==0)
+	      mypars->OutFormat = bamT;
+      if(strcasecmp("cram",tok)==0)
+	      mypars->OutFormat = cramT;
+      if(mypars->OutFormat==unknownT)
+	      ErrMsg(7.0);
+    }
+    else if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->Reference = strdup(*(++argv));
     }
     else if(strcasecmp("-vcf",*argv)==0 || strcasecmp("-bcf",*argv)==0){
@@ -76,6 +96,7 @@ argStruct *getpars(int argc,char ** argv){
       if (mypars->SamplThreads < 1){ErrMsg(9.0);}
     }
     else if(strcasecmp("-t2",*argv)==0 || strcasecmp("--threads2",*argv)==0){
+      compress_t_y_n = 1; //yes the compression are using the threads
       mypars->CompressThreads = atoi(*(++argv));
       if (mypars->CompressThreads < 0){ErrMsg(9.0);}
     }
@@ -126,26 +147,6 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-na",*argv)==0 || strcasecmp("--noalign",*argv)==0){
       mypars->Align = 0;
-    }
-    else if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
-      ++argv;
-      char *tok = *argv;
-      if(strcasecmp("fa",tok)==0 || strcasecmp("fasta",tok)==0)
-	      mypars->OutFormat = faT;
-      if(strcasecmp("fa.gz",tok)==0 || strcasecmp("fasta.gz",tok)==0)
-	      mypars->OutFormat = fagzT;
-      if(strcasecmp("fq",tok)==0 || strcasecmp("fastq",tok)==0)
-	      mypars->OutFormat = fqT;
-      if(strcasecmp("fq.gz",tok)==0 || strcasecmp("fastq.gz",tok)==0)
-	      mypars->OutFormat = fqgzT;
-      if(strcasecmp("sam",tok)==0)
-	      mypars->OutFormat = samT;
-      if(strcasecmp("bam",tok)==0)
-	      mypars->OutFormat = bamT;
-      if(strcasecmp("cram",tok)==0)
-	      mypars->OutFormat = cramT;
-      if(mypars->OutFormat==unknownT)
-	      ErrMsg(7.0);
     }
     else if(strcasecmp("-m",*argv)==0 || strcasecmp("--model",*argv)==0){
       ++argv;
@@ -210,6 +211,17 @@ argStruct *getpars(int argc,char ** argv){
     }
     
     ++argv;
+  }
+
+  // adjust the compression threads following the input parameters depending on the sampling threads and output file format
+  if (mypars->OutFormat == fagzT || mypars->OutFormat == fqgzT || mypars->OutFormat == bamT || mypars->OutFormat == cramT){
+    if (mypars->SamplThreads <= 12 && compress_t_y_n == 0){
+        mypars->CompressThreads = mypars->SamplThreads;
+    }
+    else if (mypars->SamplThreads > 12 && compress_t_y_n == 0){
+      //putting an upper limit on the number of compression threads
+      mypars->CompressThreads = 12;
+    }
   }
   return mypars;
 }
