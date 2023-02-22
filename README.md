@@ -265,3 +265,4 @@ samtools sort -@ 10 -m 2G MycoBactBamSEOut.bam -o MycoBactBamSEOut_sort.bam;
 samtools index MycoBactBamSEOut_sort.bam; 
 samtools calmd -@ 10 -r -b MycoBactBamSEOut_sort.bam Test_Examples/Mycobacterium_leprae.fa.gz > MycoBactBamSEOut_sort_MD.bam; 
 ~~~~
+ 
