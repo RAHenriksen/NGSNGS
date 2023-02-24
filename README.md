@@ -32,23 +32,23 @@ cd NGSNGS; make
 Examples of which parameters to include depending on the desired simulations
 ### simulate 1000 reads (-r) from human hg19.fa (-i), generate compressed fq.gz (-f), single end (-seq), make program use one threads (-t)
 ~~~~bash
-./ngsngs -i hg19.fa -r 1000 -f fq -l 100 -seq se -t 1 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
+./ngsngs -i hg19.fa -r 1000 -f fq -l 100 -seq SE -t 1 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
 ~~~~
 ### generate bam (-f), paired end (-seq), variable fragment length (-ld norm,350,20) but fixed readlength (-cl 100)
 ~~~~bash
-./ngsngs -i hg19.fa -r 1000 -f bam -ld norm,350,20 -cl 100 -seq pe -t 1 -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -o HgSim
+./ngsngs -i hg19.fa -r 1000 -f bam -ld norm,350,20 -cl 100 -seq PE -t 1 -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -o HgSim
 ~~~~
 ### Disable platform specific errors (-ne), adding deamination pattern with Briggs 2007 model (-m b7,...), with ancient fragment length distribution (-lf), using seed 4 (-s)
 ~~~~bash
-./ngsngs -i hg19.fa -r 1000 -f fq -s 4 -ne -lf Test_Examples/Size_dist_sampling.txt -seq se -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
+./ngsngs -i hg19.fa -r 1000 -f fq -s 4 -ne -lf Test_Examples/Size_dist_sampling.txt -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
 ~~~~
 ### Paired end reads, inferred cycle length from (-q1) to be 150, fragment length (-l) 400, inner distance of 100 (400-150*2)  
 ~~~~bash
-./ngsngs -i hg19.fa -r 1000 -f fq -l 400 -seq pe -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R1.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -o HgSim
+./ngsngs -i hg19.fa -r 1000 -f fq -l 400 -seq PE -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R1.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -o HgSim
 ~~~~
 ### Single end reads, adapter sequence (-a1) and poly-G tail (-p)
 ~~~~bash
-./ngsngs -i hg19.fa -r 1000 -f fq -l 80 -seq se -q1 Test_Examples/AccFreqL150R1.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -p G -o HgSim
+./ngsngs -i hg19.fa -r 1000 -f fq -l 80 -seq SE -q1 Test_Examples/AccFreqL150R1.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -p G -o HgSim
 ~~~~
 NB! the adapter sequences are only concatenated to the reads, if the inferred cycle length from quality profiles is greater than the fragment length, the poly-X tail is only added if the sequence with adapter length is still below the cycle length (Cycle length - fragment length - adapter length = 150 - 80 - 65 = 5).
 
@@ -93,8 +93,8 @@ Fragment Length:
 
 Output characteristics:
 -seq | --sequencing: 		 Simulate single-end or paired-end reads.
-	 <SE>	 single-end. 
- 	 <PE>	 paired-end.
+	 <SE||se||single||single-end>	 single-end. 
+ 	 <PE||pe||paired||paired-end>	 paired-end.
 -f   | --format: 		 File format of the simulated output reads.
 	Nucletide sequence w. different compression levels. 
 	 <fa||fasta> 
