@@ -268,15 +268,14 @@ void add_variant(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32
   
 }
 
-
-int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
+//if minus one then ref and alt fields are used, if nonnegative then it is used as offset to which genotype to use from the GT fields
+int add_variants(fasta_sampler *fs,const char *bcffilename,int whichsample){
   if(bcffilename==NULL)
     return 0;
   htsFile *bcf = bcf_open(bcffilename, "r");
   bcf_hdr_t *bcf_head = bcf_hdr_read(bcf);
   bcf1_t *brec = bcf_init();
   // So this could be the parameter to change for which individual
-  int whichsample=HeaderIndiv; //if minus one then ref and alt fields are used, if nonnegative then it is used as offset to which genotype to use from the GT fields
   int max_l;
   int *bcf_idx_2_fasta_idx = mapper(bcf_head,fs->char2idx,max_l);
   int ret = -1;
@@ -285,7 +284,27 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv){
   int32_t *gt_arr = NULL;
   int ngt;
   int inferred_ploidy =5;//assume max ploidy is five, this will be adjusted when parsing data
-  int32_t nodatagt[5] = {0,1,0,0,0};
+  int32_t nodatagt[2]={bcf_gt_unphased(0),bcf_gt_unphased(1)};
+  if(nsamples==0&&whichsample!=-1){
+    fprintf(stderr,"\t-> You have supplied -id but your vcf does not contain GT tag\n");
+    exit(1);
+  }
+  if(whichsample>=nsamples){
+    fprintf(stderr,"\t-> You have supplied -id %d, but your vcf only contains: %d sample\n",whichsample,nsamples);
+    exit(1);
+  }
+  if(nsamples==1&&whichsample==-1){
+    fprintf(stderr,"\t-> Your vcf contains one sample, and you you have not supplied -id option, will base sampling on GT for first sample\n");
+    whichsample = 0;
+  }
+  if(nsamples>1&&whichsample==-1){
+    fprintf(stderr,"\t-> Your vcf contains more than one sample, and you you have not supplied -id option \n");
+    exit(1);
+  }
+  if(nsamples==0)
+    fprintf(stderr,"\t-> Your vcf does not contain genotypes. Will use ref and alt column of the vcf for sampling\n");
+  else
+    fprintf(stderr,"\t-> nsamples in vcf: %d will use GT in sample: %d (zero indexed)\n",nsamples,whichsample);
   inferred_ploidy = 2;
   bcfmap mybcfmap;
   
