@@ -39,7 +39,9 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t\t Nucletide sequence with corresponding quality score w. different compression levels. \n\t\t <fq||fastq> \n\t\t <fq.gz||fastq.gz>\t\n"); 
   fprintf(fp,"\t\t Sequence Alignment Map w. different compression levels. \n\t\t <sam||bam||cram>\n"); 
   fprintf(fp,"\t-o   | --output: \t\t Prefix of output file name.\n");
-
+  fprintf(fp,"\nFormat specific: \n\n");
+  fprintf(fp,"\t-q1  | --quality1: \t\t Read Quality profile for single-end reads (SE) or first read pair (PE) for fastq or sequence alignment map formats.\n");
+  fprintf(fp,"\t-q2  | --quality2: \t\t Read Quality profile for for second read pair (PE) for fastq or sequence alignment map formats.\n");
   fprintf(fp,"\n----- Optional ----- \n");
   fprintf(fp,"\nGenetic Variations: \n\n");
   fprintf(fp,"\t-bcf | -vcf: \t\t\t Variant Calling Format (.vcf) or binary format (.bcf)\n");
@@ -63,11 +65,12 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t\t <1,2,4> \t\t Default = 1\n"); 
   fprintf(fp,"\nNucleotide Alterations: \n\n");
   fprintf(fp,"\t-mf  | --mismatch: \t\t Nucleotide substitution frequency file.\n");
-  fprintf(fp,"\t-ne  | --noerror: \t\t Disabling the sequencing error substitutions based on nucleotide qualities.\n");
+  fprintf(fp,"\t-ne  | --noerror: \t\t Disabling the sequencing error substitutions based on nucleotide qualities from the provided quality profiles -q1 and -q2.\n");
   
   fprintf(fp,"\nRead Specific: \n\n");
   fprintf(fp,"\t-na  | --noalign: \t\t Using the SAM output as a sequence container without alignment information.\n");
   fprintf(fp,"\t-cl  | --cycle: \t\t Read cycle length, the maximum length of sequence reads, if not provided the cycle length will be inferred from quality profiles (q1,q2).\n");
+  fprintf(fp,"\t-ll  | --lowerlimit: \t\t Lower fragment length limit, default = 30. The minimum fragment length for deamination is 30, so simulated fragments below will be fixed at 30.\n");
   fprintf(fp,"\t-bl  | --bufferlength: \t\t Buffer length for generated sequence reads stored in the output files, default = 30000000.\n");
   fprintf(fp,"\t-chr | --chromosomes: \t\t Specific chromosomes from input reference file to simulate from.\n\n");
   fprintf(fp,"\t-a1  | --adapter1: \t\t Adapter sequence to add for simulated reads (SE) or first read pair (PE).\n");
@@ -75,8 +78,6 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t-a2  | --adapter2: \t\t Adapter sequence to add for second read pair (PE). \n");
   fprintf(fp,"\t\t e.g. Illumina TruSeq Adapter 2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT \n\n");
   fprintf(fp,"\t-p   | --poly: \t\t\t Create Poly(X) tails for reads, containing adapters with lengths below the inferred readcycle length. \n \t\t e.g -p G or -p A \n");
-  fprintf(fp,"\t-q1  | --quality1: \t\t Read Quality profile for single-end reads (SE) or first read pair (PE).\n");
-  fprintf(fp,"\t-q2  | --quality2: \t\t Read Quality profile for for second read pair (PE).\n");
   fprintf(fp,"\nSimulation Specific: \n\n");
   fprintf(fp,"\t-t   | --threads: \t\t Number of sampling threads, default = 1.\n");
   fprintf(fp,"\t-t2  | --threads2: \t\t Number of compression threads, default = 0.\n");
@@ -108,15 +109,19 @@ void ErrMsg(double messageno){
   else if(messageno == 2.0){fprintf(stderr,"\nNumber of reads or depth to simulate not recognized, provide either number of reads (-r) or depth of coverage (-c).\n");}
   else if(messageno == 2.2){fprintf(stderr,"\nUnable to utilize the desired number for depth of coverage (-c), use values above 0.\n");}
   else if(messageno == 2.4){fprintf(stderr,"\nUnable to utilize the desired number of reads to simulate (-r), use integers above 0.\n");}
+  else if(messageno == 2.5){fprintf(stderr,"\nUnable to utilize the desired number of reads or coverage for the simulations, provide eather (-r) or coverage (-c)\n");}
   else if(messageno == 2.6){fprintf(stderr,"\nUnable to utilize the desired number of reads to simulate for the provided number of threads, i.e threads > no. reads when no. reads equals 1.\n");}
   else if(messageno == 2.99){fprintf(stderr,"\nCould not parse both the number reads and depth to simulate, provide either number of reads (-r) or depth of coverage (-c).\n");}
-  else if(messageno == 3.0){fprintf(stderr,"\nCould not parse the length parameters, provide either fixed length size (-l) or parse length distribution file (-lf).\n");}
-  else if(messageno == 3.2){fprintf(stderr,"\nUnable to simulate reads of the desired fixed length (-l), use integers above 0.\n");}
+  else if(messageno == 3.0){fprintf(stderr,"\nCould not parse the length parameters, provide either fixed length size (-l) or parse length distribution file (-lf) or parse length distribution (-ld).\n");}
+  else if(messageno == 3.1){fprintf(stderr,"\nUnable to simulate reads of the desired fixed length (-l), use integers above 0.\n");}
+  else if(messageno == 3.2){fprintf(stderr,"\nUnable to simulate reads of the desired cycle length (-cl), use integers above 0.\n");}
+  else if(messageno == 3.3){fprintf(stderr,"\nUnable to simulate reads of the desired lower limit length (-ll), use integers above 30, default = 30.\n");}
   else if(messageno == 5.0){fprintf(stderr,"\nCould not parse both length parameters, provide either fixed length size (-l) or parse length distribution file (-lf).\n");}
   else if(messageno == 6.0){fprintf(stderr,"\nSequence type not provided. provide -seq || --sequence : SE (single-end) or PE (paired-end).\n");}
   else if(messageno == 6.5){fprintf(stderr,"\nSequence type not recognized. provide either SE (single-end) or PE (paired-end).\n");}
   else if(messageno == 7.0){fprintf(stderr,"\nOutput format not recognized, provide -f | --format : <fa, fa.gz, fq, fq.gz, sam, bam, cram>.\n");}
   else if(messageno == 8.0){fprintf(stderr,"\nOutput filename not provided, provide -o.\n");}
+  else if(messageno == 8.1){fprintf(stderr,"\nOutput filename not specified, provide -o filename.\n");}
   else if(messageno == 9.0){fprintf(stderr,"\nUnable to utilize the provided number of threads, use integers above 0.\n");}
   else if(messageno == 10.0){fprintf(stderr,"\nNucleotide for poly(x) homopolymers not recognized, provide -p : <A,G,C,T,N>.\n");}
   else if(messageno == 11.0){fprintf(stderr,"\nCould not parse the Nucleotide Quality profile(s), for format <fq, fq.gz, sam, bam, cram> provide -q1 for SE and -q1, -q2 for PE.\n");}
