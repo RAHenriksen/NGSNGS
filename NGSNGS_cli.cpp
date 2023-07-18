@@ -4,6 +4,8 @@
 #include <cstring>
 #include <cstdlib>
 #include <iostream>
+#include "version.h"
+#include <cassert>
 
 argStruct *getpars(int argc,char ** argv){
   argStruct *mypars = new argStruct;
@@ -46,6 +48,7 @@ argStruct *getpars(int argc,char ** argv){
 
   // Fragment lengths
   mypars->CycleLength = 0; 
+  mypars->LowerLimit=30;
   mypars->Length = 0;
   mypars->LengthFile = NULL;
   mypars->LengthDist = NULL;
@@ -82,8 +85,10 @@ argStruct *getpars(int argc,char ** argv){
 	      mypars->OutFormat = bamT;
       if(strcasecmp("cram",tok)==0)
 	      mypars->OutFormat = cramT;
-      if(mypars->OutFormat==unknownT)
-	      ErrMsg(7.0);
+      if(mypars->OutFormat==unknownT){
+	      fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data\nWarning:\n");
+        ErrMsg(7.0);
+      }
     }
     else if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->Reference = strdup(*(++argv));
@@ -109,9 +114,14 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-c",*argv)==0 || strcasecmp("--cov",*argv)==0){
       mypars->coverage = atof(*(++argv));
-      if (mypars->coverage < 0.0){ErrMsg(2.2);}
+      if (mypars->coverage <= 0.0){ErrMsg(2.2);}
     }
     else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
+      /*if(*(++argv) == NULL){
+ 	      fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data\nWarning:\n");
+        ErrMsg(8.1);
+        exit(0);
+      }*/
       mypars->OutName = strdup(*(++argv));
     }
     else if(strcasecmp("-s",*argv)==0 || strcasecmp("--seed",*argv)==0){
@@ -124,7 +134,7 @@ argStruct *getpars(int argc,char ** argv){
 	      mypars->seq_type = SE;
       else if(strcasecmp("PE",tok)==0 || strcasecmp("pe",tok)==0 || strcasecmp("paired",tok)==0 || strcasecmp("paired-end",tok)==0)
 	      mypars->seq_type = PE;
-      if(mypars->seq_type==unknownTT)
+      else if(mypars->seq_type==unknownTT)
 	      ErrMsg(6.5);
     }
     else if(strcasecmp("-a1",*argv)==0 || strcasecmp("--adapter1",*argv)==0){
@@ -171,13 +181,17 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-l",*argv)==0 || strcasecmp("--length",*argv)==0){
       mypars->Length = atoi(*(++argv));
-      if (mypars->Length < 0.0){ErrMsg(3.2);}
+      if (mypars->Length < 0.0){ErrMsg(3.1);}
     }
     else if(strcasecmp("-lf",*argv)==0 || strcasecmp("--lengthfile",*argv)==0){
       mypars->LengthFile = strdup(*(++argv));
     }
     else if(strcasecmp("-ld",*argv)==0 || strcasecmp("--lengthdist",*argv)==0){
       mypars->LengthDist = strdup(*(++argv));
+    }
+    else if(strcasecmp("-ll",*argv)==0 || strcasecmp("--lowerlimit",*argv)==0){
+      mypars->LowerLimit = atoi(*(++argv));
+      if (mypars->LowerLimit < 30.0){ErrMsg(3.3);}
     }
     else if(strcasecmp("-chr",*argv)==0 || strcasecmp("--chromosomes",*argv)==0){
       mypars->Chromosomes = strdup(*(++argv));
@@ -223,6 +237,52 @@ argStruct *getpars(int argc,char ** argv){
       mypars->CompressThreads = 12;
     }
   }
+
+  // Ensure the required argument are parsed after all arguments have been provided
+
+  const char* NGSNGS_msg = "Next Generation Simulator for Next Generator Sequencing Data";
+  // Input
+  if(mypars->Reference == NULL){
+    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+    ErrMsg(1.0);
+    exit(0);
+  }
+  // read numbers
+  if(mypars->nreads == 0 && mypars->coverage == 0.0){
+    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+    ErrMsg(2.5);
+  }
+  // read lengths
+  if(mypars->Length == 0 && mypars->LengthFile == NULL && mypars->LengthDist == NULL){
+    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+    ErrMsg(3.0);
+  }
+  // Format
+  if(mypars->OutFormat == unknownT){
+    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+    ErrMsg(7.0);
+   exit(0);
+  }
+  if(mypars->seq_type == unknownTT){
+    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+    ErrMsg(6.0);
+    exit(0);
+  }
+  // quality profiles
+  if(mypars->OutFormat==fqT|| mypars->OutFormat== fqgzT ||mypars->OutFormat==samT ||mypars->OutFormat==bamT|| mypars->OutFormat== cramT){
+    if (mypars->QualProfile1 == NULL){
+      fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+      ErrMsg(11.0);
+      exit(0);
+    }
+  }
+  // Output
+  if(mypars->OutName == NULL){
+    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+    ErrMsg(8.0);
+    exit(0);
+  }
+
   return mypars;
 }
 
