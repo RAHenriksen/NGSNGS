@@ -98,11 +98,22 @@ int main(int argc,char **argv){
     int nlines = 0;
     if (mypars->CycleLength != 0){
       readcycle = mypars->CycleLength;
+      if (mypars->QualProfile1 == NULL){
+        ErrMsg(11.0);
+        exit(0);
+      }
+      gzFile gz = Z_NULL;
+      assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
+      gzclose(gz);
     }
     else{
       if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
+        if (mypars->QualProfile1 == NULL){
+          ErrMsg(11.0);
+          exit(0);
+        }
         gzFile gz = Z_NULL;
-        assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL);
+        assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
         char buf[LENS];
         while(gzgets(gz,buf,LENS))
 	        nlines++;
@@ -115,7 +126,7 @@ int main(int argc,char **argv){
     const char* SizeDist = mypars->LengthDist;
     double mean_length = 0;
     int SizeDistType=-1;double val1 = 0; double val2  = 0;
-
+    
     if (mypars->Length != 0){
       if (mypars->Length < 0){ErrMsg(3.0);}
       else{
@@ -251,8 +262,7 @@ int main(int argc,char **argv){
         }
       }
     }
-    else
-    {
+    else{
       if(OutputFormat== fqT ||OutputFormat==fqgzT){
         ErrMsg(11.0);
         exit(0);
@@ -325,7 +335,7 @@ int main(int argc,char **argv){
                       qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->CompressThreads,QualStringFlag,Polynt,
                       mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
                       mypars->vcffile,IndelFuncParam,DoIndel,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,
-                      mypars->Align,mypars->KstrBuf,mypars->DumpFile,mypars->IndelDumpFile,mypars->Duplicates);
+                      mypars->Align,mypars->KstrBuf,mypars->DumpFile,mypars->IndelDumpFile,mypars->Duplicates,mypars->LowerLimit);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));

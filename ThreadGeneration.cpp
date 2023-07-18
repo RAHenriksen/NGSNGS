@@ -52,7 +52,8 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2, int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
-                        char CommandArray[LENS],const char* version,int HeaderIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile,int Duplicates){
+                        char CommandArray[LENS],const char* version,int HeaderIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile,
+                        int Duplicates,int Lowerlimit){
   //creating an array with the arguments to create multiple threads;
 
   int nthreads=thread_no;
@@ -307,6 +308,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].distparam1 = val1;
       struct_for_threads[i].distparam2 = val2;
       struct_for_threads[i].LengthType = SizeDistType;
+      struct_for_threads[i].lowerlimit = Lowerlimit;
 
       // Sequence output specific
       struct_for_threads[i].BufferLength = BufferLength;

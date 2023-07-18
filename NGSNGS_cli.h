@@ -31,6 +31,7 @@ typedef struct{
   char *BriggsBiotin;         //the four briggs parameters in relation to Biotin
   int Duplicates;             //for the none biotin model, four potential fragments with independent deamination pattern are possible to generate, default PCR=1
   int CycleLength;            //cycle length with the maximum number of nucleotides to be generated, independent of the fragment length
+  int LowerLimit;             //lower limit of fragment lengths, with some distributions perhaps having values in the pdf below 0, default of 30 due to the deamination
   int Length;                 //fragment length when fixed
   char *LengthFile;           //filename for distribution of frag lengths
   char *LengthDist;           //name of pdf used for simulating fraglengths (incl parameters)

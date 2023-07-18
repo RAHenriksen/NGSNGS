@@ -112,6 +112,11 @@ void* Sampling_threads(void *arg) {
 
     //sample fragmentlength
     int fraglength = getFragmentLength(sf); 
+
+    if(fraglength < struct_obj->lowerlimit){
+      fprintf(stderr,"lowerlimit%d\n",struct_obj->lowerlimit);
+      fraglength = struct_obj->lowerlimit;
+    }
     // Selecting genomic start position across the generated contiguous contigs for which to extract 
     int chr_idx = -1;
 
