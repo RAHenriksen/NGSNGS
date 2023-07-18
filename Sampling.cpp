@@ -47,8 +47,6 @@ void* Sampling_threads(void *arg) {
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
   mrand_t *rand_alloc = mrand_alloc(struct_obj->rng_type,loc_seed);
 
-  char *seq;//actual sequence, this is unallocated
-
   // sequence reads, original, modified, with adapters, pe
   char READ_ID[1024];
   char *FragmentSequence = (char*) calloc(LENS,1);
@@ -78,11 +76,9 @@ void* Sampling_threads(void *arg) {
   indel->l = indel->m = 0;
 
   size_t localread = 0;
-  int iter = 0;
   size_t current_reads_atom = 0;
 
   char *chr; //this is an unallocated pointer to a chromosome name, eg chr1, chrMT etc
-  int posB,posE;//this is the first and last position of our fragment
 
   extern int SIG_COND;
 
@@ -94,8 +90,8 @@ void* Sampling_threads(void *arg) {
   else
     sf = sim_fragment_alloc(struct_obj->LengthType,struct_obj->distparam1,struct_obj->distparam2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,struct_obj->rng_type,loc_seed,RndGen);
   
-  int C_total = 0;int C_to_T_counter = 0;int C_to_T_counter_rev = 0;int C_total_rev=0;
-  int G_total = 0;int G_to_A_counter = 0;int G_to_A_counter_rev = 0;int G_total_rev=0;
+  int C_to_T_counter = 0;int C_to_T_counter_rev = 0;
+  int G_to_A_counter = 0;int G_to_A_counter_rev = 0;
   int refCp1 = 0;int refCTp1 = 0;int refCp2 = 0;int refCTp2 = 0;
 
   int modulovalue;
@@ -160,7 +156,6 @@ void* Sampling_threads(void *arg) {
     int strandR1 = mrand_pop(rand_alloc)>0.5?0:1;
 
     // Sequence alteration integers
-    int FragDeam = 0;
     int FragMisMatch = 0;
     int has_seqerr = 0;    
     int has_indels = 0;
@@ -279,8 +274,7 @@ void* Sampling_threads(void *arg) {
         strncpy(seq_r2,FragRes[FragNo]+(fraglength-maxbases),maxbases);
     
       //Remove reads which are all N, we remove both pairs if both reads are all N
-      int seqlen = strlen(seq_r1);
-
+  
       for(int i=0;skipread&&i<(int)strlen(seq_r1);i++)
         if(seq_r1[i]!='N')
           skipread = 0;
@@ -371,10 +365,24 @@ void* Sampling_threads(void *arg) {
       //add adapters
       if(struct_obj->AddAdapt){
         //Because i have reverse complemented the correct sequences and adapters depending on the strand origin (or flags), i know all adapters will be in 3' end
-        nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
+        nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),std::string(struct_obj->Adapter_1).length());
         strncpy(seq_r1+strlen(seq_r1),struct_obj->Adapter_1,nsofts[0]);
+        /*
+        Sampling.cpp: In function 'void* Sampling_threads(void*)':
+        Sampling.cpp:369:16: warning: 'char* strncpy(char*, const char*, size_t)' specified bound depends on the length of the source argument [-Wstringop-truncation]
+          369 |         strncpy(seq_r1+strlen(seq_r1),struct_obj->Adapter_1,nsofts[0]);
+              |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        Sampling.cpp:368:77: note: length computed here
+          368 |         nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
+              |                                                                       ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+        Sampling.cpp:369:16: warning: 'char* strncpy(char*, const char*, size_t)' specified bound depends on the length of the source argument [-Wstringop-truncation]
+          369 |         strncpy(seq_r1+strlen(seq_r1),struct_obj->Adapter_1,nsofts[0]);
+              |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        Sampling.cpp:368:77: note: length computed here
+          368 |         nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
+        */
         if(PE==struct_obj->SeqType){
-          nsofts[1] = std::min(struct_obj->maxreadlength-strlen(seq_r2),strlen(struct_obj->Adapter_2));
+          nsofts[1] = std::min(struct_obj->maxreadlength-strlen(seq_r2),std::string(struct_obj->Adapter_2).length());
           strncpy(seq_r2+strlen(seq_r2),struct_obj->Adapter_2,nsofts[1]);
         }
       }
@@ -392,12 +400,12 @@ void* Sampling_threads(void *arg) {
       }
 
       if(struct_obj->SAMout){
-        if(strlen(seq_r1)!=naligned[0]+nsofts[0]){
+        if((int)strlen(seq_r1)!=(naligned[0]+nsofts[0])){
           fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
           exit(0);
         }
         //below only runs for PE that is when nalign[1] is not -1
-        if(naligned[1]!=-1 && strlen(seq_r2)!=naligned[1]+nsofts[1]){
+        if(naligned[1]!=-1 && (int)strlen(seq_r2)!=naligned[1]+nsofts[1]){
           fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
           exit(0);
         }
@@ -476,7 +484,6 @@ void* Sampling_threads(void *arg) {
           hts_pos_t min_beg, max_end, insert; //max_end, insert;
           min_beg = posB;
           max_end = posE;
-          hts_pos_t min_beg_mate, max_end_mate;
           insert = max_end - min_beg;
 
           const char* suffR1 = " R1";
@@ -541,7 +548,7 @@ void* Sampling_threads(void *arg) {
             pthread_mutex_lock(&write_mutex);
             assert(bgzf_write(struct_obj->bgzf_fp[2],indel->s,indel->l)!=0);
             pthread_mutex_unlock(&write_mutex);
-            indel->l = indel->l = 0;
+            indel->l = 0;
           }
         }
       }
@@ -592,7 +599,7 @@ void* Sampling_threads(void *arg) {
       pthread_mutex_lock(&write_mutex);
       assert(bgzf_write(struct_obj->bgzf_fp[0],indel->s,indel->l)!=0);
       pthread_mutex_unlock(&write_mutex);
-	    indel->l = indel->l = 0;
+	    indel->l = 0;
     } 
   }
 

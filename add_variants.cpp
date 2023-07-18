@@ -131,7 +131,6 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
   int last[ploidy];
   int last_fid = -1;
   int reset = 1;
-  char buf[1024];
   int maxsize = -1;
   int *fsoffsets = NULL;
   for(int i=0;i<fs->nref;i++)
@@ -190,7 +189,7 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
           last[i] = it->first.pos;
       }
       int nitems2copy = brec->pos-last[i]+1;
-      assert(strlen(elephant[i])+brec->pos-last[i]< maxsize );//funky assert
+      assert(strlen(elephant[i])+brec->pos-last[i]< (size_t)maxsize );//funky assert
       strncat(elephant[i],fs->seqs[fsoffsets[i]]+last[i],nitems2copy);
       char *allele = NULL;
       allele = it->second->d.allele[it->first.gt[i]];
@@ -246,7 +245,6 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
 void add_variant(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32_t *gts, int ploidy){
   // Adding genotype information for chromosome,pos,ploidy
   char buf[1024];
-  char ref = fs->seqs[fs_chr_idx][pos];
   #if 0
   for(int i=0;0&&i<ploidy;i++){
     fprintf(stderr,"%d) gt: %d and GT alleles are  '%s' (first one should be reference?)\n",i,bcf_gt_allele(gts[i]),alleles[i]);
@@ -265,7 +263,6 @@ void add_variant(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32
       
     }
   }
-  
 }
 
 //if minus one then ref and alt fields are used, if nonnegative then it is used as offset to which genotype to use from the GT fields
@@ -329,7 +326,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int whichsample){
         fprintf(stderr,"nal:%d %s %zu\n",i,brec->d.allele[i],strlen(brec->d.allele[i]));
     #endif
     if(brec->n_allele==1){
-      fprintf(stderr,"\t-> Only Reference allele defined for pos: %lld will skip\n",brec->pos+1);
+      fprintf(stderr,"\t-> Only Reference allele defined for pos: %ld will skip\n",brec->pos+1);
       continue;
     }
     //check if parental chromosomes exists otherwise add them
@@ -341,7 +338,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int whichsample){
     else
       mygt = gt_arr+inferred_ploidy*whichsample;
     if(bcf_gt_is_missing(mygt[0])){
-      fprintf(stderr,"\t-> Genotype is missing for pos: %lld will skip\n",brec->pos+1);
+      fprintf(stderr,"\t-> Genotype is missing for pos: %ld will skip\n",brec->pos+1);
       continue;
     }
     //figure out if its an indel

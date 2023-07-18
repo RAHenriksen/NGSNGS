@@ -72,7 +72,7 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
     }
   else{
     int at = 0;
-    for(int i=0;i<SubsetChr.size();i++){
+    for(int i=0;i<(int)SubsetChr.size();i++){
       if( faidx_has_seq(fs->fai, SubsetChr[i])){
         fs->seqs_names[at] = strdup(SubsetChr[i]);
         fs->seqs[at] = fai_fetch(fs->fai,fs->seqs_names[i],fs->seqs_l+at);
@@ -91,7 +91,7 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
     exit(0);
   }
   fasta_sampler_setprobs(fs);
-  for(int i=0;i<SubsetChr.size();i++)
+  for(int i=0;i<(int)SubsetChr.size();i++)
     free(SubsetChr[i]);
   return fs;
 }

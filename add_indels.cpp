@@ -9,10 +9,10 @@ void add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_IN
   //int ops[2] ={0,0};
   int fragbefore = strlen(frag);
   
-  char DelOps[512];
-  char InsOps[512];
-  int offsetDel = sprintf(DelOps, "");
-  int offsetIns = sprintf(InsOps, "");
+  char DelOps[512] = "\0";
+  char InsOps[512] = "\0";
+  int offsetDel = 0;//sprintf(DelOps, "");
+  int offsetIns = 0;//sprintf(InsOps, "");
 
   int i=0;
   int cumlen = 0;
@@ -62,14 +62,14 @@ void add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_IN
     beg++;
   }
   if (ops[0] == 0){
-    snprintf(INDEL_INFO,1024,"%d\tNA\t%d\t%s\t%d\t%d",ops[0],ops[1],DelOps,fragbefore,strlen(frag));
+    snprintf(INDEL_INFO,1024,"%d\tNA\t%d\t%s\t%d\t%ld",ops[0],ops[1],DelOps,fragbefore,strlen(frag));
   }
   else if (ops[1] == 0){
-    snprintf(INDEL_INFO,1024,"%d\t%s\t%d\tNA\t%d\t%d",ops[0],InsOps,ops[1],fragbefore,strlen(frag));
+    snprintf(INDEL_INFO,1024,"%d\t%s\t%d\tNA\t%d\t%ld",ops[0],InsOps,ops[1],fragbefore,strlen(frag));
   }
   else
   {
-    snprintf(INDEL_INFO,1024,"%d\t%s\t%d\t%s\t%d\t%d",ops[0],InsOps,ops[1],DelOps,fragbefore,strlen(frag));
+    snprintf(INDEL_INFO,1024,"%d\t%s\t%d\t%s\t%d\t%ld",ops[0],InsOps,ops[1],DelOps,fragbefore,strlen(frag));
   }
 }
 
