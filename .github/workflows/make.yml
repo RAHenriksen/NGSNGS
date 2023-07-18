@@ -11,14 +11,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        name: [Ubuntulatest,ubuntu-20.04]
-        include:
-          - name: Ubuntulatest
-            os: ubuntu-latest
-            compiler: clang
-          - name: Ubuntu1804
-            os: ubuntu-18.04
-            compiler: [clang, gcc]
+        os: [ ubuntu-20.04, ubuntu-latest ]
+        compiler: [ clang, gcc ]
   
     steps:
     - uses: actions/checkout@v3
