@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        name: [Ubuntulatest,Ubuntu1804]
+        name: [Ubuntulatest,ubuntu-20.04]
         include:
           - name: Ubuntulatest
             os: ubuntu-latest
@@ -21,7 +21,7 @@ jobs:
             compiler: [clang, gcc]
   
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install dependencies
       run: sudo apt-get update;sudo apt-get install libcurl4-openssl-dev samtools
     - name: prepare and compile htslib
