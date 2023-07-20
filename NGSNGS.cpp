@@ -142,7 +142,11 @@ int main(int argc,char **argv){
 
       if (OutputFormat==faT|| OutputFormat== fagzT) {
         // Calculate mean length for all lines, i.e. the fragment length determines the number of reads, given a specific coverage
-        fscanf(fp, "%d %f", &Len_prev, &CummFreq_prev);
+        if (fscanf(fp, "%d %f", &Len_prev, &CummFreq_prev) != 2) {
+          // Handle error: unable to read expected data
+          fclose(fp);
+          return 1; // Or appropriate error code
+        }
         mean_length += Len_prev * ((double)(CummFreq_prev));
         while (fscanf(fp, "%d %f", &Len_cur, &CummFreq_cur) == 2) {
           mean_length += Len_cur * ((double)(CummFreq_cur-CummFreq_prev));
