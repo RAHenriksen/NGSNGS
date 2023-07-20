@@ -68,8 +68,8 @@ void* Sampling_threads(void *arg) {
   }
   
   //generating kstring for potential records of the stochastic indels
-  char INDEL_INFO[1024];
-  char INDEL_DUMP[1024];
+  char INDEL_INFO[512];
+  char INDEL_DUMP[2048];
   kstring_t *indel;
   indel =(kstring_t*) calloc(1,sizeof(kstring_t));
   indel->s = NULL;
@@ -541,7 +541,7 @@ void* Sampling_threads(void *arg) {
       }
       
       if (struct_obj->DoIndel && struct_obj->IndelDumpFile != NULL){
-        snprintf(INDEL_DUMP,1024,"%s\t%s\n",READ_ID,INDEL_INFO);
+        snprintf(INDEL_DUMP,2048,"%s\t%s\n",READ_ID,INDEL_INFO);
         ksprintf(indel,"%s",INDEL_DUMP);
         if (struct_obj->bgzf_fp[2]){
           if (indel->l > 0){
