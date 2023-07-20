@@ -68,7 +68,7 @@ void* Sampling_threads(void *arg) {
   }
   
   //generating kstring for potential records of the stochastic indels
-  char INDEL_INFO[512];
+  char INDEL_INFO[1024];
   char INDEL_DUMP[1024];
   kstring_t *indel;
   indel =(kstring_t*) calloc(1,sizeof(kstring_t));
