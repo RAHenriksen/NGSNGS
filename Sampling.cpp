@@ -48,7 +48,7 @@ void* Sampling_threads(void *arg) {
   mrand_t *rand_alloc = mrand_alloc(struct_obj->rng_type,loc_seed);
 
   // sequence reads, original, modified, with adapters, pe
-  char READ_ID[1024];
+  char READ_ID[512];
   char *FragmentSequence = (char*) calloc(LENS,1);
   char seq_r1[LENS] = {0};
   char seq_r2[LENS] = {0};
@@ -354,7 +354,7 @@ void* Sampling_threads(void *arg) {
       //so now everything is on 5->3 and some of them will be reverse complement to referene
       //now everything is the same strand as reference, which we call plus/+
     
-      snprintf(READ_ID,1024,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
+      snprintf(READ_ID,512,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
 
       int nsofts[2] = {0,0}; //this will contain the softclip information to be used by sam/bam/cram output format for adapter and polytail
       //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail
@@ -489,7 +489,7 @@ void* Sampling_threads(void *arg) {
           const char* suffR1 = " R1";
           const char* suffR2 = " R2";
 
-          char READ_ID2[1024];
+          char READ_ID2[512];
           strcpy(READ_ID2,READ_ID);
           
           strcat(READ_ID,suffR1);
