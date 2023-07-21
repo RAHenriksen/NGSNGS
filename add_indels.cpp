@@ -75,7 +75,7 @@ void add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_IN
 
 #ifdef __WITH_MAIN__
 int main(int argc,char **argv){
-  char INDEL_INFO[512];
+  char INDEL_INFO[1024];
   int readlength = 100;
   mrand_t *mr = mrand_alloc(2,777);
   char fragment[1024];
