@@ -79,11 +79,11 @@ ngsngs: version.h $(OBJ)
 endif
 
 clean:	
-	rm  -f ngsngs *.o *.d version.h
+	rm -f ngsngs *.o *.d version.h
 
 test:
 	echo "Subprograms is being tested";
-	cd test; sh testAll.sh;
-
+	cd test; sh testAll.sh; rm *.fa *.fq *.sam *.txt
+	
 force:
 	
