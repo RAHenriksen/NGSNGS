@@ -26,6 +26,7 @@ if [ $Unsort_line -ne $Sort_line ]; then
 echo "Warning different number of lines before and after sorting"; exit 1;
 fi
 
+md5sum MycoBactBamSEOut.sam
 md5sum MycoBactBamSEOutSort.sam
 grep 'MycoBactBamSEOutSort.sam' MycoBactTest.md5
 
