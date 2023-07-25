@@ -65,6 +65,10 @@ int main(int argc,char **argv){
     HelpPage(stderr);
     return 0;
   }
+  else if(argc==1||(argc==2&&(strcasecmp(argv[1],"--version")==0||strcasecmp(argv[1],"-v")==0))){
+    fprintf(stderr,"\t-> ngsngs version v0.9.0: %s (htslib: %s) build(%s %s)\n",NGSNGS_VERSION,hts_version(),__DATE__,__TIME__); 
+    return 0;
+  }
   else{
     catchkill();
     mypars = getpars(argc,argv);

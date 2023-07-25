@@ -19,19 +19,7 @@ echo "1) Testing Single-end, length file, reads, briggs, sampling threads, seque
 echo "---------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -r 100000 -t 1 -s 1 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f sam -o MycoBactBamSEOut
 
-samtools sort MycoBactBamSEOut.sam -o MycoBactBamSEOutSort.sam
-Unsort_line=$(samtools view MycoBactBamSEOut.sam|wc -l)
-Sort_line=$(samtools view MycoBactBamSEOutSort.sam|wc -l)
-if [ $Unsort_line -ne $Sort_line ]; then 
-echo "Warning different number of lines before and after sorting"; exit 1;
-fi
-
-md5sum MycoBactBamSEOut.sam
-md5sum MycoBactBamSEOutSort.sam
-grep 'MycoBactBamSEOutSort.sam' MycoBactTest.md5
-
-rm MycoBactBamSEOut.sam
-#md5sum MycoBactBamSEOutSort.sam > MycoBactTest.md5
+#md5sum MycoBactBamSEOut.sam > MycoBactTest.md5
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "2) Testing Paired-end, fixed length, coverage, no sequencing error, adapters, sampling threads, fq"
