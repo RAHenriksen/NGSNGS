@@ -19,6 +19,15 @@ echo "1) Testing Single-end, length file, reads, briggs, sampling threads, seque
 echo "---------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -r 100000 -t 1 -s 1 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f sam -o MycoBactBamSEOut
 
+echo "From md5 file:"
+grep 'MycoBactBamSEOut' MycoBactTest.md5
+echo "New simulations"
+md5sum MycoBactBamSEOut.sam
+samtools sort MycoBactBamSEOut.sam -o MycoBactBamSEOutSort.sam
+echo "Original file after sorting"
+md5sum MycoBactBamSEOut.sam
+echo "Sorted file"
+md5sum MycoBactBamSEOutSort.sam
 #md5sum MycoBactBamSEOut.sam > MycoBactTest.md5
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
@@ -96,6 +105,17 @@ echo "--------------------------------------------------------------------------
 ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.0,0.05,0.0,0.9 -q1 ${Q1} -DumpIndel DelTmp -f fq -o DelOut
 ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.05,0.0,0.9,0.0 -q1 ${Q1} -DumpIndel InsTmp -f fq -o InsOut
 
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "9) Testing Single-end, simulating fixed quality score of 40, with fragment lower-limit"
+echo "---------------------------------------------------------------------------------------------------------------"
+
+${PRG} -i ${IN} -r 100000 -t 1 -s 1 -lf ${LF} -seq SE -ll 50 -qs 40 -f fq -o MycoBactQSLLSEOUT
+
+No_SeqErr=$(cat MycoBactQSLLSEOUT.fq|grep 'mod0001'|wc -l)
+if [ $No_SeqErr -ne 745 ]; then 
+    echo "Warning different number of reads containing sequencing error with a fixed quality score of 40"; exit 1;
+fi
+md5sum MycoBactQSLLSEOUT.fq
 #md5sum DelOut.fq >> MycoBactTest.md5
 #md5sum InsOut.fq >> MycoBactTest.md5
 #md5sum DelTmp.txt >> MycoBactTest.md5
