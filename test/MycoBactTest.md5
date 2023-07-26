@@ -1,7 +1,9 @@
-9f9f13850a9bb6895ee4e077eca5ff26  MycoBactBamSEOut.sam
+d6e79332910976867a7eded432861317  READID.txt
+901509e7c0bfc2530f7f8a473ba1a014  CIGAR.txt
+6d682d27ab14d70b6fe295bda3c0d1ef  SEQ.txt
 95437aa3e4840475444d8233789d49d3  MycoBactFqPEOut_R1.fq
 8d9b6df0969afe2ff24f00211f35ab51  MycoBactFqPEOut_R2.fq
-f6d77362edf2b4904dbeb60123635492  MycoBactFaSEOut.fa
+1f55e18f88b4c90c26210c66703b506e  MycoBactFaSEOut.fa
 8ecafe96d0e50bd06f105e8f2bea8ca7  MycoBactFqSEPolyOut.fq
 93449d2783ff27da738ffa6fad4b8181  MycoBactFqSEClOut.fq
 f9fd637fc792cbb6205ecf8ed187f905  HaploidRef_Deletion_0.fa

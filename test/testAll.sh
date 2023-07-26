@@ -19,15 +19,19 @@ echo "1) Testing Single-end, length file, reads, briggs, sampling threads, seque
 echo "---------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -r 100000 -t 1 -s 1 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f sam -o MycoBactBamSEOut
 
-echo "From md5 file:"
-grep 'MycoBactBamSEOut' MycoBactTest.md5
-echo "New simulations"
-md5sum MycoBactBamSEOut.sam
-samtools sort MycoBactBamSEOut.sam -o MycoBactBamSEOutSort.sam
-echo "Original file after sorting"
-md5sum MycoBactBamSEOut.sam
-echo "Sorted file"
-md5sum MycoBactBamSEOutSort.sam
+samtools view MycoBactBamSEOut.sam|cut -f1|sort > READID.txt
+samtools view MycoBactBamSEOut.sam|cut -f6|sort > CIGAR.txt
+samtools view MycoBactBamSEOut.sam|cut -f10|sort > SEQ.txt
+
+#echo "From md5 file:"
+#grep 'MycoBactBamSEOut' MycoBactTest.md5
+#echo "New simulations"
+#md5sum MycoBactBamSEOut.sam
+#samtools sort MycoBactBamSEOut.sam -o MycoBactBamSEOutSort.sam
+#echo "Original file after sorting"
+#md5sum MycoBactBamSEOut.sam
+#echo "Sorted file"
+#md5sum MycoBactBamSEOutSort.sam
 #md5sum MycoBactBamSEOut.sam > MycoBactTest.md5
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"

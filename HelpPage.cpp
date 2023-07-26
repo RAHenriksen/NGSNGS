@@ -14,6 +14,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\nExample \n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 2 -s 1 -lf Test_Examples/Size_dist_sampling.txt -seq SE -m b,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut\n");
   fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut\n");  
   fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/MisincorpFile.txt -f fa -o MycoBactFaSEOut\n");  
+  fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 1 -s 1 -lf Test_Examples/Size_dist_sampling.txt -ll 50 -seq SE -qs 40 -f fq -o MycoBactFqQsLlSEOut\n");  
   fprintf(fp,"\n./ngsngs -i Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 100 -l 150 -seq SE -ne -vcf Test_Examples/ChrMtSubDeletionDiploid.vcf -id 0 -q1 Test_Examples/AccFreqL150R1.txt -chr MT -DumpVCF DeltionInfo -f fq -o MtDeletionOut \n");  
   fprintf(fp,"\n-h   | --help: \t\t\t Print help page.\n");
   fprintf(fp,"\n-v   | --version: \t\t\t Print NGSNGS version, git commit and htslib library.\n");
@@ -43,6 +44,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\nFormat specific: \n\n");
   fprintf(fp,"\t-q1  | --quality1: \t\t Read Quality profile for single-end reads (SE) or first read pair (PE) for fastq or sequence alignment map formats.\n");
   fprintf(fp,"\t-q2  | --quality2: \t\t Read Quality profile for for second read pair (PE) for fastq or sequence alignment map formats.\n");
+  fprintf(fp,"\t-qs  | --qualityscore: \t\t Fixed quality score, for both read pairs in fastq or sequence alignment map formats. It overwrites the quality profiles.\n");
   fprintf(fp,"\n----- Optional ----- \n");
   fprintf(fp,"\nGenetic Variations: \n\n");
   fprintf(fp,"\t-bcf | -vcf: \t\t\t Variant Calling Format (.vcf) or binary format (.bcf)\n");

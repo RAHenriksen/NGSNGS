@@ -34,6 +34,10 @@ Examples of which parameters to include depending on the desired simulations
 ~~~~bash
 ./ngsngs -i hg19.fa -r 1000 -f fq -l 100 -seq SE -t 1 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
 ~~~~
+### simulate 1000 reads (-r) from human hg19.fa (-i), generate fq (-f), single end (-seq), with a fixed quality score and lower fragment limit of 50
+~~~~bash
+./ngsngs -i hg19.fa -r 1000 -f fq -lf Test_Examples/Size_dist_sampling.txt -seq SE -t 1 -qs 40 -o HgSim
+~~~~
 ### generate bam (-f), paired end (-seq), variable fragment length (-ld norm,350,20) but fixed readlength (-cl 100)
 ~~~~bash
 ./ngsngs -i hg19.fa -r 1000 -f bam -ld norm,350,20 -cl 100 -seq PE -t 1 -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -o HgSim
@@ -107,6 +111,11 @@ Output characteristics:
 
 -o   | --output: 		 Prefix of output file name.
 
+Format specific:
+-q1  | --quality1:		 Read Quality profile for single-end reads (SE) or first read pair (PE) for fastq or sequence alignment map formats.
+-q2  | --quality2:		 Read Quality profile for for second read pair (PE) for fastq or sequence alignment map formats.
+-qs  | --qualityscore:	 Fixed quality score, for both read pairs in fastq or sequence alignment map formats. It overwrites the quality profiles.
+
 ----- Optional -----
 
 Genetic Variations:
@@ -148,6 +157,7 @@ Nucleotide Alterations:
 Read Specific:
 -na  | --noalign: 		 Using the SAM output as a sequence containing without alignment information.
 -cl  | --cycle:			 Read cycle length, the maximum length of sequence reads, if not provided the cycle length will be inferred from quality profiles (q1,q2).
+-ll  | --lowerlimit:	 Lower fragment length limit, default = 30. The minimum fragment length for deamination is 30, so simulated fragments below will be fixed at 30.
 -bl  | --bufferlength:		 Buffer length for generated sequence reads stored in the output files, default = 30000000.
 -chr | --chromosomes: 		 Specific chromosomes from input reference file.
 -a1  | --adapter1: 		 Adapter sequence to add for simulated reads (SE) or first read pair (PE).
@@ -158,8 +168,6 @@ Read Specific:
 
 -p   | --poly: 			 Create Poly(X) tails for reads, containing adapters with lengths below the inferred readcycle length. 
  	 e.g -p G or -p A 
--q1  | --quality1: 		 Read Quality profile for single-end reads (SE) or first read pair (PE).
--q2  | --quality2: 		 Read Quality profile for second read pair (PE).
 
 Simulation Specific: 
 -t   | --threads: 		 Number of sampling threads, default = 1.
@@ -179,11 +187,17 @@ All formats shares a similar read ID structure
 T<ThreadNumber>_RID<RandomID>_S<Read1StrandInfo>_<Chromosome>:<Start>-<End>
 _length:<Fragmentlength>_<modVal1Val2Val3Val4> F<FragmentNumber> R<PairNumber>
 ~~~~
-
 e.g.
 @T0_RID49_S0_NZ_CP029543.1:2236795-2236942_length:148_mod1000 F0 R1
 
 S0 is the forward strand and S1 is the reverse strand, mod1000 equals read with deamination, F0 signifies the first fragment out of 4 possible PCR duplicates, R1 indicate the sequence is read 1 (See supplementary material for detailed description).
+
+### Modification vector modVal1Val2Val3Val4
+* Val1 signifies deamination of the simulated fragment, 0 = no deamination, 1 = deamination.
+* Val2 signifies mismatches from file (-mf) of the simulated fragment, 0 = no mismatch, 1 = 5' mismatch, 2 = 3' mismatch, 3 = mismatch in both ends.
+* Val3 signifies stochastic structural variations in the sequenced reads, 0 = no variation, 1 = insertions, 2 = deletions, 3 = insertions and deletions. 
+* Val4 signifies sequencing error (dependent on -q1,-q2 or -qs) in the sequenced reads, 0 = no sequencing error, 1 = sequencing error.
+
 ## Nucleotide substitution models
 ### Nucleotide quality scores (-q1 and -q2)
 Simulating a .fq or .sam format requires a provided nucleotide quality profile (-q1, -q2) with one example (Test_Examples/AccFreqL150R1.txt) and its structure: 
@@ -222,6 +236,7 @@ Line120: 0.003241 	0.015273 	0.019467 	1.000000
 ~~~~
 * The substitution pattern from the misincorporation file, represent the substitution of all four nucleotide with the first half being from from both the 5’ termini and the second half being the 3’ termini of a given fragment. 
 * With a dimension of 120 lines, the first 60 represent substitution frequencies of the first 15 positions within the read given the nucleotide belonging to A,T,G or C and the latter half being the last 15 nucleotides.
+
 ### Fragment length distribution file (-lf)
 The CDF of the fragment lengths of Ancient DNA.
 ~~~~bash

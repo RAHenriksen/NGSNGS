@@ -60,6 +60,8 @@ void* Sampling_threads(void *arg) {
 
   int ErrProbTypeOffset = 0;
   if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){ErrProbTypeOffset=33;}
+  
+  // This is my Kstrings i save the format files in
   kstring_t *fqs[2];
   for(int i=0;i<2;i++){
     fqs[i] =(kstring_t*) calloc(1,sizeof(kstring_t));
@@ -192,6 +194,7 @@ void* Sampling_threads(void *arg) {
     }
 
     // Mismatch matrix input file
+    int MisMatchMod = 0;
     if(struct_obj->doMisMatchErr){
       FragMisMatch = MisMatchFile(FragmentSequence,rand_alloc,struct_obj->MisMatch,struct_obj->MisLength);
     }
