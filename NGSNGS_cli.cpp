@@ -36,6 +36,7 @@ argStruct *getpars(int argc,char ** argv){
   // 1) nucleotide quality score and sequencing errors,  
   mypars->QualProfile1 = NULL;
   mypars->QualProfile2 = NULL;
+  mypars->FixedQual = 0;
   mypars->DoSeqErr = 1;
   // 2) briggs model
   mypars->Briggs = NULL;
@@ -148,6 +149,9 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-q2",*argv)==0 || strcasecmp("--quality2",*argv)==0){
       mypars->QualProfile2 = strdup(*(++argv));
+    }
+    else if(strcasecmp("-qs",*argv)==0 || strcasecmp("--qualityscore",*argv)==0){
+      mypars->FixedQual = atoi(*(++argv));
     }
     else if(strcasecmp("-mf",*argv)==0 || strcasecmp("--mismatch",*argv)==0){
       mypars->SubProfile = strdup(*(++argv));
@@ -270,7 +274,7 @@ argStruct *getpars(int argc,char ** argv){
   }
   // quality profiles
   if(mypars->OutFormat==fqT|| mypars->OutFormat== fqgzT ||mypars->OutFormat==samT ||mypars->OutFormat==bamT|| mypars->OutFormat== cramT){
-    if (mypars->QualProfile1 == NULL){
+    if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
       fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
       ErrMsg(11.0);
       exit(0);

@@ -102,7 +102,8 @@ int main(int argc,char **argv){
     int nlines = 0;
     if (mypars->CycleLength != 0){
       readcycle = mypars->CycleLength;
-      if (mypars->QualProfile1 == NULL){
+      if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
+        fprintf(stderr,"CYCLELENGTH\n");
         ErrMsg(11.0);
         exit(0);
       }
@@ -112,18 +113,26 @@ int main(int argc,char **argv){
     }
     else{
       if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
-        if (mypars->QualProfile1 == NULL){
+        if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
+          fprintf(stderr,"OUTPUTFORMAT\n");
           ErrMsg(11.0);
           exit(0);
         }
-        gzFile gz = Z_NULL;
-        assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
-        char buf[LENS];
-        while(gzgets(gz,buf,LENS))
-	        nlines++;
-        gzclose(gz);
+
+        if (mypars->QualProfile1 != NULL){
+          gzFile gz = Z_NULL;
+          assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
+          char buf[LENS];
+          while(gzgets(gz,buf,LENS))
+            nlines++;
+          gzclose(gz);
+          readcycle = (nlines-2)/5;
+        }
+        else{
+          //fprintf(stderr,"FIXED READ CYCLE?");
+          readcycle = 0;
+        }
       }
-      readcycle = (nlines-2)/5;
     }
     fprintf(stderr,"\t-> The read cycle length is either provided (-cl): %d or inferred from the quality profile dimension (-q1): %d\n",mypars->CycleLength,readcycle);    
 
@@ -247,7 +256,7 @@ int main(int argc,char **argv){
     //size_t nreads_per_thread = mypars->nreads/mypars->SamplThreads;
     
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in file: \'%s\': %d\n",mypars->Reference,chr_total);
-    fprintf(stderr,"\t-> Seed used: %d\n",mypars->Glob_seed);
+    fprintf(stderr,"\t-> Seed used: %d\n",mypars->Glob_seed/1000);
     fprintf(stderr,"\t-> Number of sampling threads used (-t): %d and number of compression threads (-t2): %d\n",mypars->SamplThreads,mypars->CompressThreads);
     fprintf(stderr,"\t-> Number of simulated reads: %zu or coverage: %f\n",mypars->nreads,mypars->coverage);
 
@@ -265,11 +274,13 @@ int main(int argc,char **argv){
     }
     // QUALITY PROFILES
     const char* QualStringFlag;
-    if (mypars->QualProfile1 == NULL){QualStringFlag = "false";}
+    if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){QualStringFlag = "false";}
     else{QualStringFlag = "true";}
+    
     if (strcasecmp("true",QualStringFlag)==0){
       if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
-        if (mypars->seq_type == PE && mypars->QualProfile2 == NULL){
+        if (mypars->seq_type == PE && mypars->QualProfile2 == NULL && mypars->FixedQual == 0){
+          fprintf(stderr,"OUTPUTFORMAT 1");
           ErrMsg(11.0);
           exit(0);
         }
@@ -277,6 +288,7 @@ int main(int argc,char **argv){
     }
     else{
       if(OutputFormat== fqT ||OutputFormat==fqgzT){
+        fprintf(stderr,"OUTPUTFORMAT 2");
         ErrMsg(11.0);
         exit(0);
       }
@@ -345,7 +357,7 @@ int main(int argc,char **argv){
     ThreadInitialization(mypars->Reference,mypars->SamplThreads,mypars->Glob_seed,mypars->nreads,mypars->OutName,
                       AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->OutFormat,mypars->seq_type,
                       Param,DoBriggs,DoBriggsBiotin,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,readcycle,
-                      qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->CompressThreads,QualStringFlag,Polynt,
+                      qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->FixedQual,mypars->CompressThreads,QualStringFlag,Polynt,
                       mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
                       mypars->vcffile,IndelFuncParam,DoIndel,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,
                       mypars->Align,mypars->KstrBuf,mypars->DumpFile,mypars->IndelDumpFile,mypars->Duplicates,mypars->LowerLimit);

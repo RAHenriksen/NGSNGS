@@ -20,6 +20,7 @@ struct Parsarg_for_Sampling_thread{
   char *NtQual_r2;
   ransampl_ws ***QualDist_r1;
   ransampl_ws ***QualDist_r2;
+  int FixedQual_r1r2;
 
   double* MisMatch;
   int doMisMatchErr;

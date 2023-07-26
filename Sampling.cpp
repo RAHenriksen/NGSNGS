@@ -105,13 +105,14 @@ void* Sampling_threads(void *arg) {
   size_t moduloread = reads/modulovalue;
   
   while (current_reads_atom < reads && SIG_COND){
+    //fprintf(stderr,"TEST FIXED QUAL SCORE %d \n",struct_obj->FixedQual_r1r2);
     int posB = 0; int posE = 0;
 
     //sample fragmentlength
     int fraglength = getFragmentLength(sf); 
 
     if(fraglength < struct_obj->lowerlimit){
-      fprintf(stderr,"lowerlimit%d\n",struct_obj->lowerlimit);
+      //fprintf(stderr,"lowerlimit%d\n",struct_obj->lowerlimit);
       fraglength = struct_obj->lowerlimit;
     }
     // Selecting genomic start position across the generated contiguous contigs for which to extract 
@@ -120,10 +121,20 @@ void* Sampling_threads(void *arg) {
     //maxbases is the number of nucleotides we will work with.
     //set this to minimum of bases sequenced or fragment length.
     //if output is fasta then length is simply the entire fragment
-    int maxbases = std::min(fraglength,struct_obj->maxreadlength);
-    if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT)
+    int maxbases = 0;
+    int cyclelength = 0;
+    //fprintf(stderr,"Max length %d \t and cycle length %d \n",maxbases,cyclelength);
+    if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT || struct_obj->FixedQual_r1r2 > 0){
+      //fprintf(stderr,"ARE WE IN THE FA LOOP?\n");
+      cyclelength = fraglength;
       maxbases = fraglength;
-
+    }
+    else{
+      //fprintf(stderr,"ARE WE NOT IN THE FA LOOP?\n");
+      cyclelength = struct_obj->maxreadlength;
+      maxbases = std::min(fraglength,cyclelength);
+    }
+    //fprintf(stderr,"Max length %d \t and cycle length %d \n",maxbases,cyclelength);
     //get shallow copy of chromosome, offset into, is defined by posB, and posE
     char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength);
     //extracting a biological fragment of the reference genome
@@ -421,10 +432,20 @@ void* Sampling_threads(void *arg) {
       } 
       else{
         //Fastq and Sam needs quality scores
-        has_seqerr = sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
-        if (PE==struct_obj->SeqType)
-          has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
-        
+
+        if(struct_obj->FixedQual_r1r2 > 0){
+          //fprintf(stderr,"FIXED QUAL\n");
+          has_seqerr = sample_qscores_fix(seq_r1,qual_r1,struct_obj->FixedQual_r1r2,strlen(seq_r1),rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
+          if (PE==struct_obj->SeqType)
+            has_seqerr = sample_qscores_fix(seq_r2,qual_r2,struct_obj->FixedQual_r1r2,strlen(seq_r2),rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
+        }
+        else{
+          //fprintf(stderr,"SAMPLING QUAL PROFILE\n");
+          has_seqerr = sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
+          if (PE==struct_obj->SeqType)
+            has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
+        }
+        //std::cout << seq_r1 << " " << qual_r1 << std::endl;
         sprintf(READ_ID+strlen(READ_ID),"%d F%d",has_seqerr,FragNo);
 
         //write fq if requested
@@ -543,7 +564,7 @@ void* Sampling_threads(void *arg) {
       
       if (struct_obj->DoIndel && struct_obj->IndelDumpFile != NULL){
         ksprintf(indel,"%s\t%s\n",READ_ID,INDEL_INFO);
-	//        ksprintf(indel,"%s",INDEL_DUMP);
+
         if (struct_obj->bgzf_fp[2]){
           if (indel->l > 0){
             pthread_mutex_lock(&write_mutex);
@@ -578,7 +599,6 @@ void* Sampling_threads(void *arg) {
         fprintf(stderr,"\t-> Thread %d produced %zu reads with a current total of %zu\n",struct_obj->threadno,moduloread,current_reads_atom);
     }
     chr_idx = -1;
-    
     if(struct_obj->DoBriggs){
       for(int i=0;i<4;i++)
         delete[] FragRes[i];

@@ -25,6 +25,7 @@ typedef struct{
   char *Adapter2;             //actual adapter sequence, R2, not flipped, reversed or completemented
   char *QualProfile1;         //filename for quality prof, for R1 or SE
   char *QualProfile2;         //filename for quality prof, for R2 used only in PE
+  int FixedQual;
   char *SubProfile;           //filename for misincorperation, typespecific and position specific
   int DoSeqErr;               //adding potential sequencing errors
   char *Briggs;               //the four briggs parameters for the none biotin model

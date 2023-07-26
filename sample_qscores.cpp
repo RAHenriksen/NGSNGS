@@ -72,6 +72,7 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
   for (unsigned long i = 0; i < all_lines.size(); i++){free(all_lines[i]);}
   return dists;
 }
+
 int sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *NtQuals,mrand_t *mr,int simError, int ntcharoffset){
   int seq_err = 0;
   for(int i = 0;i<len;i++){
@@ -98,6 +99,39 @@ int sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *Nt
   return seq_err;
 }
 
+int sample_qscores_fix(char *bases, char *qscores, int qscoresval,int len,mrand_t *mr,int simError, int ntcharoffset){
+  //fprintf(stderr,"INSIDE THE SAMPLE QSCORE FIX VALUE\n");
+  int seq_err = 0;
+      
+  if (simError){
+    for(int qscore =0 ;qscore<256;qscore++){
+      double d = qscore;
+      phred2Prob[qscore] = pow(10,((-d)/10));
+    }
+  }
+
+  char fixedscore = (char)(qscoresval + ntcharoffset);
+  //fprintf(stderr,"Fixedscore %c\tprob %f\t length %d\n",fixedscore,phred2Prob[fixedscore-ntcharoffset],len);
+  
+  for(int i = 0;i<len;i++){
+    qscores[i] = fixedscore;
+    char inbase = refToInt[bases[i]];
+
+    if (simError){
+      double tmprand = mrand_pop(mr);
+      if ( tmprand < phred2Prob[fixedscore-ntcharoffset]){
+        int outbase=(int)floor(4.0*phred2Prob[fixedscore-ntcharoffset]*tmprand);
+        while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
+        //fprintf(stderr,"bases before %c \n",bases[i]);
+	      bases[i] = intToRef[outbase];
+        //fprintf(stderr,"bases after %c \n",bases[i]);
+        seq_err = 1;
+      }
+    }
+  }
+  return seq_err;
+}
+
 
 #ifdef __WITH_MAIN__
 int main(int argc, char **argv){
@@ -105,22 +139,26 @@ int main(int argc, char **argv){
   char ntquals[1024];
   double errorArray[1024];
   int maxreadcycles = 150;
-  ransampl_ws ***ws = ReadQuality(ntquals,errorArray,33,profile_fname);
+  //ransampl_ws ***ws = ReadQuality(ntquals,errorArray,33,profile_fname);
   mrand_t *mr = mrand_alloc(3,88);
   char bases[30];
   char qscores[30];
   memset(bases,'\0',30);
   memset(qscores,'\0',30);
 
+  char specific_char = 'I';
+  char* char_array = (char*)malloc((30 + 1) * sizeof(char));
   for(int i=0;i<30;i++){
     bases[i] = intToRef[(int)floor(drand48()*4)];
+    char_array[i] = specific_char;
     std::cout << " i " << i << " bases " << bases[i] << std::endl;
   }
-  sample_qscores(bases,qscores,30,ws,ntquals,mr,0,0);
+  sample_qscores_fix(bases,qscores,10,30,mr,1,33);
+  //sample_qscores(bases,qscores,30,ws,ntquals,mr,0,0);
   fprintf(stderr,"@readname\n%s\n+\n%s\n",bases,qscores);
   //gtggTAGAGATAAAGCACATTCTTTAGGAGTGAATATGGNNTNNCTGCNCGCANANTGNNATTGNNTTGCNNNTNNANCGNNNCNNTNNNGNTTNGCNACAGCNANGNNA
   return 0;
 }
 #endif
 
-//g++ sample_qscores.cpp RandSampling.o mrand.o -std=c++11 -lm -lz -D__WITH_MAIN__ -o Scores
+//g++ sample_qscores.cpp RandSampling.o mrand.o NGSNGS_misc.o -std=c++11 -lm -lz -D__WITH_MAIN__ -o Scores
