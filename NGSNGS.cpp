@@ -83,7 +83,7 @@ int main(int argc,char **argv){
 
     outputformat_e OutputFormat = mypars->OutFormat;
     double readcov = mypars->coverage;
-
+    //fprintf(stderr,"DESIRED COVERAGE %f \n",readcov);
     if (mypars->rng_type == -1){
       #if defined(__linux__) || defined(__unix__)
         mypars->rng_type = 0;
@@ -100,42 +100,7 @@ int main(int argc,char **argv){
     
     int readcycle = 0;
     int nlines = 0;
-    if (mypars->CycleLength != 0){
-      readcycle = mypars->CycleLength;
-      if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
-        fprintf(stderr,"CYCLELENGTH\n");
-        ErrMsg(11.0);
-        exit(0);
-      }
-      gzFile gz = Z_NULL;
-      assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
-      gzclose(gz);
-    }
-    else{
-      if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
-        if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
-          fprintf(stderr,"OUTPUTFORMAT\n");
-          ErrMsg(11.0);
-          exit(0);
-        }
-
-        if (mypars->QualProfile1 != NULL){
-          gzFile gz = Z_NULL;
-          assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
-          char buf[LENS];
-          while(gzgets(gz,buf,LENS))
-            nlines++;
-          gzclose(gz);
-          readcycle = (nlines-2)/5;
-        }
-        else{
-          //fprintf(stderr,"FIXED READ CYCLE?");
-          readcycle = 0;
-        }
-      }
-    }
     fprintf(stderr,"\t-> The read cycle length is either provided (-cl): %d or inferred from the quality profile dimension (-q1): %d\n",mypars->CycleLength,readcycle);    
-
     const char* SizeDist = mypars->LengthDist;
     double mean_length = 0;
     int SizeDistType=-1;double val1 = 0; double val2  = 0;
@@ -144,6 +109,7 @@ int main(int argc,char **argv){
       if (mypars->Length < 0){ErrMsg(3.0);}
       else{
         mean_length = mypars->Length;
+        //fprintf(stderr,"Mean_length mypars-length %f\n",mean_length);
         SizeDistType=0;
       } 
     }
@@ -216,6 +182,44 @@ int main(int argc,char **argv){
       free((char *)Dist);
     }
 
+    if (mypars->CycleLength != 0){
+      readcycle = mypars->CycleLength;
+      if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
+        fprintf(stderr,"CYCLELENGTH\n");
+        ErrMsg(11.0);
+        exit(0);
+      }
+      gzFile gz = Z_NULL;
+      assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
+      gzclose(gz);
+    }
+    else{
+      if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
+        if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
+          fprintf(stderr,"OUTPUTFORMAT\n");
+          ErrMsg(11.0);
+          exit(0);
+        }
+
+        if (mypars->QualProfile1 != NULL){
+          gzFile gz = Z_NULL;
+          assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
+          char buf[LENS];
+          while(gzgets(gz,buf,LENS))
+            nlines++;
+          gzclose(gz);
+          readcycle = (nlines-2)/5;
+        }
+        else{
+          //fprintf(stderr,"FIXED READ CYCLE?");
+          readcycle = mean_length;
+        }
+      }
+    }
+
+
+
+
     faidx_t *seq_ref = NULL;
     seq_ref  = fai_load(mypars->Reference);
     
@@ -230,8 +234,9 @@ int main(int argc,char **argv){
     if(mypars->nreads > 0 &&readcov > 0.0){
       fprintf(stderr,"must not suply nreads and cov");exit(0);
     }
+    //fprintf(stderr,"NOW IM AFTER NREADS %zu \n",mypars->nreads);
+    
     //now compute the number of reads required across all threads
-
     if (readcov > 0.0){
       size_t genome_size = 0;
 
@@ -243,10 +248,12 @@ int main(int argc,char **argv){
 
       if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
         if (mean_length > readcycle){mean_length = readcycle;}
+        //fprintf(stderr," MEAN LENGTH %f read cycle %f \n",mean_length);
       }
-      
       if (mypars->seq_type == PE){
+        //fprintf(stderr,"INSIDE PE\n");
         mypars->nreads = ((readcov*genome_size)/mean_length)/2;
+        //fprintf(stderr,"INSIDE PE NUMBER OF READS %d \n",mypars->nreads);
       }
       else{
         mypars->nreads = (readcov*genome_size)/mean_length;
@@ -280,7 +287,7 @@ int main(int argc,char **argv){
     if (strcasecmp("true",QualStringFlag)==0){
       if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
         if (mypars->seq_type == PE && mypars->QualProfile2 == NULL && mypars->FixedQual == 0){
-          fprintf(stderr,"OUTPUTFORMAT 1");
+          //fprintf(stderr,"OUTPUTFORMAT 1");
           ErrMsg(11.0);
           exit(0);
         }
@@ -288,7 +295,7 @@ int main(int argc,char **argv){
     }
     else{
       if(OutputFormat== fqT ||OutputFormat==fqgzT){
-        fprintf(stderr,"OUTPUTFORMAT 2");
+        //fprintf(stderr,"OUTPUTFORMAT 2");
         ErrMsg(11.0);
         exit(0);
       }

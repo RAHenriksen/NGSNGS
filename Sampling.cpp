@@ -56,6 +56,7 @@ void* Sampling_threads(void *arg) {
   char qual_r2[LENS] = "\0";
  
   size_t reads = struct_obj -> reads;
+
   size_t BufferLength = struct_obj -> BufferLength;
 
   int ErrProbTypeOffset = 0;
@@ -435,7 +436,6 @@ void* Sampling_threads(void *arg) {
       } 
       else{
         //Fastq and Sam needs quality scores
-
         if(struct_obj->FixedQual_r1r2 > 0){
           //fprintf(stderr,"FIXED QUAL\n");
           has_seqerr = sample_qscores_fix(seq_r1,qual_r1,struct_obj->FixedQual_r1r2,strlen(seq_r1),rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);

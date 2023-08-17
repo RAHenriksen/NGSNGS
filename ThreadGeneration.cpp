@@ -329,8 +329,9 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].PolyNt = polynucleotide;
       struct_for_threads[i].Align = Align;
     }
-
+    //fprintf(stderr,"THREADREADS 1 %zu \n",reads);
     size_t ThreadReads = (size_t) floor( reads / (double) thread_no);
+    //fprintf(stderr,"THREADREADS 2 %zu \n",ThreadReads);
     for (int i = 0; i < nthreads-1; i++){
       struct_for_threads[i].reads = ThreadReads;
     }
