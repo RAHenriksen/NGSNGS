@@ -1,4 +1,5 @@
-#rm *.bam *.sam *.fa.gz *.fq.gz *.fq *.fa 
+#!/bin/bash
+
 PRG=../ngsngs
 IN=../Test_Examples/Mycobacterium_leprae.fa.gz
 LF=../Test_Examples/Size_dist_sampling.txt
@@ -119,11 +120,14 @@ No_SeqErr=$(cat MycoBactQSLLSEOUT.fq|grep 'mod0001'|wc -l)
 if [ $No_SeqErr -ne 745 ]; then 
     echo "Warning different number of reads containing sequencing error with a fixed quality score of 40"; exit 1;
 fi
-#md5sum MycoBactQSLLSEOUT.fq >> MycoBactTest.md5
-#md5sum DelOut.fq >> MycoBactTest.md5
-#md5sum InsOut.fq >> MycoBactTest.md5
-#md5sum DelTmp.txt >> MycoBactTest.md5
-#md5sum InsTmp.txt >> MycoBactTest.md5
+
+if [ 0 -eq 1];then
+    md5sum MycoBactQSLLSEOUT.fq >> MycoBactTest.md5
+    md5sum DelOut.fq >> MycoBactTest.md5
+    md5sum InsOut.fq >> MycoBactTest.md5
+    md5sum DelTmp.txt >> MycoBactTest.md5
+    md5sum InsTmp.txt >> MycoBactTest.md5
+fi
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
@@ -131,8 +135,4 @@ echo "--------------------------------------------------- MD5SUM ---------------
 echo "---------------------------------------------------------------------------------------------------------------"
 echo " "
 md5sum -c MycoBactTest.md5 || exit 2;
-#rm DelTmp.txt
-#rm InsTmp.txt
-#rm *.fq
-#rm *.fa
-#rm *.sam
+
