@@ -25,7 +25,7 @@ struct Ran {
 	inline Uint int32() { return (Uint)int64(); }
 };
 */
-typedef struct{
+typedef struct mrand_t {
   int type;
   #if defined(__linux__) || defined(__unix__)
     struct drand48_data buf0;

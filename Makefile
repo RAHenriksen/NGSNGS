@@ -80,7 +80,7 @@ endif
 
 clean:	
 	rm -f ngsngs *.o *.d version.h
-	rm test/*.fa test/*.fq test/*.sam test/*.txt
+	rm -f test/*.fa test/*.fq test/*.sam test/*.txt
 
 test:
 	echo "Subprograms is being tested"

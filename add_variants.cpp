@@ -321,12 +321,12 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int whichsample){
       inferred_ploidy = ngt/nsamples;
     }
     #if 0
-      fprintf(stderr,"brec->pos: %d nallele: %d\n",brec->pos,brec->n_allele);
+      fprintf(stderr,"brec->pos: %lld nallele: %d\n",brec->pos,brec->n_allele);
       for(int i=0;i<brec->n_allele;i++)
         fprintf(stderr,"nal:%d %s %zu\n",i,brec->d.allele[i],strlen(brec->d.allele[i]));
     #endif
     if(brec->n_allele==1){
-      fprintf(stderr,"\t-> Only Reference allele defined for pos: %ld will skip\n",brec->pos+1);
+      fprintf(stderr,"\t-> Only Reference allele defined for pos: %lld will skip\n",brec->pos+1);
       continue;
     }
     //check if parental chromosomes exists otherwise add them
@@ -338,7 +338,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int whichsample){
     else
       mygt = gt_arr+inferred_ploidy*whichsample;
     if(bcf_gt_is_missing(mygt[0])){
-      fprintf(stderr,"\t-> Genotype is missing for pos: %ld will skip\n",brec->pos+1);
+      fprintf(stderr,"\t-> Genotype is missing for pos: %lld will skip\n",brec->pos+1);
       continue;
     }
     //figure out if its an indel
