@@ -23,4 +23,9 @@ jobs:
     - name: Compile NGSNGS using HTSSRC
       run: export HTSSRC=`pwd`/htslib; make
     - name: Run test script
-      run: make test
+      run: |
+      make test
+      if [ $? -ne 0 ]; then
+        echo "Failing"
+      exit 1
+      fi
