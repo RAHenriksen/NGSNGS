@@ -37,7 +37,7 @@ echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "2) Testing Paired-end, fixed length, coverage, no sequencing error, adapters, sampling threads, fq"
 echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -c 3 -t 1 -s 1 -l 100 -seq PE -ne -a1 ${A1} -a2 ${A2} -q1 ${Q1} -q2 ${Q2} -f fq -o MycoBactFqPEOut
+${PRG} -i ${IN} -c 3 -t 1 -s 1 -l 110 -seq PE -ne -a1 ${A1} -a2 ${A2} -q1 ${Q1} -q2 ${Q2} -f fq -o MycoBactFqPEOut
 #md5sum MycoBactFqPEOut_R1.fq >> MycoBactTest.md5
 #md5sum MycoBactFqPEOut_R2.fq >> MycoBactTest.md5
 
