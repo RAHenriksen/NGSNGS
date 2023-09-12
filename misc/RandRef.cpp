@@ -29,7 +29,7 @@ typedef struct{
 int HelpPage(FILE *fp){
   fprintf(fp,"Generate artificial reference genome uniformly sampled from the four nucleotides\n");
   fprintf(fp,"Usage\n./RandRef -l <Genome Length> -s <seed> -n <Chromosome number> -o <output name>\n");
-  fprintf(fp,"\nExample\n./RandRef -l 1000000 -s 1 --n 2 -nn -o RandRefChr1S1.fa\n");
+  fprintf(fp,"\nExample\n./RandRef -l 1000000 -s 1 -n 2 -nn -o RandRefChr1S1.fa\n");
   fprintf(fp,"\nOptions: \n");
   fprintf(fp,"-h    | --help: \t\t\t Print help page.\n");
   fprintf(fp,"-v    | --version: \t\t Print help page.\n\n");
@@ -72,7 +72,7 @@ argStruct *getpars(int argc,char ** argv){
       mypars->NoStop = 1;
     }
     else if(strcasecmp("-iter",*argv)==0 || strcasecmp("--iterations",*argv)==0){
-      mypars->iter = atoi(*(++argv));;
+      mypars->iter = atoi(*(++argv));
     }
     else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
       mypars->RandRef_out = strdup(*(++argv));

@@ -30,7 +30,7 @@ $(info HTSSRC not defined, assuming systemwide installation -lhts)
 LIBS += -lhts
 endif
 
-PROGRAMS = QualConvert LenConvert MisConvert MetaMisConvert RandRef RandVar VCFtoBED
+PROGRAMS = QualConvert LenConvert MisConvert MetaMisConvert RandRef RandVar VCFtoBED RemoveCodon
 
 default: all
 
@@ -50,6 +50,8 @@ QualConvert: ReadQualConverter.cpp
 	$(CXX) $< -D __WITH_MAIN__ $(CXXFLAGS) -o $@ $(LIBS)
 VCFtoBED: VCFtoBED.cpp
 	$(CXX) $< -D __WITH_MAIN__ $(CXXFLAGS) -o $@ $(LIBS)
+RemoveCodon: RemoveCodon.cpp
+	$(CXX) $< -D __WITH_MAIN__ ../mrand.o ../fasta_sampler.o ../RandSampling.o $(CXXFLAGS) -o $@ $(LIBS)
 clean:	
 	rm -f $(PROGRAMS) *~ 
 
