@@ -113,7 +113,7 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-bl",*argv)==0 || strcasecmp("--bufferlength",*argv)==0){
       mypars->KstrBuf = atol(*(++argv));
     }
-    else if(strcasecmp("-c",*argv)==0 || strcasecmp("--cov",*argv)==0){
+    else if(strcasecmp("-c",*argv)==0 || strcasecmp("--coverage",*argv)==0){
       mypars->coverage = atof(*(++argv));
       if (mypars->coverage <= 0.0){ErrMsg(2.2);}
     }

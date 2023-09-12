@@ -107,6 +107,13 @@ void* Sampling_threads(void *arg) {
   }
   size_t moduloread = reads/modulovalue;
   
+  /*
+
+
+
+
+  */
+
   while (current_reads_atom < reads && SIG_COND){
     //fprintf(stderr,"TEST FIXED QUAL SCORE %d \n",struct_obj->FixedQual_r1r2);
     int posB = 0; int posE = 0;

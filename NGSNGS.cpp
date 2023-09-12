@@ -229,10 +229,10 @@ int main(int argc,char **argv){
 
     //first capture the cases where no reads or cov has been defined or both defined
     if(mypars->nreads == 0 && readcov == 0.0){
-      fprintf(stderr,"must suply nreads or cov");exit(0);
+      fprintf(stderr,"must suply number of reads (-r) or desired coverage (-c)");exit(0);
     }
     if(mypars->nreads > 0 &&readcov > 0.0){
-      fprintf(stderr,"must not suply nreads and cov");exit(0);
+      fprintf(stderr,"must not suply number of reads (-r) and desired coverage (-c)");exit(0);
     }
     //fprintf(stderr,"NOW IM AFTER NREADS %zu \n",mypars->nreads);
     
