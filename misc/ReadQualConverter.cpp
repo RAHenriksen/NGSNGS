@@ -30,12 +30,12 @@ int HelpPage(FILE *fp){
   fprintf(fp,"Read Quality Profile converter - converting ART profiles to NGSNGS format\n\n");
   fprintf(fp,"Usage\n./QualConvert -i <ART platform profile> -o <NGSNGS quality profile>\n");
   fprintf(fp,"\nExample\n./QualConvert -i HiSeq2500L150R1filter.txt -o HiSeq2500L150R1_CDF.txt\n");
-  fprintf(fp,"./QualConvert --Art_in HiSeq2500L150R1filter.txt --NGSNGS_out HiSeq2500L150R1_CDF.txt\n");
+  fprintf(fp,"./QualConvert --input HiSeq2500L150R1filter.txt --output HiSeq2500L150R1_CDF.txt\n");
   fprintf(fp,"\nOptions: \n");
-  fprintf(fp,"-h   | --help: \t\t\t Print help page.\n");
-  fprintf(fp,"-v   | --version: \t\t Print help page.\n\n");
-  fprintf(fp,"-i   | --Art_in: \t\t ART platform profile intput in .txt format or .txt.gz\n");
-  fprintf(fp,"-o   | --NGSNGS_out: \t\t NGSNGS nucletide quality profile in .txt format\n");
+  fprintf(fp,"-h | --help: \t Print help page.\n");
+  fprintf(fp,"-v | --version:  Print version.\n\n");
+  fprintf(fp,"-i | --input: \t ART platform profile intput in .txt or .txt.gz format.\n");
+  fprintf(fp,"-o | --output: \t NGSNGS nucletide quality profile in .txt format.\n");
   exit(1);
   return 0;
 }
@@ -47,10 +47,10 @@ argStruct *getpars(int argc,char ** argv){
   ++argv;
   while(*argv){
     //fprintf(stderr,"ARGV %s\n",*argv);
-    if(strcasecmp("-i",*argv)==0 || strcasecmp("--Art_in",*argv)==0){
+    if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->ART_qual_nt_profile_in = strdup(*(++argv));
     }
-    else if(strcasecmp("-o",*argv)==0 || strcasecmp("--NGSNGS_out",*argv)==0){
+    else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
       mypars->NGSNGS_qual_nt_profile_out = strdup(*(++argv));
     }
     else{

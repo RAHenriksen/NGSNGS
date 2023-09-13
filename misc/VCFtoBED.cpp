@@ -24,15 +24,15 @@ typedef struct{
 
 int HelpPage(FILE *fp){
   fprintf(fp,"Stochastic variation on input reference genome\n");
-  fprintf(fp,"Usage\n./VCFtoBED -vcf <vcf_file> -r <range before and after vcf position> -o <Output file name for BED>\n");
-  fprintf(fp,"\nExample\n./VCFtoBED -vcf ../Test_Examples/ChrMtSubDeletionDiploid.vcf -bed ChrMtSubDeletionDiploid.bed -r 50 -id 0\n");
+  fprintf(fp,"Usage\n./VCFtoBED -i <vcf_file> -r <range before and after vcf position> -o <Output file name for BED>\n");
+  fprintf(fp,"\nExample\n./VCFtoBED --input ../Test_Examples/ChrMtSubDeletionDiploid.vcf --output ChrMtSubDeletionDiploid.bed -r 50 -id 0\n");
   fprintf(fp,"\nOptions: \n");
-  fprintf(fp,"-h   | --help: \t\t\t Print help page.\n");
-  fprintf(fp,"-v   | --version: \t\t Print help page.\n\n");
-  fprintf(fp,"-vcf | --vcfin: \t\t The input vcf file containing positions with variants\n");
-  fprintf(fp,"-bed | --bedout: \t\t The output name for the created bed file with only regions present in the vcf file\n");
-  fprintf(fp,"-r | --range: \t\t Integer value specifying the number of nucleotides before and after the vcf position, default = 35\n");
-  fprintf(fp,"-id \t\t Integer value specifying the index of individuals present in header, default = 0\n");
+  fprintf(fp,"-h | --help: \t Print help page.\n");
+  fprintf(fp,"-v | --version:  Print version.\n\n");
+  fprintf(fp,"-i | --input: \t VCF file containing positions with variants.\n");
+  fprintf(fp,"-o | --output: \t BED file with only regions present in the VCF file.\n");
+  fprintf(fp,"-r | --range: \t Integer value specifying the number of nucleotides before and after each VCF position, default = 35.\n");
+  fprintf(fp,"--id \t\t Integer value specifying which individual from the VCF to use, default = 0.\n");
   exit(1);
   return 0;
 }
@@ -47,16 +47,16 @@ argStruct *getpars(int argc,char ** argv){
   ++argv;
   while(*argv){
     //fprintf(stderr,"ARGV %s\n",*argv);
-    if(strcasecmp("-vcf",*argv)==0 || strcasecmp("--vcfin",*argv)==0){
+    if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->bcffilename = strdup(*(++argv));
     }
-    else if(strcasecmp("-bed",*argv)==0 || strcasecmp("--bedout",*argv)==0){
+    else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
       mypars->bedfilename = strdup(*(++argv));
     }
     else if(strcasecmp("-r",*argv)==0 || strcasecmp("--range",*argv)==0){
       mypars->range = atoi(*(++argv));
     }
-    else if(strcasecmp("-id",*argv)==0){
+    else if(strcasecmp("--id",*argv)==0){
       mypars->id = atoi(*(++argv));
     }
     else{

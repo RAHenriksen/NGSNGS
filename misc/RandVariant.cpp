@@ -29,14 +29,14 @@ int HelpPage(FILE *fp){
   fprintf(fp,"Usage\n./RandVar -i <Reference> -s <seed> -n <Number of random variations> -p <Position information> -o <Reference genome with variations>\n");
   fprintf(fp,"\nExample\n./RandVar -i RandRefChr1S1.fa -s 10 -n 1000000 -p position.txt -o RandRefChr1S1Var.fa\n");
   fprintf(fp,"\nOptions: \n");
-  fprintf(fp,"-h    | --help: \t\t\t Print help page.\n");
-  fprintf(fp,"-v    | --version: \t\t Print help page.\n\n");
-  fprintf(fp,"-i    | --input: \t\t Reference genome .fa format\n");
-  fprintf(fp,"-s    | --seed: \t\t\t seed for random generators\n");
-  fprintf(fp,"-n    | --number: \t\t Number of stochastic variations to be included in the input reference, conflicts with -m|--modulus\n");
-  fprintf(fp,"-m    | --modulus: \t\t Every N'th position to be altered, conflicts with -n|--number\n");
-  fprintf(fp,"-p    | --pos: \t\t\t Internal txt file with chromomsomal coordinate for the incorporated variations\n");
-  fprintf(fp,"-o    | --output: \t\t Altered reference genomes saved as .fa\n");
+  fprintf(fp,"-h | --help: \t Print help page.\n");
+  fprintf(fp,"-v | --version:  Print version.\n\n");
+  fprintf(fp,"-i | --input: \t Reference genome in FASTA format.\n");
+  fprintf(fp,"-s | --seed: \t Seed for random generators.\n");
+  fprintf(fp,"-n | --number: \t Number of stochastic variations to be included in the input reference, conflicts with -m|--modulus.\n");
+  fprintf(fp,"-m | --modulus:  Every N'th position to be altered, conflicts with -n|--number.\n");
+  fprintf(fp,"-p | --pos: \t Output chromomsomal coordinates for the incorporated variations in plain text.\n");
+  fprintf(fp,"-o | --output: \t Altered reference genomes saved as .fa\n");
   exit(1);
   return 0;
 }
@@ -141,7 +141,7 @@ int Reference_Variant(int argc,char **argv){
       char buf[1024];
 
       FILE *fp;
-	    fp = fopen(Coord_file, "w");
+      fp = fopen(Coord_file, "w");
 
       char **data = (char **)malloc(var_operations * sizeof(char *));
       int data_count = 0;

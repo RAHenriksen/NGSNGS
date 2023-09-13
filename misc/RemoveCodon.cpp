@@ -30,15 +30,15 @@ int HelpPage(FILE *fp){
   fprintf(fp,"Usage\n./RemoveCodon -i <Reference> -s <seed> -iter <No. Replacment iterations> --codon <Codon to be replaced> --codonout <The desired codon> -o <Reference genome with removed codons>\n");
   fprintf(fp,"\nExample\n./RemoveCodon -i RandRefChr1S1Var.fa -o RandRefChr1S1Stop.fa -s 10 -iter 10 --codon AGT --codonout GAT\n");
   fprintf(fp,"\nOptions: \n");
-  fprintf(fp,"-h    | --help: \t\t\t Print help page.\n");
-  fprintf(fp,"-v    | --version: \t\t Print help page.\n\n");
-  fprintf(fp,"-i    | --input: \t\t Reference genome .fa format\n");
-  fprintf(fp,"-o    | --output: \t\t Altered reference genomes with the removed codons saved as .fa\n");
-  fprintf(fp,"--codon \t\t Specify which codon should be removed, if used alone a random replacement will occur\n");
-  fprintf(fp,"--codonout \t\t Specify which --codon should be removed, and replaced by specified --codonout\n");
-  fprintf(fp,"--stop \t\t Replace all stop codons with randomly generated codons\n");
-  fprintf(fp,"-s    | --seed: \t\t\t seed for random generators\n");
-  fprintf(fp,"-iter | --iterations: \t\t\t Number of times the codon replacements are performed (Due to triplets, replacement of one stop codon might lead to another), default = 5\n");
+  fprintf(fp,"-h    | --help: \t Print help page.\n");
+  fprintf(fp,"-v    | --version: \t Print version.\n\n");
+  fprintf(fp,"-i    | --input: \t Reference genome in FASTA format.\n");
+  fprintf(fp,"-o    | --output: \t Altered reference genomes in FASTA format, without the specified codons.\n");
+  fprintf(fp,"--codon \t\t Specify which codon should be removed, if used alone a random replacement will occur.\n");
+  fprintf(fp,"--codonout \t\t Specify which --codon should be removed, and replaced by specified --codonout.\n");
+  fprintf(fp,"--stop \t\t\t Replace all stop codons with randomly generated codons.\n");
+  fprintf(fp,"-s    | --seed: \t seed for random generators.\n");
+  fprintf(fp,"-iter | --iterations: \t Number of times the codon replacements are performed (Due to triplets, replacement of one stop codon might lead to another), default = 5.\n");
   exit(1);
   return 0;
 }
