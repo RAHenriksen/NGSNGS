@@ -104,6 +104,7 @@ void Sizebreak(char *str){
 }
 
 void ErrMsg(double messageno){
+  fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data\nError:\n");
   if(messageno == 1.0){fprintf(stderr,"\nInput reference file not recognized, provide -i | --input\n");}
   else if(messageno == 2.0){fprintf(stderr,"\nNumber of reads or depth to simulate not recognized, provide either number of reads (-r) or depth of coverage (-c).\n");}
   else if(messageno == 2.2){fprintf(stderr,"\nUnable to utilize the desired number for depth of coverage (-c), use values above 0.\n");}
@@ -129,7 +130,7 @@ void ErrMsg(double messageno){
   else if(messageno == 14.0){fprintf(stderr,"Poly tail error: Missing adapter sequence, provide adapter sequence (-a1,-a2) as well.\n");}
   else {fprintf(stderr,"\nError with input parameters.\n");}
   fprintf(stderr,"See help page (-h)\n");
-  exit(0);
+  exit(- (int) messageno);
 }
 
 void WarMsg(double messageno){

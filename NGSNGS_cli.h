@@ -48,5 +48,6 @@ typedef struct{
   char *Indel;                //adding stochastic indels
 }argStruct;
 argStruct *getpars(int argc,char ** argv);
+outputformat_e infer_format(const char*);
 void argStruct_destroy(argStruct *mypars);
 #endif

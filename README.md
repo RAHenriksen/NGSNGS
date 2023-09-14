@@ -100,7 +100,7 @@ Output characteristics:
 	 <SE||se||single||single-end>	 single-end. 
  	 <PE||pe||paired||paired-end>	 paired-end.
 
--o   | --output: 		 Output file name (in formats `.fq`, `.fq.gz`, `.fas`, `.fas,gz`, `.sam`, `.bam`, or `.cram`).
+-o   | --output: 		 Output file name(s) (in formats `.fq`, `.fq.gz`, `.fas`, `.fas,gz`, `.sam`, `.bam`, or `.cram`).
 
 Format specific:
 -q1  | --quality1:		 Read Quality profile for single-end reads (SE) or first read pair (PE) for fastq or sequence alignment map formats.

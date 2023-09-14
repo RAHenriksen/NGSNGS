@@ -98,25 +98,7 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
       mypars->OutName = strdup(*(++argv));
-      size_t len_outname = strlen(mypars->OutName);
-      if(strcasecmp(".fa",mypars->OutName + len_outname - 3)==0 || strcasecmp(".fas",mypars->OutName + len_outname - 4)==0 || strcasecmp(".fasta",mypars->OutName + len_outname - 6)==0)
-	mypars->OutFormat = faT;
-      if(strcasecmp(".fa.gz",mypars->OutName + len_outname - 6)==0 || strcasecmp(".fas.gz",mypars->OutName + len_outname - 7)==0 || strcasecmp(".fasta.gz",mypars->OutName + len_outname - 9)==0)
-	mypars->OutFormat = fagzT;
-      if(strcasecmp(".fq",mypars->OutName + len_outname - 3)==0 || strcasecmp(".fastq",mypars->OutName + len_outname - 6)==0)
-	mypars->OutFormat = fqT;
-      if(strcasecmp(".fq.gz",mypars->OutName + len_outname - 6)==0 || strcasecmp(".fastq.gz",mypars->OutName + len_outname - 9)==0)
-	mypars->OutFormat = fqgzT;
-      if(strcasecmp(".sam",mypars->OutName + len_outname - 4)==0)
-	mypars->OutFormat = samT;
-      if(strcasecmp(".bam",mypars->OutName + len_outname - 4)==0)
-	mypars->OutFormat = bamT;
-      if(strcasecmp(".cram",mypars->OutName + len_outname - 5)==0)
-	mypars->OutFormat = cramT;
-      if(mypars->OutFormat==unknownT){
-	fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data\nWarning:\n");
-	ErrMsg(7.0);
-      }
+      mypars->OutFormat = infer_format(mypars->OutName);
     }
     else if(strcasecmp("-s",*argv)==0 || strcasecmp("--seed",*argv)==0){
       mypars->Glob_seed = atoi(*(++argv))*1000;
@@ -238,50 +220,55 @@ argStruct *getpars(int argc,char ** argv){
 
   // Ensure the required argument are parsed after all arguments have been provided
 
-  const char* NGSNGS_msg = "Next Generation Simulator for Next Generator Sequencing Data";
   // Input
-  if(mypars->Reference == NULL){
-    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+  if(mypars->Reference == NULL)
     ErrMsg(1.0);
-    exit(0);
-  }
   // read numbers
-  if(mypars->nreads == 0 && mypars->coverage == 0.0){
-    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+  if(mypars->nreads == 0 && mypars->coverage == 0.0)
     ErrMsg(2.5);
-  }
   // read lengths
-  if(mypars->Length == 0 && mypars->LengthFile == NULL && mypars->LengthDist == NULL){
-    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+  if(mypars->Length == 0 && mypars->LengthFile == NULL && mypars->LengthDist == NULL)
     ErrMsg(3.0);
-  }
   // Format
-  if(mypars->OutFormat == unknownT){
-    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+  if(mypars->OutFormat == unknownT)
     ErrMsg(7.0);
-   exit(0);
-  }
-  if(mypars->seq_type == unknownTT){
-    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+  if(mypars->seq_type == unknownTT)
     ErrMsg(6.0);
-    exit(0);
-  }
   // quality profiles
   if(mypars->OutFormat==fqT|| mypars->OutFormat== fqgzT ||mypars->OutFormat==samT ||mypars->OutFormat==bamT|| mypars->OutFormat== cramT){
-    if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
-      fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+    if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0)
       ErrMsg(11.0);
-      exit(0);
-    }
   }
   // Output
-  if(mypars->OutName == NULL){
-    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+  if(mypars->OutName == NULL)
     ErrMsg(8.0);
-    exit(0);
-  }
 
   return mypars;
+}
+
+
+outputformat_e infer_format(const char *file_name){
+  size_t len_outname = strlen(file_name);
+
+  if(strcasecmp(".fa",file_name + len_outname - 3)==0 || strcasecmp(".fas",file_name + len_outname - 4)==0 || strcasecmp(".fasta",file_name + len_outname - 6)==0)
+    return faT;
+  else if(strcasecmp(".fa.gz",file_name + len_outname - 6)==0 || strcasecmp(".fas.gz",file_name + len_outname - 7)==0 || strcasecmp(".fasta.gz",file_name + len_outname - 9)==0)
+    return fagzT;
+  else if(strcasecmp(".fq",file_name + len_outname - 3)==0 || strcasecmp(".fastq",file_name + len_outname - 6)==0)
+    return fqT;
+  else if(strcasecmp(".fq.gz",file_name + len_outname - 6)==0 || strcasecmp(".fastq.gz",file_name + len_outname - 9)==0)
+    return fqgzT;
+  else if(strcasecmp(".sam",file_name + len_outname - 4)==0)
+    return samT;
+  else if(strcasecmp(".bam",file_name + len_outname - 4)==0)
+    return bamT;
+  else if(strcasecmp(".cram",file_name + len_outname - 5)==0)
+    return cramT;
+  else{
+    ErrMsg(7.0);
+    // Irrelevant, since previous function exits with error (to avoid C compiler warning)
+    return fqgzT;
+  }
 }
 
 
