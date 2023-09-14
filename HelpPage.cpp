@@ -15,7 +15,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut\n");  
   fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/MisincorpFile.txt -f fa -o MycoBactFaSEOut\n");  
   fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 1 -s 1 -lf Test_Examples/Size_dist_sampling.txt -ll 50 -seq SE -qs 40 -f fq -o MycoBactFqQsLlSEOut\n");  
-  fprintf(fp,"\n./ngsngs -i Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 100 -l 150 -seq SE -ne -vcf Test_Examples/ChrMtSubDeletionDiploid.vcf -id 0 -q1 Test_Examples/AccFreqL150R1.txt -chr MT -DumpVCF DeltionInfo -f fq -o MtDeletionOut \n");  
+  fprintf(fp,"\n./ngsngs -i Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 100 -l 150 -seq SE -ne -vcf Test_Examples/ChrMtSubDeletionDiploid.vcf -id 0 -q1 Test_Examples/AccFreqL150R1.txt -chr MT --haplo DeltionInfo -f fq -o MtDeletionOut \n");
   fprintf(fp,"\n-h   | --help: \t\t\t Print help page.\n");
   fprintf(fp,"\n-v   | --version: \t\t\t Print NGSNGS version, git commit and htslib library.\n");
   fprintf(fp,"\n----- Required ----- \n\n");
@@ -46,14 +46,14 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t-bcf | -vcf: \t\t\t Variant Calling Format (.vcf) or binary format (.bcf)\n");
   fprintf(fp,"\t-id  | --indiv: \t\t Integer value (0 - index) for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).\n");
   fprintf(fp,"\t\t e.g -id 0\t\t First individual in the provided vcf file.\n");
-  fprintf(fp,"\t-DumpVCF:	\t\t The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided vcf file (-vcf|-bcf), for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.\n");
+  fprintf(fp,"\t--haplo:	\t\t Output FASTA file with internally generated haplotypes with the variations from the provided `vcf` file; for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.\n");
   fprintf(fp,"\nStochastic Variations: \n\n");
   fprintf(fp,"\t-indel: \t\t\t Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.\n");
   fprintf(fp,"\t\t <InsProb,DelProb,InsParam,DelParam> \t \n");
   fprintf(fp,"\t\t Insertions and deletions \t-indel 0.05,0.1,0.1,0.2 \n");
   fprintf(fp,"\t\t Only Insertions \t\t-indel 0.05,0.0,0.1,0.0 \n");
   fprintf(fp,"\t\t Only Deletions \t\t-indel 0.0,0.5,0.0,0.9 \n");
-  fprintf(fp,"\t-DumpIndel: \t\t The prefix of an internally generated txt file, containing the the read id, number of indels, the number of indel operations saving the position before and after and length of the indel, simulated read length before and after, see supplementary material for detailed example and description.\n");
+  fprintf(fp,"\t--DumpIndel: \t\t The prefix of an internally generated txt file, containing the the read id, number of indels, the number of indel operations saving the position before and after and length of the indel, simulated read length before and after, see supplementary material for detailed example and description.\n");
   fprintf(fp,"\nPostmortem damage (PMD) - Deamination: \n\n");
   fprintf(fp,"\t-m   | --model: \t\t Choice of deamination model.\n");
   fprintf(fp,"\t\t <b,nv,Lambda,Delta_s,Delta_d>  || <briggs,nv,Lambda,Delta_s,Delta_d> \t Parameters for the damage patterns using the Briggs model altered to suit modern day library preparation.\n");

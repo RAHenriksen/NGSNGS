@@ -80,7 +80,7 @@ for file in $(ls ${VCFDIR}/*Haploid*); do
     for indiv in 0 1 2; do 
         Type=$(ls ${file}| sed 's/.*Sub//'|sed 's/Haploid.vcf//');
         echo ${file} Type ${Type} indiv ${indiv}; 
-        ${PRG} -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne -vcf ${file} -id ${indiv} -DumpVCF HaploidRef_${Type}_${indiv} -q1 ${Q1} -chr MT -o HaploidRes_${Type}_${indiv}.fq
+        ${PRG} -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne --vcf ${file} -id ${indiv} --haplo HaploidRef_${Type}_${indiv} -q1 ${Q1} -chr MT -o HaploidRes_${Type}_${indiv}.fq
         #md5sum HaploidRef_${Type}_${indiv}.fa >> MycoBactTest.md5;
         #md5sum HaploidRes_${Type}_${indiv}.fq >> MycoBactTest.md5;
     done; 
@@ -97,7 +97,7 @@ for file in $(ls ${VCFDIR}/*Diploid*); do
     for indiv in 0 1 2; do 
         Type=$(ls ${file}| sed 's/.*Sub//'|sed 's/Diploid.vcf//');
         echo ${file} Type ${Type} indiv ${indiv}; 
-        ${PRG} -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne -vcf ${file} -id ${indiv} -DumpVCF DiploidRef_${Type}_${indiv} -q1 ${Q1} -chr MT -o DiploidRes_${Type}_${indiv}.fq
+        ${PRG} -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne --vcf ${file} -id ${indiv} --haplo DiploidRef_${Type}_${indiv} -q1 ${Q1} -chr MT -o DiploidRes_${Type}_${indiv}.fq
         #md5sum DiploidRef_${Type}_${indiv}.fa >> MycoBactTest.md5;
         #md5sum DiploidRes_${Type}_${indiv}.fq >> MycoBactTest.md5;
     done;
@@ -107,8 +107,8 @@ echo "--------------------------------------------------------------------------
 echo "8) Testing Single-end, simulating stochastic variations, insertion or deletions, no error, length file "
 echo "---------------------------------------------------------------------------------------------------------------"
 
-${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.0,0.05,0.0,0.9 -q1 ${Q1} -DumpIndel DelTmp -o DelOut.fq
-${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.05,0.0,0.9,0.0 -q1 ${Q1} -DumpIndel InsTmp -o InsOut.fq
+${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.0,0.05,0.0,0.9 -q1 ${Q1} --DumpIndel DelTmp -o DelOut.fq
+${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.05,0.0,0.9,0.0 -q1 ${Q1} --DumpIndel InsTmp -o InsOut.fq
 
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "9) Testing Single-end, simulating fixed quality score of 40, with fragment lower-limit"

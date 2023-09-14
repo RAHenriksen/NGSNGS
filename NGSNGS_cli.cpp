@@ -20,7 +20,7 @@ argStruct *getpars(int argc,char ** argv){
   // The output format, output files, and structural elements for SAM outputs
   mypars->OutFormat = unknownT;
   mypars->OutName = NULL;
-  mypars->DumpFile = NULL;
+  mypars->HaploFile = NULL;
   mypars->IndelDumpFile = NULL;
   mypars->HeaderIndiv=-1;
   mypars->Align=1;
@@ -73,7 +73,7 @@ argStruct *getpars(int argc,char ** argv){
     if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->Reference = strdup(*(++argv));
     }
-    else if(strcasecmp("-vcf",*argv)==0 || strcasecmp("-bcf",*argv)==0){
+    else if(strcasecmp("--vcf",*argv)==0 || strcasecmp("--bcf",*argv)==0){
       mypars->vcffile = strdup(*(++argv));
     }
     else if(strcasecmp("-t",*argv)==0 || strcasecmp("--threads",*argv)==0){
@@ -193,10 +193,10 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-indel",*argv)==0){
       mypars->Indel = strdup(*(++argv));
     }
-    else if(strcasecmp("-DumpVCF",*argv)==0){
-      mypars->DumpFile = strdup(*(++argv));
+    else if(strcasecmp("--haplo",*argv)==0){
+      mypars->HaploFile = strdup(*(++argv));
     }
-    else if(strcasecmp("-DumpIndel",*argv)==0){
+    else if(strcasecmp("--DumpIndel",*argv)==0){
       mypars->IndelDumpFile = strdup(*(++argv));
     }  
     else{
@@ -275,7 +275,7 @@ outputformat_e infer_format(const char *file_name){
 void argStruct_destroy(argStruct *mypars){
   free(mypars->Reference);
   free(mypars->OutName);
-  free(mypars->DumpFile);
+  free(mypars->HaploFile);
   free(mypars->IndelDumpFile);
   free(mypars->LengthFile);
   free(mypars->LengthDist);

@@ -72,7 +72,7 @@ Example
 
 ./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/MisincorpFile.txt -f fa -o MycoBactFaSEOut
 
-./ngsngs -i Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 100 -l 150 -seq SE -ne -vcf Test_Examples/ChrMtSubDeletionDiploid.vcf -id 0 -q1 Test_Examples/AccFreqL150R1.txt -chr MT -DumpVCF DeltionInfo -f fq -o MtDeletionOut 
+./ngsngs -i Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 100 -l 150 -seq SE -ne -vcf Test_Examples/ChrMtSubDeletionDiploid.vcf -id 0 -q1 Test_Examples/AccFreqL150R1.txt -chr MT --haplo DeltionInfo -f fq -o MtDeletionOut 
 
 -h   | --help: 			 Print help page.
 
@@ -105,27 +105,26 @@ Output characteristics:
 Format specific:
 -q1  | --quality1:		 Read Quality profile for single-end reads (SE) or first read pair (PE) for fastq or sequence alignment map formats.
 -q2  | --quality2:		 Read Quality profile for for second read pair (PE) for fastq or sequence alignment map formats.
--qs  | --qualityscore:	 Fixed quality score, for both read pairs in fastq or sequence alignment map formats. It overwrites the quality profiles.
+-qs  | --qualityscore:		 Fixed quality score, for both read pairs in fastq or sequence alignment map formats. It overwrites the quality profiles.
 
 ----- Optional -----
 
 Genetic Variations:
 
--bcf | -vcf: 			 Variant Calling Format (.vcf) or binary format (.bcf)
--id  | --indiv: 		 Integer value (0 - index) for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).
-	 e.g -id 0	 First individual in the provided vcf file. 
--DumpVCF:			 The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided
-				 vcf file, for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.
+--bcf | --vcf: 			 Variant Calling Format (.vcf) or binary format (.bcf)
+-id   | --indiv: 		 Index (0 - based) of a specific individual from --vcf/--bcf input file, default = -1 (no individual selected).
+--haplo:			 Output FASTA file with internally generated haplotypes with the variations from the provided `vcf` file; for diploid individuals
+				 the fasta file contains two copies of the reference genome with the each allelic genotype.
 
 Stochastic Variations:
 
--indel:				 Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.
+--indel:			 Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.
 	 <InsProb,DelProb,InsParam,DelParam>
-	 Insertions and deletions -indel 0.05,0.1,0.1,0.2
-	 Only Insertions          -indel 0.05,0.0,0.1,0.0
-	 Only Deletions           -indel 0.0,0.5,0.0,0.9 
--DumpIndel:			 The prefix of an internally generated text file, containing the the read id, number of indels, the number of indel operations saving the position
-				 before and after and length of the indel, simulated read length before and after, see supplementary material for detailed example and description.
+	 Insertions and deletions --indel 0.05,0.1,0.1,0.2
+	 Only Insertions          --indel 0.05,0.0,0.1,0.0
+	 Only Deletions           --indel 0.0,0.5,0.0,0.9
+--DumpIndel:			 Output text file, containing the the read id, number of indels, the number of indel operations saving the position
+				 before and after and length of the indel, simulated read length before and after.
 
 Postmortem damage (PMD) - Deamination:
 
