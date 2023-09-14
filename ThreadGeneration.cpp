@@ -96,11 +96,20 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     char file2[512];
     strcpy(file1,OutputName);
     char *file_split = strchr(file1, ',');
-    if (file_split != NULL){
+    if (file_split != NULL){ // Two output files provided
+      if(SeqType == SE){
+	fprintf(stderr, "SE output specified, but two output files provided.\n");
+	exit(-1);
+      }
       *file_split = '\0';
       strcpy(file2,file_split+1);
       if (infer_format(file1) != infer_format(file2)){
 	fprintf(stderr, "Output files have different formats.\n");
+	exit(-1);
+      }
+    } else { // One output files provided
+      if(SeqType == PE){
+	fprintf(stderr, "PE output specified, but only one output file provided.\n");
 	exit(-1);
       }
     }
