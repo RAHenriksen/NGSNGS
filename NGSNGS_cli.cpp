@@ -70,29 +70,7 @@ argStruct *getpars(int argc,char ** argv){
 
   ++argv;
   while(*argv){
-    if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
-      ++argv;
-      char *tok = *argv;
-      if(strcasecmp("fa",tok)==0 || strcasecmp("fas",tok)==0 || strcasecmp("fasta",tok)==0)
-	mypars->OutFormat = faT;
-      if(strcasecmp("fa.gz",tok)==0 || strcasecmp("fas.gz",tok)==0 || strcasecmp("fasta.gz",tok)==0)
-	mypars->OutFormat = fagzT;
-      if(strcasecmp("fq",tok)==0 || strcasecmp("fastq",tok)==0)
-	mypars->OutFormat = fqT;
-      if(strcasecmp("fq.gz",tok)==0 || strcasecmp("fastq.gz",tok)==0)
-	mypars->OutFormat = fqgzT;
-      if(strcasecmp("sam",tok)==0)
-	mypars->OutFormat = samT;
-      if(strcasecmp("bam",tok)==0)
-	mypars->OutFormat = bamT;
-      if(strcasecmp("cram",tok)==0)
-	mypars->OutFormat = cramT;
-      if(mypars->OutFormat==unknownT){
-	fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data\nWarning:\n");
-        ErrMsg(7.0);
-      }
-    }
-    else if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
+    if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->Reference = strdup(*(++argv));
     }
     else if(strcasecmp("-vcf",*argv)==0 || strcasecmp("-bcf",*argv)==0){
@@ -120,6 +98,25 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
       mypars->OutName = strdup(*(++argv));
+      size_t len_outname = strlen(mypars->OutName);
+      if(strcasecmp(".fa",mypars->OutName + len_outname - 3)==0 || strcasecmp(".fas",mypars->OutName + len_outname - 4)==0 || strcasecmp(".fasta",mypars->OutName + len_outname - 6)==0)
+	mypars->OutFormat = faT;
+      if(strcasecmp(".fa.gz",mypars->OutName + len_outname - 6)==0 || strcasecmp(".fas.gz",mypars->OutName + len_outname - 7)==0 || strcasecmp(".fasta.gz",mypars->OutName + len_outname - 9)==0)
+	mypars->OutFormat = fagzT;
+      if(strcasecmp(".fq",mypars->OutName + len_outname - 3)==0 || strcasecmp(".fastq",mypars->OutName + len_outname - 6)==0)
+	mypars->OutFormat = fqT;
+      if(strcasecmp(".fq.gz",mypars->OutName + len_outname - 6)==0 || strcasecmp(".fastq.gz",mypars->OutName + len_outname - 9)==0)
+	mypars->OutFormat = fqgzT;
+      if(strcasecmp(".sam",mypars->OutName + len_outname - 4)==0)
+	mypars->OutFormat = samT;
+      if(strcasecmp(".bam",mypars->OutName + len_outname - 4)==0)
+	mypars->OutFormat = bamT;
+      if(strcasecmp(".cram",mypars->OutName + len_outname - 5)==0)
+	mypars->OutFormat = cramT;
+      if(mypars->OutFormat==unknownT){
+	fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data\nWarning:\n");
+	ErrMsg(7.0);
+      }
     }
     else if(strcasecmp("-s",*argv)==0 || strcasecmp("--seed",*argv)==0){
       mypars->Glob_seed = atoi(*(++argv))*1000;

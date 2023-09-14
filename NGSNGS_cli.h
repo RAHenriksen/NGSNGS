@@ -17,7 +17,7 @@ typedef struct{
   int Glob_seed;              //Local seeds are computed from the global. Only one seed needs to be supplied
   int Glob_seed_binary;              //Local seeds are computed from the global. Only one seed needs to be supplied
   outputformat_e OutFormat ;  //fq, fq.gz, fa, fa.gz, sam, bam, cram
-  char *OutName;              //prefix for output name
+  char *OutName;              //Output file name
   char *DumpFile;             //prefix for internal file recording potential variations to reference genome
   char *IndelDumpFile;        //prefix for internal file recording of sequencing errors specific for indels
   char *Reference;            //full filename for reference fasta

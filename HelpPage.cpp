@@ -35,12 +35,8 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t\t<Gam,Shape,Scale> \t Gamma distribution, given a shape and scale, e.g. Gam,20,2.\n");
   fprintf(fp,"\nOutput characteristics: \n\n");
   fprintf(fp,"\t-seq | --sequencing: \t\t Simulate single-end or paired-end reads.\n");
-  fprintf(fp,"\t\t <SE>\t single-end \n \t\t <PE>\t paired-end.\n");
-  fprintf(fp,"\t-f   | --format: \t\t File format of the simulated output reads.\n");
-  fprintf(fp,"\t\t Nucletide sequence w. different compression levels. \n\t\t <fa||fasta> \n\t\t <fa.gz||fasta.gz>\t\n"); 
-  fprintf(fp,"\t\t Nucletide sequence with corresponding quality score w. different compression levels. \n\t\t <fq||fastq> \n\t\t <fq.gz||fastq.gz>\t\n"); 
-  fprintf(fp,"\t\t Sequence Alignment Map w. different compression levels. \n\t\t <sam||bam||cram>\n"); 
-  fprintf(fp,"\t-o   | --output: \t\t Prefix of output file name.\n");
+  fprintf(fp,"\t\t <SE>\t single-end \n \t\t <PE>\t paired-end.\n\n");
+  fprintf(fp,"\t-o   | --output: \t\t Output file name.\n");
   fprintf(fp,"\nFormat specific: \n\n");
   fprintf(fp,"\t-q1  | --quality1: \t\t Read Quality profile for single-end reads (SE) or first read pair (PE) for fastq or sequence alignment map formats.\n");
   fprintf(fp,"\t-q2  | --quality2: \t\t Read Quality profile for for second read pair (PE) for fastq or sequence alignment map formats.\n");
@@ -122,9 +118,8 @@ void ErrMsg(double messageno){
   else if(messageno == 5.0){fprintf(stderr,"\nCould not parse both length parameters, provide either fixed length size (-l) or parse length distribution file (-lf).\n");}
   else if(messageno == 6.0){fprintf(stderr,"\nSequence type not provided. provide -seq || --sequence : SE (single-end) or PE (paired-end).\n");}
   else if(messageno == 6.5){fprintf(stderr,"\nSequence type not recognized. provide either SE (single-end) or PE (paired-end).\n");}
-  else if(messageno == 7.0){fprintf(stderr,"\nOutput format not recognized, provide -f | --format : <fa, fa.gz, fq, fq.gz, sam, bam, cram>.\n");}
+  else if(messageno == 7.0){fprintf(stderr,"\nOutput format not recognized : <fa, fa.gz, fas, fas.gz, fasta, fasta.gz, fq, fq.gz, sam, bam, cram>.\n");}
   else if(messageno == 8.0){fprintf(stderr,"\nOutput filename not provided, provide -o.\n");}
-  else if(messageno == 8.1){fprintf(stderr,"\nOutput filename not specified, provide -o filename.\n");}
   else if(messageno == 9.0){fprintf(stderr,"\nUnable to utilize the provided number of threads, use integers above 0.\n");}
   else if(messageno == 10.0){fprintf(stderr,"\nNucleotide for poly(x) homopolymers not recognized, provide -p : <A,G,C,T,N>.\n");}
   else if(messageno == 11.0){fprintf(stderr,"\nCould not parse the Nucleotide Quality profile(s), for format <fq, fq.gz, sam, bam, cram> provide -q1 for SE and -q1, -q2 for PE.\n");}

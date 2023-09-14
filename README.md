@@ -99,17 +99,8 @@ Output characteristics:
 -seq | --sequencing: 		 Simulate single-end or paired-end reads.
 	 <SE||se||single||single-end>	 single-end. 
  	 <PE||pe||paired||paired-end>	 paired-end.
--f   | --format: 		 File format of the simulated output reads.
-	Nucletide sequence w. different compression levels. 
-	 <fa||fas||fasta> 
-	 <fa.gz||fas.gz||fasta.gz>
-  	Nucletide sequence with corresponding quality score w. different compression levels.
-	 <fq||fastq>
-	 <fq.gz||fastq.gz>
-  	Sequence Alignment Map w. different compression levels.
-	 <sam||bam||cram> 
 
--o   | --output: 		 Prefix of output file name.
+-o   | --output: 		 Output file name (in formats `.fq`, `.fq.gz`, `.fas`, `.fas,gz`, `.sam`, `.bam`, or `.cram`).
 
 Format specific:
 -q1  | --quality1:		 Read Quality profile for single-end reads (SE) or first read pair (PE) for fastq or sequence alignment map formats.

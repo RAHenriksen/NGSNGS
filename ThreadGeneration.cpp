@@ -94,90 +94,56 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
     char file1[512];
     char file2[512];
-    const char* fileprefix = OutputName;
-    strcpy(file1,fileprefix);
-    strcpy(file2,fileprefix);
+    strcpy(file1,OutputName);
+    char *file_split = strchr(file1, ',');
+    if (file_split != NULL){
+      *file_split = '\0';
+      strcpy(file2,file_split+1);
+    }
 
-    const char* suffix1 = NULL;
-    const char* suffix2 = NULL;
     const char* mode = NULL;
     int alnformatflag = 0;
     switch(OutputFormat){
     case faT:
       mode = "wu";
-      if(SE==SeqType)
-	      suffix1 = ".fa";
-      else{
-	      suffix1 = "_R1.fa";
-	      suffix2 = "_R2.fa";
-      }
       break;
     case fagzT:
       mode = "wb";
-      if(SE== SeqType)
-	      suffix1 = ".fa.gz";
-      else{
-        suffix1 = "_R1.fa.gz";
-        suffix2 = "_R2.fa.gz";
-      }
       break;
     case fqT:
       mode = "wu";
-      if(SE ==SeqType)
-	      suffix1 = ".fq";
-      else{
-        suffix1 = "_R1.fq";
-        suffix2 = "_R2.fq";
-      }
       break;
     case fqgzT:
       mode = "w";
-      if(SE==SeqType)
-	      suffix1 = ".fq.gz";
-      else{
-        suffix1 = "_R1.fq.gz";
-        suffix2 = "_R2.fq.gz";
-      }
       break;
-
     case samT:
       mode = "ws";
-      suffix1 = ".sam";
       alnformatflag++;
       break;
-
     case bamT:
       mode = "wb";
-      suffix1 = ".bam";
       alnformatflag++;
       break;
     case cramT:
       mode = "wc";
-      suffix1 = ".cram";
       alnformatflag++;
       break;
     default:
       fprintf(stderr,"\t-> Fileformat is currently not supported \n");
       break;
     }
-     
-    strcat(file1,suffix1);
-
-    fprintf(stderr,"\t-> File output name is %s\n",file1);
-    const char* filename1 = file1;
-    const char* filename2 = NULL;
+    fprintf(stderr,"\t-> Output file name is %s\n",file1);
 
     if(alnformatflag == 0){
       int mt_cores = threadwriteno;
       int bgzf_buf = 256;
       
-      bgzf_fp[0] = bgzf_open(filename1,mode);
+      bgzf_fp[0] = bgzf_open(file1,mode);
       bgzf_mt(bgzf_fp[0],mt_cores,bgzf_buf);
       
       if(PE==SeqType){
-        strcat(file2,suffix2);
-        filename2 = file2;
-        bgzf_fp[1] = bgzf_open(filename2,mode);
+	fprintf(stderr,"\t-> Output file name 2 is %s\n",file2);
+        bgzf_fp[1] = bgzf_open(file2,mode);
         bgzf_mt(bgzf_fp[1],mt_cores,bgzf_buf);
       }
     }
@@ -187,7 +153,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       
       // Save reference file name for header creation of the sam output
       //  hts_opt_add((hts_opt **)&fmt_hts->specific,ref);
-      SAMout = sam_open_format(filename1, mode, fmt_hts);
+      SAMout = sam_open_format(file1, mode, fmt_hts);
       SAMHeader = sam_hdr_init();
 
       if(threadwriteno>0){
@@ -199,7 +165,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       }
       hts_set_opt(SAMout, CRAM_OPT_REFERENCE, refSseq);
       // generate header
-      Header_func(fmt_hts,filename1,SAMout,SAMHeader,reffasta,CommandArray,version);
+      Header_func(fmt_hts,file1,SAMout,SAMHeader,reffasta,CommandArray,version);
 
       free(ref);
       // hts_opt_free((hts_opt *)fmt_hts->specific);
