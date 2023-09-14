@@ -426,12 +426,12 @@ void* Sampling_threads(void *arg) {
       if(struct_obj->SAMout){
         if((int)strlen(seq_r1)!=(naligned[0]+nsofts[0])){
           fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
-          exit(0);
+          exit(-1);
         }
         //below only runs for PE that is when nalign[1] is not -1
         if(naligned[1]!=-1 && (int)strlen(seq_r2)!=naligned[1]+nsofts[1]){
           fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
-          exit(0);
+          exit(-1);
         }
       }
 

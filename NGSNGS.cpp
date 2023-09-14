@@ -45,7 +45,7 @@ void handler(int s) {
     fprintf(stderr,"\n\t-> If you really want ngsngs to exit uncleanly ctrl+c: %d more times\n",really_kill+1);
   fflush(stderr);
   if(!really_kill)
-    exit(0);
+    exit(-1);
   VERBOSE=0;
   SIG_COND=0;
 }
@@ -254,10 +254,12 @@ int main(int argc,char **argv){
 
     //first capture the cases where no reads or cov has been defined or both defined
     if(mypars->nreads == 0 && readcov == 0.0){
-      fprintf(stderr,"must suply number of reads (-r) or desired coverage (-c)");exit(0);
+      fprintf(stderr,"must suply number of reads (-r) or desired coverage (-c)");
+      exit(-1);
     }
     if(mypars->nreads > 0 &&readcov > 0.0){
-      fprintf(stderr,"must not suply number of reads (-r) and desired coverage (-c)");exit(0);
+      fprintf(stderr,"must not suply number of reads (-r) and desired coverage (-c)");
+      exit(-1);
     }
     //fprintf(stderr,"NOW IM AFTER NREADS %zu \n",mypars->nreads);
     
@@ -304,8 +306,10 @@ int main(int argc,char **argv){
       else{Polynt = "F";}
     }
     else{
-      if (mypars->Poly != NULL){ErrMsg(14.0);exit(0);}
-      else{Polynt = "F";}
+      if (mypars->Poly != NULL)
+	ErrMsg(14.0);
+      else
+	Polynt = "F";
     }
     // QUALITY PROFILES
     const char* QualStringFlag;
@@ -314,19 +318,13 @@ int main(int argc,char **argv){
     
     if (strcasecmp("true",QualStringFlag)==0){
       if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
-        if (mypars->seq_type == PE && mypars->QualProfile2 == NULL && mypars->FixedQual == 0){
-          //fprintf(stderr,"OUTPUTFORMAT 1");
+        if (mypars->seq_type == PE && mypars->QualProfile2 == NULL && mypars->FixedQual == 0)
           ErrMsg(11.0);
-          exit(0);
-        }
       }
     }
     else{
-      if(OutputFormat== fqT ||OutputFormat==fqgzT){
-        //fprintf(stderr,"OUTPUTFORMAT 2");
+      if(OutputFormat== fqT ||OutputFormat==fqgzT)
         ErrMsg(11.0);
-        exit(0);
-      }
     }
 
     //NB!
@@ -382,10 +380,8 @@ int main(int argc,char **argv){
     if (mypars->SubProfile != NULL)
       doMisMatchErr = 1;
 
-    if(mypars->SubProfile != NULL && mypars->Briggs != NULL){
+    if(mypars->SubProfile != NULL && mypars->Briggs != NULL)
       ErrMsg(12.0);
-      exit(0);
-    }
 
     int DeamLength = 0;
 

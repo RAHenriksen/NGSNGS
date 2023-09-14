@@ -99,6 +99,10 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     if (file_split != NULL){
       *file_split = '\0';
       strcpy(file2,file_split+1);
+      if (infer_format(file1) != infer_format(file2)){
+	fprintf(stderr, "Output files have different formats.\n");
+	exit(-1);
+      }
     }
 
     const char* mode = NULL;
@@ -159,7 +163,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       if(threadwriteno>0){
         if (!(p.pool = hts_tpool_init(threadwriteno))) {
           fprintf(stderr, "Error creating thread pool\n");
-          exit(0);
+          exit(-1);
         }
         hts_set_opt(SAMout, HTS_OPT_THREAD_POOL, &p);
       }

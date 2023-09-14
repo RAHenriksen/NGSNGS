@@ -42,15 +42,15 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
       probs[at++] = atof(strtok(all_lines[2+b*readcycle+pos],"\n\t "));
       char *tok = NULL;
       while(((tok=strtok(NULL,"\n\t ")))){
-	      probs[at++] = atof(tok);
-	      assert(at<MAXBINS);
+	probs[at++] = atof(tok);
+	assert(at<MAXBINS);
       }
       if(nbins==-1){
-	      nbins = at;
+	nbins = at;
       }
       if(nbins!=at){
-	      fprintf(stderr,"Problems, number of columns is different nbins: %d at: %d\n",nbins,at);
-	      exit(0);
+	fprintf(stderr,"Problems, number of columns is different nbins: %d at: %d\n",nbins,at);
+	exit(-1);
       }
       dists[b][pos] =  ransampl_alloc( nbins );
       ransampl_set(dists[b][pos],probs);
