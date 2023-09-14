@@ -27,7 +27,7 @@ OBJ = $(CSRC:.c=.o) $(CXXSRC:.cpp=.o)
 
 all: ngsngs
 
-PACKAGE_VERSION  = 0.9.1
+PACKAGE_VERSION  = 0.9.3
 
 ifneq "$(wildcard .git)" ""
 PACKAGE_VERSION := $(shell git describe --always)
@@ -83,7 +83,7 @@ clean:
 	rm -f test/*.fa test/*.fq test/*.sam test/*.txt
 
 test:
-	echo "Subprograms is being tested"
+	echo "Subprograms are being tested"
 	cd test; ./testAll.sh
 
 force:

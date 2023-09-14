@@ -73,22 +73,22 @@ argStruct *getpars(int argc,char ** argv){
     if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
       ++argv;
       char *tok = *argv;
-      if(strcasecmp("fa",tok)==0 || strcasecmp("fasta",tok)==0)
-	      mypars->OutFormat = faT;
-      if(strcasecmp("fa.gz",tok)==0 || strcasecmp("fasta.gz",tok)==0)
-	      mypars->OutFormat = fagzT;
+      if(strcasecmp("fa",tok)==0 || strcasecmp("fas",tok)==0 || strcasecmp("fasta",tok)==0)
+	mypars->OutFormat = faT;
+      if(strcasecmp("fa.gz",tok)==0 || strcasecmp("fas.gz",tok)==0 || strcasecmp("fasta.gz",tok)==0)
+	mypars->OutFormat = fagzT;
       if(strcasecmp("fq",tok)==0 || strcasecmp("fastq",tok)==0)
-	      mypars->OutFormat = fqT;
+	mypars->OutFormat = fqT;
       if(strcasecmp("fq.gz",tok)==0 || strcasecmp("fastq.gz",tok)==0)
-	      mypars->OutFormat = fqgzT;
+	mypars->OutFormat = fqgzT;
       if(strcasecmp("sam",tok)==0)
-	      mypars->OutFormat = samT;
+	mypars->OutFormat = samT;
       if(strcasecmp("bam",tok)==0)
-	      mypars->OutFormat = bamT;
+	mypars->OutFormat = bamT;
       if(strcasecmp("cram",tok)==0)
-	      mypars->OutFormat = cramT;
+	mypars->OutFormat = cramT;
       if(mypars->OutFormat==unknownT){
-	      fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data\nWarning:\n");
+	fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data\nWarning:\n");
         ErrMsg(7.0);
       }
     }
@@ -119,11 +119,6 @@ argStruct *getpars(int argc,char ** argv){
       if (mypars->coverage <= 0.0){ErrMsg(2.2);}
     }
     else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
-      /*if(*(++argv) == NULL){
- 	      fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data\nWarning:\n");
-        ErrMsg(8.1);
-        exit(0);
-      }*/
       mypars->OutName = strdup(*(++argv));
     }
     else if(strcasecmp("-s",*argv)==0 || strcasecmp("--seed",*argv)==0){
@@ -134,11 +129,11 @@ argStruct *getpars(int argc,char ** argv){
       char * tok = *(++argv);
       
       if(strcasecmp("SE",tok)==0 || strcasecmp("se",tok)==0 || strcasecmp("single",tok)==0 || strcasecmp("single-end",tok)==0)
-	      mypars->seq_type = SE;
+	mypars->seq_type = SE;
       else if(strcasecmp("PE",tok)==0 || strcasecmp("pe",tok)==0 || strcasecmp("paired",tok)==0 || strcasecmp("paired-end",tok)==0)
-	      mypars->seq_type = PE;
+	mypars->seq_type = PE;
       else if(mypars->seq_type==unknownTT)
-	      ErrMsg(6.5);
+	ErrMsg(6.5);
     }
     else if(strcasecmp("-a1",*argv)==0 || strcasecmp("--adapter1",*argv)==0){
       mypars->Adapter1 = strdup(*(++argv));
@@ -172,10 +167,10 @@ argStruct *getpars(int argc,char ** argv){
       BriggsModel = strtok(ModelString,",");
       char* ModelParam =  strdup(strtok (NULL, ""));
       if(strcasecmp("b",BriggsModel)==0 || strcasecmp("briggs",BriggsModel)==0){
-	      mypars->Briggs = ModelParam;
+	mypars->Briggs = ModelParam;
       }
       if(strcasecmp("b7",BriggsModel)==0 || strcasecmp("briggs07",BriggsModel)==0)
-	      mypars->BriggsBiotin = ModelParam;
+	mypars->BriggsBiotin = ModelParam;
       free(ModelString);
     }
     else if(strcasecmp("-dup",*argv)==0 || strcasecmp("--duplicates",*argv)==0){
@@ -236,7 +231,7 @@ argStruct *getpars(int argc,char ** argv){
   // adjust the compression threads following the input parameters depending on the sampling threads and output file format
   if (mypars->OutFormat == fagzT || mypars->OutFormat == fqgzT || mypars->OutFormat == bamT || mypars->OutFormat == cramT){
     if (mypars->SamplThreads <= 12 && compress_t_y_n == 0){
-        mypars->CompressThreads = mypars->SamplThreads;
+      mypars->CompressThreads = mypars->SamplThreads;
     }
     else if (mypars->SamplThreads > 12 && compress_t_y_n == 0){
       //putting an upper limit on the number of compression threads

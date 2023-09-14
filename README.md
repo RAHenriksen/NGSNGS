@@ -101,8 +101,8 @@ Output characteristics:
  	 <PE||pe||paired||paired-end>	 paired-end.
 -f   | --format: 		 File format of the simulated output reads.
 	Nucletide sequence w. different compression levels. 
-	 <fa||fasta> 
-	 <fa.gz||fasta.gz>
+	 <fa||fas||fasta> 
+	 <fa.gz||fas.gz||fasta.gz>
   	Nucletide sequence with corresponding quality score w. different compression levels.
 	 <fq||fastq>
 	 <fq.gz||fastq.gz>
