@@ -30,12 +30,12 @@ int HelpPage(FILE *fp){
   fprintf(fp,"Fragment Length converter - converting MapDamage 2.0 lgdistribution files into NGSNGS length distribution format\n\n");
   fprintf(fp,"Usage\n./LenConvert -i <MapDamage Length Distribution> -o <NGSNGS length distribution file>\n");
   fprintf(fp,"\nExample\n./LenConvert -i lgdistribution.txt -o Ancient_hg19_CDF.txt\n");
-  fprintf(fp,"./LenConvert --MapDMG_in lgdistribution.txt --NGSNGS_out Ancient_hg19_CDF.txt\n");
+  fprintf(fp,"./LenConvert --input lgdistribution.txt --output Ancient_hg19_CDF.txt\n");
   fprintf(fp,"\nOptions: \n");
-  fprintf(fp,"-h   | --help: \t\t\t Print help page.\n");
-  fprintf(fp,"-v   | --version: \t\t Print help page.\n\n");
-  fprintf(fp,"-i   | --MapDMG_in: \t\t MapDamage fragment length intput in .txt format or .txt.gz\n");
-  fprintf(fp,"-o   | --NGSNGS_out: \t\t NGSNGS fragment length output in .txt format\n");
+  fprintf(fp,"-h | --help: \t Print help page.\n");
+  fprintf(fp,"-v | --version:  Print version.\n\n");
+  fprintf(fp,"-i | --input: \t MapDamage fragment length intput in .txt or .txt.gz format.\n");
+  fprintf(fp,"-o | --output: \t NGSNGS fragment length output in .txt format.\n");
   exit(1);
   return 0;
 }
@@ -47,10 +47,10 @@ argStruct *getpars(int argc,char ** argv){
   ++argv;
   while(*argv){
     //fprintf(stderr,"ARGV %s\n",*argv);
-    if(strcasecmp("-i",*argv)==0 || strcasecmp("--MapDMG_in",*argv)==0){
+    if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->MapDMG_len_in = strdup(*(++argv));
     }
-    else if(strcasecmp("-o",*argv)==0 || strcasecmp("--NGSNGS_out",*argv)==0){
+    else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
       mypars->NGSNGS_len_out = strdup(*(++argv));
     }
     else{

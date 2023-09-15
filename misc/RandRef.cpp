@@ -31,15 +31,15 @@ int HelpPage(FILE *fp){
   fprintf(fp,"Usage\n./RandRef -l <Genome Length> -s <seed> -n <Chromosome number> -o <output name>\n");
   fprintf(fp,"\nExample\n./RandRef -l 1000000 -s 1 -n 2 -nn -o RandRefChr1S1.fa\n");
   fprintf(fp,"\nOptions: \n");
-  fprintf(fp,"-h    | --help: \t\t\t Print help page.\n");
-  fprintf(fp,"-v    | --version: \t\t Print help page.\n\n");
-  fprintf(fp,"-l    | --length: \t\t Reference genome .fa format\n");
-  fprintf(fp,"-s    | --seed: \t\t\t seed for random generators\n");
-  fprintf(fp,"-n    | --chrNo: \t\t Number of chromosomes'\n");
-  fprintf(fp,"-nn   | --NoNt: \t\t Simulate sequence without the character N'\n");
-  fprintf(fp,"-nstop| --NoStopCodon: \t\t\t Creates no variation resulting in stop codons <TAG,TAA,TGA>\n");
-  fprintf(fp,"-iter | --iterations: \t\t\t Number of times the stop codon replacements are performed (Due to triplets, replacement of one stop codon might lead to another), default = 2\n");
-  fprintf(fp,"-o    | --output: \t\t Randomly simulated reference genome .fa\n");
+  fprintf(fp,"-h    | --help: \t Print help page.\n");
+  fprintf(fp,"-v    | --version: \t Print version.\n\n");
+  fprintf(fp,"-l    | --length: \t Length of genome.\n");
+  fprintf(fp,"-s    | --seed: \t Seed for random generators.\n");
+  fprintf(fp,"-n    | --chrNo: \t Number of chromosomes.\n");
+  fprintf(fp,"-nn   | --NoNt: \t Simulate sequences without the character N.\n");
+  fprintf(fp,"-nstop| --NoStopCodon: \t Creates no variation resulting in stop codons <TAG,TAA,TGA>.\n");
+  fprintf(fp,"-iter | --iterations: \t Number of times the stop codon replacements are performed (Due to triplets, replacement of one stop codon might lead to another), default = 2.\n");
+  fprintf(fp,"-o    | --output: \t Randomly simulated reference genome in FASTA format.\n");
   exit(1);
   return 0;
 }

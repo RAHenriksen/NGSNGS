@@ -31,12 +31,12 @@ int HelpPage(FILE *fp){
   fprintf(fp,"Creates a global genome misincorporation file - not chromosome specific.\n\n");
   fprintf(fp,"Usage\n./MetaMisConvert -i <MetaDamage Misincorporation file> -o <NGSNGS misincorporation file>\n");
   fprintf(fp,"\nExample\n./MetaMisConvert -i MetaNtSub.txt -o NGSNGS_mis.txt\n");
-  fprintf(fp,"./MetaMisConvert --MetaDMG_in MetaNtSub.txt --NGSNGS_out NGSNGS_mis.txt\n");
+  fprintf(fp,"./MetaMisConvert --input MetaNtSub.txt --output NGSNGS_mis.txt\n");
   fprintf(fp,"\nOptions: \n");
-  fprintf(fp,"-h   | --help: \t\t\t Print help page.\n");
-  fprintf(fp,"-v   | --version: \t\t Print help page.\n\n");
-  fprintf(fp,"-i   | --MetaDMG_in: \t\t MetaDamage misincorporation input file in .txt format or .txt.gz\n");
-  fprintf(fp,"-o   | --NGSNGS_out: \t\t NGSNGS misincorporation output file in .txt format\n");
+  fprintf(fp,"-h | --help: \t Print help page.\n");
+  fprintf(fp,"-v | --version:  Print version.\n\n");
+  fprintf(fp,"-i | --input: \t MetaDamage misincorporation input file in .txt or .txt.gz format.\n");
+  fprintf(fp,"-o | --output: \t NGSNGS misincorporation output file in .txt format.\n");
   exit(1);
   return 0;
 }
@@ -48,10 +48,10 @@ argStruct *getpars(int argc,char ** argv){
   ++argv;
   while(*argv){
     //fprintf(stderr,"ARGV %s\n",*argv);
-    if(strcasecmp("-i",*argv)==0 || strcasecmp("--MetaDMG_in",*argv)==0){
+    if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->MetaDMG_mis_in = strdup(*(++argv));
     }
-    else if(strcasecmp("-o",*argv)==0 || strcasecmp("--NGSNGS_out",*argv)==0){
+    else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
       mypars->NGSNGS_mis_out = strdup(*(++argv));
     }
     else{
