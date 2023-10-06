@@ -60,6 +60,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   pthread_t *mythreads = new pthread_t[nthreads];
   
   //allocate for reference file
+  time_t t_ref = time(NULL);
   fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
   
   if(VariantFile){
@@ -75,8 +76,8 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     }
   }
 
-  fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome\n",reffasta->nref);
-  fprintf(stderr,"\t-> Chromosome name first %s and length %d and full length %zu\n",reffasta->seqs_names[0],reffasta->seqs_l[0],reffasta->seq_l_total);
+  fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome with the full length %zu\n",reffasta->nref,reffasta->seq_l_total);
+  fprintf(stderr, "\t-> Done reading in the reference file, walltime used =  %.2f sec\n", (float)(time(NULL) - t_ref));
 
 
   if (reffasta->seqs != NULL){

@@ -104,21 +104,21 @@ int main(int argc,char **argv){
     double mean_length = 0;
     int SizeDistType=-1;double val1 = 0; double val2  = 0;
     
-    if (mypars->CycleLength != 0){
-      readcycle = mypars->CycleLength;
-      if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
-        ErrMsg(11.0);
-        exit(0);
-      }
+    if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
+      if (mypars->CycleLength != 0){
+        readcycle = mypars->CycleLength;
+        if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
+          ErrMsg(11.0);
+          exit(0);
+        }
 
-      if(mypars->QualProfile1 != NULL){
-        gzFile gz = Z_NULL;
-        assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
-        gzclose(gz);
+        if(mypars->QualProfile1 != NULL){
+          gzFile gz = Z_NULL;
+          assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
+          gzclose(gz);
+        }
       }
-    }
-    else{
-      if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
+      else{
         if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
           ErrMsg(11.0);
           exit(0);
@@ -389,12 +389,14 @@ int main(int argc,char **argv){
     }
     
     int qsreadcycle = 0;
-    if (mypars->CycleLength != 0){
-      qsreadcycle=1;
-    }
+    if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){      
+      if (mypars->CycleLength != 0){
+        qsreadcycle=1;
+      }
 
-    if (qsreadcycle == 0){
-      fprintf(stderr,"\t-> When providing a fixed quality score (-qs) the read cycle length is not used as an upper limit for the simulated reads, unless -cl is specified\n");
+      if (qsreadcycle == 0){
+        fprintf(stderr,"\t-> When providing a fixed quality score (-qs) the read cycle length is not used as an upper limit for the simulated reads, unless -cl is specified\n");
+      }
     }
 
     ThreadInitialization(mypars->Reference,mypars->SamplThreads,mypars->Glob_seed,mypars->nreads,mypars->OutName,
