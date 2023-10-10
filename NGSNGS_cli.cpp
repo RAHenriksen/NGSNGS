@@ -30,6 +30,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Reference = NULL;
   mypars->seq_type = unknownTT;
   mypars->Glob_seed = (int) time(NULL);
+  mypars->Glob_seed_binary = 0;
   mypars->rng_type = -1;
 
   // Sequence alteration models
@@ -127,6 +128,7 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-s",*argv)==0 || strcasecmp("--seed",*argv)==0){
       mypars->Glob_seed = atoi(*(++argv))*1000;
+      mypars->Glob_seed_binary = 1;
     }
     else if(strcasecmp("-seq",*argv)==0 || strcasecmp("--sequencing",*argv)==0){
       char * tok = *(++argv);

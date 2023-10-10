@@ -282,9 +282,14 @@ int main(int argc,char **argv){
     }
 
     //size_t nreads_per_thread = mypars->nreads/mypars->SamplThreads;
-    
+
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in input file (-i): \'%s\': %d\n",mypars->Reference,chr_total);
-    fprintf(stderr,"\t-> Seed is either provided (-s) or set at current calendar time (default): %d\n",mypars->Glob_seed/1000);
+    if(mypars->Glob_seed_binary == 1){
+      fprintf(stderr,"\t-> Seed is provided (-s): %ld\n",mypars->Glob_seed/1000);
+    }
+    else{
+      fprintf(stderr,"\t-> Seed is set at current calendar time: %ld\n",mypars->Glob_seed);
+    }
     fprintf(stderr,"\t-> Number of sampling threads used (-t): %d and number of compression threads (-t2): %d\n",mypars->SamplThreads,mypars->CompressThreads);
 
     if (readcov > 0.0){fprintf(stderr,"\t-> Number of reads to be simulated %zu, based on the desired coverage (-c): %f\n",mypars->nreads,mypars->coverage);}
