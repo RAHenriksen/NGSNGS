@@ -136,16 +136,34 @@ int Reference_Variant(int argc,char **argv){
       //int chr_idx = fs->nref-1;
       int chr_idx;
       //Choose random chromosome index each time
-     
+
+
+      // Calculate the number of variations made
+      size_t num_variations = 0;
+
+      int chr_idx_tmp;
+      if (ModulusNo > 0) {
+        for (size_t moduluspos_tmp = 0; moduluspos_tmp <= fs->seqs_l[fs->nref-1];moduluspos_tmp++){
+          chr_idx_tmp = (int)(mrand_pop_long(mr) % (fs->nref));
+          if (moduluspos_tmp % ModulusNo == 0){
+            num_variations++;
+          }
+        }
+      }
+      else{
+        num_variations = var_operations;
+      }
+
       long rand_val;
       char buf[1024];
 
       FILE *fp;
       fp = fopen(Coord_file, "w");
 
-      char **data = (char **)malloc(var_operations * sizeof(char *));
+      // Allocate memory for the data i need to store the actual variations
+      char **data = (char **)malloc(num_variations * sizeof(char *));
       int data_count = 0;
-
+      int test=0;
       if(var_operations > 0){
         for (int i = 0; i < var_operations;){
           chr_idx = (int)(mrand_pop_long(mr) % (fs->nref));
@@ -166,7 +184,8 @@ int Reference_Variant(int argc,char **argv){
             char entry[100]; // Adjust the buffer size as needed
             // Append data to the array
             sprintf(entry, "%s \t %lu \t ref \t %c \t alt \t %c",fs->seqs_names[chr_idx], pos+1, previous, altered);
-
+            //entry 1 RandChr2 	 120591 	 ref 	 C 	 alt 	 T
+            //std::cout << "entry 1 " << var_operations << std::endl;
             if (data_count < var_operations) {
               data[data_count++] = strdup(entry);
             }
@@ -182,6 +201,7 @@ int Reference_Variant(int argc,char **argv){
       else if(ModulusNo > 0){
         for (size_t moduluspos = 0; moduluspos <= fs->seqs_l[fs->nref-1];moduluspos++){
           chr_idx = (int)(mrand_pop_long(mr) % (fs->nref));
+          //std::cout << "chr_idx " << chr_idx << std::endl;
           if (moduluspos % ModulusNo == 0){
             //fprintf(stderr,"check %lu \t %c\n",moduluspos,fs->seqs[chr_idx][moduluspos]);
             if (fs->seqs[chr_idx][moduluspos] != 'N'){
@@ -197,13 +217,12 @@ int Reference_Variant(int argc,char **argv){
               }
               fs->seqs[chr_idx][moduluspos] = altered;
 
-              char entry[100]; // Adjust the buffer size as needed
+              char entry[1000]; // Adjust the buffer size as needed
               // Append data to the array
               sprintf(entry, "%s \t %lu \t ref \t %c \t alt \t %c",fs->seqs_names[chr_idx], moduluspos+1, previous, altered);
-
-              if (data_count < var_operations) {
-                data[data_count++] = strdup(entry);
-              }
+              //entry 2 RandChr2 	 963601 	 ref 	 C 	 alt 	 A
+              //std::cout << "entry 2 "<< ModulusNo << std::endl;
+              data[data_count++] = strdup(entry);
             }
           }
           else
@@ -219,10 +238,10 @@ int Reference_Variant(int argc,char **argv){
       // Sort the data
       qsort(data, data_count, sizeof(char *), SortChrPos);
 
-      // Write the sorted data to the file
-      for (int i = 0; i < data_count; i++) {
-          fprintf(fp, "%s\n", data[i]);
-          free(data[i]); // Free the dynamically allocated memory
+      // Write the sorted data to the file      
+      for (int i = 0; i < num_variations; i++){
+        fprintf(fp, "%s\n", data[i]);
+        free(data[i]); // Free the dynamically allocated memory
       }
       fclose(fp);
       
