@@ -163,8 +163,8 @@ int Reference_Variant(int argc,char **argv){
       // Allocate memory for the data i need to store the actual variations
       char **data = (char **)malloc(num_variations * sizeof(char *));
       int data_count = 0;
-      int test=0;
       if(var_operations > 0){
+        //std::cout << "var operations" << std::endl;
         for (int i = 0; i < var_operations;){
           chr_idx = (int)(mrand_pop_long(mr) % (fs->nref));
           rand_val = mrand_pop_long(mr);
@@ -181,7 +181,12 @@ int Reference_Variant(int argc,char **argv){
             }
             fs->seqs[chr_idx][pos] = altered;
 
-            char entry[100]; // Adjust the buffer size as needed
+            char *entry = (char *)malloc(10000); // Allocate memory for the entry
+            if (entry == NULL) {
+                fprintf(stderr, "Memory allocation failed\n");
+                return 1; // Or handle the allocation failure appropriately
+            }
+
             // Append data to the array
             sprintf(entry, "%s \t %lu \t ref \t %c \t alt \t %c",fs->seqs_names[chr_idx], pos+1, previous, altered);
             //entry 1 RandChr2 	 120591 	 ref 	 C 	 alt 	 T
@@ -191,6 +196,7 @@ int Reference_Variant(int argc,char **argv){
             }
             //fprintf(fp,"%s \t %d \t ref \t %c \t alt \t %c\n",fs->seqs_names[chr_idx],pos,previous,altered);
             i++;
+            free(entry);
           }
           else
           {
@@ -199,44 +205,61 @@ int Reference_Variant(int argc,char **argv){
         }
       }
       else if(ModulusNo > 0){
+        //std::cout << "modulus operations" << std::endl;
         for (size_t moduluspos = 0; moduluspos <= fs->seqs_l[fs->nref-1];moduluspos++){
           chr_idx = (int)(mrand_pop_long(mr) % (fs->nref));
           //std::cout << "chr_idx " << chr_idx << std::endl;
-          if (moduluspos % ModulusNo == 0){
-            //fprintf(stderr,"check %lu \t %c\n",moduluspos,fs->seqs[chr_idx][moduluspos]);
-            if (fs->seqs[chr_idx][moduluspos] != 'N'){
-              char previous; 
-              previous = fs->seqs[chr_idx][moduluspos];
-              char altered;
-              altered = bases[(int)(mrand_pop_long(mr) %4)];
-              
-              while(previous == altered){
-                //fprintf(stderr,"Chromosome \t %s \t length %d \t position \t %d \t original \t %c \t altered \t %c\n",fs->seqs_names[chr_idx],fs->seqs_l[chr_idx],moduluspos,previous,altered);
-                altered = bases[(int)(mrand_pop_long(mr) %4)];
-                //fprintf(stderr,"Chromosome \t %s \t length %d \t position \t %d \t original \t %c \t altered \t %c\n",fs->seqs_names[chr_idx],fs->seqs_l[chr_idx],moduluspos,previous,altered);
-              }
-              fs->seqs[chr_idx][moduluspos] = altered;
 
-              char entry[1000]; // Adjust the buffer size as needed
-              // Append data to the array
-              sprintf(entry, "%s \t %lu \t ref \t %c \t alt \t %c",fs->seqs_names[chr_idx], moduluspos+1, previous, altered);
-              //entry 2 RandChr2 	 963601 	 ref 	 C 	 alt 	 A
-              //std::cout << "entry 2 "<< ModulusNo << std::endl;
-              data[data_count++] = strdup(entry);
+          // Check if chr_idx is within a valid range
+          if (chr_idx >= 0 && chr_idx < fs->nref) {
+            // Check if moduluspos is within a valid range
+            if (moduluspos >= 0 && moduluspos < fs->seqs_l[chr_idx]) {
+              // Access fs->seqs only if chr_idx and moduluspos are within valid bounds
+              if (fs->seqs[chr_idx][moduluspos] != 'N'){
+                //std::cout << "if if if "<< chr_idx << std::endl;
+                char previous; 
+                previous = fs->seqs[chr_idx][moduluspos];
+                char altered;
+                altered = bases[(int)(mrand_pop_long(mr) %4)];
+                //std::cout << "before while " << std::endl;
+                while(previous == altered){
+                  //std::cout << "while " << std::endl;
+                  //fprintf(stderr,"Chromosome \t %s \t length %d \t position \t %d \t original \t %c \t altered \t %c\n",fs->seqs_names[chr_idx],fs->seqs_l[chr_idx],moduluspos,previous,altered);
+                  altered = bases[(int)(mrand_pop_long(mr) %4)];
+                  //fprintf(stderr,"Chromosome \t %s \t length %d \t position \t %d \t original \t %c \t altered \t %c\n",fs->seqs_names[chr_idx],fs->seqs_l[chr_idx],moduluspos,previous,altered);
+                }
+                fs->seqs[chr_idx][moduluspos] = altered;
+                //std::cout << "before entry " << std::endl;
+                
+                char *entry = (char *)malloc(10000); // Allocate memory for the entry
+                if (entry == NULL) {
+                    fprintf(stderr, "Memory allocation failed\n");
+                    return 1; // Or handle the allocation failure appropriately
+                }              // Append data to the array
+                sprintf(entry, "%s \t %lu \t ref \t %c \t alt \t %c",fs->seqs_names[chr_idx], moduluspos+1, previous, altered);
+                //std::cout << entry << std::endl;
+                //entry 2 RandChr2 	 963601 	 ref 	 C 	 alt 	 A
+                //std::cout << "entry 2 "<< ModulusNo << std::endl;
+                data[data_count++] = strdup(entry);
+                //std::cout << "data done " << std::endl;
+                //free(entry);
+              }
             }
           }
-          else
-          {
+          else{
             continue;
-          }
+          } 
+          //std::cout << "after if " <<std::endl;
         }
+        //std::cout << "after for " << std::endl;
       }
       else if(ModulusNo > 0 && var_operations > 0){
         fprintf(stderr,"Only use either -n or -m");exit(0);
       }
-
+      //std::cout << "before qsort "<< std::endl;
       // Sort the data
       qsort(data, data_count, sizeof(char *), SortChrPos);
+      //std::cout << "after qsort "<< std::endl;
 
       // Write the sorted data to the file      
       for (int i = 0; i < num_variations; i++){
@@ -244,17 +267,18 @@ int Reference_Variant(int argc,char **argv){
         free(data[i]); // Free the dynamically allocated memory
       }
       fclose(fp);
-      
-      // Free the array
-      free(data);
+      //std::cout << "after fclose "<< std::endl;
 
       for(int i=0;i<fs->nref;i++){
+        //std::cout << "i nref " << std::endl;
         snprintf(buf,1024,"%s_ngsngs",fs->seqs_names[i]);
         fs->seqs_names[i] = strdup(buf);
       }
+      //std::cout << "before dump internal " << std::endl;
       dump_internal(fs,RefVar_out);
-
-      fasta_sampler_destroy(fs);
+      //std::cout << "after dump internal " << std::endl;
+      //fasta_sampler_destroy(fs);
+      //std::cout << "after fasta destroy" << std::endl;
     }  
 
     return 0;
