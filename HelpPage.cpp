@@ -130,7 +130,7 @@ void ErrMsg(double messageno){
   else if(messageno == 14.0){fprintf(stderr,"Poly tail error: Missing adapter sequence, provide adapter sequence (-a1,-a2) as well.\n");}
   else {fprintf(stderr,"\nError with input parameters.\n");}
   fprintf(stderr,"See help page (-h)\n");
-  exit(- (int) messageno);
+  exit((int) messageno);
 }
 
 void WarMsg(double messageno){

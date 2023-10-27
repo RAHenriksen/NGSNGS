@@ -99,18 +99,18 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     if (file_split != NULL){ // Two output files provided
       if(SeqType == SE){
 	fprintf(stderr, "SE output specified, but two output files provided.\n");
-	exit(-1);
+	exit(1);
       }
       *file_split = '\0';
       strcpy(file2,file_split+1);
       if (infer_format(file1) != infer_format(file2)){
 	fprintf(stderr, "Output files have different formats.\n");
-	exit(-1);
+	exit(1);
       }
     } else { // One output files provided
       if(SeqType == PE){
 	fprintf(stderr, "PE output specified, but only one output file provided.\n");
-	exit(-1);
+	exit(1);
       }
     }
 
@@ -172,7 +172,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       if(threadwriteno>0){
         if (!(p.pool = hts_tpool_init(threadwriteno))) {
           fprintf(stderr, "Error creating thread pool\n");
-          exit(-1);
+          exit(1);
         }
         hts_set_opt(SAMout, HTS_OPT_THREAD_POOL, &p);
       }

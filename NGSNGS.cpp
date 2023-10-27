@@ -45,7 +45,7 @@ void handler(int s) {
     fprintf(stderr,"\n\t-> If you really want ngsngs to exit uncleanly ctrl+c: %d more times\n",really_kill+1);
   fflush(stderr);
   if(!really_kill)
-    exit(-1);
+    exit(1);
   VERBOSE=0;
   SIG_COND=0;
 }
@@ -109,7 +109,6 @@ int main(int argc,char **argv){
         readcycle = mypars->CycleLength;
         if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
           ErrMsg(11.0);
-          exit(0);
         }
 
         if(mypars->QualProfile1 != NULL){
@@ -121,7 +120,6 @@ int main(int argc,char **argv){
       else{
         if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
           ErrMsg(11.0);
-          exit(0);
         }
         else if (mypars->QualProfile1 != NULL){
           gzFile gz = Z_NULL;
@@ -255,11 +253,11 @@ int main(int argc,char **argv){
     //first capture the cases where no reads or cov has been defined or both defined
     if(mypars->nreads == 0 && readcov == 0.0){
       fprintf(stderr,"must suply number of reads (-r) or desired coverage (-c)");
-      exit(-1);
+      exit(1);
     }
     if(mypars->nreads > 0 &&readcov > 0.0){
       fprintf(stderr,"must not suply number of reads (-r) and desired coverage (-c)");
-      exit(-1);
+      exit(1);
     }
     //fprintf(stderr,"NOW IM AFTER NREADS %zu \n",mypars->nreads);
     

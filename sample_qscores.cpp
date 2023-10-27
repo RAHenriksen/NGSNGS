@@ -50,7 +50,7 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
       }
       if(nbins!=at){
 	fprintf(stderr,"Problems, number of columns is different nbins: %d at: %d\n",nbins,at);
-	exit(-1);
+	exit(1);
       }
       dists[b][pos] =  ransampl_alloc( nbins );
       ransampl_set(dists[b][pos],probs);
