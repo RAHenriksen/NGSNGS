@@ -92,97 +92,46 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     htsFormat *fmt_hts =(htsFormat*) calloc(1,sizeof(htsFormat));
     htsThreadPool p = {NULL, 0};
 
-    char file1[512];
-    char file2[512];
-    strcpy(file1,OutputName);
-    char *file_split = strchr(file1, ',');
-    if (file_split != NULL){ // Two output files provided
-      if(SeqType == SE){
-	fprintf(stderr, "SE output specified, but two output files provided.\n");
-	exit(1);
-      }
-      *file_split = '\0';
-      strcpy(file2,file_split+1);
-      if (infer_format(file1) != infer_format(file2)){
-	fprintf(stderr, "Output files have different formats.\n");
-	exit(1);
-      }
-    } else { // One output files provided
-      if(SeqType == PE){
-	fprintf(stderr, "PE output specified, but only one output file provided.\n");
-	exit(1);
-      }
-    }
-
     const char* mode = NULL;
-    int alnformatflag = 0;
     switch(OutputFormat){
-    case faT:
-      mode = "wu";
-      break;
-    case fagzT:
-      mode = "wb";
-      break;
-    case fqT:
-      mode = "wu";
-      break;
-    case fqgzT:
-      mode = "w";
-      break;
     case samT:
       mode = "ws";
-      alnformatflag++;
       break;
     case bamT:
       mode = "wb";
-      alnformatflag++;
       break;
     case cramT:
       mode = "wc";
-      alnformatflag++;
       break;
     default:
       fprintf(stderr,"\t-> Fileformat is currently not supported \n");
       break;
     }
-    fprintf(stderr,"\t-> Output file name is %s\n",file1);
+    fprintf(stderr,"\t-> Output file name is %s\n",OutputName);
 
-    if(alnformatflag == 0){
-      int mt_cores = threadwriteno;
-      int bgzf_buf = 256;
+    // Write output
+    char *ref =(char*) malloc(strlen(".fasta.gz") + strlen(refSseq) + 2);
+    sprintf(ref, "reference=%s", refSseq);
       
-      bgzf_fp[0] = bgzf_open(file1,mode);
-      bgzf_mt(bgzf_fp[0],mt_cores,bgzf_buf);
-      
-      if(PE==SeqType){
-	fprintf(stderr,"\t-> Output file name 2 is %s\n",file2);
-        bgzf_fp[1] = bgzf_open(file2,mode);
-        bgzf_mt(bgzf_fp[1],mt_cores,bgzf_buf);
+    // Save reference file name for header creation of the sam output
+    //  hts_opt_add((hts_opt **)&fmt_hts->specific,ref);
+    SAMout = sam_open_format(OutputName, mode, fmt_hts);
+    SAMHeader = sam_hdr_init();
+
+    if(threadwriteno>0){
+      if (!(p.pool = hts_tpool_init(threadwriteno))) {
+	fprintf(stderr, "Error creating thread pool\n");
+	exit(1);
       }
+      hts_set_opt(SAMout, HTS_OPT_THREAD_POOL, &p);
     }
-    else{
-      char *ref =(char*) malloc(strlen(".fasta.gz") + strlen(refSseq) + 2);
-      sprintf(ref, "reference=%s", refSseq);
-      
-      // Save reference file name for header creation of the sam output
-      //  hts_opt_add((hts_opt **)&fmt_hts->specific,ref);
-      SAMout = sam_open_format(file1, mode, fmt_hts);
-      SAMHeader = sam_hdr_init();
+    hts_set_opt(SAMout, CRAM_OPT_REFERENCE, refSseq);
+    // generate header
+    Header_func(fmt_hts,OutputName,SAMout,SAMHeader,reffasta,CommandArray,version);
 
-      if(threadwriteno>0){
-        if (!(p.pool = hts_tpool_init(threadwriteno))) {
-          fprintf(stderr, "Error creating thread pool\n");
-          exit(1);
-        }
-        hts_set_opt(SAMout, HTS_OPT_THREAD_POOL, &p);
-      }
-      hts_set_opt(SAMout, CRAM_OPT_REFERENCE, refSseq);
-      // generate header
-      Header_func(fmt_hts,file1,SAMout,SAMHeader,reffasta,CommandArray,version);
+    free(ref);
+    // hts_opt_free((hts_opt *)fmt_hts->specific);
 
-      free(ref);
-      // hts_opt_free((hts_opt *)fmt_hts->specific);
-    }
 
     //generate file array before creating the threads
     int no_elem;double* Frag_freq;int* Frag_len;

@@ -72,7 +72,7 @@ Example
 
 ./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/MisincorpFile.txt -f fa -o MycoBactFaSEOut
 
-./ngsngs -i Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 100 -l 150 -seq SE -ne -vcf Test_Examples/ChrMtSubDeletionDiploid.vcf -id 0 -q1 Test_Examples/AccFreqL150R1.txt -chr MT --haplo DeltionInfo -f fq -o MtDeletionOut 
+./ngsngs -i Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 100 -l 150 -seq SE -ne -vcf Test_Examples/ChrMtSubDeletionDiploid.vcf -id 0 -q1 Test_Examples/AccFreqL150R1.txt -chr MT --out_haplo DeltionInfo -f fq -o MtDeletionOut 
 
 -h   | --help: 			 Print help page.
 
@@ -96,11 +96,11 @@ Fragment Length:
 	 <Gamma,Shape,Scale> 	 Gamma distribution, given a shape and scale, e.g. Gam,20,2.
 
 Output characteristics:
--seq | --sequencing: 		 Simulate single-end or paired-end reads.
+--seq | --sequencing: 		 Simulate single-end or paired-end reads.
 	 <SE||se||single||single-end>	 single-end. 
  	 <PE||pe||paired||paired-end>	 paired-end.
 
--o   | --output: 		 Output file name(s) (in formats `.fq`, `.fq.gz`, `.fas`, `.fas,gz`, `.sam`, `.bam`, or `.cram`).
+-o   | --out | --output:	 Output ALN file name (in formats `.sam`, `.bam`, or `.cram`).
 
 Format specific:
 -q1  | --quality1:		 Read Quality profile for single-end reads (SE) or first read pair (PE) for fastq or sequence alignment map formats.
@@ -112,8 +112,8 @@ Format specific:
 Genetic Variations:
 
 --bcf | --vcf: 			 Variant Calling Format (.vcf) or binary format (.bcf)
--id   | --indiv: 		 Index (0 - based) of a specific individual from --vcf/--bcf input file, default = -1 (no individual selected).
---haplo:			 Output FASTA file with internally generated haplotypes with the variations from the provided `vcf` file; for diploid individuals
+--id  | --indiv: 		 Index (0 - based) of a specific individual from --vcf/--bcf input file, default = -1 (no individual selected).
+--out_haplo:			 Output FASTA file with internally generated haplotypes with the variations from the provided `vcf` file; for diploid individuals
 				 the fasta file contains two copies of the reference genome with the each allelic genotype.
 
 Stochastic Variations:
@@ -123,7 +123,7 @@ Stochastic Variations:
 	 Insertions and deletions --indel 0.05,0.1,0.1,0.2
 	 Only Insertions          --indel 0.05,0.0,0.1,0.0
 	 Only Deletions           --indel 0.0,0.5,0.0,0.9
---DumpIndel:			 Output text file, containing the the read id, number of indels, the number of indel operations saving the position
+--out_indel:			 Output text file, containing the the read id, number of indels, the number of indel operations saving the position
 				 before and after and length of the indel, simulated read length before and after.
 
 Postmortem damage (PMD) - Deamination:
@@ -136,7 +136,7 @@ Postmortem damage (PMD) - Deamination:
 	 Delta_s: PMD rate in single-strand regions.
 	 Delta_d: PMD rate in double-strand regions.
 	 e.g -m b,0.024,0.36,0.68,0.0097
--dup | --duplicates:	 	 Number of PCR duplicates, used in conjunction with briggs modern library prep -m <b,nv,Lambda,Delta_s,Delta_d>
+--dup | --duplicates:	 	 Number of PCR duplicates, used in conjunction with briggs modern library prep -m <b,nv,Lambda,Delta_s,Delta_d>
 	 <1,2,4>, Default = 1.
 
 Nucleotide Alterations:
@@ -160,10 +160,10 @@ Read Specific:
  	 e.g -p G or -p A 
 
 Simulation Specific: 
--t   | --threads: 		 Number of sampling threads, default = 1.
--t2  | --threads2: 		 Number of compression threads, default = 0.
--s   | --seed: 			 Random seed, default = current calendar time (s).
--rng | --rand: 			 Pseudo-random number generator, OS specific
+-t    | --threads: 		 Number of sampling threads, default = 1.
+-t2   | --threads2: 		 Number of compression threads, default = 0.
+-s    | --seed: 		 Random seed, default = current calendar time (s).
+--rng | --rand: 		 Pseudo-random number generator, OS specific
 	 <0,1,2,3> 
 	 0 :  			 drand48_r, default for linux or unix, not available for MacOS.
 	 1 :  			 std::uniform_int_distribution

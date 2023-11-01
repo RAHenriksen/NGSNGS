@@ -20,8 +20,8 @@ argStruct *getpars(int argc,char ** argv){
   // The output format, output files, and structural elements for SAM outputs
   mypars->OutFormat = unknownT;
   mypars->OutName = NULL;
-  mypars->HaploFile = NULL;
-  mypars->IndelDumpFile = NULL;
+  mypars->OutHaploFile = NULL;
+  mypars->OutIndelFile = NULL;
   mypars->HeaderIndiv=-1;
   mypars->Align=1;
 
@@ -96,7 +96,7 @@ argStruct *getpars(int argc,char ** argv){
       mypars->coverage = atof(*(++argv));
       if (mypars->coverage <= 0.0){ErrMsg(2.2);}
     }
-    else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
+    else if(strcasecmp("-o",*argv)==0 || strcasecmp("--out",*argv)==0 || strcasecmp("--output",*argv)==0){
       mypars->OutName = strdup(*(++argv));
       mypars->OutFormat = infer_format(mypars->OutName);
     }
@@ -104,7 +104,7 @@ argStruct *getpars(int argc,char ** argv){
       mypars->Glob_seed = atoi(*(++argv))*1000;
       mypars->Glob_seed_binary = 1;
     }
-    else if(strcasecmp("-seq",*argv)==0 || strcasecmp("--sequencing",*argv)==0){
+    else if(strcasecmp("--seq",*argv)==0 || strcasecmp("--sequencing",*argv)==0){
       char * tok = *(++argv);
       
       if(strcasecmp("SE",tok)==0 || strcasecmp("se",tok)==0 || strcasecmp("single",tok)==0 || strcasecmp("single-end",tok)==0)
@@ -152,7 +152,7 @@ argStruct *getpars(int argc,char ** argv){
 	mypars->BriggsBiotin = ModelParam;
       free(ModelString);
     }
-    else if(strcasecmp("-dup",*argv)==0 || strcasecmp("--duplicates",*argv)==0){
+    else if(strcasecmp("--dup",*argv)==0 || strcasecmp("--duplicates",*argv)==0){
       mypars->Duplicates = atoi(*(++argv));
     }
     else if(strcasecmp("-cl",*argv)==0 || strcasecmp("--cycle",*argv)==0){
@@ -173,7 +173,7 @@ argStruct *getpars(int argc,char ** argv){
       mypars->LowerLimit = atoi(*(++argv));
       if (mypars->LowerLimit < 30.0){ErrMsg(3.3);}
     }
-    else if(strcasecmp("-chr",*argv)==0 || strcasecmp("--chromosomes",*argv)==0){
+    else if(strcasecmp("--chr",*argv)==0 || strcasecmp("--chromosomes",*argv)==0){
       mypars->Chromosomes = strdup(*(++argv));
     }
     else if(strcasecmp("-p",*argv)==0 || strcasecmp("--poly",*argv)==0){
@@ -184,20 +184,20 @@ argStruct *getpars(int argc,char ** argv){
       strcasecmp("T",mypars->Poly)!=0 &&
       strcasecmp("N",mypars->Poly)!=0){ErrMsg(10.0);}
     }
-    else if(strcasecmp("-id",*argv)==0 || strcasecmp("--indiv",*argv)==0){
+    else if(strcasecmp("--id",*argv)==0 || strcasecmp("--indiv",*argv)==0){
       mypars->HeaderIndiv = atoi(*(++argv));
     }
-    else if(strcasecmp("-rng",*argv)==0 || strcasecmp("--rand",*argv)==0){
+    else if(strcasecmp("--rng",*argv)==0 || strcasecmp("--rand",*argv)==0){
       mypars->rng_type = atoi(*(++argv));
     }
-    else if(strcasecmp("-indel",*argv)==0){
+    else if(strcasecmp("--indel",*argv)==0){
       mypars->Indel = strdup(*(++argv));
     }
-    else if(strcasecmp("--haplo",*argv)==0){
-      mypars->HaploFile = strdup(*(++argv));
+    else if(strcasecmp("--out_haplo",*argv)==0){
+      mypars->OutHaploFile = strdup(*(++argv));
     }
-    else if(strcasecmp("--DumpIndel",*argv)==0){
-      mypars->IndelDumpFile = strdup(*(++argv));
+    else if(strcasecmp("--out_indel",*argv)==0){
+      mypars->OutIndelFile = strdup(*(++argv));
     }  
     else{
       fprintf(stderr,"Unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
@@ -250,15 +250,7 @@ argStruct *getpars(int argc,char ** argv){
 outputformat_e infer_format(const char *file_name){
   size_t len_outname = strlen(file_name);
 
-  if(strcasecmp(".fa",file_name + len_outname - 3)==0 || strcasecmp(".fas",file_name + len_outname - 4)==0 || strcasecmp(".fasta",file_name + len_outname - 6)==0)
-    return faT;
-  else if(strcasecmp(".fa.gz",file_name + len_outname - 6)==0 || strcasecmp(".fas.gz",file_name + len_outname - 7)==0 || strcasecmp(".fasta.gz",file_name + len_outname - 9)==0)
-    return fagzT;
-  else if(strcasecmp(".fq",file_name + len_outname - 3)==0 || strcasecmp(".fastq",file_name + len_outname - 6)==0)
-    return fqT;
-  else if(strcasecmp(".fq.gz",file_name + len_outname - 6)==0 || strcasecmp(".fastq.gz",file_name + len_outname - 9)==0)
-    return fqgzT;
-  else if(strcasecmp(".sam",file_name + len_outname - 4)==0)
+  if(strcasecmp(".sam",file_name + len_outname - 4)==0)
     return samT;
   else if(strcasecmp(".bam",file_name + len_outname - 4)==0)
     return bamT;
@@ -275,8 +267,8 @@ outputformat_e infer_format(const char *file_name){
 void argStruct_destroy(argStruct *mypars){
   free(mypars->Reference);
   free(mypars->OutName);
-  free(mypars->HaploFile);
-  free(mypars->IndelDumpFile);
+  free(mypars->OutHaploFile);
+  free(mypars->OutIndelFile);
   free(mypars->LengthFile);
   free(mypars->LengthDist);
   free(mypars->Indel);
