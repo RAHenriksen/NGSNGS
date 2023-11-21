@@ -107,12 +107,7 @@ void* Sampling_threads(void *arg) {
   }
   size_t moduloread = reads/modulovalue;
   
-  /*
-
-
-
-
-  */
+  int sampled_skipped = 0;
 
   while (current_reads_atom < reads && SIG_COND){
     //fprintf(stderr,"TEST FIXED QUAL SCORE %d \n",struct_obj->FixedQual_r1r2);
@@ -162,8 +157,10 @@ void* Sampling_threads(void *arg) {
     */
 
     int skipread = 1;
-    if(FragmentSequence[0]!='N' && FragmentSequence[(int)strlen(FragmentSequence)-1]!='N')
+    if(FragmentSequence[0]!='N' && FragmentSequence[(int)strlen(FragmentSequence)-1]!='N'){
+      sampled_skipped++;
       skipread = 0;
+    }
 
     if(skipread==1){
       memset(FragmentSequence,0,strlen(FragmentSequence));
@@ -217,7 +214,7 @@ void* Sampling_threads(void *arg) {
 
     //Nucleotide alteration models only on the sequence itself which holds for fa,fq,sam
     int ReadDeam = 0;
-    int Groupshift = mrand_pop(rand_alloc)>0.5?0:1; 
+    int Groupshift = 0; //mrand_pop(rand_alloc)>0.5?0:1; 
     int FragTotal = 4;
     int iter = 1; //iterating through all fragments
     if(struct_obj->DoBriggs){
@@ -242,20 +239,14 @@ void* Sampling_threads(void *arg) {
         FragTotal = Groupshift+1;
       }
       else if (struct_obj->Duplicates == 2){
+        Groupshift = mrand_pop(rand_alloc)>0.5?0:1; 
         iter = 2;
-      }
-      else if (struct_obj->Duplicates == 4){
-        // Keep all 4 fragments
-        Groupshift = 0;
-        FragTotal = 4;
-      }
-      
+      }      
     }
     else if(struct_obj->DoBriggsBiotin){
-      FragRes = new char *[1];
-      FragRes[0] = FragmentSequence;
-      Groupshift = 0;
       FragTotal = 1;
+      FragRes = new char *[FragTotal];
+      FragRes[0] = FragmentSequence;
       ReadDeam=0;
       ReadDeam = SimBriggsModel(FragRes[0],fragmentLength,struct_obj->BriggsParam[0],
 		    struct_obj->BriggsParam[1],
@@ -264,25 +255,14 @@ void* Sampling_threads(void *arg) {
         strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
     }
     else{
-      // for the none-deaminated sequences we likewise need to generate PCR duplicates
+      // This is for the none-deaminated data if we want PCR duplicates. But in theory this is for each read, whereas for the deaminated its more to show a more comprehensive deamination patteen
+      // for the none-deaminated sequences we likewise need to generate PCR duplicates but they are identical so we dont have to shift them? 
+      //Perhaps add a probability to how often we would expect to see a duplicate, and then also a probability of how many duplicates so sample from
       FragTotal = struct_obj->Duplicates;
       FragRes = new char *[FragTotal];
       for (int i = 0; i < FragTotal; i++){
         FragRes[i] = FragmentSequence;
       }
-      if (struct_obj->Duplicates == 1){
-        // keep one fragment out of the 4 possible
-        FragTotal = 1;
-      }
-      else if (struct_obj->Duplicates == 2){
-        //only if we want two duplicates we have to select a pair and iterate through the pair
-        FragTotal = 2;
-        Groupshift = 0;
-      }
-      else if (struct_obj->Duplicates == 4){
-        //only if we want two duplicates we have to select a pair and iterate through the pair
-        Groupshift = 0;
-      } 
     }
 
     int chr_idx_array[struct_obj->Duplicates];
@@ -634,6 +614,8 @@ void* Sampling_threads(void *arg) {
 	    indel->l = 0;
     } 
   }
+
+  //fprintf(stderr,"\t-> Simulated but skipped reads %d \n",sampled_skipped);
 
   for(int j=0; j<struct_obj->MaximumLength;j++){bam_destroy1(struct_obj->list_of_reads[j]);}
   
