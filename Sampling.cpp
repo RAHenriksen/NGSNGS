@@ -417,7 +417,7 @@ void* Sampling_threads(void *arg) {
 
       //now seq_r1 and seq_r2 is completely done, we can generate the quality score if the format is different for Fasta
       if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
-        sprintf(READ_ID+strlen(READ_ID),"%d F%d",0,FragNo);
+        snprintf(READ_ID+strlen(READ_ID),512-strlen(READ_ID),"%d F%d",0,FragNo);
         ksprintf(fqs[0],">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
         if (PE==struct_obj->SeqType)
         ksprintf(fqs[1],">%s R2\n%s\n",READ_ID,seq_r2);
@@ -437,7 +437,7 @@ void* Sampling_threads(void *arg) {
             has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
         }
         //std::cout << seq_r1 << " " << qual_r1 << std::endl;
-        sprintf(READ_ID+strlen(READ_ID),"%d F%d",has_seqerr,FragNo);
+        snprintf(READ_ID+strlen(READ_ID),512-strlen(READ_ID),"%d F%d",has_seqerr,FragNo);
 
         //write fq if requested
         if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){

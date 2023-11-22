@@ -11,8 +11,8 @@ void add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_IN
   
   char DelOps[512] = "\0";
   char InsOps[512] = "\0";
-  int offsetDel = 0;//sprintf(DelOps, "");
-  int offsetIns = 0;//sprintf(InsOps, "");
+  int offsetDel = 0;
+  int offsetIns = 0;
 
   int i=0;
   int cumlen = 0;
@@ -25,7 +25,7 @@ void add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_IN
     if(mrand_pop(mr)<pars[0]){
       ops[0]++;
       int len = Random_geometric_k(pars[2],mr)+1;
-      offsetIns+=sprintf(InsOps+offsetIns,"[%d,%d:%d],",beg-cumlen,beg,len);
+      offsetIns+=snprintf(InsOps+offsetIns,512,"[%d,%d:%d],",beg-cumlen,beg,len);
       cumlen = cumlen+len;
       for(int i=end-1;i>=beg;i--){
         frag[i+len] = frag[i];
@@ -40,7 +40,7 @@ void add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_IN
     if(mrand_pop(mr)<pars[1]){
       ops[1]++;
       int len = Random_geometric_k(pars[3],mr)+1;
-      offsetDel+=sprintf(DelOps+offsetDel,"[%d,%d:%d],",beg+offset,beg-cumlen+offset,len);
+      offsetDel+=snprintf(DelOps+offsetDel,512,"[%d,%d:%d],",beg+offset,beg-cumlen+offset,len);
       cumlen = cumlen+len;
         //two cases: 1) is that deletion is in the middle of the fragment and we should shift all data to the left
         //2) Deletion will cover the rest of the read. 
