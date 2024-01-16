@@ -290,20 +290,6 @@ int main(int argc,char **argv){
 	Polynt = "F";
     }
     // QUALITY PROFILES
-    const char* QualStringFlag;
-    if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){QualStringFlag = "false";}
-    else{QualStringFlag = "true";}
-
-    if (strcasecmp("true",QualStringFlag)==0){
-        if (mypars->seq_type == PE && mypars->QualProfile2 == NULL && mypars->FixedQual == 0)
-          ErrMsg(11.0);
-    }
-
-    if (mypars->seq_type == PE && mypars->QualProfile2 == NULL)
-      ErrMsg(11.0);
-
-    int qualstringoffset = 0;
-    
     int DoBriggs = 0;
     int DoBriggsBiotin = 0;
     float Param[4];
@@ -362,7 +348,7 @@ int main(int argc,char **argv){
     ThreadInitialization(mypars->Reference,mypars->SamplThreads,mypars->Glob_seed,mypars->nreads,mypars->OutName,
                       AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->seq_type,
                       Param,DoBriggs,DoBriggsBiotin,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,readcycle,qsreadcycle,
-                      qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->FixedQual,mypars->CompressThreads,"true",Polynt,
+                      mypars->QualProfile1,mypars->QualProfile2,mypars->FixedQual,mypars->CompressThreads,Polynt,
                       mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
                       mypars->vcffile,IndelFuncParam,DoIndel,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,
                       mypars->Align,mypars->KstrBuf,mypars->OutHaploFile,mypars->OutIndelFile,mypars->Duplicates,mypars->LowerLimit);

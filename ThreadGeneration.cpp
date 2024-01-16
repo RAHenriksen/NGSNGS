@@ -49,8 +49,8 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
 void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
                         const char* Adapter_2,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,int DoBriggsBiotin,
                         const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,int readcycle,int qsreadcycle,
-                        int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int FixedQual,int threadwriteno,
-                        const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
+                        const char* QualProfile1,const char* QualProfile2,int FixedQual,int threadwriteno,
+                        const char* Polynt,int DoSeqErr,const char* Specific_Chr,
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
                         char CommandArray[LENS],const char* version,int HeaderIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile,
                         int Duplicates,int Lowerlimit){
@@ -121,7 +121,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     
     const char *freqfile_r1; //"Qual_profiles/AccFreqL150R1.txt";
     const char *freqfile_r2;
-    int outputoffset = qualstringoffset;
     ransampl_ws ***QualDist = NULL;
     char nt_qual_r1[1024];
     ransampl_ws ***QualDist2 = NULL;
@@ -130,18 +129,16 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     double ErrArray_r2[1024];
     freqfile_r1 = QualProfile1;
     //std::cout << " ASF AFSA ASFSF AASF " << freqfile_r1 << std::endl;
-    if(strcasecmp("true",QualStringFlag)==0){
       //fprintf(stderr,"WHAT IS THE FIXED QUAL VAL1 %d\n",FixedQual);
       if(QualProfile1 != NULL && FixedQual == 0){
         //fprintf(stderr,"INSIDE IF STATEMTN\n");
-        QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1);
+        QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,0,freqfile_r1);
         if(PE==SeqType){
           freqfile_r2 = QualProfile2;
-          QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2);
+          QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,0,freqfile_r2);
         }
       }
       //fprintf(stderr,"WHAT IS THE FIXED QUAL VAL2 %d\n",FixedQual);
-    }
     //fprintf(stderr,"WHAT IS THE FIXED QUAL VAL3 %d\n",FixedQual);
     
     int maxsize = 20;
@@ -189,7 +186,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
       // Sequence alteration models
       // 1) nucleotide quality score and sequencing errors,  
-      struct_for_threads[i].QualFlag = QualStringFlag;
       struct_for_threads[i].DoSeqErr = DoSeqErr;
       struct_for_threads[i].NtQual_r1 = nt_qual_r1;
       struct_for_threads[i].NtQual_r2 = nt_qual_r2;
