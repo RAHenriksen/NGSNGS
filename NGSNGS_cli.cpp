@@ -11,7 +11,6 @@ argStruct *getpars(int argc,char ** argv){
   argStruct *mypars = new argStruct;
   mypars->SamplThreads = 1;
   mypars->CompressThreads = 1;
-  int compress_t_y_n = 0; // set to no pr default
   // generating strings for which the simulated reads will be contained
   mypars->nreads = 0;
   mypars->coverage = 0.0;
@@ -78,11 +77,6 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-t",*argv)==0 || strcasecmp("--threads",*argv)==0){
       mypars->SamplThreads = atoi(*(++argv));
       if (mypars->SamplThreads < 1){ErrMsg(9.0);}
-    }
-    else if(strcasecmp("-t2",*argv)==0 || strcasecmp("--threads2",*argv)==0){
-      compress_t_y_n = 1; //yes the compression are using the threads
-      mypars->CompressThreads = atoi(*(++argv));
-      if (mypars->CompressThreads < 0){ErrMsg(9.0);}
     }
     else if(strcasecmp("-r",*argv)==0 || strcasecmp("--reads",*argv)==0){
       mypars->nreads = atol(*(++argv));

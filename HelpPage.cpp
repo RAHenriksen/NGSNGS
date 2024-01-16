@@ -80,7 +80,6 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t-p   | --poly: \t\t\t Create Poly(X) tails for reads, containing adapters with lengths below the inferred readcycle length. \n \t\t e.g -p G or -p A \n");
   fprintf(fp,"\nSimulation Specific: \n\n");
   fprintf(fp,"\t-t   | --threads: \t\t Number of sampling threads, default = 1.\n");
-  fprintf(fp,"\t-t2  | --threads2: \t\t Number of compression threads, default = 0.\n");
   fprintf(fp,"\t-s   | --seed: \t\t\t Random seed, default = current calendar time (s).\n");
   fprintf(fp,"\t--rng | --rand: \t\t\t Pseudo-random number generator, OS specific\n");
   fprintf(fp,"\t\t <0,1,2,3> \n"); 

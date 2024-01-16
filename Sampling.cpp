@@ -448,7 +448,6 @@ void* Sampling_threads(void *arg) {
           if (struct_obj->SeqType == PE)
             has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
         }
-	  
         sprintf(READ_ID+strlen(READ_ID),"%d F%d",has_seqerr,FragNo);
 
         //now only sam family needs to be done, lets revcomplement the bases, and reverse the quality scores so everything is back to forward/+ strand

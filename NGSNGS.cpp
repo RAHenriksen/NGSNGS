@@ -105,7 +105,10 @@ int main(int argc,char **argv){
     
     if (mypars->CycleLength != 0){
       readcycle = mypars->CycleLength;
-      
+      if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
+          ErrMsg(11.0);
+      }
+
       if(mypars->QualProfile1 != NULL){
 	gzFile gz = Z_NULL;
 	assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
@@ -113,6 +116,10 @@ int main(int argc,char **argv){
       }
     }
     else{
+      if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
+	ErrMsg(11.0);
+      }
+
       if (mypars->QualProfile1 != NULL){
 	gzFile gz = Z_NULL;
 	assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
@@ -147,7 +154,7 @@ int main(int argc,char **argv){
         }
         
         int Len_cur_tmp;float CummFreq_cur_tmp;
-        if(mypars->CycleLength == 0){
+        if(mypars->FixedQual > 0 && mypars->CycleLength == 0){
           FILE *fp_tmp = fopen(mypars->LengthFile, "r");
           while (fscanf(fp_tmp, "%d %f", &Len_cur_tmp, &CummFreq_cur_tmp) == 2){continue;}
           fclose(fp_tmp);
@@ -285,6 +292,15 @@ int main(int argc,char **argv){
 	Polynt = "F";
     }
     // QUALITY PROFILES
+    const char* QualStringFlag;
+    if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){QualStringFlag = "false";}
+    else{QualStringFlag = "true";}
+
+    if (strcasecmp("true",QualStringFlag)==0){
+        if (mypars->seq_type == PE && mypars->QualProfile2 == NULL && mypars->FixedQual == 0)
+          ErrMsg(11.0);
+    }
+
     if (mypars->seq_type == PE && mypars->QualProfile2 == NULL)
       ErrMsg(11.0);
 
