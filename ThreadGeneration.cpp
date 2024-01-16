@@ -137,7 +137,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     //std::cout << " ASF AFSA ASFSF AASF " << freqfile_r1 << std::endl;
     if(strcasecmp("true",QualStringFlag)==0){
       //fprintf(stderr,"WHAT IS THE FIXED QUAL VAL1 %d\n",FixedQual);
-      if(QualProfile1 != NULL){
+      if(QualProfile1 != NULL && FixedQual == 0){
         //fprintf(stderr,"INSIDE IF STATEMTN\n");
         QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1);
         if(PE==SeqType){
@@ -288,7 +288,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     
     delete[] mythreads; //pthread_t *mythreads = new pthread_t[nthreads]; 
 
-    if(QualProfile1 != NULL){
+    if(QualProfile1 != NULL && FixedQual == 0){
       for(int base=0;base<5;base++){
         for(int pos = 0 ; pos< (int) readcycle;pos++){
           ransampl_free(QualDist[base][pos]);
