@@ -19,7 +19,6 @@ typedef struct{
   const char *Ref_input;
   int seed;
   size_t VarNumber;
-  size_t ModulusNo;
   size_t DivisionNo;
   const char* PosFile;
   const char *RefVar_out;
@@ -36,7 +35,6 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-s | --seed: \t Seed for random generators.\n");
   fprintf(fp,"-n | --number: \t Number of stochastic variations to be included in the input reference, conflicts with -m|--modulus and -d|--denominator.\n");
   fprintf(fp,"-d | --denominator: \tCalculate the number of position to be altered, (Genome length / Provided value), conflicts with -n|--number and -m|--modulus.\n");
-  fprintf(fp,"-m | --modulus:  \tCalculate the number of position to be altered using modulus (Genome length % Provided value), conflicts with -n|--number and -d|--denominator.\n");
   fprintf(fp,"-p | --pos: \t Output chromomsomal coordinates for the incorporated variations in plain text.\n");
   fprintf(fp,"-o | --output: \t Altered reference genome\n");
   exit(1);
@@ -49,7 +47,6 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Ref_input = NULL;
   mypars->seed = 0;
   mypars->VarNumber = 0;
-  mypars->ModulusNo = 0;
   mypars->DivisionNo = 0;
   mypars->PosFile = NULL;
   mypars->RefVar_out = NULL;
@@ -67,9 +64,6 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-d",*argv)==0 || strcasecmp("--division",*argv)==0){
       mypars->DivisionNo = atol(*(++argv));
-    }
-    else if(strcasecmp("-m",*argv)==0 || strcasecmp("--modulus",*argv)==0){
-      mypars->ModulusNo = atol(*(++argv));
     }
     else if(strcasecmp("-p",*argv)==0 || strcasecmp("--pos",*argv)==0){
       mypars->PosFile = strdup(*(++argv));
@@ -130,13 +124,12 @@ int Reference_Variant(int argc,char **argv){
       const char* RefVar_out = mypars->RefVar_out;
       int seed = mypars->seed;
       size_t var_operations = mypars->VarNumber;
-      size_t ModulusNo = mypars->ModulusNo;
       size_t DivisionNo = mypars->DivisionNo;
       const char* Coord_file = mypars->PosFile;
       const char* SubsetChr = NULL;
 
-      if((ModulusNo > 0 && var_operations > 0)||(ModulusNo > 0 && DivisionNo > 0)||(DivisionNo > 0 && var_operations > 0)){
-        fprintf(stderr,"Only use either -n or -m or -d");
+      if(DivisionNo > 0 && var_operations > 0){
+        fprintf(stderr,"Only use either -n or -d");
         exit(1);
       }
 
@@ -153,7 +146,6 @@ int Reference_Variant(int argc,char **argv){
       size_t num_variations = 0;
       size_t genome_len = 0;
       
-      //fprintf(stderr,"Division %zu \t and the remainder from modulus %zu \n",(size_t)genome_len/ModulusNo,((size_t)genome_len%(size_t)ModulusNo));
       int chr_idx_tmp;
       
       for(int idx = 0; idx < (int)fs->nref;idx++){
@@ -161,15 +153,7 @@ int Reference_Variant(int argc,char **argv){
         //fprintf(stderr,"Chromosome idx %d and name %s and total genome length %zu\n",idx,fs->seqs_names[idx],genome_len);
       }
       
-      if (ModulusNo > 0) {  
-        for (size_t moduluspos_tmp = 0; moduluspos_tmp <= genome_len;moduluspos_tmp++){
-          //fprintf(stderr,"Modulus value at position %zu \n",moduluspos_tmp % ModulusNo);
-          if ((int)(moduluspos_tmp % ModulusNo) == 0){
-            num_variations++;
-          }
-        }
-      }
-      else if (DivisionNo > 0){
+      if (DivisionNo > 0){
         num_variations = (size_t)genome_len/DivisionNo;
       }
       else{
@@ -223,56 +207,7 @@ int Reference_Variant(int argc,char **argv){
           continue;
         }
       }
-      /*else if(ModulusNo > 0){
-        //std::cout << "modulus operations" << std::endl;
-        for (size_t moduluspos = 0; moduluspos <= fs->seqs_l[fs->nref-1];moduluspos++){
-          chr_idx = (int)(mrand_pop_long(mr) % (fs->nref));
-
-          //std::cout << "chr_idx " << chr_idx << std::endl;
-
-          // Check if chr_idx is within a valid range
-          if (chr_idx >= 0 && chr_idx < fs->nref) {
-            // Check if moduluspos is within a valid range
-            if (moduluspos >= 0 && moduluspos < fs->seqs_l[chr_idx]) {
-              // Access fs->seqs only if chr_idx and moduluspos are within valid bounds
-              if (fs->seqs[chr_idx][moduluspos] != 'N'){
-                //std::cout << "if if if "<< chr_idx << std::endl;
-                char previous; 
-                previous = fs->seqs[chr_idx][moduluspos];
-                char altered;
-                altered = bases[(int)(mrand_pop_long(mr) %4)];
-                //std::cout << "before while " << std::endl;
-                while(previous == altered){
-                  //std::cout << "while " << std::endl;
-                  //fprintf(stderr,"Chromosome \t %s \t length %d \t position \t %d \t original \t %c \t altered \t %c\n",fs->seqs_names[chr_idx],fs->seqs_l[chr_idx],moduluspos,previous,altered);
-                  altered = bases[(int)(mrand_pop_long(mr) %4)];
-                  //fprintf(stderr,"Chromosome \t %s \t length %d \t position \t %d \t original \t %c \t altered \t %c\n",fs->seqs_names[chr_idx],fs->seqs_l[chr_idx],moduluspos,previous,altered);
-                }
-                fs->seqs[chr_idx][moduluspos] = altered;
-                //std::cout << "before entry " << std::endl;
-                
-                char *entry = (char *)malloc(10000); // Allocate memory for the entry
-                if (entry == NULL) {
-                    fprintf(stderr, "Memory allocation failed\n");
-                    return 1; // Or handle the allocation failure appropriately
-                }              // Append data to the array
-                sprintf(entry, "%s \t %lu \t ref \t %c \t alt \t %c",fs->seqs_names[chr_idx], moduluspos+1, previous, altered);
-                //std::cout << entry << std::endl;
-                //entry 2 RandChr2 	 963601 	 ref 	 C 	 alt 	 A
-                //std::cout << "entry 2 "<< ModulusNo << std::endl;
-                data[data_count++] = strdup(entry);
-                //std::cout << "data done " << std::endl;
-                //free(entry);
-              }
-            }
-          }
-          else{
-            continue;
-          } 
-          //std::cout << "after if " <<std::endl;
-        }
-        //std::cout << "after for " << std::endl;
-      }*/
+      
       //std::cout << "before qsort "<< std::endl;
       // Sort the data
       qsort(data, data_count, sizeof(char *), SortChrPos);
