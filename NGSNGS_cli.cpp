@@ -18,7 +18,6 @@ argStruct *getpars(int argc,char ** argv){
   mypars->KstrBuf=30000000;
 
   // The output format, output files, and structural elements for SAM outputs
-  mypars->OutFormat = unknownT;
   mypars->OutName = NULL;
   mypars->OutHaploFile = NULL;
   mypars->OutIndelFile = NULL;
@@ -37,7 +36,7 @@ argStruct *getpars(int argc,char ** argv){
   // 1) nucleotide quality score and sequencing errors,  
   mypars->QualProfile1 = NULL;
   mypars->QualProfile2 = NULL;
-  mypars->FixedQual = 0;
+  mypars->FixedQual = 30;
   mypars->DoSeqErr = 1;
   // 2) briggs model
   mypars->Briggs = NULL;
@@ -98,7 +97,6 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-o",*argv)==0 || strcasecmp("--out",*argv)==0 || strcasecmp("--output",*argv)==0){
       mypars->OutName = strdup(*(++argv));
-      mypars->OutFormat = infer_format(mypars->OutName);
     }
     else if(strcasecmp("-s",*argv)==0 || strcasecmp("--seed",*argv)==0){
       mypars->Glob_seed = atoi(*(++argv))*1000;
@@ -120,10 +118,18 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-a2",*argv)==0 || strcasecmp("--adapter2",*argv)==0){
       mypars->Adapter2 = strdup(*(++argv));
     }
+    else if(strcasecmp("-q",*argv)==0 || strcasecmp("--quality",*argv)==0){
+      mypars->QualProfile1 = strdup(*(++argv));
+      mypars->QualProfile2 = strdup(*(++argv));
+    }
     else if(strcasecmp("-q1",*argv)==0 || strcasecmp("--quality1",*argv)==0){
+      if(mypars->QualProfile1 != NULL)
+	ErrMsg(7.0);
       mypars->QualProfile1 = strdup(*(++argv));
     }
     else if(strcasecmp("-q2",*argv)==0 || strcasecmp("--quality2",*argv)==0){
+      if(mypars->QualProfile2 != NULL)
+	ErrMsg(7.0);
       mypars->QualProfile2 = strdup(*(++argv));
     }
     else if(strcasecmp("-qs",*argv)==0 || strcasecmp("--qualityscore",*argv)==0){
@@ -207,17 +213,6 @@ argStruct *getpars(int argc,char ** argv){
     ++argv;
   }
 
-  // adjust the compression threads following the input parameters depending on the sampling threads and output file format
-  if (mypars->OutFormat == fagzT || mypars->OutFormat == fqgzT || mypars->OutFormat == bamT || mypars->OutFormat == cramT){
-    if (mypars->SamplThreads <= 12 && compress_t_y_n == 0){
-      mypars->CompressThreads = mypars->SamplThreads;
-    }
-    else if (mypars->SamplThreads > 12 && compress_t_y_n == 0){
-      //putting an upper limit on the number of compression threads
-      mypars->CompressThreads = 12;
-    }
-  }
-
   // Ensure the required argument are parsed after all arguments have been provided
 
   // Input
@@ -229,38 +224,13 @@ argStruct *getpars(int argc,char ** argv){
   // read lengths
   if(mypars->Length == 0 && mypars->LengthFile == NULL && mypars->LengthDist == NULL)
     ErrMsg(3.0);
-  // Format
-  if(mypars->OutFormat == unknownT)
-    ErrMsg(7.0);
   if(mypars->seq_type == unknownTT)
     ErrMsg(6.0);
-  // quality profiles
-  if(mypars->OutFormat==fqT|| mypars->OutFormat== fqgzT ||mypars->OutFormat==samT ||mypars->OutFormat==bamT|| mypars->OutFormat== cramT){
-    if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0)
-      ErrMsg(11.0);
-  }
   // Output
   if(mypars->OutName == NULL)
     ErrMsg(8.0);
 
   return mypars;
-}
-
-
-outputformat_e infer_format(const char *file_name){
-  size_t len_outname = strlen(file_name);
-
-  if(strcasecmp(".sam",file_name + len_outname - 4)==0)
-    return samT;
-  else if(strcasecmp(".bam",file_name + len_outname - 4)==0)
-    return bamT;
-  else if(strcasecmp(".cram",file_name + len_outname - 5)==0)
-    return cramT;
-  else{
-    ErrMsg(7.0);
-    // Irrelevant, since previous function exits with error (to avoid C compiler warning)
-    return fqgzT;
-  }
 }
 
 

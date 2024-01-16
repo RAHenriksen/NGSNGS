@@ -59,8 +59,7 @@ void* Sampling_threads(void *arg) {
 
   size_t BufferLength = struct_obj -> BufferLength;
 
-  int ErrProbTypeOffset = 0;
-  if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){ErrProbTypeOffset=33;}
+  int ErrProbTypeOffset = 33;
   
   // This is my Kstrings i save the format files in
   kstring_t *fqs[2];
@@ -134,7 +133,7 @@ void* Sampling_threads(void *arg) {
     int maxbases = 0;
     int cyclelength = 0;
     //fprintf(stderr,"Max length %d \t and cycle length %d \n",maxbases,cyclelength);
-    if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT || (struct_obj->FixedQual_r1r2 > 0 && struct_obj->qsreadcycle==0 )){
+    if (struct_obj->FixedQual_r1r2 > 0 && struct_obj->qsreadcycle==0 ){
       //fprintf(stderr,"ARE WE IN THE FA LOOP?\n");
       cyclelength = fraglength;
       maxbases = fraglength;
@@ -380,7 +379,7 @@ void* Sampling_threads(void *arg) {
     
       snprintf(READ_ID,512,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
 
-      int nsofts[2] = {0,0}; //this will contain the softclip information to be used by sam/bam/cram output format for adapter and polytail
+      int nsofts[2] = {0,0}; //this will contain the softclip information to be used by sam output format for adapter and polytail
       //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail
       int naligned[2] = {(int)strlen(seq_r1),-1};
       if(PE==struct_obj->SeqType)
@@ -436,35 +435,21 @@ void* Sampling_threads(void *arg) {
       }
 
       //now seq_r1 and seq_r2 is completely done, we can generate the quality score if the format is different for Fasta
-      if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT){
-        sprintf(READ_ID+strlen(READ_ID),"%d F%d",0,FragNo);
-        ksprintf(fqs[0],">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
-        if (PE==struct_obj->SeqType)
-        ksprintf(fqs[1],">%s R2\n%s\n",READ_ID,seq_r2);
-      } 
-      else{
         //Fastq and Sam needs quality scores
-        if(struct_obj->FixedQual_r1r2 > 0){
-          //fprintf(stderr,"FIXED QUAL\n");
-          has_seqerr = sample_qscores_fix(seq_r1,qual_r1,struct_obj->FixedQual_r1r2,strlen(seq_r1),rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
-          if (PE==struct_obj->SeqType)
-            has_seqerr = sample_qscores_fix(seq_r2,qual_r2,struct_obj->FixedQual_r1r2,strlen(seq_r2),rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
-        }
-        else{
+        if(struct_obj->QualDist_r1 != NULL){
           //fprintf(stderr,"SAMPLING QUAL PROFILE\n");
           has_seqerr = sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
-          if (PE==struct_obj->SeqType)
+          if (struct_obj->SeqType == PE)
             has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
         }
-        //std::cout << seq_r1 << " " << qual_r1 << std::endl;
-        sprintf(READ_ID+strlen(READ_ID),"%d F%d",has_seqerr,FragNo);
-
-        //write fq if requested
-        if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){
-          ksprintf(fqs[0],"@%s R1\n%s\n+\n%s\n",READ_ID,seq_r1,qual_r1);
-          if (PE==struct_obj->SeqType)
-            ksprintf(fqs[1],"@%s R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);
+	else{
+          //fprintf(stderr,"FIXED QUAL\n");
+          has_seqerr = sample_qscores_fix(seq_r1,qual_r1,struct_obj->FixedQual_r1r2,strlen(seq_r1),rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
+          if (struct_obj->SeqType == PE)
+            has_seqerr = sample_qscores_fix(seq_r2,qual_r2,struct_obj->FixedQual_r1r2,strlen(seq_r2),rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
         }
+	  
+        sprintf(READ_ID+strlen(READ_ID),"%d F%d",has_seqerr,FragNo);
 
         //now only sam family needs to be done, lets revcomplement the bases, and reverse the quality scores so everything is back to forward/+ strand
         if(struct_obj->SAMout){
@@ -501,7 +486,7 @@ void* Sampling_threads(void *arg) {
                   uint32_t tmp= AlignCigar[1][0];
                   AlignCigar[1][0] = AlignCigar[1][1];
                   AlignCigar[1][1] = tmp;
-                } 
+                }
               }
             }
           }
@@ -541,7 +526,7 @@ void* Sampling_threads(void *arg) {
               chr_max_end_mate = max_end;
               insert_mate = insert;
               chr_idx_mate = chr_idx_array[struct_obj->Duplicates];
-            }        
+            }    
           }
           if (struct_obj->Align == 0){
             mapq = 255;
@@ -571,7 +556,6 @@ void* Sampling_threads(void *arg) {
           }
           fqs[0]->l = fqs[1]->l = 0;
         }
-      }
       
       if (struct_obj->DoIndel && struct_obj->IndelDumpFile != NULL){
         ksprintf(indel,"%s\t%s\n",READ_ID,INDEL_INFO);

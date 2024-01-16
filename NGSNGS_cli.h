@@ -4,7 +4,6 @@
 #include <ctime>
 #include <cstring>
 #include "HelpPage.h"
-enum outputformat_e {unknownT, faT, fagzT, fqT, fqgzT, samT, bamT,cramT };
 enum seqtype_e {unknownTT, SE,PE};
 enum dist_e {unknownDist,Uni,Norm,LogNorm,Pois,Exp,Gam};
 enum poly_nt {unknownNt,A,G,C,T,N};
@@ -16,7 +15,6 @@ typedef struct{
   double coverage;            //Depth of coverage across the entire genome, estimated from rlen, flen, genomsize
   int Glob_seed;              //Local seeds are computed from the global. Only one seed needs to be supplied
   int Glob_seed_binary;       //Local seeds are computed from the global. Only one seed needs to be supplied
-  outputformat_e OutFormat ;  //fq, fq.gz, fa, fa.gz, sam, bam, cram
   char *OutName;              //Output file name
   char *OutHaploFile;         //Output FASTA file with recording potential variations to reference genome
   char *OutIndelFile;         //prefix for internal file recording of sequencing errors specific for indels
@@ -48,6 +46,5 @@ typedef struct{
   char *Indel;                //adding stochastic indels
 }argStruct;
 argStruct *getpars(int argc,char ** argv);
-outputformat_e infer_format(const char*);
 void argStruct_destroy(argStruct *mypars);
 #endif

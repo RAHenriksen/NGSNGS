@@ -81,7 +81,6 @@ int main(int argc,char **argv){
     clock_t t = clock();
     time_t t2 = time(NULL);
 
-    outputformat_e OutputFormat = mypars->OutFormat;
     double readcov = mypars->coverage;
     //fprintf(stderr,"DESIRED COVERAGE %f \n",readcov);
     if (mypars->rng_type == -1){
@@ -104,32 +103,24 @@ int main(int argc,char **argv){
     double mean_length = 0;
     int SizeDistType=-1;double val1 = 0; double val2  = 0;
     
-    if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
-      if (mypars->CycleLength != 0){
-        readcycle = mypars->CycleLength;
-        if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
-          ErrMsg(11.0);
-        }
-
-        if(mypars->QualProfile1 != NULL){
-          gzFile gz = Z_NULL;
-          assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
-          gzclose(gz);
-        }
+    if (mypars->CycleLength != 0){
+      readcycle = mypars->CycleLength;
+      
+      if(mypars->QualProfile1 != NULL){
+	gzFile gz = Z_NULL;
+	assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
+	gzclose(gz);
       }
-      else{
-        if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
-          ErrMsg(11.0);
-        }
-        else if (mypars->QualProfile1 != NULL){
-          gzFile gz = Z_NULL;
-          assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
-          char buf[LENS];
-          while(gzgets(gz,buf,LENS))
-            nlines++;
-          gzclose(gz);
-          readcycle = (nlines-2)/5;
-        }
+    }
+    else{
+      if (mypars->QualProfile1 != NULL){
+	gzFile gz = Z_NULL;
+	assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
+	char buf[LENS];
+	while(gzgets(gz,buf,LENS))
+	  nlines++;
+	gzclose(gz);
+	readcycle = (nlines-2)/5;
       }
     }
 
@@ -148,21 +139,6 @@ int main(int argc,char **argv){
       int Len_prev; int Len_cur;
       float CummFreq_cur, CummFreq_prev;
 
-      if (OutputFormat==faT|| OutputFormat== fagzT) {
-        // Calculate mean length for all lines, i.e. the fragment length determines the number of reads, given a specific coverage
-        if (fscanf(fp, "%d %f", &Len_prev, &CummFreq_prev) != 2) {
-          // Handle error: unable to read expected data
-          fclose(fp);
-          return 1; // Or appropriate error code
-        }
-        mean_length += Len_prev * ((double)(CummFreq_prev));
-        while (fscanf(fp, "%d %f", &Len_cur, &CummFreq_cur) == 2) {
-          mean_length += Len_cur * ((double)(CummFreq_cur-CummFreq_prev));
-          Len_prev = Len_cur;
-          CummFreq_prev = CummFreq_cur;
-        }
-      }
-      else{
         // Calculate mean length up to a certain readcycle limit, i.e. the read length determines the number of reads, given a specific coverage
         if (fscanf(fp, "%d %f", &Len_prev, &CummFreq_prev) != 2) {
           // Handle error: unable to read expected data
@@ -171,7 +147,7 @@ int main(int argc,char **argv){
         }
         
         int Len_cur_tmp;float CummFreq_cur_tmp;
-        if(mypars->FixedQual > 0 && mypars->CycleLength == 0){
+        if(mypars->CycleLength == 0){
           FILE *fp_tmp = fopen(mypars->LengthFile, "r");
           while (fscanf(fp_tmp, "%d %f", &Len_cur_tmp, &CummFreq_cur_tmp) == 2){continue;}
           fclose(fp_tmp);
@@ -199,7 +175,6 @@ int main(int argc,char **argv){
             CummFreq_prev = CummFreq_cur;
           }
         }
-      }   
       fclose(fp);
       fprintf(stderr,"\t-> Mean fragment length of the provided length file (-lf) is %f nt\n",mean_length);
       if (mypars->Length <0){fprintf(stderr,"Fixed fragment length %d",mypars->Length);ErrMsg(5.0);}
@@ -270,8 +245,8 @@ int main(int argc,char **argv){
         int chr_len = faidx_seq_len(seq_ref,chr_name);
         genome_size += chr_len;
       }
-      if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
-        if (mean_length >= readcycle){mean_length = (double)readcycle;}
+      if (mean_length >= readcycle){
+	mean_length = (double)readcycle;
       }
       if (mypars->seq_type == PE){
         mypars->nreads = ((readcov*genome_size)/mean_length)/2;
@@ -310,34 +285,10 @@ int main(int argc,char **argv){
 	Polynt = "F";
     }
     // QUALITY PROFILES
-    const char* QualStringFlag;
-    if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){QualStringFlag = "false";}
-    else{QualStringFlag = "true";}
-    
-    if (strcasecmp("true",QualStringFlag)==0){
-      if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
-        if (mypars->seq_type == PE && mypars->QualProfile2 == NULL && mypars->FixedQual == 0)
-          ErrMsg(11.0);
-      }
-    }
-    else{
-      if(OutputFormat== fqT ||OutputFormat==fqgzT)
-        ErrMsg(11.0);
-    }
+    if (mypars->seq_type == PE && mypars->QualProfile2 == NULL)
+      ErrMsg(11.0);
 
-    //NB!
-    /*if (strcasecmp("false",QualStringFlag)==0){
-      if(strcasecmp("true",Adapt_flag==0 && mypars->Poly != NULL){WarMsg(2.0);}
-      //if(mypars->ErrorFlag == NULL){WarMsg(3.0);}
-    }
-    if (strcasecmp("true",QualStringFlag)==0){
-      if(OutputFormat== faT|| fagzT==OutputFormat)
-	    WarMsg(4.0);
-    }*/
-
-    int qualstringoffset = 0;
-    if(fqT==OutputFormat|| fqgzT==OutputFormat)
-      qualstringoffset = 33;
+    int qualstringoffset = 33;
     
     int DoBriggs = 0;
     int DoBriggsBiotin = 0;
@@ -388,20 +339,16 @@ int main(int argc,char **argv){
     }
     
     int qsreadcycle = 0;
-    if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){      
-      if (mypars->CycleLength != 0){
-        qsreadcycle=1;
-      }
-
-      if (qsreadcycle == 0){
-        fprintf(stderr,"\t-> When providing a fixed quality score (-qs) the read cycle length is not used as an upper limit for the simulated reads, unless -cl is specified\n");
-      }
+    if (mypars->CycleLength != 0){
+      qsreadcycle=1;
+    } else {
+      fprintf(stderr,"\t-> When providing a fixed quality score (-qs) the read cycle length is not used as an upper limit for the simulated reads, unless -cl is specified\n");
     }
 
     ThreadInitialization(mypars->Reference,mypars->SamplThreads,mypars->Glob_seed,mypars->nreads,mypars->OutName,
-                      AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->OutFormat,mypars->seq_type,
+                      AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->seq_type,
                       Param,DoBriggs,DoBriggsBiotin,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,readcycle,qsreadcycle,
-                      qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->FixedQual,mypars->CompressThreads,QualStringFlag,Polynt,
+                      qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->FixedQual,mypars->CompressThreads,"true",Polynt,
                       mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
                       mypars->vcffile,IndelFuncParam,DoIndel,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,
                       mypars->Align,mypars->KstrBuf,mypars->OutHaploFile,mypars->OutIndelFile,mypars->Duplicates,mypars->LowerLimit);

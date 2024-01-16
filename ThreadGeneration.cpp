@@ -47,7 +47,7 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
 }
 
 void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
-                        const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,int DoBriggsBiotin,
+                        const char* Adapter_2,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,int DoBriggsBiotin,
                         const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,int readcycle,int qsreadcycle,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int FixedQual,int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
@@ -92,30 +92,13 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     htsFormat *fmt_hts =(htsFormat*) calloc(1,sizeof(htsFormat));
     htsThreadPool p = {NULL, 0};
 
-    const char* mode = NULL;
-    switch(OutputFormat){
-    case samT:
-      mode = "ws";
-      break;
-    case bamT:
-      mode = "wb";
-      break;
-    case cramT:
-      mode = "wc";
-      break;
-    default:
-      fprintf(stderr,"\t-> Fileformat is currently not supported \n");
-      break;
-    }
-    fprintf(stderr,"\t-> Output file name is %s\n",OutputName);
-
     // Write output
     char *ref =(char*) malloc(strlen(".fasta.gz") + strlen(refSseq) + 2);
     sprintf(ref, "reference=%s", refSseq);
       
     // Save reference file name for header creation of the sam output
     //  hts_opt_add((hts_opt **)&fmt_hts->specific,ref);
-    SAMout = sam_open_format(OutputName, mode, fmt_hts);
+    SAMout = sam_open_format(OutputName, "ws", fmt_hts);
     SAMHeader = sam_hdr_init();
 
     if(threadwriteno>0){
@@ -154,7 +137,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     //std::cout << " ASF AFSA ASFSF AASF " << freqfile_r1 << std::endl;
     if(strcasecmp("true",QualStringFlag)==0){
       //fprintf(stderr,"WHAT IS THE FIXED QUAL VAL1 %d\n",FixedQual);
-      if(QualProfile1 != NULL && FixedQual == 0){
+      if(QualProfile1 != NULL){
         //fprintf(stderr,"INSIDE IF STATEMTN\n");
         QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1);
         if(PE==SeqType){
@@ -194,7 +177,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].reffasta = reffasta;
 
       // The output format, output files, and structural elements for SAM outputs
-      struct_for_threads[i].OutputFormat = OutputFormat;
       struct_for_threads[i].SeqType = SeqType;
       struct_for_threads[i].bgzf_fp = bgzf_fp;
       struct_for_threads[i].SAMout = SAMout;
@@ -306,7 +288,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     
     delete[] mythreads; //pthread_t *mythreads = new pthread_t[nthreads]; 
 
-    if(QualProfile1 != NULL && FixedQual == 0){
+    if(QualProfile1 != NULL){
       for(int base=0;base<5;base++){
         for(int pos = 0 ; pos< (int) readcycle;pos++){
           ransampl_free(QualDist[base][pos]);

@@ -38,9 +38,10 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t\t <SE>\t single-end \n \t\t <PE>\t paired-end.\n\n");
   fprintf(fp,"\t-o  | --out | --output: \t\t Output file name.\n");
   fprintf(fp,"\nFormat specific: \n\n");
-  fprintf(fp,"\t-q1  | --quality1: \t\t Read Quality profile for single-end reads (SE) or first read pair (PE) for fastq or sequence alignment map formats.\n");
-  fprintf(fp,"\t-q2  | --quality2: \t\t Read Quality profile for for second read pair (PE) for fastq or sequence alignment map formats.\n");
-  fprintf(fp,"\t-qs  | --qualityscore: \t\t Fixed quality score, for both read pairs in fastq or sequence alignment map formats. It overwrites the quality profiles.\n");
+  fprintf(fp,"\t-q   | --quality:  \t\t Read Quality profile for all reads (conflict with --quality1 and --quality2).\n");
+  fprintf(fp,"\t-q1  | --quality1: \t\t Read Quality profile for single-end reads (SE) or first read pair (PE).\n");
+  fprintf(fp,"\t-q2  | --quality2: \t\t Read Quality profile for for second read pair (PE).\n");
+  fprintf(fp,"\t-qs  | --qualityscore: \t\t Fixed quality score, for all reads (deafult: 30).\n");
   fprintf(fp,"\n----- Optional ----- \n");
   fprintf(fp,"\nGenetic Variations: \n\n");
   fprintf(fp,"\t--bcf | --vcf: \t\t\t Variant Calling Format (.vcf) or binary format (.bcf)\n");
@@ -119,13 +120,12 @@ void ErrMsg(double messageno){
   else if(messageno == 5.0){fprintf(stderr,"\nCould not parse both length parameters, provide either fixed length size (-l) or parse length distribution file (-lf).\n");}
   else if(messageno == 6.0){fprintf(stderr,"\nSequence type not provided. provide -seq || --sequence : SE (single-end) or PE (paired-end).\n");}
   else if(messageno == 6.5){fprintf(stderr,"\nSequence type not recognized. provide either SE (single-end) or PE (paired-end).\n");}
-  else if(messageno == 7.0){fprintf(stderr,"\nOutput format not recognized : <fa, fa.gz, fas, fas.gz, fasta, fasta.gz, fq, fq.gz, sam, bam, cram>.\n");}
+  else if(messageno == 7.0){fprintf(stderr,"\nQuality score profile already specified. Are you also using --quality?\n");}
   else if(messageno == 8.0){fprintf(stderr,"\nOutput filename not provided, provide -o.\n");}
   else if(messageno == 9.0){fprintf(stderr,"\nUnable to utilize the provided number of threads, use integers above 0.\n");}
   else if(messageno == 10.0){fprintf(stderr,"\nNucleotide for poly(x) homopolymers not recognized, provide -p : <A,G,C,T,N>.\n");}
-  else if(messageno == 11.0){fprintf(stderr,"\nCould not parse the Nucleotide Quality profile(s), for format <fq, fq.gz, sam, bam, cram> provide -q1 for SE and -q1, -q2 for PE.\n");}
   else if(messageno == 12.0){fprintf(stderr,"\nBoth a mismatch file and briggs deamination parameters has been provided. Provide either briggs (-p) og mismatch (-mf).\n");}
-  else if(messageno == 13.0){fprintf(stderr,"\nOnly variantion type has been provided (-v). Provide variant calling format (-bcf).\n");}
+  else if(messageno == 13.0){fprintf(stderr,"\nOnly variation type has been provided (-v). Provide variant calling format (-bcf).\n");}
   else if(messageno == 13.5){fprintf(stderr,"\nProvide variantion type not recognized, provide snp (default).\n");}
   else if(messageno == 14.0){fprintf(stderr,"Poly tail error: Missing adapter sequence, provide adapter sequence (-a1,-a2) as well.\n");}
   else {fprintf(stderr,"\nError with input parameters.\n");}
@@ -135,7 +135,7 @@ void ErrMsg(double messageno){
 
 void WarMsg(double messageno){
   if(messageno == 1.0){fprintf(stderr,"\nWarning: for the output format <fa> the quality profiles (-q1, -q2) remains unused\n");}
-  else if(messageno == 2.0){fprintf(stderr,"\nWarning: for the output format <fa, sam, bam, cram> the parameter (-p) is rendered moot without the nucleotide quality profiles (-q1, -q2), since poly(x) tails cannot be added to the reads since the read length cannot be inferred\n");}
+  else if(messageno == 2.0){fprintf(stderr,"\nWarning: parameter (-p) is rendered moot without the nucleotide quality profiles (-q1, -q2), since poly(x) tails cannot be added to the reads without the read length\n");}
   else if(messageno == 3.0){fprintf(stderr,"\nWarning: sequencing errors (-e) are not added to the sequence reads without the nucleotide quality profiles (-q1, -q2) \n");}
   else if(messageno == 4.0){fprintf(stderr,"\nWarning: for the output format <fa> the provided nucleotide qualities (-q1, -q2) will not be used \n");}
 }

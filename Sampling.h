@@ -58,7 +58,6 @@ struct Parsarg_for_Sampling_thread{
   int lowerlimit;
   int maxreadlength;
   
-  outputformat_e OutputFormat;
   seqtype_e SeqType;
   const char* QualFlag;
 

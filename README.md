@@ -100,7 +100,7 @@ Output characteristics:
 	 <SE||se||single||single-end>	 single-end. 
  	 <PE||pe||paired||paired-end>	 paired-end.
 
--o   | --out | --output:	 Output ALN file name (in formats `.sam`, `.bam`, or `.cram`).
+-o   | --out | --output:	 Output ALN file name (SAM format)
 
 Format specific:
 -q1  | --quality1:		 Read Quality profile for single-end reads (SE) or first read pair (PE) for fastq or sequence alignment map formats.
