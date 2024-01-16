@@ -59,7 +59,7 @@ void* Sampling_threads(void *arg) {
 
   size_t BufferLength = struct_obj -> BufferLength;
 
-  int ErrProbTypeOffset = 33;
+  int ErrProbTypeOffset = 0;
   
   // This is my Kstrings i save the format files in
   kstring_t *fqs[2];

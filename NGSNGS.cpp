@@ -304,7 +304,7 @@ int main(int argc,char **argv){
     if (mypars->seq_type == PE && mypars->QualProfile2 == NULL)
       ErrMsg(11.0);
 
-    int qualstringoffset = 33;
+    int qualstringoffset = 0;
     
     int DoBriggs = 0;
     int DoBriggsBiotin = 0;

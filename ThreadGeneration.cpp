@@ -103,7 +103,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 	  fprintf(stderr, "Error creating thread pool\n");
           exit(1);
         }
-      hts_set_opt(SAMout, HTS_OPT_THREAD_POOL, &p);
+        hts_set_opt(SAMout, HTS_OPT_THREAD_POOL, &p);
       }
       hts_set_opt(SAMout, CRAM_OPT_REFERENCE, refSseq);
       // generate header
