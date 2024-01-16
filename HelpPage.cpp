@@ -41,7 +41,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t-q   | --quality:  \t\t Read Quality profile for all reads (conflict with --quality1 and --quality2).\n");
   fprintf(fp,"\t-q1  | --quality1: \t\t Read Quality profile for single-end reads (SE) or first read pair (PE).\n");
   fprintf(fp,"\t-q2  | --quality2: \t\t Read Quality profile for for second read pair (PE).\n");
-  fprintf(fp,"\t-qs  | --qualityscore: \t\t Fixed quality score, for all reads (deafult: 30).\n");
+  fprintf(fp,"\t-qs  | --qualityscore: \t\t Fixed quality score, for all reads. It overwrites the quality profiles.\n");
   fprintf(fp,"\n----- Optional ----- \n");
   fprintf(fp,"\nGenetic Variations: \n\n");
   fprintf(fp,"\t--bcf | --vcf: \t\t\t Variant Calling Format (.vcf) or binary format (.bcf)\n");

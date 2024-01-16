@@ -436,17 +436,17 @@ void* Sampling_threads(void *arg) {
 
       //now seq_r1 and seq_r2 is completely done, we can generate the quality score if the format is different for Fasta
         //Fastq and Sam needs quality scores
-        if(struct_obj->QualDist_r1 != NULL){
-          //fprintf(stderr,"SAMPLING QUAL PROFILE\n");
-          has_seqerr = sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
-          if (struct_obj->SeqType == PE)
-            has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
-        }
-	else{
+        if(struct_obj->FixedQual_r1r2 > 0){
           //fprintf(stderr,"FIXED QUAL\n");
           has_seqerr = sample_qscores_fix(seq_r1,qual_r1,struct_obj->FixedQual_r1r2,strlen(seq_r1),rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
           if (struct_obj->SeqType == PE)
             has_seqerr = sample_qscores_fix(seq_r2,qual_r2,struct_obj->FixedQual_r1r2,strlen(seq_r2),rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
+        }
+        else{
+          //fprintf(stderr,"SAMPLING QUAL PROFILE\n");
+          has_seqerr = sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
+          if (struct_obj->SeqType == PE)
+            has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
         }
 	  
         sprintf(READ_ID+strlen(READ_ID),"%d F%d",has_seqerr,FragNo);

@@ -36,7 +36,7 @@ argStruct *getpars(int argc,char ** argv){
   // 1) nucleotide quality score and sequencing errors,  
   mypars->QualProfile1 = NULL;
   mypars->QualProfile2 = NULL;
-  mypars->FixedQual = 30;
+  mypars->FixedQual = 0;
   mypars->DoSeqErr = 1;
   // 2) briggs model
   mypars->Briggs = NULL;
