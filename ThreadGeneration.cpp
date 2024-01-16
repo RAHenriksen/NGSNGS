@@ -93,27 +93,22 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     htsThreadPool p = {NULL, 0};
 
     // Write output
-    char *ref =(char*) malloc(strlen(".fasta.gz") + strlen(refSseq) + 2);
-    sprintf(ref, "reference=%s", refSseq);
-      
-    // Save reference file name for header creation of the sam output
-    //  hts_opt_add((hts_opt **)&fmt_hts->specific,ref);
-    SAMout = sam_open_format(OutputName, "ws", fmt_hts);
-    SAMHeader = sam_hdr_init();
+      // Save reference file name for header creation of the sam output
+      //  hts_opt_add((hts_opt **)&fmt_hts->specific,ref);
+      SAMout = sam_open_format(OutputName, "ws", fmt_hts);
+      SAMHeader = sam_hdr_init();
 
-    if(threadwriteno>0){
-      if (!(p.pool = hts_tpool_init(threadwriteno))) {
-	fprintf(stderr, "Error creating thread pool\n");
-	exit(1);
-      }
+      if(threadwriteno>0){
+        if (!(p.pool = hts_tpool_init(threadwriteno))) {
+	  fprintf(stderr, "Error creating thread pool\n");
+          exit(1);
+        }
       hts_set_opt(SAMout, HTS_OPT_THREAD_POOL, &p);
-    }
-    hts_set_opt(SAMout, CRAM_OPT_REFERENCE, refSseq);
-    // generate header
-    Header_func(fmt_hts,OutputName,SAMout,SAMHeader,reffasta,CommandArray,version);
-
-    free(ref);
-    // hts_opt_free((hts_opt *)fmt_hts->specific);
+      }
+      hts_set_opt(SAMout, CRAM_OPT_REFERENCE, refSseq);
+      // generate header
+      Header_func(fmt_hts,OutputName,SAMout,SAMHeader,reffasta,CommandArray,version);
+      // hts_opt_free((hts_opt *)fmt_hts->specific);
 
 
     //generate file array before creating the threads
