@@ -130,17 +130,12 @@ if [ $No_SeqErr -ne 745 ]; then
     echo "Warning different number of reads containing sequencing error with a fixed quality score of 40"; exit 1;
 fi
 
-if [ 0 -eq 1 ]; then
-    md5sum MycoBactQSLLSEOUT.fq >> output.md5
-    md5sum DelOut.fq >> output.md5
-    md5sum InsOut.fq >> output.md5
-    md5sum DelTmp.txt >> output.md5
-    md5sum InsTmp.txt >> output.md5
-fi
-
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "--------------------------------------------------- MD5SUM ----------------------------------------------------"
 echo "---------------------------------------------------------------------------------------------------------------"
 echo " "
+# Remove SAM headers (they include commit sha as version)
+sed -i '/^@/d' *.sam
+# Compare md5sum
 md5sum -c output.md5 || exit 2;
