@@ -20,6 +20,7 @@ typedef struct{
   int seed;
   size_t VarNumber;
   size_t ModulusNo;
+  size_t DivisionNo;
   const char* PosFile;
   const char *RefVar_out;
 }argStruct;
@@ -33,10 +34,11 @@ int HelpPage(FILE *fp){
   fprintf(fp,"-v | --version:  Print version.\n\n");
   fprintf(fp,"-i | --input: \t Reference genome in FASTA format.\n");
   fprintf(fp,"-s | --seed: \t Seed for random generators.\n");
-  fprintf(fp,"-n | --number: \t Number of stochastic variations to be included in the input reference, conflicts with -m|--modulus.\n");
-  fprintf(fp,"-m | --modulus:  Every N'th position to be altered, conflicts with -n|--number.\n");
+  fprintf(fp,"-n | --number: \t Number of stochastic variations to be included in the input reference, conflicts with -m|--modulus and -d|--denominator.\n");
+  fprintf(fp,"-d | --denominator: \tCalculate the number of position to be altered, (Genome length / Provided value), conflicts with -n|--number and -m|--modulus.\n");
+  fprintf(fp,"-m | --modulus:  \tCalculate the number of position to be altered using modulus (Genome length % Provided value), conflicts with -n|--number and -d|--denominator.\n");
   fprintf(fp,"-p | --pos: \t Output chromomsomal coordinates for the incorporated variations in plain text.\n");
-  fprintf(fp,"-o | --output: \t Altered reference genomes saved as .fa\n");
+  fprintf(fp,"-o | --output: \t Altered reference genome\n");
   exit(1);
   return 0;
 }
@@ -48,6 +50,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->seed = 0;
   mypars->VarNumber = 0;
   mypars->ModulusNo = 0;
+  mypars->DivisionNo = 0;
   mypars->PosFile = NULL;
   mypars->RefVar_out = NULL;
   ++argv;
@@ -61,6 +64,9 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-n",*argv)==0 || strcasecmp("--number",*argv)==0){
       mypars->VarNumber = atol(*(++argv));
+    }
+    else if(strcasecmp("-d",*argv)==0 || strcasecmp("--division",*argv)==0){
+      mypars->DivisionNo = atol(*(++argv));
     }
     else if(strcasecmp("-m",*argv)==0 || strcasecmp("--modulus",*argv)==0){
       mypars->ModulusNo = atol(*(++argv));
@@ -82,6 +88,7 @@ argStruct *getpars(int argc,char ** argv){
 
 // Comparison function for sorting
 int SortChr(const void *a, const void *b) {
+    fprintf(stderr,"INSIDE SortChr function\n");
     return strcmp(*(const char **)a, *(const char **)b);
 }
 
@@ -95,7 +102,6 @@ int SortChrPos(const void *a, const void *b) {
     char seq_name_b[50];
     sscanf(str_a, "%s", seq_name_a);
     sscanf(str_b, "%s", seq_name_b);
-
     // Compare based on column 1 (sequence name)
     int result = strcmp(seq_name_a, seq_name_b);
     if (result != 0) {
@@ -125,8 +131,14 @@ int Reference_Variant(int argc,char **argv){
       int seed = mypars->seed;
       size_t var_operations = mypars->VarNumber;
       size_t ModulusNo = mypars->ModulusNo;
+      size_t DivisionNo = mypars->DivisionNo;
       const char* Coord_file = mypars->PosFile;
       const char* SubsetChr = NULL;
+
+      if((ModulusNo > 0 && var_operations > 0)||(ModulusNo > 0 && DivisionNo > 0)||(DivisionNo > 0 && var_operations > 0)){
+        fprintf(stderr,"Only use either -n or -m or -d");
+        exit(1);
+      }
 
       const char *bases = "ACGTN";
       fasta_sampler *fs = fasta_sampler_alloc(Ref_input,SubsetChr);
@@ -137,23 +149,34 @@ int Reference_Variant(int argc,char **argv){
       int chr_idx;
       //Choose random chromosome index each time
 
-
       // Calculate the number of variations made
       size_t num_variations = 0;
-
+      size_t genome_len = 0;
+      
+      //fprintf(stderr,"Division %zu \t and the remainder from modulus %zu \n",(size_t)genome_len/ModulusNo,((size_t)genome_len%(size_t)ModulusNo));
       int chr_idx_tmp;
-      if (ModulusNo > 0) {
-        for (size_t moduluspos_tmp = 0; moduluspos_tmp <= fs->seqs_l[fs->nref-1];moduluspos_tmp++){
-          chr_idx_tmp = (int)(mrand_pop_long(mr) % (fs->nref));
-          if (moduluspos_tmp % ModulusNo == 0){
+      
+      for(int idx = 0; idx < (int)fs->nref;idx++){
+        genome_len += fs->seqs_l[idx];
+        //fprintf(stderr,"Chromosome idx %d and name %s and total genome length %zu\n",idx,fs->seqs_names[idx],genome_len);
+      }
+      
+      if (ModulusNo > 0) {  
+        for (size_t moduluspos_tmp = 0; moduluspos_tmp <= genome_len;moduluspos_tmp++){
+          //fprintf(stderr,"Modulus value at position %zu \n",moduluspos_tmp % ModulusNo);
+          if ((int)(moduluspos_tmp % ModulusNo) == 0){
             num_variations++;
           }
         }
       }
+      else if (DivisionNo > 0){
+        num_variations = (size_t)genome_len/DivisionNo;
+      }
       else{
         num_variations = var_operations;
       }
-
+      fprintf(stderr,"\t-> Full genome length %zu with %zu variations to be included \n",genome_len,num_variations);
+      //exit(1);
       long rand_val;
       char buf[1024];
 
@@ -163,51 +186,48 @@ int Reference_Variant(int argc,char **argv){
       // Allocate memory for the data i need to store the actual variations
       char **data = (char **)malloc(num_variations * sizeof(char *));
       int data_count = 0;
-      if(var_operations > 0){
-        //std::cout << "var operations" << std::endl;
-        for (int i = 0; i < var_operations;){
-          chr_idx = (int)(mrand_pop_long(mr) % (fs->nref));
-          rand_val = mrand_pop_long(mr);
-          int pos = (int)(abs(rand_val) % fs->seqs_l[chr_idx]);
-          //fprintf(stderr,"Random value %d with seed %d \t %ld \t and position %d\n",i,seed,rand_val,pos);
-          if (fs->seqs[chr_idx][pos] != 'N'){  
-            char previous; 
-            previous = fs->seqs[chr_idx][pos];
-            char altered;
-            altered = bases[(int)(mrand_pop_long(mr) %4)];
+      for (int i = 0; i < num_variations;){
+        chr_idx = (int)(mrand_pop_long(mr) % (fs->nref));
+        rand_val = mrand_pop_long(mr);
+        int pos = (int)(abs(rand_val) % fs->seqs_l[chr_idx]);
+        //fprintf(stderr,"Random value %d with seed %d \t %ld \t and position %d\n",i,seed,rand_val,pos);
+        if (fs->seqs[chr_idx][pos] != 'N'){  
+          char previous; 
+          previous = fs->seqs[chr_idx][pos];
+          char altered;
+          altered = bases[(int)(mrand_pop_long(mr) %4)];
             
-            while(previous == altered){
-              altered = bases[(int)(mrand_pop_long(mr) %4)];
-            }
-            fs->seqs[chr_idx][pos] = altered;
-
-            char *entry = (char *)malloc(10000); // Allocate memory for the entry
-            if (entry == NULL) {
-                fprintf(stderr, "Memory allocation failed\n");
-                return 1; // Or handle the allocation failure appropriately
-            }
-
-            // Append data to the array
-            sprintf(entry, "%s \t %lu \t ref \t %c \t alt \t %c",fs->seqs_names[chr_idx], pos+1, previous, altered);
-            //entry 1 RandChr2 	 120591 	 ref 	 C 	 alt 	 T
-            //std::cout << "entry 1 " << var_operations << std::endl;
-            if (data_count < var_operations) {
-              data[data_count++] = strdup(entry);
-            }
-            //fprintf(fp,"%s \t %d \t ref \t %c \t alt \t %c\n",fs->seqs_names[chr_idx],pos,previous,altered);
-            i++;
-            free(entry);
+          while(previous == altered){
+            altered = bases[(int)(mrand_pop_long(mr) %4)];
           }
-          else
-          {
-            continue;
+          fs->seqs[chr_idx][pos] = altered;
+
+          char *entry = (char *)malloc(10000); // Allocate memory for the entry
+          if (entry == NULL) {
+            fprintf(stderr, "Memory allocation failed\n");
+            return 1; // Or handle the allocation failure appropriately
           }
+
+          // Append data to the array
+          sprintf(entry, "%s \t %lu \t ref \t %c \t alt \t %c",fs->seqs_names[chr_idx], pos+1, previous, altered);
+          //entry 1 RandChr2 	 120591 	 ref 	 C 	 alt 	 T
+          //std::cout << "entry 1 " << var_operations << std::endl;
+          if (data_count < num_variations) {
+            data[data_count++] = strdup(entry);
+          }
+          //fprintf(fp,"%s \t %d \t ref \t %c \t alt \t %c\n",fs->seqs_names[chr_idx],pos,previous,altered);
+          i++;
+          free(entry);
+        }
+        else{
+          continue;
         }
       }
-      else if(ModulusNo > 0){
+      /*else if(ModulusNo > 0){
         //std::cout << "modulus operations" << std::endl;
         for (size_t moduluspos = 0; moduluspos <= fs->seqs_l[fs->nref-1];moduluspos++){
           chr_idx = (int)(mrand_pop_long(mr) % (fs->nref));
+
           //std::cout << "chr_idx " << chr_idx << std::endl;
 
           // Check if chr_idx is within a valid range
@@ -252,13 +272,11 @@ int Reference_Variant(int argc,char **argv){
           //std::cout << "after if " <<std::endl;
         }
         //std::cout << "after for " << std::endl;
-      }
-      else if(ModulusNo > 0 && var_operations > 0){
-        fprintf(stderr,"Only use either -n or -m");exit(0);
-      }
+      }*/
       //std::cout << "before qsort "<< std::endl;
       // Sort the data
       qsort(data, data_count, sizeof(char *), SortChrPos);
+
       //std::cout << "after qsort "<< std::endl;
 
       // Write the sorted data to the file      
