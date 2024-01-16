@@ -103,33 +103,31 @@ int main(int argc,char **argv){
     double mean_length = 0;
     int SizeDistType=-1;double val1 = 0; double val2  = 0;
     
-    if (mypars->CycleLength != 0){
-      readcycle = mypars->CycleLength;
-      if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
+      if (mypars->CycleLength != 0){
+        readcycle = mypars->CycleLength;
+        if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0)
+            ErrMsg(11.0);
+
+        if(mypars->QualProfile1 != NULL){
+          gzFile gz = Z_NULL;
+          assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
+          gzclose(gz);
+        }
+      }
+      else{
+        if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0)
           ErrMsg(11.0);
-      }
 
-      if(mypars->QualProfile1 != NULL){
-	gzFile gz = Z_NULL;
-	assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
-	gzclose(gz);
+        if (mypars->QualProfile1 != NULL){
+          gzFile gz = Z_NULL;
+          assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
+          char buf[LENS];
+          while(gzgets(gz,buf,LENS))
+	    nlines++;
+          gzclose(gz);
+          readcycle = (nlines-2)/5;
+        }
       }
-    }
-    else{
-      if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
-	ErrMsg(11.0);
-      }
-
-      if (mypars->QualProfile1 != NULL){
-	gzFile gz = Z_NULL;
-	assert(((gz = gzopen(mypars->QualProfile1,"rb")))!=Z_NULL && "Check the structure of the provided nucleotide quality profile, see README on https://github.com/RAHenriksen/NGSNGS");
-	char buf[LENS];
-	while(gzgets(gz,buf,LENS))
-	  nlines++;
-	gzclose(gz);
-	readcycle = (nlines-2)/5;
-      }
-    }
 
     if (mypars->Length != 0){
       if (mypars->Length < 0){ErrMsg(3.0);}
