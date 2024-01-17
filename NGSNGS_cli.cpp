@@ -20,8 +20,8 @@ argStruct *getpars(int argc,char ** argv){
   // The output format, output files, and structural elements for SAM outputs
   mypars->OutFormat = unknownT;
   mypars->OutName = NULL;
-  mypars->DumpFile = NULL;
-  mypars->IndelDumpFile = NULL;
+  mypars->OutHaploFile = NULL;
+  mypars->OutIndelFile = NULL;
   mypars->HeaderIndiv=-1;
   mypars->Align=1;
 
@@ -74,28 +74,28 @@ argStruct *getpars(int argc,char ** argv){
       ++argv;
       char *tok = *argv;
       if(strcasecmp("fa",tok)==0 || strcasecmp("fasta",tok)==0)
-	      mypars->OutFormat = faT;
+	mypars->OutFormat = faT;
       if(strcasecmp("fa.gz",tok)==0 || strcasecmp("fasta.gz",tok)==0)
-	      mypars->OutFormat = fagzT;
+	mypars->OutFormat = fagzT;
       if(strcasecmp("fq",tok)==0 || strcasecmp("fastq",tok)==0)
-	      mypars->OutFormat = fqT;
+	mypars->OutFormat = fqT;
       if(strcasecmp("fq.gz",tok)==0 || strcasecmp("fastq.gz",tok)==0)
-	      mypars->OutFormat = fqgzT;
+	mypars->OutFormat = fqgzT;
       if(strcasecmp("sam",tok)==0)
-	      mypars->OutFormat = samT;
+	mypars->OutFormat = samT;
       if(strcasecmp("bam",tok)==0)
-	      mypars->OutFormat = bamT;
+	mypars->OutFormat = bamT;
       if(strcasecmp("cram",tok)==0)
-	      mypars->OutFormat = cramT;
+	mypars->OutFormat = cramT;
       if(mypars->OutFormat==unknownT){
-	      fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data\nWarning:\n");
+	fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data\nWarning:\n");
         ErrMsg(7.0);
       }
     }
     else if(strcasecmp("-i",*argv)==0 || strcasecmp("--input",*argv)==0){
       mypars->Reference = strdup(*(++argv));
     }
-    else if(strcasecmp("-vcf",*argv)==0 || strcasecmp("-bcf",*argv)==0){
+    else if(strcasecmp("--vcf",*argv)==0 || strcasecmp("--bcf",*argv)==0){
       mypars->vcffile = strdup(*(++argv));
     }
     else if(strcasecmp("-t",*argv)==0 || strcasecmp("--threads",*argv)==0){
@@ -118,27 +118,22 @@ argStruct *getpars(int argc,char ** argv){
       mypars->coverage = atof(*(++argv));
       if (mypars->coverage <= 0.0){ErrMsg(2.2);}
     }
-    else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
-      /*if(*(++argv) == NULL){
- 	      fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data\nWarning:\n");
-        ErrMsg(8.1);
-        exit(0);
-      }*/
+    else if(strcasecmp("-o",*argv)==0 || strcasecmp("--out",*argv)==0 || strcasecmp("--output",*argv)==0){
       mypars->OutName = strdup(*(++argv));
     }
     else if(strcasecmp("-s",*argv)==0 || strcasecmp("--seed",*argv)==0){
       mypars->Glob_seed = atoi(*(++argv))*1000;
       mypars->Glob_seed_binary = 1;
     }
-    else if(strcasecmp("-seq",*argv)==0 || strcasecmp("--sequencing",*argv)==0){
+    else if(strcasecmp("--seq",*argv)==0 || strcasecmp("--sequencing",*argv)==0){
       char * tok = *(++argv);
       
       if(strcasecmp("SE",tok)==0 || strcasecmp("se",tok)==0 || strcasecmp("single",tok)==0 || strcasecmp("single-end",tok)==0)
-	      mypars->seq_type = SE;
+	mypars->seq_type = SE;
       else if(strcasecmp("PE",tok)==0 || strcasecmp("pe",tok)==0 || strcasecmp("paired",tok)==0 || strcasecmp("paired-end",tok)==0)
-	      mypars->seq_type = PE;
+	mypars->seq_type = PE;
       else if(mypars->seq_type==unknownTT)
-	      ErrMsg(6.5);
+	ErrMsg(6.5);
     }
     else if(strcasecmp("-a1",*argv)==0 || strcasecmp("--adapter1",*argv)==0){
       mypars->Adapter1 = strdup(*(++argv));
@@ -146,10 +141,20 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-a2",*argv)==0 || strcasecmp("--adapter2",*argv)==0){
       mypars->Adapter2 = strdup(*(++argv));
     }
+    else if(strcasecmp("-q",*argv)==0 || strcasecmp("--quality",*argv)==0){
+      if(mypars->QualProfile1 != NULL || mypars->QualProfile2 != NULL)
+	ErrMsg(4.0);
+      mypars->QualProfile1 = strdup(*(++argv));
+      mypars->QualProfile2 = strdup(*(argv));
+    }
     else if(strcasecmp("-q1",*argv)==0 || strcasecmp("--quality1",*argv)==0){
+      if(mypars->QualProfile1 != NULL)
+	ErrMsg(4.0);
       mypars->QualProfile1 = strdup(*(++argv));
     }
     else if(strcasecmp("-q2",*argv)==0 || strcasecmp("--quality2",*argv)==0){
+      if(mypars->QualProfile2 != NULL)
+	ErrMsg(4.0);
       mypars->QualProfile2 = strdup(*(++argv));
     }
     else if(strcasecmp("-qs",*argv)==0 || strcasecmp("--qualityscore",*argv)==0){
@@ -172,13 +177,13 @@ argStruct *getpars(int argc,char ** argv){
       BriggsModel = strtok(ModelString,",");
       char* ModelParam =  strdup(strtok (NULL, ""));
       if(strcasecmp("b",BriggsModel)==0 || strcasecmp("briggs",BriggsModel)==0){
-	      mypars->Briggs = ModelParam;
+	mypars->Briggs = ModelParam;
       }
       if(strcasecmp("b7",BriggsModel)==0 || strcasecmp("briggs07",BriggsModel)==0)
-	      mypars->BriggsBiotin = ModelParam;
+	mypars->BriggsBiotin = ModelParam;
       free(ModelString);
     }
-    else if(strcasecmp("-dup",*argv)==0 || strcasecmp("--duplicates",*argv)==0){
+    else if(strcasecmp("--dup",*argv)==0 || strcasecmp("--duplicates",*argv)==0){
       mypars->Duplicates = atoi(*(++argv));
     }
     else if(strcasecmp("-cl",*argv)==0 || strcasecmp("--cycle",*argv)==0){
@@ -199,31 +204,31 @@ argStruct *getpars(int argc,char ** argv){
       mypars->LowerLimit = atoi(*(++argv));
       if (mypars->LowerLimit < 30.0){ErrMsg(3.3);}
     }
-    else if(strcasecmp("-chr",*argv)==0 || strcasecmp("--chromosomes",*argv)==0){
+    else if(strcasecmp("--chr",*argv)==0 || strcasecmp("--chromosomes",*argv)==0){
       mypars->Chromosomes = strdup(*(++argv));
     }
     else if(strcasecmp("-p",*argv)==0 || strcasecmp("--poly",*argv)==0){
       mypars->Poly = strdup(*(++argv));
       if(strcasecmp("A",mypars->Poly)!=0 && 
-      strcasecmp("G",mypars->Poly)!=0 &&
-      strcasecmp("C",mypars->Poly)!=0 &&
-      strcasecmp("T",mypars->Poly)!=0 &&
-      strcasecmp("N",mypars->Poly)!=0){ErrMsg(10.0);}
+	 strcasecmp("G",mypars->Poly)!=0 &&
+	 strcasecmp("C",mypars->Poly)!=0 &&
+	 strcasecmp("T",mypars->Poly)!=0 &&
+	 strcasecmp("N",mypars->Poly)!=0){ErrMsg(10.0);}
     }
-    else if(strcasecmp("-id",*argv)==0 || strcasecmp("--indiv",*argv)==0){
+    else if(strcasecmp("--id",*argv)==0 || strcasecmp("--indiv",*argv)==0){
       mypars->HeaderIndiv = atoi(*(++argv));
     }
-    else if(strcasecmp("-rng",*argv)==0 || strcasecmp("--rand",*argv)==0){
+    else if(strcasecmp("--rng",*argv)==0 || strcasecmp("--rand",*argv)==0){
       mypars->rng_type = atoi(*(++argv));
     }
-    else if(strcasecmp("-indel",*argv)==0){
+    else if(strcasecmp("--indel",*argv)==0){
       mypars->Indel = strdup(*(++argv));
     }
-    else if(strcasecmp("-DumpVCF",*argv)==0){
-      mypars->DumpFile = strdup(*(++argv));
+    else if(strcasecmp("--out_haplo",*argv)==0){
+      mypars->OutHaploFile = strdup(*(++argv));
     }
-    else if(strcasecmp("-DumpIndel",*argv)==0){
-      mypars->IndelDumpFile = strdup(*(++argv));
+    else if(strcasecmp("--out_indel",*argv)==0){
+      mypars->OutIndelFile = strdup(*(++argv));
     }  
     else{
       fprintf(stderr,"Unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
@@ -236,7 +241,7 @@ argStruct *getpars(int argc,char ** argv){
   // adjust the compression threads following the input parameters depending on the sampling threads and output file format
   if (mypars->OutFormat == fagzT || mypars->OutFormat == fqgzT || mypars->OutFormat == bamT || mypars->OutFormat == cramT){
     if (mypars->SamplThreads <= 12 && compress_t_y_n == 0){
-        mypars->CompressThreads = mypars->SamplThreads;
+      mypars->CompressThreads = mypars->SamplThreads;
     }
     else if (mypars->SamplThreads > 12 && compress_t_y_n == 0){
       //putting an upper limit on the number of compression threads
@@ -245,49 +250,29 @@ argStruct *getpars(int argc,char ** argv){
   }
 
   // Ensure the required argument are parsed after all arguments have been provided
-
-  const char* NGSNGS_msg = "Next Generation Simulator for Next Generator Sequencing Data";
   // Input
-  if(mypars->Reference == NULL){
-    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+  if(mypars->Reference == NULL)
     ErrMsg(1.0);
-    exit(0);
-  }
   // read numbers
-  if(mypars->nreads == 0 && mypars->coverage == 0.0){
-    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+  if(mypars->nreads == 0 && mypars->coverage == 0.0)
     ErrMsg(2.5);
-  }
   // read lengths
-  if(mypars->Length == 0 && mypars->LengthFile == NULL && mypars->LengthDist == NULL){
-    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+  if(mypars->Length == 0 && mypars->LengthFile == NULL && mypars->LengthDist == NULL)
     ErrMsg(3.0);
-  }
   // Format
-  if(mypars->OutFormat == unknownT){
-    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+  if(mypars->OutFormat == unknownT)
     ErrMsg(7.0);
-   exit(0);
-  }
-  if(mypars->seq_type == unknownTT){
-    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+  if(mypars->seq_type == unknownTT)
     ErrMsg(6.0);
-    exit(0);
-  }
   // quality profiles
   if(mypars->OutFormat==fqT|| mypars->OutFormat== fqgzT ||mypars->OutFormat==samT ||mypars->OutFormat==bamT|| mypars->OutFormat== cramT){
     if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
-      fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
       ErrMsg(11.0);
-      exit(0);
     }
   }
   // Output
-  if(mypars->OutName == NULL){
-    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+  if(mypars->OutName == NULL)
     ErrMsg(8.0);
-    exit(0);
-  }
 
   return mypars;
 }
@@ -296,8 +281,8 @@ argStruct *getpars(int argc,char ** argv){
 void argStruct_destroy(argStruct *mypars){
   free(mypars->Reference);
   free(mypars->OutName);
-  free(mypars->DumpFile);
-  free(mypars->IndelDumpFile);
+  free(mypars->OutHaploFile);
+  free(mypars->OutIndelFile);
   free(mypars->LengthFile);
   free(mypars->LengthDist);
   free(mypars->Indel);

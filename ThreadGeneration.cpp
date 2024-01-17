@@ -47,13 +47,13 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
 }
 
 void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
-                        const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,int DoBriggsBiotin,
-                        const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,int readcycle,int qsreadcycle,
-                        int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int FixedQual,int threadwriteno,
-                        const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
-                        int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
-                        char CommandArray[LENS],const char* version,int HeaderIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile,
-                        int Duplicates,int Lowerlimit){
+			   const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,int DoBriggsBiotin,
+			   const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,int readcycle,int qsreadcycle,
+			   int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int FixedQual,int threadwriteno,
+			   const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
+			   int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
+			   char CommandArray[LENS],const char* version,int HeaderIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile,
+			   int Duplicates,int Lowerlimit){
   //creating an array with the arguments to create multiple threads;
 
   int nthreads=thread_no;
@@ -106,16 +106,16 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     case faT:
       mode = "wu";
       if(SE==SeqType)
-	      suffix1 = ".fa";
+	suffix1 = ".fa";
       else{
-	      suffix1 = "_R1.fa";
-	      suffix2 = "_R2.fa";
+	suffix1 = "_R1.fa";
+	suffix2 = "_R2.fa";
       }
       break;
     case fagzT:
       mode = "wb";
       if(SE== SeqType)
-	      suffix1 = ".fa.gz";
+	suffix1 = ".fa.gz";
       else{
         suffix1 = "_R1.fa.gz";
         suffix2 = "_R2.fa.gz";
@@ -124,7 +124,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     case fqT:
       mode = "wu";
       if(SE ==SeqType)
-	      suffix1 = ".fq";
+	suffix1 = ".fq";
       else{
         suffix1 = "_R1.fq";
         suffix2 = "_R2.fq";
@@ -133,7 +133,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     case fqgzT:
       mode = "w";
       if(SE==SeqType)
-	      suffix1 = ".fq.gz";
+	suffix1 = ".fq.gz";
       else{
         suffix1 = "_R1.fq.gz";
         suffix2 = "_R2.fq.gz";
@@ -193,7 +193,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       if(threadwriteno>0){
         if (!(p.pool = hts_tpool_init(threadwriteno))) {
           fprintf(stderr, "Error creating thread pool\n");
-          exit(0);
+          exit(1);
         }
         hts_set_opt(SAMout, HTS_OPT_THREAD_POOL, &p);
       }
@@ -208,14 +208,13 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     //generate file array before creating the threads
     int no_elem;double* Frag_freq;int* Frag_len;
     if(SizeDistType==1){
-        Frag_len = new int[LENS];Frag_freq = new double[LENS];
-        ReadLengthFile(no_elem,Frag_len,Frag_freq,Sizefile);
+      Frag_len = new int[LENS];Frag_freq = new double[LENS];
+      ReadLengthFile(no_elem,Frag_len,Frag_freq,Sizefile);
     }
     else{no_elem = -1;}
     
     const char *freqfile_r1; //"Qual_profiles/AccFreqL150R1.txt";
     const char *freqfile_r2;
-    int outputoffset = qualstringoffset;
     ransampl_ws ***QualDist = NULL;
     char nt_qual_r1[1024];
     ransampl_ws ***QualDist2 = NULL;
@@ -228,10 +227,10 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       //fprintf(stderr,"WHAT IS THE FIXED QUAL VAL1 %d\n",FixedQual);
       if(QualProfile1 != NULL && FixedQual == 0){
         //fprintf(stderr,"INSIDE IF STATEMTN\n");
-        QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1);
+        QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,qualstringoffset,freqfile_r1);
         if(PE==SeqType){
           freqfile_r2 = QualProfile2;
-          QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2);
+          QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,qualstringoffset,freqfile_r2);
         }
       }
       //fprintf(stderr,"WHAT IS THE FIXED QUAL VAL2 %d\n",FixedQual);
@@ -252,14 +251,8 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     }
 
     if(IndelDumpFile!=NULL){
-      char IndelFile[512];
-      const char* IndelSuffix = ".txt";
-      const char* IndelPrefix = IndelDumpFile;
-      strcpy(IndelFile,IndelPrefix);
-      strcat(IndelFile,IndelSuffix);
-      const char* modefp2 = "wu";
-      bgzf_fp[2] = bgzf_open(IndelFile,modefp2); //w
-      bgzf_mt(bgzf_fp[2],threadwriteno,256); //
+      bgzf_fp[2] = bgzf_open(IndelDumpFile,"wu");
+      bgzf_mt(bgzf_fp[2],threadwriteno,256);
     }
 
     for (int i = 0; i < nthreads; i++){
@@ -345,11 +338,11 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     }
     else{
       for (int i = 0; i < nthreads; i++){
-	    pthread_create(&mythreads[i],&attr,Sampling_threads,&struct_for_threads[i]);
+	pthread_create(&mythreads[i],&attr,Sampling_threads,&struct_for_threads[i]);
       }
       
       for (int i = 0; i < nthreads; i++){  
-	    pthread_join(mythreads[i],NULL);
+	pthread_join(mythreads[i],NULL);
       }
     }
     if(bgzf_fp[0]!=NULL){
@@ -363,12 +356,12 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     }
     free(bgzf_fp); //free the calloc
      
-     if(SAMHeader)
+    if(SAMHeader)
       sam_hdr_destroy(SAMHeader);
-     if(SAMout)
-       sam_close(SAMout);
-     if (p.pool)
-       hts_tpool_destroy(p.pool);
+    if(SAMout)
+      sam_close(SAMout);
+    if (p.pool)
+      hts_tpool_destroy(p.pool);
     
     fasta_sampler_destroy(reffasta);
 

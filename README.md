@@ -30,29 +30,29 @@ cd NGSNGS; make
 
 ## QUICK TUTORIAL
 Examples of which parameters to include depending on the desired simulations
-### simulate 1000 reads (-r) from human hg19.fa (-i), generate compressed fq.gz (-f), single end (-seq), make program use one threads (-t)
+### simulate 1000 reads (-r) from human hg19.fa (-i), generate compressed fq.gz (-f), single end (--seq), make program use one threads (-t)
 ~~~~bash
-./ngsngs -i hg19.fa -r 1000 -f fq -l 100 -seq SE -t 1 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
+./ngsngs -i hg19.fa -r 1000 -f fq -l 100 --seq SE -t 1 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
 ~~~~
-### simulate 1000 reads (-r) from human hg19.fa (-i), generate fq (-f), single end (-seq), with a fixed quality score and lower fragment limit of 50
+### simulate 1000 reads (-r) from human hg19.fa (-i), generate fq (-f), single end (--seq), with a fixed quality score and lower fragment limit of 50
 ~~~~bash
-./ngsngs -i hg19.fa -r 1000 -f fq -lf Test_Examples/Size_dist_sampling.txt -seq SE -t 1 -qs 40 -o HgSim
+./ngsngs -i hg19.fa -r 1000 -f fq -lf Test_Examples/Size_dist_sampling.txt --seq SE -t 1 -qs 40 -o HgSim
 ~~~~
-### generate bam (-f), paired end (-seq), variable fragment length (-ld norm,350,20) but fixed readlength (-cl 100)
+### generate bam (-f), paired end (--seq), variable fragment length (-ld norm,350,20) but fixed readlength (-cl 100)
 ~~~~bash
-./ngsngs -i hg19.fa -r 1000 -f bam -ld norm,350,20 -cl 100 -seq PE -t 1 -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -o HgSim
+./ngsngs -i hg19.fa -r 1000 -f bam -ld norm,350,20 -cl 100 --seq PE -t 1 -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -o HgSim
 ~~~~
 ### Disable platform specific errors (-ne), adding deamination pattern with Briggs 2007 model (-m b7,...), with ancient fragment length distribution (-lf), using seed 4 (-s)
 ~~~~bash
-./ngsngs -i hg19.fa -r 1000 -f fq -s 4 -ne -lf Test_Examples/Size_dist_sampling.txt -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
+./ngsngs -i hg19.fa -r 1000 -f fq -s 4 -ne -lf Test_Examples/Size_dist_sampling.txt --seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
 ~~~~
 ### Paired end reads, inferred cycle length from (-q1) to be 150, fragment length (-l) 400, inner distance of 100 (400-150*2)  
 ~~~~bash
-./ngsngs -i hg19.fa -r 1000 -f fq -l 400 -seq PE -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R1.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -o HgSim
+./ngsngs -i hg19.fa -r 1000 -f fq -l 400 --seq PE -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R1.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -o HgSim
 ~~~~
 ### Single end reads, adapter sequence (-a1) and poly-G tail (-p)
 ~~~~bash
-./ngsngs -i hg19.fa -r 1000 -f fq -l 80 -seq SE -q1 Test_Examples/AccFreqL150R1.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -p G -o HgSim
+./ngsngs -i hg19.fa -r 1000 -f fq -l 80 --seq SE -q1 Test_Examples/AccFreqL150R1.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -p G -o HgSim
 ~~~~
 NB! the adapter sequences are only concatenated to the reads, if the inferred cycle length from quality profiles is greater than the fragment length, the poly-X tail is only added if the sequence with adapter length is still below the cycle length (Cycle length - fragment length - adapter length = 150 - 80 - 65 = 5).
 
@@ -63,16 +63,16 @@ Next Generation Simulator for Next Generator Sequencing Data version 0.9.0
 Next Generation Simulator for Next Generator Sequencing Data version 0.9.0 
 
 Usage
-./ngsngs [options] -i <input_reference.fa> -r/-c <Number of reads or depth of coverage> -l/-lf/-ld <fixed length, length file or length distribution> -seq <SE/PE> -f <output format> -o <output name prefix>
+./ngsngs [options] -i <input_reference.fa> -r/-c <Number of reads or depth of coverage> -l/-lf/-ld <fixed length, length file or length distribution> --seq <SE/PE> -f <output format> -o <output name prefix>
 
 Example 
-./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 2 -s 1 -lf Test_Examples/Size_dist_sampling.txt -seq SE -m b,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut
+./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 2 -s 1 -lf Test_Examples/Size_dist_sampling.txt --seq SE -m b,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut
 
-./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut
+./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t 2 -s 1 -l 100 --seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut
 
-./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/MisincorpFile.txt -f fa -o MycoBactFaSEOut
+./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 1 -s 1 -ld Pois,78 --seq SE -mf Test_Examples/MisincorpFile.txt -f fa -o MycoBactFaSEOut
 
-./ngsngs -i Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 100 -l 150 -seq SE -ne -vcf Test_Examples/ChrMtSubDeletionDiploid.vcf -id 0 -q1 Test_Examples/AccFreqL150R1.txt -chr MT -DumpVCF DeltionInfo -f fq -o MtDeletionOut 
+./ngsngs -i Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 100 -l 150 --seq SE -ne -vcf Test_Examples/ChrMtSubDeletionDiploid.vcf -id 0 -q1 Test_Examples/AccFreqL150R1.txt -chr MT --out_haplo DeltionInfo -f fq -o MtDeletionOut 
 
 -h   | --help: 			 Print help page.
 
@@ -96,7 +96,7 @@ Fragment Length:
 	 <Gamma,Shape,Scale> 	 Gamma distribution, given a shape and scale, e.g. Gam,20,2.
 
 Output characteristics:
--seq | --sequencing: 		 Simulate single-end or paired-end reads.
+--seq | --sequencing: 		 Simulate single-end or paired-end reads.
 	 <SE||se||single||single-end>	 single-end. 
  	 <PE||pe||paired||paired-end>	 paired-end.
 -f   | --format: 		 File format of the simulated output reads.
@@ -109,32 +109,32 @@ Output characteristics:
   	Sequence Alignment Map w. different compression levels.
 	 <sam||bam||cram> 
 
--o   | --output: 		 Prefix of output file name.
+-o   | --out | --output:	 Output ALN file name (SAM format)
 
 Format specific:
+-q   | --quality:		 Read Quality profile for all reads for fastq or sequence alignment map formats.
 -q1  | --quality1:		 Read Quality profile for single-end reads (SE) or first read pair (PE) for fastq or sequence alignment map formats.
 -q2  | --quality2:		 Read Quality profile for for second read pair (PE) for fastq or sequence alignment map formats.
--qs  | --qualityscore:	 Fixed quality score, for both read pairs in fastq or sequence alignment map formats. It overwrites the quality profiles.
+-qs  | --qualityscore:		 Fixed quality score, for both read pairs in fastq or sequence alignment map formats. It overwrites the quality profiles.
 
 ----- Optional -----
 
 Genetic Variations:
 
--bcf | -vcf: 			 Variant Calling Format (.vcf) or binary format (.bcf)
--id  | --indiv: 		 Integer value (0 - index) for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).
-	 e.g -id 0	 First individual in the provided vcf file. 
--DumpVCF:			 The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided
-				 vcf file, for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.
+--bcf | --vcf: 			 Variant Calling Format (.vcf) or binary format (.bcf)
+--id  | --indiv: 		 Index (0 - based) of a specific individual from --vcf/--bcf input file, default = -1 (no individual selected).
+--out_haplo:			 Output FASTA file with internally generated haplotypes with the variations from the provided `vcf` file; for diploid individuals
+				 the fasta file contains two copies of the reference genome with the each allelic genotype.
 
 Stochastic Variations:
 
--indel:				 Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.
+--indel:			 Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.
 	 <InsProb,DelProb,InsParam,DelParam>
-	 Insertions and deletions -indel 0.05,0.1,0.1,0.2
-	 Only Insertions          -indel 0.05,0.0,0.1,0.0
-	 Only Deletions           -indel 0.0,0.5,0.0,0.9 
--DumpIndel:			 The prefix of an internally generated text file, containing the the read id, number of indels, the number of indel operations saving the position
-				 before and after and length of the indel, simulated read length before and after, see supplementary material for detailed example and description.
+	 Insertions and deletions --indel 0.05,0.1,0.1,0.2
+	 Only Insertions          --indel 0.05,0.0,0.1,0.0
+	 Only Deletions           --indel 0.0,0.5,0.0,0.9
+--out_indel:			 Output text file, containing the the read id, number of indels, the number of indel operations saving the position
+				 before and after and length of the indel, simulated read length before and after.
 
 Postmortem damage (PMD) - Deamination:
 
@@ -146,7 +146,7 @@ Postmortem damage (PMD) - Deamination:
 	 Delta_s: PMD rate in single-strand regions.
 	 Delta_d: PMD rate in double-strand regions.
 	 e.g -m b,0.024,0.36,0.68,0.0097
--dup | --duplicates:	 	 Number of PCR duplicates, used in conjunction with briggs modern library prep -m <b,nv,Lambda,Delta_s,Delta_d>
+--dup | --duplicates:	 	 Number of PCR duplicates, used in conjunction with briggs modern library prep -m <b,nv,Lambda,Delta_s,Delta_d>
 	 <1,2,4>, Default = 1.
 
 Nucleotide Alterations:
@@ -170,10 +170,10 @@ Read Specific:
  	 e.g -p G or -p A 
 
 Simulation Specific: 
--t   | --threads: 		 Number of sampling threads, default = 1.
--t2  | --threads2: 		 Number of compression threads, default = 0.
--s   | --seed: 			 Random seed, default = current calendar time (s).
--rng | --rand: 			 Pseudo-random number generator, OS specific
+-t    | --threads: 		 Number of sampling threads, default = 1.
+-t2   | --threads2: 		 Number of compression threads, default = 0.
+-s    | --seed: 		 Random seed, default = current calendar time (s).
+--rng | --rand: 		 Pseudo-random number generator, OS specific
 	 <0,1,2,3> 
 	 0 :  			 drand48_r, default for linux or unix, not available for MacOS.
 	 1 :  			 std::uniform_int_distribution

@@ -48,9 +48,9 @@ mrand_t *mrand_alloc(int type_a,long int seedval){
 double mrand_pop(mrand_t *mr){
   double res;
   if(mr->type==0){
-    #if defined(__linux__) || defined(__unix__)
+#if defined(__linux__) || defined(__unix__)
     drand48_r((struct drand48_data*)&mr->buf0,&res);
-    #endif
+#endif
   }
   else if(mr->type==1){
     res =  mr->distr(mr->eng);
@@ -70,7 +70,7 @@ double mrand_pop(mrand_t *mr){
   }
   else{
     fprintf(stderr,"Random parameter %d is not supported\n",mr->type);
-    exit(0);
+    exit(1);
   }
   assert(res!=0.0);
   assert(res!=1.0);
@@ -79,10 +79,10 @@ double mrand_pop(mrand_t *mr){
 long mrand_pop_long(mrand_t *mr){
   long res;
   if(mr->type==0){
-    #if defined(__linux__) || defined(__unix__)
+#if defined(__linux__) || defined(__unix__)
     lrand48_r((struct drand48_data*)&mr->buf0,&res);
     res >>= 4;
-    #endif
+#endif
   }
   else if(mr->type==1){
     res =  mr->distrInt(mr->eng);
@@ -98,7 +98,7 @@ long mrand_pop_long(mrand_t *mr){
   }
   else{
     fprintf(stderr,"Random parameter %d is not supported\n",mr->type);
-    exit(0);
+    exit(1);
   }
   return res;
 }

@@ -102,7 +102,7 @@ void* Sampling_threads(void *arg) {
   if (reads > 1000000){
     modulovalue = 10;
   }
-  else{ 
+  else{
     modulovalue = 1;
   }
   size_t moduloread = reads/modulovalue;
@@ -150,10 +150,10 @@ void* Sampling_threads(void *arg) {
     /*
     // not implemented yet - nor to be included within the near future as off december 2022
     if circ
-      if (posE < posB+fraglenth) 
-        memset(FragmentSequence,'0',strlen(FragmentSequence));
-        strncpy(FragmentSequence,chrseq+(posB),fraglength);
-        strncpy(FragmentSequence,chrseq,fraglength-(posE-posB));         
+    if (posE < posB+fraglenth) 
+    memset(FragmentSequence,'0',strlen(FragmentSequence));
+    strncpy(FragmentSequence,chrseq+(posB),fraglength);
+    strncpy(FragmentSequence,chrseq,fraglength-(posE-posB));         
     */
 
     int skipread = 1;
@@ -226,12 +226,12 @@ void* Sampling_threads(void *arg) {
       }
       
       ReadDeam=SimBriggsModel2(FragmentSequence, fragmentLength, 
-        struct_obj->BriggsParam[0],
-        struct_obj->BriggsParam[1],
-        struct_obj->BriggsParam[2],
-        struct_obj->BriggsParam[3],rand_alloc,FragRes,strandR1,
-        C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev,
-        refCp1,refCTp1,refCp2,refCTp2);
+			       struct_obj->BriggsParam[0],
+			       struct_obj->BriggsParam[1],
+			       struct_obj->BriggsParam[2],
+			       struct_obj->BriggsParam[3],rand_alloc,FragRes,strandR1,
+			       C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev,
+			       refCp1,refCTp1,refCp2,refCTp2);
 
       if (struct_obj->Duplicates == 1){
         //keep one fragment out of the 4 possible
@@ -241,7 +241,7 @@ void* Sampling_threads(void *arg) {
       else if (struct_obj->Duplicates == 2){
         Groupshift = mrand_pop(rand_alloc)>0.5?0:1; 
         iter = 2;
-      }      
+      }
     }
     else if(struct_obj->DoBriggsBiotin){
       FragTotal = 1;
@@ -249,10 +249,10 @@ void* Sampling_threads(void *arg) {
       FragRes[0] = FragmentSequence;
       ReadDeam=0;
       ReadDeam = SimBriggsModel(FragRes[0],fragmentLength,struct_obj->BriggsParam[0],
-		    struct_obj->BriggsParam[1],
-		    struct_obj->BriggsParam[2], 
-		    struct_obj->BriggsParam[3],rand_alloc,
-        strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
+				struct_obj->BriggsParam[1],
+				struct_obj->BriggsParam[2], 
+				struct_obj->BriggsParam[3],rand_alloc,
+				strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
     }
     else{
       // This is for the none-deaminated data if we want PCR duplicates. But in theory this is for each read, whereas for the deaminated its more to show a more comprehensive deamination patteen
@@ -286,7 +286,7 @@ void* Sampling_threads(void *arg) {
       if(PE==struct_obj->SeqType){
         for(int i=0; skipread && i<(int)strlen(seq_r2);i++)
           if(seq_r2[i]!='N')
-          skipread = 0;
+	    skipread = 0;
       }
       
       if(skipread==1){
@@ -372,17 +372,17 @@ void* Sampling_threads(void *arg) {
         nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),std::string(struct_obj->Adapter_1).length());
         strncpy(seq_r1+strlen(seq_r1),struct_obj->Adapter_1,nsofts[0]);
         /*
-        Sampling.cpp: In function 'void* Sampling_threads(void*)':
-        Sampling.cpp:369:16: warning: 'char* strncpy(char*, const char*, size_t)' specified bound depends on the length of the source argument [-Wstringop-truncation]
+	  Sampling.cpp: In function 'void* Sampling_threads(void*)':
+	  Sampling.cpp:369:16: warning: 'char* strncpy(char*, const char*, size_t)' specified bound depends on the length of the source argument [-Wstringop-truncation]
           369 |         strncpy(seq_r1+strlen(seq_r1),struct_obj->Adapter_1,nsofts[0]);
-              |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        Sampling.cpp:368:77: note: length computed here
+	  |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	  Sampling.cpp:368:77: note: length computed here
           368 |         nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
-              |                                                                       ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
-        Sampling.cpp:369:16: warning: 'char* strncpy(char*, const char*, size_t)' specified bound depends on the length of the source argument [-Wstringop-truncation]
+	  |                                                                       ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+	  Sampling.cpp:369:16: warning: 'char* strncpy(char*, const char*, size_t)' specified bound depends on the length of the source argument [-Wstringop-truncation]
           369 |         strncpy(seq_r1+strlen(seq_r1),struct_obj->Adapter_1,nsofts[0]);
-              |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        Sampling.cpp:368:77: note: length computed here
+	  |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	  Sampling.cpp:368:77: note: length computed here
           368 |         nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
         */
         if(PE==struct_obj->SeqType){
@@ -406,12 +406,12 @@ void* Sampling_threads(void *arg) {
       if(struct_obj->SAMout){
         if((int)strlen(seq_r1)!=(naligned[0]+nsofts[0])){
           fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
-          exit(0);
+          exit(1);
         }
         //below only runs for PE that is when nalign[1] is not -1
         if(naligned[1]!=-1 && (int)strlen(seq_r2)!=naligned[1]+nsofts[1]){
           fprintf(stderr,"Number of aligned bases + number of adap + poly does not match\n");
-          exit(0);
+          exit(1);
         }
       }
 
@@ -420,8 +420,8 @@ void* Sampling_threads(void *arg) {
         snprintf(READ_ID+strlen(READ_ID),512-strlen(READ_ID),"%d F%d",0,FragNo);
         ksprintf(fqs[0],">%s R1\n%s\n",READ_ID,seq_r1);//make this into read
         if (PE==struct_obj->SeqType)
-        ksprintf(fqs[1],">%s R2\n%s\n",READ_ID,seq_r2);
-      } 
+	  ksprintf(fqs[1],">%s R2\n%s\n",READ_ID,seq_r2);
+      }
       else{
         //Fastq and Sam needs quality scores
         if(struct_obj->FixedQual_r1r2 > 0){
@@ -481,7 +481,7 @@ void* Sampling_threads(void *arg) {
                   uint32_t tmp= AlignCigar[1][0];
                   AlignCigar[1][0] = AlignCigar[1][1];
                   AlignCigar[1][1] = tmp;
-                } 
+                }
               }
             }
           }
@@ -521,7 +521,7 @@ void* Sampling_threads(void *arg) {
               chr_max_end_mate = max_end;
               insert_mate = insert;
               chr_idx_mate = chr_idx_array[struct_obj->Duplicates];
-            }        
+            }
           }
           if (struct_obj->Align == 0){
             mapq = 255;
@@ -533,15 +533,15 @@ void* Sampling_threads(void *arg) {
 
           //we have set the parameters accordingly above for no align and PE
           bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx_array[struct_obj->Duplicates],min_beg,mapq,
-                n_cigar[0],AlignCigar[0],chr_idx_mate,chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
+		   n_cigar[0],AlignCigar[0],chr_idx_mate,chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
 
           //write PE also
           if (PE==struct_obj->SeqType){
             bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx_array[struct_obj->Duplicates],max_end-1,mapq,
-              n_cigar[1],AlignCigar[1],chr_idx_array[struct_obj->Duplicates],min_beg,0-insert_mate,strlen(seq_r2),seq_r2,qual_r2,l_aux);
+		     n_cigar[1],AlignCigar[1],chr_idx_array[struct_obj->Duplicates],min_beg,0-insert_mate,strlen(seq_r2),seq_r2,qual_r2,l_aux);
           }
         
-          if (struct_obj->LengthData < struct_obj->MaximumLength){   
+          if (struct_obj->LengthData < struct_obj->MaximumLength){
             pthread_mutex_lock(&write_mutex);
             for (int k = 0; k < struct_obj->LengthData; k++){
               assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) >=0 );
@@ -602,8 +602,8 @@ void* Sampling_threads(void *arg) {
       assert(bgzf_write(struct_obj->bgzf_fp[0],fqs[0]->s,fqs[0]->l)!=0);
       if (PE==struct_obj->SeqType){assert(bgzf_write(struct_obj->bgzf_fp[1],fqs[1]->s,fqs[1]->l)!=0);}
       pthread_mutex_unlock(&write_mutex);
-	    fqs[0]->l = fqs[1]->l = 0;
-    } 
+      fqs[0]->l = fqs[1]->l = 0;
+    }
   }
 
   if (struct_obj->bgzf_fp[2]){
@@ -611,8 +611,8 @@ void* Sampling_threads(void *arg) {
       pthread_mutex_lock(&write_mutex);
       assert(bgzf_write(struct_obj->bgzf_fp[0],indel->s,indel->l)!=0);
       pthread_mutex_unlock(&write_mutex);
-	    indel->l = 0;
-    } 
+      indel->l = 0;
+    }
   }
 
   //fprintf(stderr,"\t-> Simulated but skipped reads %d \n",sampled_skipped);

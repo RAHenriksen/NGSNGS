@@ -2,9 +2,9 @@
 #define RANDSAMPLING_H
 
 typedef struct{
-    int n;
-    int* alias;
-    double* prob;
+  int n;
+  int* alias;
+  double* prob;
 } ransampl_ws;
 
 ransampl_ws* ransampl_alloc(int n);
