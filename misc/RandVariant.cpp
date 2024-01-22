@@ -18,8 +18,9 @@
 typedef struct{
   const char *Ref_input;
   int seed;
+  int generation;
+  double Mutation;
   size_t VarNumber;
-  size_t DivisionNo;
   const char* PosFile;
   const char *RefVar_out;
 }argStruct;
@@ -38,16 +39,17 @@ char *sample_full_chr(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_i
 
 int HelpPage(FILE *fp){
   fprintf(fp,"Stochastic variation on input reference genome\n");
-  fprintf(fp,"Usage\n./RandVar -i <Reference> -s <seed> -n <Number of random variations> -p <Position information> -o <Reference genome with variations>\n");
-  fprintf(fp,"\nExample\n./RandVar -i RandRefChr1S1.fa -s 10 -n 1000000 -p position.txt -o RandRefChr1S1Var.fa\n");
+  fprintf(fp,"Usage\n./RandVar --input <Reference> --seed <seed> --mutationrate/--number <Mutation rate or number of random variations> --position <Storing the information of altered position in text based format> --output <Saving altered fasta file>\n");
+  fprintf(fp,"\nExample\n./RandVar --input hg19.fa --seed 10 --mutationrate 1.0E-8 --positions position.txt --output hg19var.fa\n");
   fprintf(fp,"\nOptions: \n");
   fprintf(fp,"-h | --help: \t Print help page.\n");
   fprintf(fp,"-v | --version:  Print version.\n\n");
   fprintf(fp,"-i | --input: \t Reference genome in FASTA format.\n");
   fprintf(fp,"-s | --seed: \t Seed for random generators.\n");
-  fprintf(fp,"-n | --number: \t Number of stochastic variations to be included in the input reference, conflicts with -m|--modulus and -d|--denominator.\n");
-  fprintf(fp,"-d | --denominator: \tCalculate the number of position to be altered, (Genome length / Provided value), conflicts with -n|--number and -m|--modulus.\n");
-  fprintf(fp,"-p | --pos: \t Output chromomsomal coordinates for the incorporated variations in plain text.\n");
+  fprintf(fp,"-n | --number: \t Number of stochastic variations to be included in the input reference, conflicts with -m.\n");
+  fprintf(fp,"-m | --mutationrate: \tCalculate the number of position to be altered, based on a fixed mutation rate pr generation.\n");
+  fprintf(fp,"-g | --generations: \t Specify the number of generations for which the fized mutation rate (-m) alters the genome, default = 1.\n");
+  fprintf(fp,"-p | --positions: \t Output chromomsomal coordinates for the incorporated variations in plain text.\n");
   fprintf(fp,"-o | --output: \t Altered reference genome\n");
   exit(1);
   return 0;
@@ -59,9 +61,10 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Ref_input = NULL;
   mypars->seed = 0;
   mypars->VarNumber = 0;
-  mypars->DivisionNo = 0;
   mypars->PosFile = NULL;
   mypars->RefVar_out = NULL;
+  mypars->Mutation = 0.0;
+  mypars->generation =1;
   ++argv;
   while(*argv){
     //fprintf(stderr,"ARGV %s\n",*argv);
@@ -74,10 +77,13 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-n",*argv)==0 || strcasecmp("--number",*argv)==0){
       mypars->VarNumber = atol(*(++argv));
     }
-    else if(strcasecmp("-d",*argv)==0 || strcasecmp("--division",*argv)==0){
-      mypars->DivisionNo = atol(*(++argv));
+    else if(strcasecmp("-m",*argv)==0 || strcasecmp("--mutationrate",*argv)==0){
+      mypars->Mutation = atof(*(++argv));
     }
-    else if(strcasecmp("-p",*argv)==0 || strcasecmp("--pos",*argv)==0){
+    else if(strcasecmp("-g",*argv)==0 || strcasecmp("--generations",*argv)==0){
+      mypars->generation = atoi(*(++argv));
+    }
+    else if(strcasecmp("-p",*argv)==0 || strcasecmp("--positions",*argv)==0){
       mypars->PosFile = strdup(*(++argv));
     }
     else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
@@ -135,13 +141,19 @@ int Reference_Variant(int argc,char **argv){
       const char* Ref_input = mypars->Ref_input;
       const char* RefVar_out = mypars->RefVar_out;
       int seed = mypars->seed;
+      int generation = mypars->generation;
       size_t var_operations = mypars->VarNumber;
-      size_t DivisionNo = mypars->DivisionNo;
       const char* Coord_file = mypars->PosFile;
       const char* SubsetChr = NULL;
+      double Mutation = mypars->Mutation;
 
-      if(DivisionNo > 0 && var_operations > 0){
-        fprintf(stderr,"Only use either -n or -d");
+      if(Mutation > 0.0 && var_operations > 0){
+        fprintf(stderr,"Only use either -n or -m");
+        exit(1);
+      }
+
+      if(generation > 1 && Mutation == 0.0){
+        fprintf(stderr,"The fixed mutation rate (-m) for each generation (-g) is not specified\n");
         exit(1);
       }
 
@@ -164,8 +176,8 @@ int Reference_Variant(int argc,char **argv){
         //fprintf(stderr,"Chromosome idx %d and name %s and total genome length %zu\n",idx,fs->seqs_names[idx],genome_len);
       }
       
-      if (DivisionNo > 0){
-        num_variations = (size_t)genome_len/DivisionNo;
+      if (Mutation > 0){
+        num_variations = (size_t) genome_len*Mutation*generation;
       }
       else{
         num_variations = var_operations;
