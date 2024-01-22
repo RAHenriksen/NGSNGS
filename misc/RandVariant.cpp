@@ -24,6 +24,18 @@ typedef struct{
   const char *RefVar_out;
 }argStruct;
 
+//functions returns head of chromosome, with posB, posE, chr_idx and fraglength set accordingly
+char *sample_full_chr(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx){
+  chr_idx = 0;
+  if(fs->nref>1)
+    chr_idx = ransampl_draw2(fs->ws,mrand_pop(mr),mrand_pop(mr));
+  *chromoname = fs->seqs_names[chr_idx];
+
+  char *ret =fs->seqs[chr_idx]; 
+  chr_idx = fs->realnameidx[chr_idx];
+  return ret;
+}
+
 int HelpPage(FILE *fp){
   fprintf(fp,"Stochastic variation on input reference genome\n");
   fprintf(fp,"Usage\n./RandVar -i <Reference> -s <seed> -n <Number of random variations> -p <Position information> -o <Reference genome with variations>\n");
@@ -137,10 +149,9 @@ int Reference_Variant(int argc,char **argv){
       fasta_sampler *fs = fasta_sampler_alloc(Ref_input,SubsetChr);
       //fprintf(stderr,"\t-> Chromosome name %s \t length %d\n",fs->seqs_names[fs->nref-1],fs->seqs_l[fs->nref-1]);
       mrand_t *mr = mrand_alloc(0,seed);
-      
+    
       //int chr_idx = fs->nref-1;
       int chr_idx;
-      //Choose random chromosome index each time
 
       // Calculate the number of variations made
       size_t num_variations = 0;
@@ -170,14 +181,21 @@ int Reference_Variant(int argc,char **argv){
       // Allocate memory for the data i need to store the actual variations
       char **data = (char **)malloc(num_variations * sizeof(char *));
       int data_count = 0;
+      char *chr;
       for (int i = 0; i < num_variations;){
-        chr_idx = (int)(mrand_pop_long(mr) % (fs->nref));
+        chr_idx = 0; //(int)(mrand_pop_long(mr) % (fs->nref));
+        //Choose random chromosome index each time
+        
+      //char *sample_full_chr(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx){
+        char *chrseq = sample_full_chr(fs,mr,&chr,chr_idx);
+        //std::cout << chrseq[2] << std::endl;
+
         rand_val = mrand_pop_long(mr);
         int pos = (int)(abs(rand_val) % fs->seqs_l[chr_idx]);
         //fprintf(stderr,"Random value %d with seed %d \t %ld \t and position %d\n",i,seed,rand_val,pos);
-        if (fs->seqs[chr_idx][pos] != 'N'){  
+        if (chrseq[pos] != 'N'){  
           char previous; 
-          previous = fs->seqs[chr_idx][pos];
+          previous = chrseq[pos];
           char altered;
           altered = bases[(int)(mrand_pop_long(mr) %4)];
             
