@@ -42,18 +42,18 @@ void add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_IN
       int len = Random_geometric_k(pars[3],mr)+1;
       offsetDel+=snprintf(DelOps+offsetDel,512,"[%d,%d:%d],",beg+offset,beg-cumlen+offset,len);
       cumlen = cumlen+len;
-        //two cases: 1) is that deletion is in the middle of the fragment and we should shift all data to the left
-        //2) Deletion will cover the rest of the read. 
-        if(len+beg>end){
-          //case 2)
-          frag[beg+1] = '\0';
-          end = beg+1;
-        }else{
-          //case 1) we dont need to check for running of the data
-          memmove(frag + beg, frag+(beg+len), strlen(frag) - len);
-          end -= len;
-          frag[end] = '\0';
-        }
+      //two cases: 1) is that deletion is in the middle of the fragment and we should shift all data to the left
+      //2) Deletion will cover the rest of the read. 
+      if(len+beg>end){
+	//case 2)
+	frag[beg+1] = '\0';
+	end = beg+1;
+      }else{
+	//case 1) we dont need to check for running of the data
+	memmove(frag + beg, frag+(beg+len), strlen(frag) - len);
+	end -= len;
+	frag[end] = '\0';
+      }
       i++;      
       beg++;
       offset++;
@@ -68,9 +68,9 @@ void add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_IN
     snprintf(INDEL_INFO,1024,"%d\t%s\t%d\tNA\t%d\t%ld",ops[0],InsOps,ops[1],fragbefore,strlen(frag));
   }
   else
-  {
-    snprintf(INDEL_INFO,1024,"%d\t%s\t%d\t%s\t%d\t%ld",ops[0],InsOps,ops[1],DelOps,fragbefore,strlen(frag));
-  }
+    {
+      snprintf(INDEL_INFO,1024,"%d\t%s\t%d\t%s\t%d\t%ld",ops[0],InsOps,ops[1],DelOps,fragbefore,strlen(frag));
+    }
 }
 
 #ifdef __WITH_MAIN__

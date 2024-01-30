@@ -45,7 +45,7 @@ void handler(int s) {
     fprintf(stderr,"\n\t-> If you really want ngsngs to exit uncleanly ctrl+c: %d more times\n",really_kill+1);
   fflush(stderr);
   if(!really_kill)
-    exit(0);
+    exit(1);
   VERBOSE=0;
   SIG_COND=0;
 }
@@ -85,14 +85,14 @@ int main(int argc,char **argv){
     double readcov = mypars->coverage;
     //fprintf(stderr,"DESIRED COVERAGE %f \n",readcov);
     if (mypars->rng_type == -1){
-      #if defined(__linux__) || defined(__unix__)
-        mypars->rng_type = 0;
-      #elif defined(__APPLE__) || defined(__MACH__)
-        mypars->rng_type = 3;
-        //when 0 it will have problems with drand48 reentrant, will default to erand48 (MacroRandType 3)
-      #else
-      #   error "Unknown compiler"
-      #endif
+#if defined(__linux__) || defined(__unix__)
+      mypars->rng_type = 0;
+#elif defined(__APPLE__) || defined(__MACH__)
+      mypars->rng_type = 3;
+      //when 0 it will have problems with drand48 reentrant, will default to erand48 (MacroRandType 3)
+#else
+#   error "Unknown compiler"
+#endif
     }
     
     if (mypars->Reference == NULL){ErrMsg(1.0);}
@@ -109,7 +109,6 @@ int main(int argc,char **argv){
         readcycle = mypars->CycleLength;
         if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
           ErrMsg(11.0);
-          exit(0);
         }
 
         if(mypars->QualProfile1 != NULL){
@@ -121,7 +120,6 @@ int main(int argc,char **argv){
       else{
         if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
           ErrMsg(11.0);
-          exit(0);
         }
         else if (mypars->QualProfile1 != NULL){
           gzFile gz = Z_NULL;
@@ -190,7 +188,7 @@ int main(int argc,char **argv){
           if (Len_prev < readcycle && Len_cur > readcycle) {
             // If the next line exceeds the limit, only consider the fraction of the current line up to the limit
             double fraction = (CummFreq_prev + (CummFreq_cur-CummFreq_prev) *
-                              ((double)(readcycle-Len_prev)/(Len_cur-Len_prev)));
+			       ((double)(readcycle-Len_prev)/(Len_cur-Len_prev)));
             mean_length += readcycle * fraction;
             break;
           }
@@ -228,11 +226,11 @@ int main(int argc,char **argv){
     }
     
     /*std::cout << " x " << mean_length << std::endl;
-    std::cout << " read " << readcycle << std::endl;
-    readcycle = mean_length;
-    fprintf(stderr,"SIZEDISTTYPE %d \t FRAG DIST MEAN LENGTH %f 1\n",SizeDistType,mean_length);
-    std::cout << " x " << mean_length << std::endl;
-    std::cout << " read " << readcycle << std::endl;
+      std::cout << " read " << readcycle << std::endl;
+      readcycle = mean_length;
+      fprintf(stderr,"SIZEDISTTYPE %d \t FRAG DIST MEAN LENGTH %f 1\n",SizeDistType,mean_length);
+      std::cout << " x " << mean_length << std::endl;
+      std::cout << " read " << readcycle << std::endl;
     */
     if (mypars->CycleLength == 0 && mypars->QualProfile1 == NULL){
       readcycle = (int) mean_length;
@@ -254,10 +252,10 @@ int main(int argc,char **argv){
 
     //first capture the cases where no reads or cov has been defined or both defined
     if(mypars->nreads == 0 && readcov == 0.0){
-      fprintf(stderr,"must suply number of reads (-r) or desired coverage (-c)");exit(0);
+      fprintf(stderr,"must suply number of reads (-r) or desired coverage (-c)");exit(1);
     }
     if(mypars->nreads > 0 &&readcov > 0.0){
-      fprintf(stderr,"must not suply number of reads (-r) and desired coverage (-c)");exit(0);
+      fprintf(stderr,"must not suply number of reads (-r) and desired coverage (-c)");exit(1);
     }
     //fprintf(stderr,"NOW IM AFTER NREADS %zu \n",mypars->nreads);
     
@@ -304,7 +302,7 @@ int main(int argc,char **argv){
       else{Polynt = "F";}
     }
     else{
-      if (mypars->Poly != NULL){ErrMsg(14.0);exit(0);}
+      if (mypars->Poly != NULL){ErrMsg(14.0);}
       else{Polynt = "F";}
     }
     // QUALITY PROFILES
@@ -317,7 +315,6 @@ int main(int argc,char **argv){
         if (mypars->seq_type == PE && mypars->QualProfile2 == NULL && mypars->FixedQual == 0){
           //fprintf(stderr,"OUTPUTFORMAT 1");
           ErrMsg(11.0);
-          exit(0);
         }
       }
     }
@@ -325,7 +322,6 @@ int main(int argc,char **argv){
       if(OutputFormat== fqT ||OutputFormat==fqgzT){
         //fprintf(stderr,"OUTPUTFORMAT 2");
         ErrMsg(11.0);
-        exit(0);
       }
     }
 
@@ -333,11 +329,11 @@ int main(int argc,char **argv){
     /*if (strcasecmp("false",QualStringFlag)==0){
       if(strcasecmp("true",Adapt_flag==0 && mypars->Poly != NULL){WarMsg(2.0);}
       //if(mypars->ErrorFlag == NULL){WarMsg(3.0);}
-    }
-    if (strcasecmp("true",QualStringFlag)==0){
+      }
+      if (strcasecmp("true",QualStringFlag)==0){
       if(OutputFormat== faT|| fagzT==OutputFormat)
-	    WarMsg(4.0);
-    }*/
+      WarMsg(4.0);
+      }*/
 
     int qualstringoffset = 0;
     if(fqT==OutputFormat|| fqgzT==OutputFormat)
@@ -384,7 +380,6 @@ int main(int argc,char **argv){
 
     if(mypars->SubProfile != NULL && mypars->Briggs != NULL){
       ErrMsg(12.0);
-      exit(0);
     }
 
     int DeamLength = 0;
@@ -405,12 +400,12 @@ int main(int argc,char **argv){
     }
 
     ThreadInitialization(mypars->Reference,mypars->SamplThreads,mypars->Glob_seed,mypars->nreads,mypars->OutName,
-                      AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->OutFormat,mypars->seq_type,
-                      Param,DoBriggs,DoBriggsBiotin,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,readcycle,qsreadcycle,
-                      qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->FixedQual,mypars->CompressThreads,QualStringFlag,Polynt,
-                      mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
-                      mypars->vcffile,IndelFuncParam,DoIndel,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,
-                      mypars->Align,mypars->KstrBuf,mypars->DumpFile,mypars->IndelDumpFile,mypars->Duplicates,mypars->LowerLimit);
+			 AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->OutFormat,mypars->seq_type,
+			 Param,DoBriggs,DoBriggsBiotin,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,readcycle,qsreadcycle,
+			 qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->FixedQual,mypars->CompressThreads,QualStringFlag,Polynt,
+			 mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
+			 mypars->vcffile,IndelFuncParam,DoIndel,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,
+			 mypars->Align,mypars->KstrBuf,mypars->OutHaploFile,mypars->OutIndelFile,mypars->Duplicates,mypars->LowerLimit);
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));

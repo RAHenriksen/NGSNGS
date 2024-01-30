@@ -42,15 +42,15 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
       probs[at++] = atof(strtok(all_lines[2+b*readcycle+pos],"\n\t "));
       char *tok = NULL;
       while(((tok=strtok(NULL,"\n\t ")))){
-	      probs[at++] = atof(tok);
-	      assert(at<MAXBINS);
+	probs[at++] = atof(tok);
+	assert(at<MAXBINS);
       }
       if(nbins==-1){
-	      nbins = at;
+	nbins = at;
       }
       if(nbins!=at){
-	      fprintf(stderr,"Problems, number of columns is different nbins: %d at: %d\n",nbins,at);
-	      exit(0);
+	fprintf(stderr,"Problems, number of columns is different nbins: %d at: %d\n",nbins,at);
+	exit(1);
       }
       dists[b][pos] =  ransampl_alloc( nbins );
       ransampl_set(dists[b][pos],probs);
@@ -91,7 +91,7 @@ int sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *Nt
 
         int outbase=(int)floor(4.0*phred2Prob[qscores[i]-ntcharoffset]*tmprand);//DRAGON
         while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
-	      bases[i] = intToRef[outbase];
+	bases[i] = intToRef[outbase];
         seq_err = 1;
       }
     }
@@ -123,7 +123,7 @@ int sample_qscores_fix(char *bases, char *qscores, int qscoresval,int len,mrand_
         int outbase=(int)floor(4.0*phred2Prob[fixedscore-ntcharoffset]*tmprand);
         while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
         //fprintf(stderr,"bases before %c \n",bases[i]);
-	      bases[i] = intToRef[outbase];
+	bases[i] = intToRef[outbase];
         //fprintf(stderr,"bases after %c \n",bases[i]);
         seq_err = 1;
       }

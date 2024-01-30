@@ -23,7 +23,7 @@ typedef struct{
 }sim_fragment;
 
 sim_fragment *sim_fragment_alloc(int type,double par1, double par2,int no_row,double*& FreqArray,int*& FragArray,
-int RandType,unsigned int Thread_Seed,std::default_random_engine& generator);
+				 int RandType,unsigned int Thread_Seed,std::default_random_engine& generator);
 void ReadLengthFile(int& number,int*& Length, double*& Frequency,const char* filename);
 
 int getFragmentLength(sim_fragment *sf);

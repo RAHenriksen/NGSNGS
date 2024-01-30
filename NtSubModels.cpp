@@ -32,19 +32,19 @@ void ErrorSub(double randval,char seqchar[], int pos){
 }
 
 double* MisMatchFileArray(double* freqval,const char* filename,int &mismatchcyclelength){
-    char buf[LENS];
-    int i = 0;
-    gzFile gz = Z_NULL;
-    gz = gzopen(filename,"r");
-    assert(gz!=Z_NULL);
-    while(gzgets(gz,buf,LENS)){
-        double val1;double val2;double val3;double val4;
-        sscanf(buf,"%lf\t%lf\t%lf\t%lf\n",&val1,&val2,&val3,&val4);
-        freqval[i*4] = val1; freqval[i*4+1] = val2; freqval[i*4+2] = val3; freqval[i*4+3] = val4;
-        i++;
-    }
-    gzclose(gz);
-    mismatchcyclelength = i/8;
+  char buf[LENS];
+  int i = 0;
+  gzFile gz = Z_NULL;
+  gz = gzopen(filename,"r");
+  assert(gz!=Z_NULL);
+  while(gzgets(gz,buf,LENS)){
+    double val1;double val2;double val3;double val4;
+    sscanf(buf,"%lf\t%lf\t%lf\t%lf\n",&val1,&val2,&val3,&val4);
+    freqval[i*4] = val1; freqval[i*4+1] = val2; freqval[i*4+2] = val3; freqval[i*4+3] = val4;
+    i++;
+  }
+  gzclose(gz);
+  mismatchcyclelength = i/8;
   return freqval;
 }
 

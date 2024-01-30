@@ -85,7 +85,7 @@ int getFragmentLength(sim_fragment *sf){
 }
 
 sim_fragment *sim_fragment_alloc(int type,double par1, double par2,int no_row,double*& FreqArray,
-int*& FragArray,int RandType,unsigned int Thread_Seed,std::default_random_engine& generator){
+				 int*& FragArray,int RandType,unsigned int Thread_Seed,std::default_random_engine& generator){
   sim_fragment *fp = new sim_fragment;
 
   fp->rand_alloc= mrand_alloc(RandType,Thread_Seed);
@@ -132,7 +132,7 @@ int*& FragArray,int RandType,unsigned int Thread_Seed,std::default_random_engine
 
 int main(int argc,char **argv){
   if(argc==1)
-  fprintf(stderr,"./a.out dist par1 par2 nrep");
+    fprintf(stderr,"./a.out dist par1 par2 nrep");
 
   int type = atoi(argv[1]);
   double par1 = atof(argv[2]);

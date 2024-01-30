@@ -23,13 +23,13 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
   //The input reference should always be equal to the 5' ---> fwrd ---> 3' orientation similar to the reference genome
   if (strandR1 == 1){ReversComplement(ori);}
   /*
-  strand = 0
-  ori pre 	0	GACAGTGGAACTGGCCCTCAACGTATAGTGTGTAAAA
-  ori post	0	GACAGTGGAACTGGCCCTCAACGTATAGTGTGTAAAA
+    strand = 0
+    ori pre 	0	GACAGTGGAACTGGCCCTCAACGTATAGTGTGTAAAA
+    ori post	0	GACAGTGGAACTGGCCCTCAACGTATAGTGTGTAAAA
   
-  strand = 1
-  ori pre 	1	AGCGTTACCTAGAACAATTAGATCTGCTATAGGTATCT
-  ori post	1	AGATACCTATAGCAGATCTAATTGTTCTAGGTAACGCT
+    strand = 1
+    ori pre 	1	AGCGTTACCTAGAACAATTAGATCTGCTATAGGTATCT
+    ori post	1	AGATACCTATAGCAGATCTAATTGTTCTAGGTAACGCT
   */
 
   char *rasmus = res[0];
@@ -117,20 +117,20 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
   
     // Given m, sampling n
     if (p_nick_m < L-r-1){
-        p_nick_n = L-p_nick_m-2; //we shift both n and m
-        CumPn = nv;
-        while((u_nick_n > CumPn) && (p_nick_n < L-l-1)){
-          p_nick_n +=1;
-          CumPn += nv*pow(1-nv,p_nick_m+p_nick_n-L+2);
-        }
+      p_nick_n = L-p_nick_m-2; //we shift both n and m
+      CumPn = nv;
+      while((u_nick_n > CumPn) && (p_nick_n < L-l-1)){
+	p_nick_n +=1;
+	CumPn += nv*pow(1-nv,p_nick_m+p_nick_n-L+2);
+      }
     }
     else if(p_nick_m == L-r-1){
-        p_nick_n = r;
-        CumPn = nv;
-        while((u_nick_n > CumPn) && (p_nick_n < L-l-1)){
-          p_nick_n +=1;
-          CumPn += nv*pow(1-nv,p_nick_n-r);
-        }
+      p_nick_n = r;
+      CumPn = nv;
+      while((u_nick_n > CumPn) && (p_nick_n < L-l-1)){
+	p_nick_n +=1;
+	CumPn += nv*pow(1-nv,p_nick_n-r);
+      }
     }
     // Way 2 Complicated Way (should be a little bit faster)
     for (int i = l; i < L-r; i++){
@@ -141,8 +141,8 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
         /*
           5' CGTATACATAGGCACTATATCGACCACACT 3'
           3' GCATATGTA CCGTGATATAGCTGGTGTGA 5'
-                        |
-                        v
+	  |
+	  v
           5' CGTATACATAGGCACTATATCGACCACACT 3'
           3'           CCGTGATATAGCTGGTGTGA 5'                
         */
@@ -162,8 +162,8 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
         /*
           5' CGTATACAT GGCACTATATCGACCACACT 3'
           3' GCATATGTATCCGTGATATAGCTGGTGTGA 5'
-                        |
-                        v
+	  |
+	  v
           5' CGTATACAT                       3'
           3' GCATATGTATCCGTGATATAGCTGGTGTGA  5'                
         */
