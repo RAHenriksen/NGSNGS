@@ -117,8 +117,17 @@ void* Sampling_threads(void *arg) {
     int fraglength = getFragmentLength(sf); 
 
     if(fraglength < struct_obj->lowerlimit){
+      if (struct_obj->LengthType>=2){
+        fraglength = getFragmentLength(sf);
+        while (fraglength < struct_obj->lowerlimit) {
+          //printf("%d\n", fraglength);
+          fraglength = getFragmentLength(sf);
+        }
+      }
+      else{
+        fraglength = struct_obj->lowerlimit;
+      }
       //fprintf(stderr,"lowerlimit%d\n",struct_obj->lowerlimit);
-      fraglength = struct_obj->lowerlimit;
     }
     // Selecting genomic start position across the generated contiguous contigs for which to extract 
     int chr_idx = -1;

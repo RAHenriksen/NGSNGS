@@ -223,20 +223,15 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     double ErrArray_r1[1024];
     double ErrArray_r2[1024];
     freqfile_r1 = QualProfile1;
-    //std::cout << " ASF AFSA ASFSF AASF " << freqfile_r1 << std::endl;
     if(strcasecmp("true",QualStringFlag)==0){
-      //fprintf(stderr,"WHAT IS THE FIXED QUAL VAL1 %d\n",FixedQual);
       if(QualProfile1 != NULL && FixedQual == 0){
-        //fprintf(stderr,"INSIDE IF STATEMTN\n");
         QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1);
         if(PE==SeqType){
           freqfile_r2 = QualProfile2;
           QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2);
         }
       }
-      //fprintf(stderr,"WHAT IS THE FIXED QUAL VAL2 %d\n",FixedQual);
     }
-    //fprintf(stderr,"WHAT IS THE FIXED QUAL VAL3 %d\n",FixedQual);
     
     int maxsize = 20;
     char polynucleotide;
