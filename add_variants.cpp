@@ -311,7 +311,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int whichsample){
     
     if(fai_chr==-1){
       fprintf(stderr,"chrname: %s does not exists in fasta reference\n",bcf_hdr_id2name(bcf_head,brec->rid));
-      exit(0);
+      exit(1);
     }
     if(whichsample!=-1){
       ngt = bcf_get_genotypes(bcf_head, brec, &gt_arr, &ngt_arr);

@@ -88,7 +88,7 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
   fprintf(stderr,"\t-> Number of nref %d in file: \'%s\'\n",fs->nref,fa);
   if(fs->nref==0){
     fprintf(stderr,"\t-> Possible error, no sequences loaded\n");
-    exit(0);
+    exit(1);
   }
   fasta_sampler_setprobs(fs);
   for(int i=0;i<(int)SubsetChr.size();i++)

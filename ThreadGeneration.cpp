@@ -242,7 +242,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       if(threadwriteno>0){
         if (!(p.pool = hts_tpool_init(threadwriteno))) {
           fprintf(stderr, "Error creating thread pool\n");
-          exit(0);
+          exit(1);
         }
         hts_set_opt(SAMout, HTS_OPT_THREAD_POOL, &p);
       }

@@ -126,7 +126,7 @@ argStruct *getpars(int argc,char ** argv){
       /*if(*(++argv) == NULL){
  	      fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data\nWarning:\n");
         ErrMsg(8.1);
-        exit(0);
+        exit(1);
       }*/
       mypars->OutName = strdup(*(++argv));
     }
@@ -264,7 +264,7 @@ argStruct *getpars(int argc,char ** argv){
   if(mypars->Reference == NULL){
     fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
     ErrMsg(1.0);
-    exit(0);
+    exit(1);
   }
   // read numbers
   if(mypars->nreads == 0 && mypars->coverage == 0.0){
@@ -280,26 +280,26 @@ argStruct *getpars(int argc,char ** argv){
   if(mypars->OutFormat == unknownT){
     fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
     ErrMsg(7.0);
-   exit(0);
+   exit(1);
   }
   if(mypars->seq_type == unknownTT){
     fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
     ErrMsg(6.0);
-    exit(0);
+    exit(1);
   }
   // quality profiles
   if(mypars->OutFormat==fqT|| mypars->OutFormat== fqgzT ||mypars->OutFormat==samT ||mypars->OutFormat==bamT|| mypars->OutFormat== cramT){
     if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
       fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
       ErrMsg(11.0);
-      exit(0);
+      exit(1);
     }
   }
   // Output
   if(mypars->OutName == NULL){
     fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
     ErrMsg(8.0);
-    exit(0);
+    exit(1);
   }
   //reference variations
   if(mypars->mutationrate>0.0 && mypars->referencevariations>0){
