@@ -47,6 +47,10 @@ argStruct *getpars(int argc,char ** argv){
   mypars->SubProfile = NULL;
   // 4) Bcf file and variation incorporation
   mypars->vcffile = NULL;
+  // 5) random variations to the reference genome
+  mypars->mutationrate = 0.0;
+  mypars->generations = 1;
+  mypars->referencevariations = 0;
 
   // Fragment lengths
   mypars->CycleLength = 0; 
@@ -224,12 +228,21 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-DumpIndel",*argv)==0){
       mypars->IndelDumpFile = strdup(*(++argv));
+    }
+    else if(strcasecmp("-mr",*argv)==0 || strcasecmp("--mutationrate",*argv)==0){
+      mypars->mutationrate = atof(*(++argv));
+    }
+    else if(strcasecmp("-g",*argv)==0 || strcasecmp("--generations",*argv)==0){
+      mypars->generations = atoi(*(++argv));
+    }
+    else if(strcasecmp("-v",*argv)==0 || strcasecmp("--variations",*argv)==0){
+      mypars->referencevariations = atol(*(++argv));
     }  
     else{
       fprintf(stderr,"Unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
       return NULL;
     }
-    
+  
     ++argv;
   }
 
@@ -287,6 +300,12 @@ argStruct *getpars(int argc,char ** argv){
     fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
     ErrMsg(8.0);
     exit(0);
+  }
+  //reference variations
+  if(mypars->mutationrate>0.0 && mypars->referencevariations>0){
+    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+    ErrMsg(15.0);
+    //if(mypars->mutationrate<0.0 || mypars->referencevariations<0){ErrMsg(15.1);}
   }
 
   return mypars;

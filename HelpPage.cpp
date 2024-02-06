@@ -46,6 +46,10 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t-q2  | --quality2: \t\t Read Quality profile for for second read pair (PE) for fastq or sequence alignment map formats.\n");
   fprintf(fp,"\t-qs  | --qualityscore: \t\t Fixed quality score, for both read pairs in fastq or sequence alignment map formats. It overwrites the quality profiles.\n");
   fprintf(fp,"\n----- Optional ----- \n");
+  fprintf(fp,"\nReference Variations: \n\n");
+  fprintf(fp,"\t-mr | --mutationrate: \t\t\t Adding stochastic variations to the reference genome (-i) from a fixed mutation rate, conflicts with number of variations (-v), default = 0.0\n");
+  fprintf(fp,"\t-g | --generations: \t\t\t Adding stochastic variations to the reference genome (-i) according to the fixed mutation rate (-mr) across numerous generations, default = 1\n");
+  fprintf(fp,"\t-v | --variations: \t\t\t Adding a fixed number of stochastic variations to the reference genome (-i), conflicts with mutation rate (-mr), default = 0\n");
   fprintf(fp,"\nGenetic Variations: \n\n");
   fprintf(fp,"\t-bcf | -vcf: \t\t\t Variant Calling Format (.vcf) or binary format (.bcf)\n");
   fprintf(fp,"\t-id  | --indiv: \t\t Integer value (0 - index) for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).\n");
@@ -131,10 +135,12 @@ void ErrMsg(double messageno){
   else if(messageno == 12.0){fprintf(stderr,"\nBoth a mismatch file and briggs deamination parameters has been provided. Provide either briggs (-p) og mismatch (-mf).\n");}
   else if(messageno == 13.0){fprintf(stderr,"\nOnly variantion type has been provided (-v). Provide variant calling format (-bcf).\n");}
   else if(messageno == 13.5){fprintf(stderr,"\nProvide variantion type not recognized, provide snp (default)\n");}
-  else if(messageno == 14.0){fprintf(stderr,"Poly tail error: Missing adapter sequence, provide adapter sequence (-a1,-a2) as well\n");}
+  else if(messageno == 14.0){fprintf(stderr,"\nPoly tail error: Missing adapter sequence, provide adapter sequence (-a1,-a2) as well\n");}
+  else if(messageno == 15.0){fprintf(stderr,"\nReference variation error: provide either a mutation rate (-mr) or number of variations to include to the reference genome\n");}
+  else if(messageno == 15.1){fprintf(stderr,"\nCannot parse the provided mutation rate (-mr) or number of variations to include (-v) please provide a non-negative \n");}
   else {fprintf(stderr,"\nError with input parameters, see helppage (-h)");}
   fprintf(stderr,"see helppage (-h)\n");
-  exit(0);
+  exit(1);
 }
 
 void WarMsg(double messageno){

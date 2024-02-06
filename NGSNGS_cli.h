@@ -15,7 +15,7 @@ typedef struct{
   size_t nreads;              //Number of reads to simulate
   double coverage;            //Depth of coverage across the entire genome, estimated from rlen, flen, genomsize
   int Glob_seed;              //Local seeds are computed from the global. Only one seed needs to be supplied
-  int Glob_seed_binary;              //Local seeds are computed from the global. Only one seed needs to be supplied
+  int Glob_seed_binary;       //Local seeds are computed from the global. Only one seed needs to be supplied
   outputformat_e OutFormat ;  //fq, fq.gz, fa, fa.gz, sam, bam, cram
   char *OutName;              //prefix for output name
   char *DumpFile;             //prefix for internal file recording potential variations to reference genome
@@ -46,6 +46,9 @@ typedef struct{
   int Align;                  //Storing sequence reads with- or without alignment information in the sequence alignment map/format
   size_t KstrBuf;             //buffer size for kstring length
   char *Indel;                //adding stochastic indels
+  double mutationrate;        //fixated mutation rate to alter reference genome
+  int generations;           //mutation rate for a certain number of generations which alters the reference genome
+  size_t referencevariations; //adding a fixed number of variations to the reference genome
 }argStruct;
 argStruct *getpars(int argc,char ** argv);
 void argStruct_destroy(argStruct *mypars);

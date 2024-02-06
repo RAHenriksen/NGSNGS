@@ -53,7 +53,8 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
                         char CommandArray[LENS],const char* version,int HeaderIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile,
-                        int Duplicates,int Lowerlimit){
+                        int Duplicates,int Lowerlimit,double mutationrate, size_t referencevariations, int generations){
+                          
   //creating an array with the arguments to create multiple threads;
 
   int nthreads=thread_no;
@@ -63,6 +64,9 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   time_t t_ref = time(NULL);
   fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
   
+  fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome with the full length %zu\n",reffasta->nref,reffasta->seq_l_total);
+  fprintf(stderr, "\t-> Done reading in the reference file, walltime used =  %.2f sec\n", (float)(time(NULL) - t_ref));
+
   if(VariantFile){
     add_variants(reffasta,VariantFile,HeaderIndiv);
     if(FileDump!=NULL){
@@ -74,10 +78,55 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       const char* dumpfilefull = dumpfile1;
       dump_internal(reffasta,dumpfilefull);
     }
+    fprintf(stderr, "\t-> Done adding variants from variant calling format, walltime used =  %.2f sec\n", (float)(time(NULL) - t_ref));
+  }
+  
+  if(mutationrate > 0.0 || referencevariations > 0){
+    //fprintf(stderr,"INSIDE MUTATION LOOP \n");
+    mrand_t *mr = mrand_alloc(RandMacro,seed);
+    const char *bases = "ACGTN";
+
+    size_t num_variations = 0;
+
+    if (mutationrate > 0.0){
+      num_variations = (size_t) reffasta->seq_l_total*mutationrate*generations;
+    }
+    else{
+      num_variations = referencevariations;
+    }
+    //fprintf(stderr,"Number of variations to be simulated %zu\n",num_variations);
+    //exit(1);
+    for (size_t i = 0; i < num_variations;){
+      int chr_idx = 0; //(int)(mrand_pop_long(mr) % (reffasta->nref));
+      //Choose random chromosome index each time
+      if(reffasta->nref>1)
+        chr_idx = ransampl_draw2(reffasta->ws,mrand_pop(mr),mrand_pop(mr));
+
+      long rand_val = mrand_pop_long(mr);
+      size_t pos = (size_t)(abs(rand_val) % reffasta->seqs_l[chr_idx]);
+
+      if (reffasta->seqs[chr_idx][pos] != 'N'){  
+        char previous = reffasta->seqs[chr_idx][pos];
+        char altered = bases[(int)(mrand_pop_long(mr) %4)];
+      
+        while(previous == altered){
+          altered = bases[(int)(mrand_pop_long(mr) %4)];
+        }
+        //fprintf(stderr,"Chromosome idx %d and name %s and total genome length %zu and position %zu\n",chr_idx,reffasta->seqs_names[chr_idx],reffasta->seqs_l[chr_idx],pos);
+        //fprintf(stderr,"before alteration %c\n",reffasta->seqs[chr_idx][pos]);
+        reffasta->seqs[chr_idx][pos] = altered;
+        //fprintf(stderr,"after alteration %c\n------\n",reffasta->seqs[chr_idx][pos]);
+        i++;
+      }
+      else{
+        continue;
+      }
+    }
+    fprintf(stderr, "\t-> Done adding %zu stochastic variants to reference genome, walltime used =  %.2f sec\n", num_variations,(float)(time(NULL) - t_ref));
   }
 
-  fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome with the full length %zu\n",reffasta->nref,reffasta->seq_l_total);
-  fprintf(stderr, "\t-> Done reading in the reference file, walltime used =  %.2f sec\n", (float)(time(NULL) - t_ref));
+
+  //fprintf(stderr,"\t-> Created %d variations according to the length of chromosomes/contigs/scaffolds from input reference genome%zu\n");
 
 
   if (reffasta->seqs != NULL){
