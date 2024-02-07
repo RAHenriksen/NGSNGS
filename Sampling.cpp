@@ -114,7 +114,8 @@ void* Sampling_threads(void *arg) {
     int posB = 0; int posE = 0;
 
     //sample fragmentlength
-    int fraglength = getFragmentLength(sf); 
+    int fraglength = 0;
+    fraglength = getFragmentLength(sf); 
 
     if(fraglength < struct_obj->lowerlimit){
       if (struct_obj->LengthType>=2){
@@ -138,16 +139,14 @@ void* Sampling_threads(void *arg) {
     int maxbases = 0;
     int cyclelength = 0;
     //fprintf(stderr,"Max length %d \t and cycle length %d \n",maxbases,cyclelength);
-    if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT || (struct_obj->FixedQual_r1r2 > 0 && struct_obj->qsreadcycle==0 )){
+    if (struct_obj->OutputFormat==faT ||struct_obj->OutputFormat==fagzT || (struct_obj->FixedQual_r1r2 > 0 && struct_obj->qsreadcycle==0)){
       //fprintf(stderr,"ARE WE IN THE FA LOOP?\n");
       cyclelength = fraglength;
       maxbases = fraglength;
     }
     else{
-      //fprintf(stderr,"ARE WE NOT IN THE FA LOOP?\n");
       cyclelength = struct_obj->maxreadlength;
       maxbases = std::min(fraglength,cyclelength);
-      //std::cout << " fraglength "<< fraglength << " cyclelength " << cyclelength << " maxbases " << maxbases << std::endl;
     }
     //fprintf(stderr,"Max length %d \t and cycle length %d \n",maxbases,cyclelength);
     //get shallow copy of chromosome, offset into, is defined by posB, and posE

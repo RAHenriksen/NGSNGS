@@ -221,10 +221,10 @@ int main(int argc,char **argv){
       else if (strcasecmp(Dist,"LogNorm")==0){SizeDistType=4;mean_length= (double)exp((val1+((val2*val2)/2)));}
       else if (strcasecmp(Dist,"Pois")==0){SizeDistType=5;mean_length= (double)val1;}
       else if (strcasecmp(Dist,"Exp")==0){SizeDistType=6;mean_length= (double)(1/val1);}
-      else if (strcasecmp(Dist,"Gam")==0){SizeDistType=7;mean_length= (double)(val1/val2);}
+      else if (strcasecmp(Dist,"Gam")==0){SizeDistType=7;mean_length= (double)(val1*val2);}
       else if (mypars->Length >0){ErrMsg(5.0);}
       free((char *)Dist);
-      fprintf(stderr,"\t-> Mean fragment length of the provided length distribution (-ld) is %f nt\n",mean_length);
+      fprintf(stderr,"\t-> Mean fragment length calculated from the provided length distribution (-ld) and parameters is %f nt\n",mean_length);
     }
     
     /*std::cout << " x " << mean_length << std::endl;
@@ -393,26 +393,27 @@ int main(int argc,char **argv){
       fprintf(stderr,"\t-> Number of PCR duplicates for non-biotin simulated deamination model is %d\n",mypars->Duplicates);
     }
     
-    int qsreadcycle = 0;
+    /*
+    int qsreadcyclelen = 0;
     if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){      
-      if (mypars->CycleLength != 0){
-        qsreadcycle=1;
+      if (mypars->CycleLength > 0){
+        qsreadcyclelen=1;
       }
 
-      if (qsreadcycle == 0){
+      if (qsreadcyclelen == 0){
         fprintf(stderr,"\t-> When providing a fixed quality score (-qs) the read cycle length is not used as an upper limit for the simulated reads, unless -cl is specified\n");
       }
-    }
+    }*/
 
     ThreadInitialization(mypars->Reference,mypars->SamplThreads,mypars->Glob_seed,mypars->nreads,mypars->OutName,
                       AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->OutFormat,mypars->seq_type,
-                      Param,DoBriggs,DoBriggsBiotin,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,readcycle,qsreadcycle,
+                      Param,DoBriggs,DoBriggsBiotin,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,readcycle,mypars->CycleLength,
                       qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->FixedQual,mypars->CompressThreads,QualStringFlag,Polynt,
                       mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
                       mypars->vcffile,IndelFuncParam,DoIndel,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,
                       mypars->Align,mypars->KstrBuf,mypars->DumpFile,mypars->IndelDumpFile,mypars->Duplicates,mypars->LowerLimit,
                       mypars->mutationrate,mypars->referencevariations,mypars->generations);
-
+                        
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));

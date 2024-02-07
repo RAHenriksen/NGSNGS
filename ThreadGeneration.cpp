@@ -48,7 +48,7 @@ void Header_func(htsFormat *fmt_hts,const char *outfile_nam,samFile *outfile,sam
 
 void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t reads,const char* OutputName,int AddAdapt,const char* Adapter_1,
                         const char* Adapter_2,outputformat_e OutputFormat,seqtype_e SeqType,float BriggsParam[4],int DoBriggs,int DoBriggsBiotin,
-                        const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,int readcycle,int qsreadcycle,
+                        const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,int readcycle,int readcycle_fix,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int FixedQual,int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
@@ -80,10 +80,10 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     }
     fprintf(stderr, "\t-> Done adding variants from variant calling format, walltime used =  %.2f sec\n", (float)(time(NULL) - t_ref));
   }
-  
   if(mutationrate > 0.0 || referencevariations > 0){
+    time_t t_mutation = time(NULL);
     //fprintf(stderr,"INSIDE MUTATION LOOP \n");
-    mrand_t *mr = mrand_alloc(RandMacro,seed);
+    mrand_t *mutation_rand = mrand_alloc(RandMacro,seed);
     const char *bases = "ACGTN";
 
     size_t num_variations = 0;
@@ -100,17 +100,17 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       int chr_idx = 0; //(int)(mrand_pop_long(mr) % (reffasta->nref));
       //Choose random chromosome index each time
       if(reffasta->nref>1)
-        chr_idx = ransampl_draw2(reffasta->ws,mrand_pop(mr),mrand_pop(mr));
+        chr_idx = ransampl_draw2(reffasta->ws,mrand_pop(mutation_rand),mrand_pop(mutation_rand));
 
-      long rand_val = mrand_pop_long(mr);
+      long rand_val = mrand_pop_long(mutation_rand);
       size_t pos = (size_t)(abs(rand_val) % reffasta->seqs_l[chr_idx]);
 
       if (reffasta->seqs[chr_idx][pos] != 'N'){  
         char previous = reffasta->seqs[chr_idx][pos];
-        char altered = bases[(int)(mrand_pop_long(mr) %4)];
+        char altered = bases[(int)(mrand_pop(mutation_rand)*4)]; //bases[(int)(mrand_pop_long(mr) %4)];
       
         while(previous == altered){
-          altered = bases[(int)(mrand_pop_long(mr) %4)];
+          altered = bases[(int)(mrand_pop(mutation_rand)*4)]; //bases[(int)(mrand_pop_long(mr) %4)];
         }
         //fprintf(stderr,"Chromosome idx %d and name %s and total genome length %zu and position %zu\n",chr_idx,reffasta->seqs_names[chr_idx],reffasta->seqs_l[chr_idx],pos);
         //fprintf(stderr,"before alteration %c\n",reffasta->seqs[chr_idx][pos]);
@@ -122,7 +122,9 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
         continue;
       }
     }
-    fprintf(stderr, "\t-> Done adding %zu stochastic variants to reference genome, walltime used =  %.2f sec\n", num_variations,(float)(time(NULL) - t_ref));
+
+    free(mutation_rand);
+    fprintf(stderr, "\t-> Done adding %zu stochastic variants to reference genome, walltime used =  %.2f sec\n", num_variations,(float)(time(NULL) - t_mutation));
   }
 
 
@@ -335,6 +337,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].QualDist_r1 = QualDist;
       struct_for_threads[i].QualDist_r2 = QualDist2;
       struct_for_threads[i].FixedQual_r1r2 = FixedQual;
+      struct_for_threads[i].qsreadcycle = (int) readcycle_fix;
 
       struct_for_threads[i].NtErr_r1 = ErrArray_r1;
       struct_for_threads[i].NtErr_r2 = ErrArray_r2;
