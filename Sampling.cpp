@@ -272,10 +272,7 @@ void* Sampling_threads(void *arg) {
         FragRes[i] = FragmentSequence;
       }
     }
-
-    int chr_idx_array[struct_obj->Duplicates];
-    for (int i = 0; i < struct_obj->Duplicates; i++){chr_idx_array[struct_obj->Duplicates]=chr_idx;}
-    
+   
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
       qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0';
 
@@ -516,37 +513,36 @@ void* Sampling_threads(void *arg) {
           strcat(READ_ID,suffR1);
           int chr_max_end_mate = 0; //PNEXT 0-> unavailable for SE
           int insert_mate = 0; //TLEN
-          int chr_idx_mate = -1;
+          int chr_idx_read = chr_idx;
           if(PE==struct_obj->SeqType){
             strcat(READ_ID2,suffR2);
             if (struct_obj->Align == 0){
               mapq = 255;
               SamFlags[0] = SamFlags[1] = 4;
-              chr_idx_array[struct_obj->Duplicates] = -1;
+              chr_idx_read = -1;
               chr_max_end_mate = 0;
             }
             else{
               chr_max_end_mate = max_end;
               insert_mate = insert;
-              chr_idx_mate = chr_idx_array[struct_obj->Duplicates];
             }        
           }
           if (struct_obj->Align == 0){
             mapq = 255;
             SamFlags[0] = SamFlags[1] = 4;
-            chr_idx_array[struct_obj->Duplicates] = -1;
+            chr_idx_read = -1;
             min_beg = -1;
             max_end = 0;
           }
 
           //we have set the parameters accordingly above for no align and PE
-          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx_array[struct_obj->Duplicates],min_beg,mapq,
-                n_cigar[0],AlignCigar[0],chr_idx_mate,chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
+          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx_read,min_beg,mapq,
+                n_cigar[0],AlignCigar[0],chr_idx_read,chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
 
           //write PE also
           if (PE==struct_obj->SeqType){
-            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx_array[struct_obj->Duplicates],max_end-1,mapq,
-              n_cigar[1],AlignCigar[1],chr_idx_array[struct_obj->Duplicates],min_beg,0-insert_mate,strlen(seq_r2),seq_r2,qual_r2,l_aux);
+            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx_read,max_end-1,mapq,
+              n_cigar[1],AlignCigar[1],chr_idx_read,min_beg,0-insert_mate,strlen(seq_r2),seq_r2,qual_r2,l_aux);
           }
         
           if (struct_obj->LengthData < struct_obj->MaximumLength){   

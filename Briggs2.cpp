@@ -58,7 +58,7 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
   
   strncpy(rasmus,ori,L);
   strncpy(thorfinn,ori,L);
-  Complement(thorfinn,strlen(thorfinn));
+  Complement(thorfinn);
   
   if (rasmus[0] == 'C'|| rasmus[0] == 'c' ){C_total++;G_total++;}
   if (thorfinn[L-1] == 'C'|| thorfinn[L-1] == 'c' ){C_total++;G_total++;}
