@@ -16,45 +16,40 @@ echo "---------------------------------------- Testing '${PRG}' examples -------
 echo "---------------------------------------------------------------------------------------------------------------"
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "1) Testing Single-end, length file, reads, briggs, sampling threads, sequencing error, sam"
+echo "1) Testing Single-end, length file, reads, briggs, sampling threads, sequencing error, sam,bam,cram and its compression"
 echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 100000 -t 1 -s 1 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f sam -o MycoBactBamSEOut
+${PRG} -i ${IN} -r 100000 -t 1 -s 1 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f sam -o MycoBactSamSEOut
+${PRG} -i ${IN} -r 100000 -t 1 -s 1 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f bam -o MycoBactBamSEOut
+${PRG} -i ${IN} -r 100000 -t 1 -s 1 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f cram -o MycoBactCramSEOut
 
-samtools view MycoBactBamSEOut.sam|cut -f1|sort > READID.txt
-samtools view MycoBactBamSEOut.sam|cut -f6|sort > CIGAR.txt
-samtools view MycoBactBamSEOut.sam|cut -f10|sort > SEQ.txt
+# Check file sizes and ordering
+sam_size=$(stat -c%s MycoBactSamSEOut.sam)
+bam_size=$(stat -c%s MycoBactBamSEOut.bam)
+cram_size=$(stat -c%s MycoBactCramSEOut.cram)
 
-#echo "From md5 file:"
-#grep 'MycoBactBamSEOut' MycoBactTest.md5
-#echo "New simulations"
-#md5sum MycoBactBamSEOut.sam
-#samtools sort MycoBactBamSEOut.sam -o MycoBactBamSEOutSort.sam
-#echo "Original file after sorting"
-#md5sum MycoBactBamSEOut.sam
-#echo "Sorted file"
-#md5sum MycoBactBamSEOutSort.sam
-#md5sum MycoBactBamSEOut.sam > MycoBactTest.md5
+if [ $sam_size -gt $bam_size ] && [ $bam_size -gt $cram_size ]; then
+    echo "File sizes are in correct order: sam > bam > cram"
+else
+    echo "File sizes are not in correct order: sam < bam < cram"; exit 1;
+fi
+
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "2) Testing Paired-end, fixed length, coverage, no sequencing error, adapters, sampling threads, fq"
 echo "---------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -c 3 -t 1 -s 1 -l 100 -seq PE -ne -a1 ${A1} -a2 ${A2} -q1 ${Q1} -q2 ${Q2} -f fq -o MycoBactFqPEOut
-#md5sum MycoBactFqPEOut_R1.fq >> MycoBactTest.md5
-#md5sum MycoBactFqPEOut_R2.fq >> MycoBactTest.md5
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "3) Testing Single-end, length distributions, reads, sequencing error, misincorporation file, fa"
 echo "---------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -r 100000 -t 1 -s 1 -ld Pois,78 -seq SE -mf ${MF} -f fa -o MycoBactFaSEOut
-#md5sum MycoBactFaSEOut.fa >> MycoBactTest.md5
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "4) Testing Single-end, fixed length, reads, sequencing error, adapters, poly-G tail"
 echo "---------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -r 100000 -t 1 -s 1 -l 70 -seq SE -q1 ${Q1} -a1 ${A1} -p G -f fq -o MycoBactFqSEPolyOut
-#md5sum MycoBactFqSEPolyOut.fq >> MycoBactTest.md5
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
@@ -66,7 +61,6 @@ Mean_read_length=$(awk '{if(NR%4==2) {count++; bases += length} } END{print base
 if [ $Mean_read_length -ne 90 ]; then 
 echo "Warning the mean read length isn't in accorandance with the cycle length"; exit 1;
 fi
-#md5sum MycoBactFqSEClOut.fq >> MycoBactTest.md5
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
@@ -128,6 +122,13 @@ if [ 0 -eq 1 ]; then
     md5sum DelTmp.txt >> MycoBactTest.md5
     md5sum InsTmp.txt >> MycoBactTest.md5
 fi
+
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "10) Testing mutation rate (reference genome 1.9%), sampling with replacement when below lower limit (30), 
+        adapters and poly G for fixed sequencing error "
+echo "---------------------------------------------------------------------------------------------------------------"
+
+${PRG} -i ${IN} -r 100000 -f fq.gz -seq PE -s 34532 -t 1 -ld Gam,20,2 -mr 0.019 -cl 100 -p G -a1 ${A1} -a2 ${A2} -qs 30 -o MutationRateSeqErrAdapters
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"

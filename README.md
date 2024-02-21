@@ -5,7 +5,7 @@ Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen \
 Contact: rasmus.henriksen@sund.ku.dk
 
 ## VERSION
-Next Generation Simulator for Next Generator Sequencing Data version 0.9.0, 
+Next Generation Simulator for Next Generator Sequencing Data 
 
 This article was [published](https://academic.oup.com/bioinformatics/advance-article/doi/10.1093/bioinformatics/btad041/6994180) in Oxford Academics as an application note the 20th of January 2023.
 
@@ -32,13 +32,13 @@ cd NGSNGS; make
 Examples of which parameters to include depending on the desired simulations
 ### simulate 1000 reads (-r) from human hg19.fa (-i), generate compressed fq.gz (-f), single end (-seq), make program use one threads (-t)
 ~~~~bash
-./ngsngs -i hg19.fa -r 1000 -f fq -l 100 -seq SE -t 1 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
+./ngsngs -i hg19.fa -r 1000 -f fq.gz -l 100 -seq SE -t 1 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
 ~~~~
-### simulate 1000 reads (-r) from human hg19.fa (-i), generate fq (-f), single end (-seq), with a fixed quality score and lower fragment limit of 50
+### simulate 1000 reads (-r) from human hg19.fa (-i), generate fq (-f), single end (-seq), with a fixed quality score (-qs) and lower fragment limit of 50 (-ll)
 ~~~~bash
-./ngsngs -i hg19.fa -r 1000 -f fq -lf Test_Examples/Size_dist_sampling.txt -seq SE -t 1 -qs 40 -o HgSim
+./ngsngs -i hg19.fa -r 1000 -f fq -lf Test_Examples/Size_dist_sampling.txt -ll 50 -seq SE -t 1 -qs 40 -o HgSim
 ~~~~
-### generate bam (-f), paired end (-seq), variable fragment length (-ld norm,350,20) but fixed readlength (-cl 100)
+### generate bam (-f), paired end (-seq), fragment length from a normal distribution mean:350,sd:20 (-ld) but fixed cycle length (-cl) with two independent quality profiles (-q1,-q2)
 ~~~~bash
 ./ngsngs -i hg19.fa -r 1000 -f bam -ld norm,350,20 -cl 100 -seq PE -t 1 -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -o HgSim
 ~~~~
@@ -46,7 +46,7 @@ Examples of which parameters to include depending on the desired simulations
 ~~~~bash
 ./ngsngs -i hg19.fa -r 1000 -f fq -s 4 -ne -lf Test_Examples/Size_dist_sampling.txt -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
 ~~~~
-### Paired end reads, inferred cycle length from (-q1) to be 150, fragment length (-l) 400, inner distance of 100 (400-150*2)  
+### Paired end reads, inferred cycle length from the distribution of quality profile (-q1) to be 150, fragment length (-l) 400, inner distance of 100 (400-150*2), while adding adapters
 ~~~~bash
 ./ngsngs -i hg19.fa -r 1000 -f fq -l 400 -seq PE -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R1.txt -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -o HgSim
 ~~~~
@@ -95,6 +95,8 @@ Fragment Length:
 	 <Exp,Rate> 		 Exponential distribution, given a rate, e.g. Exp,0.025.
 	 <Gamma,Shape,Scale> 	 Gamma distribution, given a shape and scale, e.g. Gam,20,2.
 
+	note: Depending on parameters, if the sampled length is below the lower limit (-ll) resampling is performed.
+
 Output characteristics:
 -seq | --sequencing: 		 Simulate single-end or paired-end reads.
 	 <SE||se||single||single-end>	 single-end. 
@@ -117,6 +119,12 @@ Format specific:
 -qs  | --qualityscore:	 Fixed quality score, for both read pairs in fastq or sequence alignment map formats. It overwrites the quality profiles.
 
 ----- Optional -----
+
+Reference Variations:
+
+-mr | --mutationrate:	Adding stochastic variations to the reference genome (-i) from a fixed mutation rate, conflicts with number of variations (-v), default = 0.0
+-g | --generations:		Adding stochastic variations to the reference genome (-i) according to the fixed mutation rate (-mr) across numerous generations, default = 1
+-v | --variations:		Adding a fixed number of stochastic variations to the reference genome (-i), conflicts with mutation rate (-mr), default = 0
 
 Genetic Variations:
 
@@ -157,7 +165,7 @@ Nucleotide Alterations:
 Read Specific:
 -na  | --noalign: 		 Using the SAM output as a sequence containing without alignment information.
 -cl  | --cycle:			 Read cycle length, the maximum length of sequence reads, if not provided the cycle length will be inferred from quality profiles (q1,q2).
--ll  | --lowerlimit:	 Lower fragment length limit, default = 30. The minimum fragment length for deamination is 30, so simulated fragments below will be fixed at 30.
+-ll  | --lowerlimit:	 Lower fragment length limit, default = 30. The minimum fragment length for deamination is 30, so simulated fragments below will be fixed at 30. 
 -bl  | --bufferlength:		 Buffer length for generated sequence reads stored in the output files, default = 30000000.
 -chr | --chromosomes: 		 Specific chromosomes from input reference file.
 -a1  | --adapter1: 		 Adapter sequence to add for simulated reads (SE) or first read pair (PE).

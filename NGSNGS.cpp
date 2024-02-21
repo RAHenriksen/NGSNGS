@@ -66,7 +66,7 @@ int main(int argc,char **argv){
     return 0;
   }
   else if(argc==1||(argc==2&&(strcasecmp(argv[1],"--version")==0||strcasecmp(argv[1],"-v")==0))){
-    fprintf(stderr,"\t-> ngsngs version v0.9.0: %s (htslib: %s) build(%s %s)\n",NGSNGS_VERSION,hts_version(),__DATE__,__TIME__); 
+    fprintf(stderr,"\t-> ngsngs version %s: %s (htslib: %s) build(%s %s)\n",NGSNGS_RELEASE,NGSNGS_VERSION,hts_version(),__DATE__,__TIME__); 
     return 0;
   }
   else{
@@ -75,7 +75,7 @@ int main(int argc,char **argv){
     if(mypars==NULL)
       return 1;
     
-    fprintf(stderr,"\n\t-> ngsngs version: %s (htslib: %s) build(%s %s)\n",NGSNGS_VERSION,hts_version(),__DATE__,__TIME__); 
+    fprintf(stderr,"\n\t-> ngsngs version %s: %s (htslib: %s) build(%s %s)\n",NGSNGS_RELEASE,NGSNGS_VERSION,hts_version(),__DATE__,__TIME__); 
     fprintf(stderr,"\t-> Mycommmand: %s\n",mypars->CommandRun);
 
     clock_t t = clock();
@@ -109,7 +109,6 @@ int main(int argc,char **argv){
         readcycle = mypars->CycleLength;
         if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
           ErrMsg(11.0);
-          exit(1);
         }
 
         if(mypars->QualProfile1 != NULL){
@@ -121,7 +120,6 @@ int main(int argc,char **argv){
       else{
         if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
           ErrMsg(11.0);
-          exit(1);
         }
         else if (mypars->QualProfile1 != NULL){
           gzFile gz = Z_NULL;
@@ -304,7 +302,7 @@ int main(int argc,char **argv){
       else{Polynt = "F";}
     }
     else{
-      if (mypars->Poly != NULL){ErrMsg(14.0);exit(1);}
+      if (mypars->Poly != NULL){ErrMsg(14.0);}
       else{Polynt = "F";}
     }
     // QUALITY PROFILES
@@ -317,7 +315,6 @@ int main(int argc,char **argv){
         if (mypars->seq_type == PE && mypars->QualProfile2 == NULL && mypars->FixedQual == 0){
           //fprintf(stderr,"OUTPUTFORMAT 1");
           ErrMsg(11.0);
-          exit(1);
         }
       }
     }
@@ -325,7 +322,6 @@ int main(int argc,char **argv){
       if(OutputFormat== fqT ||OutputFormat==fqgzT){
         //fprintf(stderr,"OUTPUTFORMAT 2");
         ErrMsg(11.0);
-        exit(1);
       }
     }
 
@@ -384,7 +380,6 @@ int main(int argc,char **argv){
 
     if(mypars->SubProfile != NULL && mypars->Briggs != NULL){
       ErrMsg(12.0);
-      exit(1);
     }
 
     int DeamLength = 0;

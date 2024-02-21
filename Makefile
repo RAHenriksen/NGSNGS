@@ -27,15 +27,15 @@ OBJ = $(CSRC:.c=.o) $(CXXSRC:.cpp=.o)
 
 all: ngsngs
 
-PACKAGE_VERSION  = 0.9.1
-
 ifneq "$(wildcard .git)" ""
 PACKAGE_VERSION := $(shell git describe --always)
+PACKAGE_RELEASE := $(shell git describe --tags --abbrev=0)
 version.h: $(if $(wildcard version.h),$(if $(findstring "$(PACKAGE_VERSION)",$(shell cat version.h)),,force))
 endif
 
 version.h:
-	echo '#define NGSNGS_VERSION "$(PACKAGE_VERSION)"' > $@
+	echo '#define NGSNGS_RELEASE "$(PACKAGE_RELEASE)"' > $@
+	echo '#define NGSNGS_VERSION "$(PACKAGE_VERSION)"' >> $@
 
 .PHONY: all clean test
 
