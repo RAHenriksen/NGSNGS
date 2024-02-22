@@ -513,16 +513,14 @@ void* Sampling_threads(void *arg) {
           strcat(READ_ID,suffR1);
           int chr_max_end_mate = 0; //PNEXT 0-> unavailable for SE
           int insert_mate = 0; //TLEN
-          int chr_idx_read = chr_idx;
+          int chr_idx_read = -1;
           if(PE==struct_obj->SeqType){
             strcat(READ_ID2,suffR2);
             if (struct_obj->Align == 0){
-              mapq = 255;
-              SamFlags[0] = SamFlags[1] = 4;
-              chr_idx_read = -1;
               chr_max_end_mate = 0;
             }
             else{
+              chr_idx_read = chr_idx;
               chr_max_end_mate = max_end;
               insert_mate = insert;
             }        
@@ -530,18 +528,35 @@ void* Sampling_threads(void *arg) {
           if (struct_obj->Align == 0){
             mapq = 255;
             SamFlags[0] = SamFlags[1] = 4;
+            chr_idx = -1;
             chr_idx_read = -1;
             min_beg = -1;
             max_end = 0;
           }
 
-          //we have set the parameters accordingly above for no align and PE
-          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID),READ_ID,SamFlags[0],chr_idx_read,min_beg,mapq,
-                n_cigar[0],AlignCigar[0],chr_idx_read,chr_max_end_mate-1,insert_mate,strlen(seq_r1),seq_r1,qual_r1,l_aux);
+          /*
+          https://github.com/samtools/htslib/blob/develop/htslib/sam.h#L1040C1-L1047C1
+          int bam_set1(bam1_t *bam,
+            size_t l_qname, const char *qname,
+            uint16_t flag, int32_t tid, hts_pos_t pos, uint8_t mapq,
+            size_t n_cigar, const uint32_t *cigar,
+            int32_t mtid, hts_pos_t mpos, hts_pos_t isize,
+            size_t l_seq, const char *seq, const char *qual,
+            size_t l_aux);
+          */
 
+          //we have set the parameters accordingly above for no align and PE
+          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],
+            strlen(READ_ID),READ_ID,
+            SamFlags[0],chr_idx,min_beg,mapq,
+            n_cigar[0],AlignCigar[0],
+            chr_idx_read,chr_max_end_mate-1,insert_mate,
+            strlen(seq_r1),seq_r1,qual_r1,
+            l_aux);
+          
           //write PE also
           if (PE==struct_obj->SeqType){
-            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx_read,max_end-1,mapq,
+            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx,max_end-1,mapq,
               n_cigar[1],AlignCigar[1],chr_idx_read,min_beg,0-insert_mate,strlen(seq_r2),seq_r2,qual_r2,l_aux);
           }
         

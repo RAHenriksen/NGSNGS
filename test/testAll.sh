@@ -12,48 +12,81 @@ VCFDIR=../Test_Examples
 VCFIN=../Test_Examples/hg19MSub.fa
 
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "---------------------------------------- Testing '${PRG}' examples -----------------------------------------"
+echo "------------------------------------------- Testing NGSNGS examples -------------------------------------------"
+echo "---------------------------------------------------------------------------------------------------------------"
+echo " "
+
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "--------------------------------- I) Testing file format (-f) and compression----------------------------------"
 echo "---------------------------------------------------------------------------------------------------------------"
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "1) Testing Single-end, length file, reads, briggs, sampling threads, sequencing error, sam,bam,cram and its compression"
+echo "1) Testing Single-end, length file, reads, briggs, sampling threads, sequencing error, sam,bam,cram"
 echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 100000 -t 1 -s 1 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f sam -o MycoBactSamSEOut
-${PRG} -i ${IN} -r 100000 -t 1 -s 1 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f bam -o MycoBactBamSEOut
-${PRG} -i ${IN} -r 100000 -t 1 -s 1 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f cram -o MycoBactCramSEOut
+${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f sam -o MycoBactSamSEOut
+${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f bam -o MycoBactBamSEOut
+${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f cram -o MycoBactCramSEOut
 
 # Check file sizes and ordering
 sam_size=$(stat -c%s MycoBactSamSEOut.sam)
 bam_size=$(stat -c%s MycoBactBamSEOut.bam)
 cram_size=$(stat -c%s MycoBactCramSEOut.cram)
-
+echo " "
 if [ $sam_size -gt $bam_size ] && [ $bam_size -gt $cram_size ]; then
-    echo "File sizes are in correct order: sam > bam > cram"
+    echo "File sizes are in correct order: sam ("${sam_size}") > bam ("${bam_size}") > cram ("${cram_size}")"
 else
-    echo "File sizes are not in correct order: sam < bam < cram"; exit 1;
+    echo "File sizes are in correct order: sam ("${sam_size}") & bam ("${bam_size}") & cram ("${cram_size}")"; exit 1;
 fi
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "2) Testing Paired-end, fixed length, coverage, no sequencing error, adapters, sampling threads, fq"
+echo "2) Testing sequence alignment map format specific information for paired-end information"
+echo "---------------------------------------------------------------------------------------------------------------"
+${PRG} -i ${IN} -r 10000 -t 1 -s 81 -lf ${LF} -seq PE -qs 40 -f bam -o MycoBactBamPEOut
+${PRG} -i ${IN} -r 10000 -t 1 -s 314 -lf ${LF} -seq PE -qs 40 -na -f bam -o MycoBactBamPEOutNa
+echo " "
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "3) Testing fastq compression"
+echo "---------------------------------------------------------------------------------------------------------------"
+${PRG} -i ${IN} -r 10000 -t 1 -s 22 -l 100 -seq SE -qs 20 -f fq -o MycoBactFQout
+${PRG} -i ${IN} -r 10000 -t 1 -s 22 -l 100 -seq SE -qs 20 -f fq.gz -o MycoBactFQGZout
+# Check file sizes and ordering
+fq_size=$(stat -c%s MycoBactFQout.fq)
+fqgz_size=$(stat -c%s MycoBactFQGZout.fq.gz)
+
+echo " "
+if [ $fq_size -gt $fqgz_size ]; then
+    echo "Fastq file sizes are in correct order: fq ("${fq_size}") > fq.gz ("${fqgz_size}")"
+else
+    echo "Fastq file sizes are in correct order: fq ("${fq_size}") < fq.gz ("${fqgz_size}")"; exit 1;
+fi
+
+echo " "
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "--------------------------------------- II) Testing simulation options ----------------------------------------"
+echo "---------------------------------------------------------------------------------------------------------------"
+
+echo " "
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "1) Testing Paired-end, fixed length, coverage, no sequencing error, adapters, sampling threads, fq"
 echo "---------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -c 3 -t 1 -s 1 -l 100 -seq PE -ne -a1 ${A1} -a2 ${A2} -q1 ${Q1} -q2 ${Q2} -f fq -o MycoBactFqPEOut
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "3) Testing Single-end, length distributions, reads, sequencing error, misincorporation file, fa"
+echo "2) Testing Single-end, length distributions, reads, sequencing error, misincorporation file, fa"
 echo "---------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -r 100000 -t 1 -s 1 -ld Pois,78 -seq SE -mf ${MF} -f fa -o MycoBactFaSEOut
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "4) Testing Single-end, fixed length, reads, sequencing error, adapters, poly-G tail"
+echo "3) Testing Single-end, fixed length, reads, sequencing error, adapters, poly-G tail"
 echo "---------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -r 100000 -t 1 -s 1 -l 70 -seq SE -q1 ${Q1} -a1 ${A1} -p G -f fq -o MycoBactFqSEPolyOut
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "5) Testing Single-end, fixed length greater than error profile, reads, cycle length"
+echo "4) Testing Single-end, fixed length greater than error profile, reads, cycle length"
 echo "---------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -r 100000 -t 1 -s 1 -l 200 -seq SE -q1 ${Q1} -cl 90 -f fq -o MycoBactFqSEClOut
 
@@ -61,15 +94,19 @@ Mean_read_length=$(awk '{if(NR%4==2) {count++; bases += length} } END{print base
 if [ $Mean_read_length -ne 90 ]; then 
 echo "Warning the mean read length isn't in accorandance with the cycle length"; exit 1;
 fi
+echo " "
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "------------------------- III) Testing Stochastic-, genetic- and reference variations -------------------------"
+echo "---------------------------------------------------------------------------------------------------------------"
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "6) Testing Single-end, simulating genetic variations, SNP, Insertion and deletions from Haploid vcf files, 
+echo "1) Testing Single-end, simulating genetic variations, SNP, Insertion and deletions from Haploid vcf files, 
          for three indivdiuals with different genotype (represented as 0 1 or 2), homozygous for reference 
          and alternative and heterozygous. The alterede reference genome containing the variants are saved in 
          the HaploidRef*fa file and the simulated data are stored in the HaploidRes*fq."
 echo "---------------------------------------------------------------------------------------------------------------"
-
+echo " "
 for file in $(ls ${VCFDIR}/*Haploid*); do 
     for indiv in 0 1 2; do 
         Type=$(ls ${file}| sed 's/.*Sub//'|sed 's/Haploid.vcf//');
@@ -77,11 +114,12 @@ for file in $(ls ${VCFDIR}/*Haploid*); do
         ../ngsngs -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne -vcf ${file} -id ${indiv} -DumpVCF HaploidRef_${Type}_${indiv} -q1 ${Q1} -chr MT -f fq -o HaploidRes_${Type}_${indiv}    
         #md5sum HaploidRef_${Type}_${indiv}.fa >> MycoBactTest.md5;
         #md5sum HaploidRes_${Type}_${indiv}.fq >> MycoBactTest.md5;
+        echo " ";
     done; 
 done
 
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "7) Testing Single-end, simulating genetic variations, SNP, Insertion and deletions from Diploid vcf files, 
+echo "2) Testing Single-end, simulating genetic variations, SNP, Insertion and deletions from Diploid vcf files, 
          for three indivdiuals with different genotype (represented as 0 1 or 2), homozygous for reference 
          and alternative and heterozygous The alterede reference genome containing the variants are saved in 
          the DiploidRef*fa file and the simulated data are stored in the DiploidRes*fq."
@@ -90,24 +128,24 @@ echo "--------------------------------------------------------------------------
 for file in $(ls ${VCFDIR}/*Diploid*); do 
     for indiv in 0 1 2; do 
         Type=$(ls ${file}| sed 's/.*Sub//'|sed 's/Diploid.vcf//');
+        echo " ";
         echo ${file} Type ${Type} indiv ${indiv}; 
         ../ngsngs -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne -vcf ${file} -id ${indiv} -DumpVCF DiploidRef_${Type}_${indiv} -q1 ${Q1} -chr MT -f fq -o DiploidRes_${Type}_${indiv}   
         #md5sum DiploidRef_${Type}_${indiv}.fa >> MycoBactTest.md5;
         #md5sum DiploidRes_${Type}_${indiv}.fq >> MycoBactTest.md5;
     done;
 done;
-
+echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "8) Testing Single-end, simulating stochastic variations, insertion or deletions, no error, length file "
+echo "3) Testing Single-end, simulating stochastic variations, insertion or deletions, no error, length file "
 echo "---------------------------------------------------------------------------------------------------------------"
 
 ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.0,0.05,0.0,0.9 -q1 ${Q1} -DumpIndel DelTmp -f fq -o DelOut
 ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.05,0.0,0.9,0.0 -q1 ${Q1} -DumpIndel InsTmp -f fq -o InsOut
-
+echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "9) Testing Single-end, simulating fixed quality score of 40, with fragment lower-limit"
+echo "4) Testing Single-end, simulating fixed quality score of 40, with fragment lower-limit"
 echo "---------------------------------------------------------------------------------------------------------------"
-
 ${PRG} -i ${IN} -r 100000 -t 1 -s 1 -lf ${LF} -seq SE -ll 50 -qs 40 -f fq -o MycoBactQSLLSEOUT
 
 No_SeqErr=$(cat MycoBactQSLLSEOUT.fq|grep 'mod0001'|wc -l)
@@ -122,9 +160,9 @@ if [ 0 -eq 1 ]; then
     md5sum DelTmp.txt >> MycoBactTest.md5
     md5sum InsTmp.txt >> MycoBactTest.md5
 fi
-
+echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "10) Testing mutation rate (reference genome 1.9%), sampling with replacement when below lower limit (30), 
+echo "5) Testing mutation rate (reference genome 1.9%), sampling with replacement when below lower limit (30), 
         adapters and poly G for fixed sequencing error "
 echo "---------------------------------------------------------------------------------------------------------------"
 
