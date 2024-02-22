@@ -1,6 +1,8 @@
-de2693eeccd528fc88d3a3875e7c315b  MycoBactSamSEOut.sam
-9550982cc0fccc6ba4215fa55f276bb3  MycoBactBamSEOut.bam
-b2ee5c8da50a69561ab9ee5d3240fdb2  MycoBactCramSEOut.cram
+382ce7789b6a1c5ccf5b091119a99752  SamSE.txt
+382ce7789b6a1c5ccf5b091119a99752  BamSE.txt
+9c952f576bd060fab7db0f8d0e8b85aa  CramSE.txt
+84191a0e93481428a58e3cf0d97f19e4  BamPE.txt
+5d9dfef6716bb4989b112f65538a1a5c  BamPEna.txt
 9c908d81a429851a3118f67149c560f2  MycoBactFQout.fq
 1ecdb9d539034c5d5b0c99f9895b28b0  MycoBactFQGZout.fq.gz
 6d0be725410fdff3881650bfa2b2d3c0  MycoBactFqPEOut_R1.fq

@@ -37,15 +37,32 @@ if [ $sam_size -gt $bam_size ] && [ $bam_size -gt $cram_size ]; then
 else
     echo "File sizes are in correct order: sam ("${sam_size}") & bam ("${bam_size}") & cram ("${cram_size}")"; exit 1;
 fi
-md5sum MycoBactSamSEOut.sam
-md5sum MycoBactSamSEOut.bam
-md5sum MycoBactSamSEOut.cram
+
+samtools view MycoBactSamSEOut.sam > SamSE.txt
+samtools view MycoBactBamSEOut.bam > BamSE.txt
+samtools view MycoBactCramSEOut.cram > CramSE.txt
+md5sum SamSE.txt
+md5sum BamSE.txt
+md5sum CramSE.txt
+SamMD5=$(md5sum SamSE.txt|cut -f1 -d ' ')
+BamMD5=$(md5sum BamSE.txt|cut -f1 -d ' ')
+echo $SamMD5
+echo $BamMD5
+if [ "$SamMD5" != "$BamMD5" ]; then
+    echo "The decompression, or mate information differs from sam to bam"; exit 1;
+fi
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "2) Testing sequence alignment map format specific information for paired-end information"
 echo "---------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -r 10000 -t 1 -s 81 -lf ${LF} -seq PE -qs 40 -f bam -o MycoBactBamPEOut
 ${PRG} -i ${IN} -r 10000 -t 1 -s 314 -lf ${LF} -seq PE -qs 40 -na -f bam -o MycoBactBamPEOutNa
+
+samtools view MycoBactBamPEOut.bam > BamPE.txt
+samtools view MycoBactBamPEOutNa.bam > BamPEna.txt
+md5sum BamPE.txt
+md5sum BamPEna.txt
+
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "3) Testing fastq compression"
