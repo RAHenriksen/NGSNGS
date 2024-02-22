@@ -37,7 +37,9 @@ if [ $sam_size -gt $bam_size ] && [ $bam_size -gt $cram_size ]; then
 else
     echo "File sizes are in correct order: sam ("${sam_size}") & bam ("${bam_size}") & cram ("${cram_size}")"; exit 1;
 fi
-
+md5sum MycoBactSamSEOut.sam
+md5sum MycoBactSamSEOut.bam
+md5sum MycoBactSamSEOut.cram
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "2) Testing sequence alignment map format specific information for paired-end information"
