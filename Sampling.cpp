@@ -271,16 +271,49 @@ void* Sampling_threads(void *arg) {
       for (int i = 0; i < FragTotal; i++){
         FragRes[i] = FragmentSequence;
       }
+      // so for strandR1 they are in theory still reverse complemented 
     }
    
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
       qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0';
 
       //now copy the actual sequence into seq_r1 and seq_r2 if PE 
-      strncpy(seq_r1,FragRes[FragNo],maxbases);
+      if(strandR1==1){
+        if(struct_obj->DoBriggs){
+          if (FragNo==0||FragNo==2){
+            strncpy(seq_r1,FragRes[FragNo],maxbases);
+          }
+        }
+        else{
+          if (FragNo==0||FragNo==2){
+            strncpy(seq_r1,FragRes[FragNo]+(fraglength-maxbases),maxbases);
+          }
+          else{
+            strncpy(seq_r1,FragRes[FragNo],maxbases);
+          }
+        }
+      }
+      else{
+        if (FragNo==1||FragNo==3){
+          strncpy(seq_r1,FragRes[FragNo]+(fraglength-maxbases),maxbases);
+        }
+        else{
+          strncpy(seq_r1,FragRes[FragNo],maxbases);
+        }
+      }
 
       if(PE==struct_obj->SeqType)
-        strncpy(seq_r2,FragRes[FragNo]+(fraglength-maxbases),maxbases);
+        if(strandR1==1){
+          if(struct_obj->DoBriggs){
+            strncpy(seq_r2,FragRes[FragNo]+(fraglength-maxbases),maxbases);
+          }
+          else{
+            strncpy(seq_r2,FragRes[FragNo],maxbases);
+          }
+        }
+        else{
+          strncpy(seq_r2,FragRes[FragNo]+(fraglength-maxbases),maxbases);
+        }
     
       //Remove reads which are all N, we remove both pairs if both reads are all N
   
@@ -376,20 +409,7 @@ void* Sampling_threads(void *arg) {
         //Because i have reverse complemented the correct sequences and adapters depending on the strand origin (or flags), i know all adapters will be in 3' end
         nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),std::string(struct_obj->Adapter_1).length());
         strncpy(seq_r1+strlen(seq_r1),struct_obj->Adapter_1,nsofts[0]);
-        /*
-        Sampling.cpp: In function 'void* Sampling_threads(void*)':
-        Sampling.cpp:369:16: warning: 'char* strncpy(char*, const char*, size_t)' specified bound depends on the length of the source argument [-Wstringop-truncation]
-          369 |         strncpy(seq_r1+strlen(seq_r1),struct_obj->Adapter_1,nsofts[0]);
-              |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        Sampling.cpp:368:77: note: length computed here
-          368 |         nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
-              |                                                                       ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
-        Sampling.cpp:369:16: warning: 'char* strncpy(char*, const char*, size_t)' specified bound depends on the length of the source argument [-Wstringop-truncation]
-          369 |         strncpy(seq_r1+strlen(seq_r1),struct_obj->Adapter_1,nsofts[0]);
-              |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        Sampling.cpp:368:77: note: length computed here
-          368 |         nsofts[0] = std::min(struct_obj->maxreadlength-strlen(seq_r1),strlen(struct_obj->Adapter_1));
-        */
+
         if(PE==struct_obj->SeqType){
           nsofts[1] = std::min(struct_obj->maxreadlength-strlen(seq_r2),std::string(struct_obj->Adapter_2).length());
           strncpy(seq_r2+strlen(seq_r2),struct_obj->Adapter_2,nsofts[1]);
@@ -463,8 +483,14 @@ void* Sampling_threads(void *arg) {
               n_cigar[0] = 2;
             }
             if(SamFlags[0]==16||SamFlags[0]==81){
-              ReversComplement(seq_r1);
-              reverseChar(qual_r1,strlen(seq_r1));
+              if(struct_obj->DoBriggs){
+                continue;
+              }
+              else{
+                ReversComplement(seq_r1);
+                reverseChar(qual_r1,strlen(seq_r1));           
+              }
+              
               if(n_cigar[0]>1){
                 //swap softclip and match
                 uint32_t tmp= AlignCigar[0][0];
@@ -546,18 +572,34 @@ void* Sampling_threads(void *arg) {
           */
 
           //we have set the parameters accordingly above for no align and PE
-          bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],
-            strlen(READ_ID),READ_ID,
-            SamFlags[0],chr_idx,min_beg,mapq,
-            n_cigar[0],AlignCigar[0],
-            chr_idx_read,chr_max_end_mate-1,insert_mate,
-            strlen(seq_r1),seq_r1,qual_r1,
-            l_aux);
+          if (SE==struct_obj->SeqType){
+            /*if(SamFlags[0]==16){
+              min_beg = chr_max_end_mate-strlen(seq_r1);
+            }*/
+            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],
+              strlen(READ_ID),READ_ID,
+              SamFlags[0],chr_idx,min_beg,mapq,
+              n_cigar[0],AlignCigar[0],
+              chr_idx_read,chr_max_end_mate-strlen(seq_r2),insert_mate,
+              strlen(seq_r1),seq_r1,qual_r1,
+              l_aux);
+          }
           
           //write PE also
           if (PE==struct_obj->SeqType){
-            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx,max_end-1,mapq,
-              n_cigar[1],AlignCigar[1],chr_idx_read,min_beg,0-insert_mate,strlen(seq_r2),seq_r2,qual_r2,l_aux);
+            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],
+            strlen(READ_ID),READ_ID,
+            SamFlags[0],chr_idx,min_beg,mapq,
+            n_cigar[0],AlignCigar[0],
+            chr_idx_read,chr_max_end_mate-strlen(seq_r2),insert_mate,
+            strlen(seq_r1),seq_r1,qual_r1,
+            l_aux);
+
+            bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],
+            strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx,max_end-strlen(seq_r2),mapq,
+              n_cigar[1],AlignCigar[1],
+              chr_idx_read,min_beg,0-insert_mate,
+              strlen(seq_r2),seq_r2,qual_r2,l_aux);
           }
         
           if (struct_obj->LengthData < struct_obj->MaximumLength){   

@@ -41,13 +41,10 @@ fi
 samtools view MycoBactSamSEOut.sam > SamSE.txt
 samtools view MycoBactBamSEOut.bam > BamSE.txt
 samtools view MycoBactCramSEOut.cram > CramSE.txt
-md5sum SamSE.txt
-md5sum BamSE.txt
-md5sum CramSE.txt
+
 SamMD5=$(md5sum SamSE.txt|cut -f1 -d ' ')
 BamMD5=$(md5sum BamSE.txt|cut -f1 -d ' ')
-echo $SamMD5
-echo $BamMD5
+
 if [ "$SamMD5" != "$BamMD5" ]; then
     echo "The decompression, or mate information differs from sam to bam"; exit 1;
 fi
@@ -60,8 +57,6 @@ ${PRG} -i ${IN} -r 10000 -t 1 -s 314 -lf ${LF} -seq PE -qs 40 -na -f bam -o Myco
 
 samtools view MycoBactBamPEOut.bam > BamPE.txt
 samtools view MycoBactBamPEOutNa.bam > BamPEna.txt
-md5sum BamPE.txt
-md5sum BamPEna.txt
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
@@ -113,6 +108,21 @@ Mean_read_length=$(awk '{if(NR%4==2) {count++; bases += length} } END{print base
 if [ $Mean_read_length -ne 90 ]; then 
 echo "Warning the mean read length isn't in accorandance with the cycle length"; exit 1;
 fi
+
+echo " "
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "5) Testing alignments with cycle length below fragment length with deamination and position in terms of MD:Z"
+echo "---------------------------------------------------------------------------------------------------------------"
+${PRG} -i ${IN} -r 1000 -t 1 -s 1 -l 1000 -seq SE -q1 ${Q1} -m b,0.024,0.36,0.68,0.0097 -f bam -o L1000SEDeamin
+
+samtools sort -@ 10 -m 2G -n L1000SEDeamin.bam -o L1000SEDeaminSort.bam;samtools calmd -@ 10 -r -b L1000SEDeaminSort.bam ${IN} > L1000SEDeaminSortMD.bam
+
+MDcheck=$(samtools view L1000SEDeaminSortMD.bam |cut -f14|awk '{ md_index = index($0, "MD:Z:"); md_substr = substr($0, md_index + 5); md_length = length(md_substr); if (md_length > 60) print 0; else print 1}'|awk '{sum += $1} END {print sum}')
+
+if [ $MDcheck -ne 1000 ]; then 
+    echo "Warning issue with MD tag above 60 characters for some reads, suggesting wrong positions stored within bam"; exit 1;
+fi
+
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "------------------------- III) Testing Stochastic-, genetic- and reference variations -------------------------"
@@ -161,6 +171,7 @@ echo "--------------------------------------------------------------------------
 
 ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.0,0.05,0.0,0.9 -q1 ${Q1} -DumpIndel DelTmp -f fq -o DelOut
 ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.05,0.0,0.9,0.0 -q1 ${Q1} -DumpIndel InsTmp -f fq -o InsOut
+
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "4) Testing Single-end, simulating fixed quality score of 40, with fragment lower-limit"
