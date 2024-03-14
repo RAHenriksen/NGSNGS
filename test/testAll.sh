@@ -117,7 +117,11 @@ ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -l 1000 -seq SE -q1 ${Q1} -m b,0.024,0.36,0.68
 
 samtools sort -@ 10 -m 2G -n L1000SEDeamin.bam -o L1000SEDeaminSort.bam;samtools calmd -@ 10 -r -b L1000SEDeaminSort.bam ${IN} > L1000SEDeaminSortMD.bam
 
-samtools view L1000SEDeaminSortMD.bam |cut -f14|awk '{ md_index = index($0, "MD:Z:"); md_substr = substr($0, md_index + 5); md_length = length(md_substr); if (md_length > 60) print 0; else print 1}' > MDcheck.txt
+MDcheck=$(samtools view L1000SEDeaminSortMD.bam |cut -f14|awk '{ md_index = index($0, "MD:Z:"); md_substr = substr($0, md_index + 5); md_length = length(md_substr); if (md_length > 60) print 0; else print 1}'|awk '{sum += $1} END {print sum}')
+
+if [ $MDcheck -ne 1000 ]; then 
+    echo "Warning issue with MD tag above 60 characters for some reads, suggesting wrong positions stored within bam with MD tag sum value " $MDcheck; exit 1;
+fi
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
