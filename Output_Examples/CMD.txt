@@ -1,0 +1,11 @@
+# Deaminated ancietn DNA in sam file storing genomic origin of single-end reads
+../ngsngs -i ../Test_Examples/Mycobacterium_leprae.fa.gz -r 1000 -t 1 -s 1 -lf ../Test_Examples/Size_dist_sampling.txt -seq SE -m b,0.024,0.36,0.68,0.0097 -q1 ../Test_Examples/AccFreqL150R1.txt -f sam -o MycoBactSamDeaminSE
+
+# Long read sequencing simulation in raw fasta file (no cycle length limitation)
+../ngsngs -i ../Test_Examples/Mycobacterium_leprae.fa.gz -r 1000 -t 1 -s 1 -ld Norm,2300,52 -seq SE -f fa -o MycoBactFASE
+
+# Modern paired-end sequencing data, with an insert size of 500, cycle length of 100 and inner distance of 300, fixed quality score of 40 and sequence read specific nucleotide substitutions 
+../ngsngs -i ../Test_Examples/Mycobacterium_leprae.fa.gz -r 1000 -t 1 -s 1 -l 500 -cl 100 -qs 40 -mf ../Test_Examples/MisincorpFile.txt -seq PE -f fq -o ModernPEmismatch
+
+# Modern paired-ed sequencing data, overlapping with stochastic sequence read variations without sequencing errors
+../ngsngs -i ../Test_Examples/Mycobacterium_leprae.fa.gz -indel 0.005,0.001,0.1,0.2 -c 0.5 -ne -ld Uni,180,250 -seq PE -q1 ../Test_Examples/AccFreqL150R1.txt -q2 ../Test_Examples/AccFreqL150R2.txt -f fq -o PEreadOverlapIndel
