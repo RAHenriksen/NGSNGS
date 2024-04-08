@@ -94,8 +94,8 @@ void* Sampling_threads(void *arg) {
   else
     sf = sim_fragment_alloc(struct_obj->LengthType,struct_obj->distparam1,struct_obj->distparam2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,struct_obj->rng_type,loc_seed,RndGen);
   
-  int C_to_T_counter = 0;int C_to_T_counter_rev = 0;
-  int G_to_A_counter = 0;int G_to_A_counter_rev = 0;
+  int C_to_T_counter = 0;int C_total = 0;
+  int G_to_A_counter = 0;int G_total = 0;
   int refCp1 = 0;int refCTp1 = 0;int refCp2 = 0;int refCTp2 = 0;
 
   int modulovalue;
@@ -108,8 +108,10 @@ void* Sampling_threads(void *arg) {
   size_t moduloread = reads/modulovalue;
   
   int sampled_skipped = 0;
-
+  int whileiter=0;
   while (current_reads_atom < reads && SIG_COND){
+    //fprintf(stderr,"-----------\nwhile iteration %d\n-----------\n",whileiter);
+    whileiter++;
     //fprintf(stderr,"TEST FIXED QUAL SCORE %d \n",struct_obj->FixedQual_r1r2);
     int posB = 0; int posE = 0;
 
@@ -154,6 +156,21 @@ void* Sampling_threads(void *arg) {
     //extracting a biological fragment of the reference genome
     memset(FragmentSequence,0,strlen(FragmentSequence));
     strncpy(FragmentSequence,chrseq+(posB),fraglength); // same orientation as reference genome 5' -------> FWD -------> 3'
+    int fragmentLength =posE-posB;
+    assert(posE>=posB&&fragmentLength>20);
+    //fprintf(stderr,"initial sequence \n%s \n position %d to %d \n",FragmentSequence,posB,posE);
+
+    int skipread = 0; // Initialize skipread to 0
+    if(FragmentSequence[0]=='N' && FragmentSequence[(int)strlen(FragmentSequence)-1]=='N'){
+      skipread = 1;
+      //std::cout << FragmentSequence << "s f" << posB << " " << posE << std::endl;
+      memset(FragmentSequence,0,strlen(FragmentSequence));
+      sampled_skipped++;
+      continue;
+    }
+    //std::cout << "Current read atom "<< current_reads_atom << std::endl;
+    //std::cout << FragmentSequence << "s f" << posB << " " << posE << std::endl;
+    
     
     /*
     // not implemented yet - nor to be included within the near future as off december 2022
@@ -164,19 +181,6 @@ void* Sampling_threads(void *arg) {
         strncpy(FragmentSequence,chrseq,fraglength-(posE-posB));         
     */
 
-    int skipread = 1;
-    if(FragmentSequence[0]!='N' && FragmentSequence[(int)strlen(FragmentSequence)-1]!='N'){
-      sampled_skipped++;
-      skipread = 0;
-    }
-
-    if(skipread==1){
-      memset(FragmentSequence,0,strlen(FragmentSequence));
-      continue;
-    }
-
-    int fragmentLength =posE-posB;
-    assert(posE>=posB&&fragmentLength>20);
     //Generating random ID unique for each read output
     double rand_val_id = mrand_pop(rand_alloc);
     int rand_id = (rand_val_id * fraglength-1)+(rand_val_id*current_reads_atom);
@@ -226,25 +230,29 @@ void* Sampling_threads(void *arg) {
     int FragTotal = 4;
     int iter = 1; //iterating through all fragments
     if(struct_obj->DoBriggs){
+      //fprintf(stderr,"Do Non-biotin deaminaiton\n");
       //For the none-biotin briggs model we need to store 4 fragments with slightly different deaminations patterns
       FragRes = new char *[FragTotal];
       for(int i=0;i<FragTotal;i++){
         FragRes[i] = new char[1024];
         memset(FragRes[i],'\0',1024);
       }
-      
+
       ReadDeam=SimBriggsModel2(FragmentSequence, fragmentLength, 
         struct_obj->BriggsParam[0],
         struct_obj->BriggsParam[1],
         struct_obj->BriggsParam[2],
         struct_obj->BriggsParam[3],rand_alloc,FragRes,strandR1,
-        C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev,
-        refCp1,refCTp1,refCp2,refCTp2);
-
+        C_to_T_counter,G_to_A_counter,C_total,G_total);
+        double C_Deam = (double)C_to_T_counter/(double)C_total;
+        double G_Deam = (double)G_to_A_counter/(double)C_total;
+        //fprintf(stderr,"C>T freq %f and G>A freq %f\n",C_Deam,G_Deam);
+      
       if (struct_obj->Duplicates == 1){
         //keep one fragment out of the 4 possible
         Groupshift = mrand_pop_long(rand_alloc) % 4;
         FragTotal = Groupshift+1;
+        //fprintf(stderr,"group shift %d\n",Groupshift);
       }
       else if (struct_obj->Duplicates == 2){
         Groupshift = mrand_pop(rand_alloc)>0.5?0:1; 
@@ -260,71 +268,95 @@ void* Sampling_threads(void *arg) {
 		    struct_obj->BriggsParam[1],
 		    struct_obj->BriggsParam[2], 
 		    struct_obj->BriggsParam[3],rand_alloc,
-        strandR1,C_to_T_counter,G_to_A_counter,C_to_T_counter_rev,G_to_A_counter_rev);
+        strandR1,C_to_T_counter,G_to_A_counter,C_total,G_total);
     }
     else{
       // This is for the none-deaminated data if we want PCR duplicates. But in theory this is for each read, whereas for the deaminated its more to show a more comprehensive deamination patteen
       // for the none-deaminated sequences we likewise need to generate PCR duplicates but they are identical so we dont have to shift them? 
       //Perhaps add a probability to how often we would expect to see a duplicate, and then also a probability of how many duplicates so sample from
-      FragTotal = struct_obj->Duplicates;
+      FragTotal = 1;//struct_obj->Duplicates;
       FragRes = new char *[FragTotal];
       for (int i = 0; i < FragTotal; i++){
         FragRes[i] = FragmentSequence;
       }
+      //fprintf(stderr,"NON DEAMINATED %d\n",FragTotal);
       // so for strandR1 they are in theory still reverse complemented 
     }
    
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
       qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0';
 
-      //now copy the actual sequence into seq_r1 and seq_r2 if PE 
+      /*//now copy the actual sequence into seq_r1 and seq_r2 if PE 
       if(strandR1==1){
         if(struct_obj->DoBriggs){
+          //fprintf(stderr,"WHAT IS DEAMINATION FRAG %d\n",FragNo);
+          strncpy(seq_r1,FragRes[FragNo],maxbases);
           if (FragNo==0||FragNo==2){
             strncpy(seq_r1,FragRes[FragNo],maxbases);
+            //strncpy(seq_r1,FragRes[FragNo],maxbases);
+            //fprintf(stderr,"inside frag no %d \nseq\t%s\n",FragNo,seq_r1);
+          }
+          else if (FragNo==1||FragNo==3){
+            strncpy(seq_r1,FragRes[FragNo]+(fraglength-maxbases),maxbases);
+            //fprintf(stderr,"inside LOL frag no %d \nseq\t%s\n",FragNo,FragRes[FragNo]);
+            //strncpy(seq_r1,FragRes[FragNo],maxbases);
           }
         }
         else{
-          if (FragNo==0||FragNo==2){
-            strncpy(seq_r1,FragRes[FragNo]+(fraglength-maxbases),maxbases);
-          }
-          else{
-            strncpy(seq_r1,FragRes[FragNo],maxbases);
-          }
+          // copying from opposite strand
+          strncpy(seq_r1,FragRes[FragNo]+(fraglength-maxbases),maxbases);
+        }
         }
       }
       else{
-        if (FragNo==1||FragNo==3){
-          strncpy(seq_r1,FragRes[FragNo]+(fraglength-maxbases),maxbases);
+        if(struct_obj->DoBriggs){
+          strncpy(seq_r1,FragRes[FragNo],maxbases);
         }
         else{
           strncpy(seq_r1,FragRes[FragNo],maxbases);
         }
-      }
+      //std::cout << " bases " << maxbases << " " << FragRes[FragNo] << std::endl;
+      strncpy(seq_r1,FragRes[FragNo],maxbases);
+      //std::cout << " bases " << seq_r1 << " " << std::endl;
+      }*/
 
-      if(PE==struct_obj->SeqType)
-        if(strandR1==1){
-          if(struct_obj->DoBriggs){
-            strncpy(seq_r2,FragRes[FragNo]+(fraglength-maxbases),maxbases);
-          }
-          else{
-            strncpy(seq_r2,FragRes[FragNo],maxbases);
-          }
+      if(SE==struct_obj->SeqType){
+        if(struct_obj->DoBriggs){
+          strncpy(seq_r1,FragRes[FragNo],maxbases);
         }
         else{
+          if (strandR1 == 0){
+            strncpy(seq_r1,FragRes[FragNo],maxbases);
+          }
+          else{
+            strncpy(seq_r1,FragRes[FragNo]+(fraglength-maxbases),maxbases);
+          }
+        }
+      }      
+      else if(PE==struct_obj->SeqType){
+        if (strandR1 == 0){
+          strncpy(seq_r1,FragRes[FragNo],maxbases);
           strncpy(seq_r2,FragRes[FragNo]+(fraglength-maxbases),maxbases);
         }
+        else{
+          strncpy(seq_r1,FragRes[FragNo]+(fraglength-maxbases),maxbases);
+          strncpy(seq_r2,FragRes[FragNo],maxbases);
+        }
+      }
     
       //Remove reads which are all N, we remove both pairs if both reads are all N
   
-      for(int i=0;skipread&&i<(int)strlen(seq_r1);i++)
-        if(seq_r1[i]!='N')
-          skipread = 0;
-      
+      for(int i=0;i<(int)strlen(seq_r1);i++){
+        if(seq_r1[i]=='N'){
+          skipread = 1;
+        }
+      }
       if(PE==struct_obj->SeqType){
-        for(int i=0; skipread && i<(int)strlen(seq_r2);i++)
-          if(seq_r2[i]!='N')
-          skipread = 0;
+        for(int i=0;i<(int)strlen(seq_r2);i++){
+          if(seq_r2[i]=='N'){
+            skipread = 1;
+          }
+        }
       }
       
       if(skipread==1){
@@ -341,7 +373,9 @@ void* Sampling_threads(void *arg) {
       //generating sam output information
       int SamFlags[2] = {-1,-1}; //flag[0] is for read1, flag[1] is for read2
       if(struct_obj->DoBriggs){
+        //fprintf(stderr,"SAMPLING DO BRIGGS\t FRAG %d\n",FragNo);
         if (FragNo==0||FragNo==2){
+          //fprintf(stderr,"INSIDE FRAG 0 OR 2\n");
           //The sequences are equal to the reference
           if (SE==struct_obj->SeqType){
             // R1  5' |---R1-->|--FWD------------> 3'
@@ -356,7 +390,8 @@ void* Sampling_threads(void *arg) {
             ReversComplement(seq_r2);
           }
         }
-        if (FragNo==1||FragNo==3){
+        else if (FragNo==1||FragNo==3){
+          //fprintf(stderr,"INSIDE FRAG 1 OR 3\n");
           //The sequences are reverse complementary of the original reference orientation
           if (SE==struct_obj->SeqType){
             // R1  5' |-----------FWD------------> 3'
@@ -373,6 +408,7 @@ void* Sampling_threads(void *arg) {
         }
       }
       else{
+        //fprintf(stderr,"INSIDE NOT DEAMINATION BRIGGS ELSE");
         if (SE==struct_obj->SeqType){
           if (strandR1 == 0)
             SamFlags[0] = 0;
@@ -392,12 +428,11 @@ void* Sampling_threads(void *arg) {
           ReversComplement(seq_r2);
         }
       }
-      
       //so now everything is on 5->3 and some of them will be reverse complement to referene
       //now everything is the same strand as reference, which we call plus/+
-    
       snprintf(READ_ID,512,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
 
+      //fprintf(stderr,"read id %s \n\t %s\n",READ_ID,seq_r1);
       int nsofts[2] = {0,0}; //this will contain the softclip information to be used by sam/bam/cram output format for adapter and polytail
       //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail
       int naligned[2] = {(int)strlen(seq_r1),-1};
@@ -462,6 +497,7 @@ void* Sampling_threads(void *arg) {
             has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
         }
         //std::cout << seq_r1 << " " << qual_r1 << std::endl;
+        //fprintf(stderr,"READ ID FRAGNO %d \n\t %s\n",FragNo,seq_r1);
         snprintf(READ_ID+strlen(READ_ID),512-strlen(READ_ID),"%d F%d",has_seqerr,FragNo);
 
         //write fq if requested
@@ -477,20 +513,17 @@ void* Sampling_threads(void *arg) {
           size_t n_cigar[2] = {1,1};
 
           if (struct_obj->Align){
+            //std::cout << "INSIDE DO ALIGN" << std::endl;
             AlignCigar[0][0] = bam_cigar_gen(naligned[0], BAM_CMATCH);
             if(nsofts[0]>0){
               AlignCigar[0][1] = bam_cigar_gen(nsofts[0], BAM_CSOFT_CLIP);
               n_cigar[0] = 2;
             }
             if(SamFlags[0]==16||SamFlags[0]==81){
-              if(struct_obj->DoBriggs){
-                continue;
-              }
-              else{
-                ReversComplement(seq_r1);
-                reverseChar(qual_r1,strlen(seq_r1));           
-              }
-              
+              //std::cout << "seq_r1 "<< seq_r1 << std::endl;
+              ReversComplement(seq_r1);
+              reverseChar(qual_r1,strlen(seq_r1));           
+              //std::cout << "seq_r1 "<< seq_r1 << std::endl;
               if(n_cigar[0]>1){
                 //swap softclip and match
                 uint32_t tmp= AlignCigar[0][0];
@@ -526,6 +559,7 @@ void* Sampling_threads(void *arg) {
           //generating id, position and the remaining sam field information
           size_t l_aux = 2; uint8_t mapq = 60;
           hts_pos_t min_beg, max_end, insert; //max_end, insert;
+          hts_pos_t mpos;
           min_beg = posB;
           max_end = posE;
           insert = max_end - min_beg;
@@ -573,6 +607,12 @@ void* Sampling_threads(void *arg) {
 
           //we have set the parameters accordingly above for no align and PE
           if (SE==struct_obj->SeqType){
+            mpos = -1;
+            if (struct_obj->DoBriggs){
+              if (FragNo==1||FragNo==3){
+                min_beg = max_end-strlen(seq_r1);
+              }
+            }
             /*if(SamFlags[0]==16){
               min_beg = chr_max_end_mate-strlen(seq_r1);
             }*/
@@ -580,7 +620,7 @@ void* Sampling_threads(void *arg) {
               strlen(READ_ID),READ_ID,
               SamFlags[0],chr_idx,min_beg,mapq,
               n_cigar[0],AlignCigar[0],
-              chr_idx_read,chr_max_end_mate-strlen(seq_r2),insert_mate,
+              chr_idx_read,mpos,insert_mate,
               strlen(seq_r1),seq_r1,qual_r1,
               l_aux);
           }
@@ -639,6 +679,8 @@ void* Sampling_threads(void *arg) {
         }
       }
 
+      //fprintf(stderr,"read still exist?\n\t %s \n\t %s\n",seq_r1,qual_r1);
+
       memset(qual_r1, 0, sizeof qual_r1); 
       memset(qual_r2, 0, sizeof qual_r2);
       memset(seq_r1, 0, sizeof seq_r1);
@@ -676,7 +718,13 @@ void* Sampling_threads(void *arg) {
     } 
   }
 
-  //fprintf(stderr,"\t-> Simulated but skipped reads %d \n",sampled_skipped);
+  if(struct_obj->DoBriggs){
+    double Pair1 = (double) refCTp1/(double)refCp1;
+    double Pair2 = (double) refCTp2/(double)refCp2;
+    fprintf(stderr,"\t-> Global deamination frequency of C>T and G>A deamination at posiiton 1 is %f and %f\n",Pair1,Pair2);
+  }
+
+  fprintf(stderr,"\t-> Extracted fragment but skipped due to 'N' %d \n",sampled_skipped);
 
   for(int j=0; j<struct_obj->MaximumLength;j++){bam_destroy1(struct_obj->list_of_reads[j]);}
   

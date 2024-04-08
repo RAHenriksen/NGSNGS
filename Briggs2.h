@@ -19,6 +19,6 @@
  */
 
 
-int SimBriggsModel2(char *original, int L, double nv, double lambda, double delta_s, double delta,mrand_t *mr,char **results, int strandR1,int& C_to_T_counter,int& G_to_A_counter,int& C_to_T_counter_rev,int& G_to_A_counter_rev,int& refCp1,int& refCTp1,int& refCp2,int& refCTp2);
+int SimBriggsModel2(char *original, int L, double nv, double lambda, double delta_s, double delta,mrand_t *mr,char **results, int strandR1,int& C_to_T_counter,int& G_to_A_counter,int& C_total,int& G_total);
 
 #endif /* NGSNGSFUNC_H */

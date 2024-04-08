@@ -1,6 +1,6 @@
-7732917d1967271b89906956dd7e91d6  SamSE.txt
-7732917d1967271b89906956dd7e91d6  BamSE.txt
-9f74f40e83ddf8ca8941a147fc6b5a15  CramSE.txt
+926e53d260b48f5581b95ab4f7996dcb  SamSE.txt
+926e53d260b48f5581b95ab4f7996dcb  BamSE.txt
+fbf033624c1ce3221a8a0f921b4554d0  CramSE.txt
 2ac8e37cfa0271d81f89c95c14b759ff  BamPE.txt
 bc026c4a3502627d5b17fc5861c15383  BamPEna.txt
 9c908d81a429851a3118f67149c560f2  MycoBactFQout.fq
@@ -47,9 +47,9 @@ bd54775c8e5f8d5a1aae9f56b32a6a63  DiploidRef_SNP_0.fa
 ab7e078436515323dcd317c8e34752aa  DiploidRef_SNP_2.fa
 24a04d25320f5c2f97ad5e4d6e00e844  DiploidRes_SNP_2.fq
 538aaa0b019b18844984484671ed355f  DelOut.fq
-8ff6cfd547c8b371b003c04818948200  InsOut.fq
+44859062ec848dc6e52ca34f753586ea  InsOut.fq
 ef3fd54e87b60e2338ecef946770c499  DelTmp.txt
-b42a10e212de256a7f99deacda31ce73  InsTmp.txt
+eaee052a4cece1db4fbf74cbbd7d99fd  InsTmp.txt
 2fdde609fbdbc867e3bed1f80f4d1d86  MycoBactQSLLSEOUT.fq
 a082a9ce8b64eb213aab7f94fda00b27  MutationRateSeqErrAdapters_R1.fq.gz
 b66d9a92087415203cb4521b591b2696  MutationRateSeqErrAdapters_R2.fq.gz

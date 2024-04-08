@@ -23,9 +23,9 @@ echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "1) Testing Single-end, length file, reads, briggs, sampling threads, sequencing error, sam,bam,cram"
 echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f sam -o MycoBactSamSEOut
-${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f bam -o MycoBactBamSEOut
-${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f cram -o MycoBactCramSEOut
+${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -m b,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f sam -o MycoBactSamSEOut
+${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -m b,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f bam -o MycoBactBamSEOut
+${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -m b,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f cram -o MycoBactCramSEOut
 
 # Check file sizes and ordering
 sam_size=$(stat -c%s MycoBactSamSEOut.sam)
@@ -35,7 +35,7 @@ echo " "
 if [ $sam_size -gt $bam_size ] && [ $bam_size -gt $cram_size ]; then
     echo "File sizes are in correct order: sam ("${sam_size}") > bam ("${bam_size}") > cram ("${cram_size}")"
 else
-    echo "File sizes are in correct order: sam ("${sam_size}") & bam ("${bam_size}") & cram ("${cram_size}")"; exit 1;
+    echo "File sizes are in incorrect order: sam ("${sam_size}") & bam ("${bam_size}") & cram ("${cram_size}")"; exit 1;
 fi
 
 samtools view MycoBactSamSEOut.sam > SamSE.txt
@@ -48,6 +48,8 @@ BamMD5=$(md5sum BamSE.txt|cut -f1 -d ' ')
 if [ "$SamMD5" != "$BamMD5" ]; then
     echo "The decompression, or mate information differs from sam to bam"; exit 1;
 fi
+
+
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "2) Testing sequence alignment map format specific information for paired-end information"
@@ -72,7 +74,7 @@ echo " "
 if [ $fq_size -gt $fqgz_size ]; then
     echo "Fastq file sizes are in correct order: fq ("${fq_size}") > fq.gz ("${fqgz_size}")"
 else
-    echo "Fastq file sizes are in correct order: fq ("${fq_size}") < fq.gz ("${fqgz_size}")"; exit 1;
+    echo "Fastq file sizes are in incorrect order: fq ("${fq_size}") < fq.gz ("${fqgz_size}")"; exit 1;
 fi
 
 echo " "
@@ -171,6 +173,11 @@ echo "--------------------------------------------------------------------------
 
 ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.0,0.05,0.0,0.9 -q1 ${Q1} -DumpIndel DelTmp -f fq -o DelOut
 ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.05,0.0,0.9,0.0 -q1 ${Q1} -DumpIndel InsTmp -f fq -o InsOut
+
+md5sum DelOut.fq
+md5sum DelTmp.txt
+md5sum InsOut.fq
+md5sum InsTmp.txt
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"

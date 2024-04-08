@@ -130,7 +130,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
   //fprintf(stderr,"\t-> Created %d variations according to the length of chromosomes/contigs/scaffolds from input reference genome%zu\n");
 
-
   if (reffasta->seqs != NULL){
   
     Parsarg_for_Sampling_thread *struct_for_threads = new Parsarg_for_Sampling_thread[nthreads];
@@ -346,16 +345,16 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].DoIndel = DoIndel;
       struct_for_threads[i].IndelDumpFile = IndelDumpFile;
       
-      // 2) briggs model
-      struct_for_threads[i].MisMatch = MisMatchFreqArray;
-      struct_for_threads[i].doMisMatchErr = doMisMatchErr;
-      struct_for_threads[i].MisLength = (int) mismatchcyclelength;
-
-      // 3) misincorporation matrix
+      // 2) briggs modes
       struct_for_threads[i].DoBriggs = DoBriggs;
       struct_for_threads[i].DoBriggsBiotin = DoBriggsBiotin;
       struct_for_threads[i].BriggsParam = BriggsParam;
       struct_for_threads[i].Duplicates = Duplicates;
+
+      // 3) misincorporation matrix
+      struct_for_threads[i].MisMatch = MisMatchFreqArray;
+      struct_for_threads[i].doMisMatchErr = doMisMatchErr;
+      struct_for_threads[i].MisLength = (int) mismatchcyclelength;
 
       // Fragment lengths 
       struct_for_threads[i].FragLen = Frag_len;
