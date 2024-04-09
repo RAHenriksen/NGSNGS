@@ -21,11 +21,11 @@ echo "--------------------------------- I) Testing file format (-f) and compress
 echo "---------------------------------------------------------------------------------------------------------------"
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "1) Testing Single-end, length file, reads, briggs, sampling threads, sequencing error, sam,bam,cram"
+echo "1) Testing Single-end, length file, reads, sampling threads, sequencing error, sam,bam,cram"
 echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -m b,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f sam -o MycoBactSamSEOut
-${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -m b,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f bam -o MycoBactBamSEOut
-${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -m b,0.024,0.36,0.68,0.0097 -q1 ${Q1} -f cram -o MycoBactCramSEOut
+${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -q1 ${Q1} -f sam -o MycoBactSamSEOut
+${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -q1 ${Q1} -f bam -o MycoBactBamSEOut
+${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -q1 ${Q1} -f cram -o MycoBactCramSEOut
 
 # Check file sizes and ordering
 sam_size=$(stat -c%s MycoBactSamSEOut.sam)
@@ -113,20 +113,6 @@ fi
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "5) Testing alignments with cycle length below fragment length with deamination and position in terms of MD:Z"
-echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 1000 -t 1 -s 1 -l 1000 -seq SE -q1 ${Q1} -m b,0.024,0.36,0.68,0.0097 -f bam -o L1000SEDeamin
-
-samtools sort -@ 10 -m 2G -n L1000SEDeamin.bam -o L1000SEDeaminSort.bam;samtools calmd -@ 10 -r -b L1000SEDeaminSort.bam ${IN} > L1000SEDeaminSortMD.bam
-
-MDcheck=$(samtools view L1000SEDeaminSortMD.bam |cut -f14|awk '{ md_index = index($0, "MD:Z:"); md_substr = substr($0, md_index + 5); md_length = length(md_substr); if (md_length > 60) print 0; else print 1}'|awk '{sum += $1} END {print sum}')
-
-if [ $MDcheck -ne 1000 ]; then 
-    echo "Warning issue with MD tag above 60 characters for some reads, suggesting wrong positions stored within bam with MD tag sum value " $MDcheck; exit 1;
-fi
-
-echo " "
-echo "---------------------------------------------------------------------------------------------------------------"
 echo "------------------------- III) Testing Stochastic-, genetic- and reference variations -------------------------"
 echo "---------------------------------------------------------------------------------------------------------------"
 
@@ -174,11 +160,6 @@ echo "--------------------------------------------------------------------------
 ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.0,0.05,0.0,0.9 -q1 ${Q1} -DumpIndel DelTmp -f fq -o DelOut
 ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.05,0.0,0.9,0.0 -q1 ${Q1} -DumpIndel InsTmp -f fq -o InsOut
 
-md5sum DelOut.fq
-md5sum DelTmp.txt
-md5sum InsOut.fq
-md5sum InsTmp.txt
-
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "4) Testing Single-end, simulating fixed quality score of 40, with fragment lower-limit"
@@ -205,10 +186,70 @@ echo "--------------------------------------------------------------------------
 
 ${PRG} -i ${IN} -r 100000 -f fq.gz -seq PE -s 34532 -t 1 -ld Gam,20,2 -mr 0.019 -cl 100 -p G -a1 ${A1} -a2 ${A2} -qs 30 -o MutationRateSeqErrAdapters
 
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "------------ IV) Testing MD tags to ensure accurate flags and position with- or without deamination -----------"
+echo "---------------------------------------------------------------------------------------------------------------"
+
+echo " "
+echo "-----------------------------------------------------------------------------------------------------------------------"
+echo "1) Testing single-end alignments with cycle length below fragment length with deamination and position in terms of MD:Z"
+echo "-----------------------------------------------------------------------------------------------------------------------"
+${PRG} -i ${IN} -r 1000 -t 1 -s 1 -l 1000 -seq SE -q1 ${Q1} -m b,0.024,0.36,0.68,0.0097 -f bam -o L1000SEDeamin
+
+samtools sort -@ 10 -m 2G -n L1000SEDeamin.bam -o L1000SEDeaminSort.bam;samtools calmd -@ 10 -r -b L1000SEDeaminSort.bam ${IN} > L1000SEDeaminSortMD.bam
+
+MDcheck1=$(samtools view L1000SEDeaminSortMD.bam |cut -f14|awk '{ md_index = index($0, "MD:Z:"); md_substr = substr($0, md_index + 5); md_length = length(md_substr); if (md_length > 60) print 0; else print 1}'|awk '{sum += $1} END {print sum}')
+
+if [ $MDcheck1 -ne 1000 ]; then 
+    echo "Warning issue with MD tag above 60 characters for some reads, suggesting wrong positions stored within bam with MD tag sum value " $MDcheck1; exit 1;
+fi
+
+samtools view L1000SEDeamin.bam > L1000SEDeamin.txt
+
+echo " "
+echo "-----------------------------------------------------------------------------------------------------------------------"
+echo "2) Testing paired-end alignments with cycle length above fragment length with deamination and position in terms of MD:Z"
+echo "-----------------------------------------------------------------------------------------------------------------------"
+${PRG} -i ${IN} -r 1000 -t 1 -s 1 -l 1000 -seq PE -q1 ${Q1} -q2 ${Q2} -m b,0.024,0.36,0.68,0.0097 -f bam -o L1000PEDeamin
+
+samtools sort -@ 10 -m 2G -n L1000PEDeamin.bam -o L1000PEDeaminSort.bam;samtools calmd -@ 10 -r -b L1000PEDeaminSort.bam ${IN} > L1000PEDeaminSortMD.bam
+
+MDcheck2=$(samtools view L1000PEDeaminSortMD.bam |cut -f14|awk '{ md_index = index($0, "MD:Z:"); md_substr = substr($0, md_index + 5); md_length = length(md_substr); if (md_length > 60) print 0; else print 1}'|awk '{sum += $1} END {print sum}')
+
+if [ $MDcheck2 -ne 2000 ]; then 
+    echo "Warning issue with MD tag above 60 characters for some reads, suggesting wrong positions stored within bam with MD tag sum value " $MDcheck2; exit 1;
+fi
+
+samtools view L1000PEDeamin.bam > L1000PEDeamin.txt
+echo " "
+echo "------------------------------------------------------------------------------------------------"
+echo "3) Testing MD:Z for single- and paired-end alignments without deamination and sequencing errors "
+echo "------------------------------------------------------------------------------------------------"
+${PRG} -i ${IN} -r 1000 -t 1 -s 200 -l 1000 -ne -seq SE -q1 ${Q1} -f bam -o L1000SE
+
+samtools sort -@ 10 -m 2G -n L1000SE.bam -o L1000SESort.bam;samtools calmd -@ 10 -r -b L1000SESort.bam ${IN} > L1000SESortMD.bam
+
+#should only have one md tag equal to cycle length if positions are correct as we're not altering any nucleotides
+MDcheck3=$(samtools view L1000SESortMD.bam |cut -f14|sort|uniq -c|wc -l)
+if [ $MDcheck3 -ne 1 ]; then 
+    echo "Warning issue with too many MD tags, suggesting wrong positions stored within bam with no nucleotide alterations" $MDcheck3; exit 1;
+fi
+
+samtools view L1000SESortMD.bam > L1000SESortMD.txt
+
+${PRG} -i ${IN} -r 1000 -t 1 -s 300 -l 1000 -ne -seq PE -q1 ${Q1} -q2 ${Q2} -f bam -o L1000PE
+
+samtools sort -@ 10 -m 2G -n L1000PE.bam -o L1000PESort.bam;samtools calmd -@ 10 -r -b L1000PESort.bam ${IN} > L1000PESortMD.bam
+
+MDcheck4=$(samtools view L1000PESortMD.bam |cut -f14|sort|uniq -c|wc -l)
+if [ $MDcheck4 -ne 1 ]; then 
+    echo "Warning issue with too many MD tags, suggesting wrong positions stored within bam with no nucleotide alterations" $MDcheck4; exit 1;
+fi
+
+samtools view L1000PESortMD.bam > L1000PESortMD.txt
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "--------------------------------------------------- MD5SUM ----------------------------------------------------"
 echo "---------------------------------------------------------------------------------------------------------------"
 echo " "
 md5sum -c MycoBactTest.md5 || exit 2;
-

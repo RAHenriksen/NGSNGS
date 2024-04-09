@@ -1,6 +1,6 @@
-926e53d260b48f5581b95ab4f7996dcb  SamSE.txt
-926e53d260b48f5581b95ab4f7996dcb  BamSE.txt
-fbf033624c1ce3221a8a0f921b4554d0  CramSE.txt
+7bbec4e3286f25b18f51bdbf75b821b4  SamSE.txt
+7bbec4e3286f25b18f51bdbf75b821b4  BamSE.txt
+a4d9fc907552af5c6af6d49e5ff297b7  CramSE.txt
 2ac8e37cfa0271d81f89c95c14b759ff  BamPE.txt
 bc026c4a3502627d5b17fc5861c15383  BamPEna.txt
 9c908d81a429851a3118f67149c560f2  MycoBactFQout.fq
@@ -53,3 +53,7 @@ eaee052a4cece1db4fbf74cbbd7d99fd  InsTmp.txt
 2fdde609fbdbc867e3bed1f80f4d1d86  MycoBactQSLLSEOUT.fq
 a082a9ce8b64eb213aab7f94fda00b27  MutationRateSeqErrAdapters_R1.fq.gz
 b66d9a92087415203cb4521b591b2696  MutationRateSeqErrAdapters_R2.fq.gz
+5ee245e5c7e7995cab81023641f05881  L1000SEDeamin.txt
+dc1b539f7aeda538999b04915b91c96d  L1000PEDeamin.txt
+5df14e2c1b857d1dd9b27d826a9b79f6  L1000SESortMD.txt
+9b3253e2ee6714e00d3e50b4f105e778  L1000PESortMD.txt

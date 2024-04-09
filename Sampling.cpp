@@ -385,8 +385,8 @@ void* Sampling_threads(void *arg) {
           else if (PE==struct_obj->SeqType){
             // R1  5' |---R1-->|--FWD------------> 3'
             // R2  3' ------------REV---|<--R2---| 5'
-            SamFlags[0] = 97; // Read paired, mate reverse strand, first in pair
-            SamFlags[1] = 145; // Read paired, read reverse strand, second in pair
+            SamFlags[0] = 97; // Read paired, mate reverse strand, first in pair 99
+            SamFlags[1] = 145; // Read paired, read reverse strand, second in pair 147
             ReversComplement(seq_r2);
           }
         }
@@ -401,8 +401,8 @@ void* Sampling_threads(void *arg) {
           else if (PE==struct_obj->SeqType){
             //R2  5' ------------FWD---|<--R2---| 3'  
             //R1  3' |---R1-->|--REV------------> 5'
-            SamFlags[0] = 81;
-            SamFlags[1] = 161;
+            SamFlags[0] = 81; // 83 
+            SamFlags[1] = 161; // 161
             ReversComplement(seq_r2);
           }
         }
@@ -558,11 +558,10 @@ void* Sampling_threads(void *arg) {
 
           //generating id, position and the remaining sam field information
           size_t l_aux = 2; uint8_t mapq = 60;
-          hts_pos_t min_beg, max_end, insert; //max_end, insert;
+          hts_pos_t min_beg = posB;
+          hts_pos_t max_end = posE;
+          hts_pos_t insert = max_end - min_beg;
           hts_pos_t mpos;
-          min_beg = posB;
-          max_end = posE;
-          insert = max_end - min_beg;
 
           const char* suffR1 = " R1";
           const char* suffR2 = " R2";
@@ -627,19 +626,37 @@ void* Sampling_threads(void *arg) {
           
           //write PE also
           if (PE==struct_obj->SeqType){
+            if (struct_obj->DoBriggs){
+              if (strandR1 == 0){
+                if (FragNo==1||FragNo==3){
+                  // sam flags 81 and 161 
+                  //reverse the start and end positions
+                  min_beg = max_end-strlen(seq_r1);
+                  max_end = posB+strlen(seq_r2); //adding strlen(seq_r2) since its removed further down on line 641 in the case of read 1 being on opposite strand 
+                }
+              }
+              else if (strandR1 == 1){
+                if (FragNo==0||FragNo==2){
+                  // sam flags 81 and 161 
+                  //reverse the start and end positions
+                  min_beg = max_end-strlen(seq_r1);
+                  max_end = posB+strlen(seq_r2); //adding strlen(seq_r2) since its removed further down on line 641 in the case of read 1 being on opposite strand 
+                }
+              }
+            }
             bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],
             strlen(READ_ID),READ_ID,
             SamFlags[0],chr_idx,min_beg,mapq,
             n_cigar[0],AlignCigar[0],
-            chr_idx_read,chr_max_end_mate-strlen(seq_r2),insert_mate,
+            chr_idx_read,max_end-strlen(seq_r2),insert_mate,
             strlen(seq_r1),seq_r1,qual_r1,
             l_aux);
 
             bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],
             strlen(READ_ID2),READ_ID2,SamFlags[1],chr_idx,max_end-strlen(seq_r2),mapq,
-              n_cigar[1],AlignCigar[1],
-              chr_idx_read,min_beg,0-insert_mate,
-              strlen(seq_r2),seq_r2,qual_r2,l_aux);
+            n_cigar[1],AlignCigar[1],
+            chr_idx_read,min_beg,0-insert_mate,
+            strlen(seq_r2),seq_r2,qual_r2,l_aux);
           }
         
           if (struct_obj->LengthData < struct_obj->MaximumLength){   
