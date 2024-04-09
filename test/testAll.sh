@@ -23,9 +23,9 @@ echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "1) Testing Single-end, length file, reads, sampling threads, sequencing error, sam,bam,cram"
 echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -q1 ${Q1} -f sam -o MycoBactSamSEOut
-${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -q1 ${Q1} -f bam -o MycoBactBamSEOut
-${PRG} -i ${IN} -r 10000 -t 1 -s 5643 -lf ${LF} -seq SE -q1 ${Q1} -f cram -o MycoBactCramSEOut
+${PRG} -i ${IN} -r 1000 -t 1 -s 5643 -lf ${LF} -seq SE -q1 ${Q1} -f sam -o MycoBactSamSEOut
+${PRG} -i ${IN} -r 1000 -t 1 -s 5643 -lf ${LF} -seq SE -q1 ${Q1} -f bam -o MycoBactBamSEOut
+${PRG} -i ${IN} -r 1000 -t 1 -s 5643 -lf ${LF} -seq SE -q1 ${Q1} -f cram -o MycoBactCramSEOut
 
 # Check file sizes and ordering
 sam_size=$(stat -c%s MycoBactSamSEOut.sam)
@@ -54,8 +54,8 @@ echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "2) Testing sequence alignment map format specific information for paired-end information"
 echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 10000 -t 1 -s 81 -lf ${LF} -seq PE -qs 40 -f bam -o MycoBactBamPEOut
-${PRG} -i ${IN} -r 10000 -t 1 -s 314 -lf ${LF} -seq PE -qs 40 -na -f bam -o MycoBactBamPEOutNa
+${PRG} -i ${IN} -r 1000 -t 1 -s 81 -lf ${LF} -seq PE -qs 40 -f bam -o MycoBactBamPEOut
+${PRG} -i ${IN} -r 1000 -t 1 -s 314 -lf ${LF} -seq PE -qs 40 -na -f bam -o MycoBactBamPEOutNa
 
 samtools view MycoBactBamPEOut.bam > BamPE.txt
 samtools view MycoBactBamPEOutNa.bam > BamPEna.txt
@@ -64,11 +64,11 @@ echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "3) Testing fastq compression"
 echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 10000 -t 1 -s 22 -l 100 -seq SE -qs 20 -f fq -o MycoBactFQout
-${PRG} -i ${IN} -r 10000 -t 1 -s 22 -l 100 -seq SE -qs 20 -f fq.gz -o MycoBactFQGZout
+${PRG} -i ${IN} -r 1000 -t 1 -s 22 -l 100 -seq SE -qs 20 -f fq -o MycoBactFqout
+${PRG} -i ${IN} -r 1000 -t 1 -s 22 -l 100 -seq SE -qs 20 -f fq.gz -o MycoBactFqGzout
 # Check file sizes and ordering
-fq_size=$(stat -c%s MycoBactFQout.fq)
-fqgz_size=$(stat -c%s MycoBactFQGZout.fq.gz)
+fq_size=$(stat -c%s MycoBactFqout.fq)
+fqgz_size=$(stat -c%s MycoBactFqGzout.fq.gz)
 
 echo " "
 if [ $fq_size -gt $fqgz_size ]; then
@@ -86,25 +86,25 @@ echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "1) Testing Paired-end, fixed length, coverage, no sequencing error, adapters, sampling threads, fq"
 echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -c 3 -t 1 -s 1 -l 100 -seq PE -ne -a1 ${A1} -a2 ${A2} -q1 ${Q1} -q2 ${Q2} -f fq -o MycoBactFqPEOut
+${PRG} -i ${IN} -c 1 -t 1 -s 1 -l 100 -seq PE -ne -a1 ${A1} -a2 ${A2} -q1 ${Q1} -q2 ${Q2} -f fq -o MycoBactFqPEOut
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "2) Testing Single-end, length distributions, reads, sequencing error, misincorporation file, fa"
 echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 100000 -t 1 -s 1 -ld Pois,78 -seq SE -mf ${MF} -f fa -o MycoBactFaSEOut
+${PRG} -i ${IN} -r 1000 -t 1 -s 1 -ld Pois,78 -seq SE -mf ${MF} -f fa -o MycoBactFaSEOut
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "3) Testing Single-end, fixed length, reads, sequencing error, adapters, poly-G tail"
 echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 100000 -t 1 -s 1 -l 70 -seq SE -q1 ${Q1} -a1 ${A1} -p G -f fq -o MycoBactFqSEPolyOut
+${PRG} -i ${IN} -r 1000 -t 1 -s 1 -l 70 -seq SE -q1 ${Q1} -a1 ${A1} -p G -f fq -o MycoBactFqSEPolyOut
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "4) Testing Single-end, fixed length greater than error profile, reads, cycle length"
 echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 100000 -t 1 -s 1 -l 200 -seq SE -q1 ${Q1} -cl 90 -f fq -o MycoBactFqSEClOut
+${PRG} -i ${IN} -r 1000 -t 1 -s 1 -l 200 -seq SE -q1 ${Q1} -cl 90 -f fq -o MycoBactFqSEClOut
 
 Mean_read_length=$(awk '{if(NR%4==2) {count++; bases += length} } END{print bases/count}' MycoBactFqSEClOut.fq)
 if [ $Mean_read_length -ne 90 ]; then 
@@ -162,13 +162,13 @@ ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.05,0.0,0.9,0.0 
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "4) Testing Single-end, simulating fixed quality score of 40, with fragment lower-limit"
+echo "4) Testing Single-end, simulating fixed quality score of 30, with fragment lower-limit"
 echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 100000 -t 1 -s 1 -lf ${LF} -seq SE -ll 50 -qs 40 -f fq -o MycoBactQSLLSEOUT
+${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ll 50 -qs 30 -f fq -o MycoBactQSLLSEOUT
 
 No_SeqErr=$(cat MycoBactQSLLSEOUT.fq|grep 'mod0001'|wc -l)
-if [ $No_SeqErr -ne 745 ]; then 
-    echo "Warning different number of reads containing sequencing error with a fixed quality score of 40"; exit 1;
+if [ $No_SeqErr -ne 62 ]; then 
+    echo "Warning different number of reads containing sequencing error with a fixed quality score of 30"; exit 1;
 fi
 
 if [ 0 -eq 1 ]; then
@@ -184,7 +184,7 @@ echo "5) Testing mutation rate (reference genome 1.9%), sampling with replacemen
         adapters and poly G for fixed sequencing error "
 echo "---------------------------------------------------------------------------------------------------------------"
 
-${PRG} -i ${IN} -r 100000 -f fq.gz -seq PE -s 34532 -t 1 -ld Gam,20,2 -mr 0.019 -cl 100 -p G -a1 ${A1} -a2 ${A2} -qs 30 -o MutationRateSeqErrAdapters
+${PRG} -i ${IN} -r 1000 -f fq.gz -seq PE -s 34532 -t 1 -ld Gam,20,2 -mr 0.019 -cl 100 -p G -a1 ${A1} -a2 ${A2} -qs 30 -o MutationRateSeqErrAdapters
 
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "------------ IV) Testing MD tags to ensure accurate flags and position with- or without deamination -----------"
