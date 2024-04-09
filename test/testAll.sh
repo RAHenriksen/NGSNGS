@@ -196,7 +196,7 @@ echo "1) Testing single-end alignments with cycle length below fragment length w
 echo "-----------------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -l 1000 -seq SE -q1 ${Q1} -m b,0.024,0.36,0.68,0.0097 -f bam -o L1000SEDeamin
 
-samtools sort -@ 10 -m 2G -n L1000SEDeamin.bam -o L1000SEDeaminSort.bam;samtools calmd -@ 10 -r -b L1000SEDeaminSort.bam ${IN} > L1000SEDeaminSortMD.bam
+samtools sort -n L1000SEDeamin.bam -o L1000SEDeaminSort.bam;samtools calmd -@ 10 -r -b L1000SEDeaminSort.bam ${IN} > L1000SEDeaminSortMD.bam
 
 MDcheck1=$(samtools view L1000SEDeaminSortMD.bam |cut -f14|awk '{ md_index = index($0, "MD:Z:"); md_substr = substr($0, md_index + 5); md_length = length(md_substr); if (md_length > 60) print 0; else print 1}'|awk '{sum += $1} END {print sum}')
 
@@ -212,7 +212,7 @@ echo "2) Testing paired-end alignments with cycle length above fragment length w
 echo "-----------------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -l 1000 -seq PE -q1 ${Q1} -q2 ${Q2} -m b,0.024,0.36,0.68,0.0097 -f bam -o L1000PEDeamin
 
-samtools sort -@ 10 -m 2G -n L1000PEDeamin.bam -o L1000PEDeaminSort.bam;samtools calmd -@ 10 -r -b L1000PEDeaminSort.bam ${IN} > L1000PEDeaminSortMD.bam
+samtools sort -n L1000PEDeamin.bam -o L1000PEDeaminSort.bam;samtools calmd -@ 10 -r -b L1000PEDeaminSort.bam ${IN} > L1000PEDeaminSortMD.bam
 
 MDcheck2=$(samtools view L1000PEDeaminSortMD.bam |cut -f14|awk '{ md_index = index($0, "MD:Z:"); md_substr = substr($0, md_index + 5); md_length = length(md_substr); if (md_length > 60) print 0; else print 1}'|awk '{sum += $1} END {print sum}')
 
@@ -227,7 +227,7 @@ echo "3) Testing MD:Z for single- and paired-end alignments without deamination 
 echo "------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -r 1000 -t 1 -s 200 -l 1000 -ne -seq SE -q1 ${Q1} -f bam -o L1000SE
 
-samtools sort -@ 10 -m 2G -n L1000SE.bam -o L1000SESort.bam;samtools calmd -@ 10 -r -b L1000SESort.bam ${IN} > L1000SESortMD.bam
+samtools sort -n L1000SE.bam -o L1000SESort.bam;samtools calmd -@ 10 -r -b L1000SESort.bam ${IN} > L1000SESortMD.bam
 
 #should only have one md tag equal to cycle length if positions are correct as we're not altering any nucleotides
 MDcheck3=$(samtools view L1000SESortMD.bam |cut -f14|sort|uniq -c|wc -l)
@@ -239,7 +239,7 @@ samtools view L1000SESortMD.bam > L1000SESortMD.txt
 
 ${PRG} -i ${IN} -r 1000 -t 1 -s 300 -l 1000 -ne -seq PE -q1 ${Q1} -q2 ${Q2} -f bam -o L1000PE
 
-samtools sort -@ 10 -m 2G -n L1000PE.bam -o L1000PESort.bam;samtools calmd -@ 10 -r -b L1000PESort.bam ${IN} > L1000PESortMD.bam
+samtools sort -n L1000PE.bam -o L1000PESort.bam;samtools calmd -@ 10 -r -b L1000PESort.bam ${IN} > L1000PESortMD.bam
 
 MDcheck4=$(samtools view L1000PESortMD.bam |cut -f14|sort|uniq -c|wc -l)
 if [ $MDcheck4 -ne 1 ]; then 
