@@ -12,6 +12,10 @@ argStruct *getpars(int argc,char ** argv){
   mypars->SamplThreads = 1;
   mypars->CompressThreads = 1;
   int compress_t_y_n = 0; // set to no pr default
+
+  // Simulation mode
+  mypars->simmode = 0;
+
   // generating strings for which the simulated reads will be contained
   mypars->nreads = 0;
   mypars->coverage = 0.0;
@@ -237,6 +241,11 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-v",*argv)==0 || strcasecmp("--variations",*argv)==0){
       mypars->referencevariations = atol(*(++argv));
+    }
+    else if(strcasecmp("-sim",*argv)==0 || strcasecmp("--simulation",*argv)==0){
+      char * tok = *(++argv);
+      if(strcasecmp("circ",tok)==0 || strcasecmp("circular",tok)==0)
+	      mypars->simmode = 1;
     }  
     else{
       fprintf(stderr,"Unrecognized input option %s, see NGSNGS help page\n\n",*(argv));

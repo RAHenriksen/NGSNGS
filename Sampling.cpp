@@ -41,6 +41,7 @@ extern const char *bass;
 pthread_mutex_t write_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void* Sampling_threads(void *arg) {
+  
   //casting my struct as arguments for the thread creation
   Parsarg_for_Sampling_thread *struct_obj = (Parsarg_for_Sampling_thread*) arg;
 
@@ -106,9 +107,11 @@ void* Sampling_threads(void *arg) {
     modulovalue = 1;
   }
   size_t moduloread = reads/modulovalue;
-  
+
   int sampled_skipped = 0;
   int whileiter=0;
+  
+  //fprintf(stderr,"Test \n struct_obj->simmode %d \n",struct_obj->simmode);
   while (current_reads_atom < reads && SIG_COND){
     //fprintf(stderr,"-----------\nwhile iteration %d\n-----------\n",whileiter);
     whileiter++;
@@ -152,13 +155,43 @@ void* Sampling_threads(void *arg) {
     }
     //fprintf(stderr,"Max length %d \t and cycle length %d \n",maxbases,cyclelength);
     //get shallow copy of chromosome, offset into, is defined by posB, and posE
-    char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength);
+    size_t chr_end;
+    char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength,chr_end,struct_obj->simmode);
+    int fragmentLength;
     //extracting a biological fragment of the reference genome
-    memset(FragmentSequence,0,strlen(FragmentSequence));
-    strncpy(FragmentSequence,chrseq+(posB),fraglength); // same orientation as reference genome 5' -------> FWD -------> 3'
-    int fragmentLength =posE-posB;
-    assert(posE>=posB&&fragmentLength>20);
-    //fprintf(stderr,"initial sequence \n%s \n position %d to %d \n",FragmentSequence,posB,posE);
+    if(struct_obj->simmode == 1){
+      if(posE>chr_end){
+        //breakpoint reads
+        fragmentLength = fraglength;
+        assert(fragmentLength>20);
+
+        size_t segment1_start = posB;
+        size_t segment1_length = chr_end-posB; // Length of "Hello"
+        size_t segment2_start = 0;
+        size_t segment2_length = posE-chr_end; // Length of "World"  
+
+        memset(FragmentSequence,0,strlen(FragmentSequence));
+        // Copy first segment - end of the chromosome 
+        strncpy(FragmentSequence, chrseq + segment1_start, segment1_length);
+        // Copy second segment to the correct position - start of the chromosome
+        strncpy(FragmentSequence + segment1_length, chrseq + segment2_start, segment2_length);
+      }
+      else{
+        // linear breakpoint
+        fragmentLength=posE-posB;
+        assert(posE>=posB&&fragmentLength>20);
+        memset(FragmentSequence,0,strlen(FragmentSequence));
+        strncpy(FragmentSequence,chrseq+(posB),fraglength);
+      }
+    }
+    else{
+      //linear
+      fragmentLength=posE-posB;
+      assert(posE>=posB&&fragmentLength>20);
+      memset(FragmentSequence,0,strlen(FragmentSequence));
+      strncpy(FragmentSequence,chrseq+(posB),fraglength); // same orientation as reference genome 5' -------> FWD -------> 3'
+      //fprintf(stderr,"initial sequence \n%s \n position %d to %d \n",FragmentSequence,posB,posE);
+    }
 
     int skipread = 0; // Initialize skipread to 0
     if(FragmentSequence[0]=='N' && FragmentSequence[(int)strlen(FragmentSequence)-1]=='N'){
@@ -171,7 +204,7 @@ void* Sampling_threads(void *arg) {
     //std::cout << "Current read atom "<< current_reads_atom << std::endl;
     //std::cout << FragmentSequence << "s f" << posB << " " << posE << std::endl;
     
-    
+
     /*
     // not implemented yet - nor to be included within the near future as off december 2022
     if circ

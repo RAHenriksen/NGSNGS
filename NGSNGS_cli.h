@@ -10,6 +10,7 @@ enum dist_e {unknownDist,Uni,Norm,LogNorm,Pois,Exp,Gam};
 enum poly_nt {unknownNt,A,G,C,T,N};
 
 typedef struct{
+  int simmode;              //simulation mode
   int SamplThreads;           //sampling threads, used internally by pthread_create
   int CompressThreads;        //compression threads, used external by bgzf_mt and set_hts_options
   size_t nreads;              //Number of reads to simulate

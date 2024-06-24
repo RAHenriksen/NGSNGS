@@ -12,19 +12,28 @@ This article was [published](https://academic.oup.com/bioinformatics/advance-art
 NGSNGS is a new program, therefore we are very interested in feedback to solve potential problems, as well as ideas for improvements or additions to specific and relevant features.
 
 ## INSTALLATION & REQUIREMENTS
-* Use local installation of htslib
+### Dependencies
+`NGSNGS` requires `HTSlib`, a library used for handling high-throughput sequencing data.
 
-git clone https://github.com/RAHenriksen/NGSNGS.git
-
+### Install NGSNGS with local HTSlib:
+```
 git clone https://github.com/samtools/htslib.git
 
-cd htslib; make; cd ../NGSNGS; make HTSSRC=../htslib
-
-* Use systemwide installation of htslib
-
 git clone https://github.com/RAHenriksen/NGSNGS.git
 
+cd htslib
+git submodule update --init --recursive
+make
+
+cd ../NGSNGS; make HTSSRC=../htslib
+```
+
+### Install NGSNGS with systemwide installation of htslib
+To install NGSNGS do:
+```
+git clone https://github.com/RAHenriksen/NGSNGS.git
 cd NGSNGS; make
+```
 
 **NOTE:** Newer version of htslib which includes bam_set1 is required
 
@@ -45,6 +54,8 @@ Example
 ./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/MisincorpFile.txt -f fa -o MycoBactFaSEOut
 
 ./ngsngs -i Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 100 -l 150 -seq SE -ne -vcf Test_Examples/ChrMtSubDeletionDiploid.vcf -id 0 -q1 Test_Examples/AccFreqL150R1.txt -chr MT -DumpVCF DeltionInfo -f fq -o MtDeletionOut 
+
+./ngsngs -i Test_Examples/hg19MSub.fa -r 100 -t 1 -s 1 -l 100 -seq SE -qs 40 -f fq -o CircularSimulation -sim circ
 
 -h   | --help: 			 Print help page.
 
@@ -88,21 +99,25 @@ Output characteristics:
 Format specific:
 -q1  | --quality1:		 Read Quality profile for single-end reads (SE) or first read pair (PE) for fastq or sequence alignment map formats.
 -q2  | --quality2:		 Read Quality profile for for second read pair (PE) for fastq or sequence alignment map formats.
--qs  | --qualityscore:	 Fixed quality score, for both read pairs in fastq or sequence alignment map formats. It overwrites the quality profiles.
+-qs  | --qualityscore:	 	Fixed quality score, for both read pairs in fastq or sequence alignment map formats. It overwrites the quality profiles.
 
 ----- Optional -----
 
+Simulation mode:
+-sim | --simulation:
+	<circ||circular>		Circular simulations - Creating breakpoint reads crossing end coordinate of the reference genome for bacterial or mitochondrial simulation. 
+
 Reference Variations:
 
--mr | --mutationrate:	Adding stochastic variations to the reference genome (-i) from a fixed mutation rate, conflicts with number of variations (-v), default = 0.0
--g | --generations:		Adding stochastic variations to the reference genome (-i) according to the fixed mutation rate (-mr) across numerous generations, default = 1
--v | --variations:		Adding a fixed number of stochastic variations to the reference genome (-i), conflicts with mutation rate (-mr), default = 0
+-mr | --mutationrate:			Adding stochastic variations to the reference genome (-i) from a fixed mutation rate, conflicts with number of variations (-v), default = 0.0
+-g | --generations:			Adding stochastic variations to the reference genome (-i) according to the fixed mutation rate (-mr) across numerous generations, default = 1
+-v | --variations:			Adding a fixed number of stochastic variations to the reference genome (-i), conflicts with mutation rate (-mr), default = 0
 
 Genetic Variations:
 
 -bcf | -vcf: 			 Variant Calling Format (.vcf) or binary format (.bcf)
 -id  | --indiv: 		 Integer value (0 - index) for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).
-	 e.g -id 0	 First individual in the provided vcf file. 
+	 e.g -id 0	 	First individual in the provided vcf file. 
 -DumpVCF:			 The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided
 				 vcf file, for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.
 
@@ -137,7 +152,7 @@ Nucleotide Alterations:
 Read Specific:
 -na  | --noalign: 		 Using the SAM output as a sequence containing without alignment information.
 -cl  | --cycle:			 Read cycle length, the maximum length of sequence reads, if not provided the cycle length will be inferred from quality profiles (q1,q2).
--ll  | --lowerlimit:	 Lower fragment length limit, default = 30. The minimum fragment length for deamination is 30, so simulated fragments below will be fixed at 30. 
+-ll  | --lowerlimit:	 	fragment length limit, default = 30. The minimum fragment length for deamination is 30, so simulated fragments below will be fixed at 30. 
 -bl  | --bufferlength:		 Buffer length for generated sequence reads stored in the output files, default = 30000000.
 -chr | --chromosomes: 		 Specific chromosomes from input reference file.
 -a1  | --adapter1: 		 Adapter sequence to add for simulated reads (SE) or first read pair (PE).

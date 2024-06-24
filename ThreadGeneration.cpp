@@ -53,7 +53,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
                         char CommandArray[LENS],const char* version,int HeaderIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile,
-                        int Duplicates,int Lowerlimit,double mutationrate, size_t referencevariations, int generations){
+                        int Duplicates,int Lowerlimit,double mutationrate, size_t referencevariations, int generations,int simmode){
                           
   //creating an array with the arguments to create multiple threads;
 
@@ -326,7 +326,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].totalThreads = nthreads;
       struct_for_threads[i].threadseed = seed;
       struct_for_threads[i].rng_type = RandMacro;
-
+      struct_for_threads[i].simmode = simmode;
       // Sequence alteration models
       // 1) nucleotide quality score and sequencing errors,  
       struct_for_threads[i].QualFlag = QualStringFlag;

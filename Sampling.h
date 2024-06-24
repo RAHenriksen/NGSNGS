@@ -6,6 +6,7 @@
 
 struct Parsarg_for_Sampling_thread{
   fasta_sampler *reffasta;
+  int simmode;
   int threadno;
   int totalThreads; //<- this contains the total number of threads. This is shared among all threads
 

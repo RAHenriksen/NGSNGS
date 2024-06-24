@@ -97,18 +97,21 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
 }
 
 //functions returns head of chromosome, with posB, posE, chr_idx and fraglength set accordingly
-char *sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength){
+char *sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength, size_t &chr_end, int simmode){
   chr_idx = 0;
   if(fs->nref>1)
     chr_idx = ransampl_draw2(fs->ws,mrand_pop(mr),mrand_pop(mr));
   *chromoname = fs->seqs_names[chr_idx];
+  chr_end = fs->seqs_l[chr_idx];
   posB = mrand_pop(mr)*fs->seqs_l[chr_idx]; //abs(mrand_pop_long(mr)) % fs->seqs_l[chr_idx];
   posE = posB +fraglength;
   
-  if(posE>=fs->seqs_l[chr_idx]){
+  if(posE>=fs->seqs_l[chr_idx] && simmode == 0){
+    // linear simulations, move the end point to ensure no crossing of the breakpoint.
     posE=fs->seqs_l[chr_idx];
     posB=posE-fraglength;
   }
+
   char *ret =fs->seqs[chr_idx]; 
   chr_idx = fs->realnameidx[chr_idx];
   return ret;

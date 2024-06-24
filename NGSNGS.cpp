@@ -240,7 +240,6 @@ int main(int argc,char **argv){
       fprintf(stderr,"\t-> The read cycle length is either provided (-cl): %d or inferred from the quality profile dimension (-q1): %d\n",mypars->CycleLength,readcycle);
     }
 
-
     // READ IN THE FASTQ FILE
 
     faidx_t *seq_ref = NULL;
@@ -407,7 +406,7 @@ int main(int argc,char **argv){
                       mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
                       mypars->vcffile,IndelFuncParam,DoIndel,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,
                       mypars->Align,mypars->KstrBuf,mypars->DumpFile,mypars->IndelDumpFile,mypars->Duplicates,mypars->LowerLimit,
-                      mypars->mutationrate,mypars->referencevariations,mypars->generations);
+                      mypars->mutationrate,mypars->referencevariations,mypars->generations,mypars->simmode);
                         
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);

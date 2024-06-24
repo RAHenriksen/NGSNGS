@@ -37,7 +37,7 @@ typedef struct{
 
 fasta_sampler *fasta_sampler_alloc(const char *,const char *);
 void fasta_sampler_destroy(fasta_sampler *fs);
-char* sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength);
+char* sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength,size_t& chr_end,int simmode);
 void fasta_sampler_setprobs(fasta_sampler *fs);
 void fasta_sampler_print(FILE *fp,fasta_sampler *fs);
 void dump_internal(fasta_sampler *fs,const char* filename);
