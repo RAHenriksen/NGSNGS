@@ -150,3 +150,38 @@ void WarMsg(double messageno){
   else if(messageno == 3.0){fprintf(stderr,"\nWarning: sequencing errors (-e) are not added to the sequence reads without the nucleotide quality profiles (-q1, -q2) \n");}
   else if(messageno == 4.0){fprintf(stderr,"\nWarning: for the output format <fa> the provided nucleotide qualities (-q1, -q2) will not be used \n");}
 }
+
+int AmpliconHelpPage(FILE *fp){
+  fprintf(fp,"Amplicon simulation - adding nucleotide alterations to existing empirical data\n\n");
+  fprintf(fp,"Usage\n./Amplicon [options] --amplicon <InputSequenceFile.fq> --output <AmpliconOutput.fq>\n");
+  fprintf(fp,"\nOptions: \n");
+  fprintf(fp,"-h | --help: \t Print help page.\n");
+  fprintf(fp,"-a | --amplicon: \t Input sequence file in .fq format.\n");
+  fprintf(fp,"-o | --output: \t Output sequence file with nucleotide alterations.\n");
+  fprintf(fp,"-s   | --seed: \t Random seed, default = current calendar time (s).\n");
+  fprintf(fp,"-rng | --rand: \t Pseudo-random number generator, OS specific\n");
+  fprintf(fp,"\t <0,1,2,3> \n"); 
+  fprintf(fp,"\t 0 :  \t drand48_r, default for linux or unix, not available for MacOS.\n"); 
+  fprintf(fp,"\t 1 :  \t std::uniform_int_distribution\n"); 
+  fprintf(fp,"\t 2 :  \t rand_r\n"); 
+  fprintf(fp,"\t 3 :  \t erand48, default for MacOS.\n"); 
+  fprintf(fp,"\nPostmortem damage (PMD) - Deamination: \n\n");
+  fprintf(fp,"-m   | --model: \t Choice of deamination model.\n");
+  fprintf(fp,"\t <b,nv,Lambda,Delta_s,Delta_d>  || <briggs,nv,Lambda,Delta_s,Delta_d> \t Parameters for the damage patterns using the Briggs model.\n");
+  fprintf(fp,"\t nv: Nick rate per site. \n \t Lambda: Geometric distribution parameter for overhang length.\n \t Delta_s: PMD rate in single-strand regions.\n \t Delta_d: PMD rate in double-strand regions.\n");
+  fprintf(fp,"\t e.g -m b,0.024,0.36,0.68,0.0097\n\n");  
+  fprintf(fp,"\nStochastic Variations: \n\n");
+  fprintf(fp,"-indel: \t Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.\n");
+  fprintf(fp,"\t <InsProb,DelProb,InsParam,DelParam> \t \n");
+  fprintf(fp,"\t Indels \t-indel 0.05,0.1,0.1,0.2 \n");
+  fprintf(fp,"\t Insertions \t-indel 0.05,0.0,0.1,0.0 \n");
+  fprintf(fp,"\t Deletions \t-indel 0.0,0.5,0.0,0.9 \n");
+  fprintf(fp,"\nNucleotide Alterations: \n\n");
+  fprintf(fp,"-mf  | --mismatch: \t Nucleotide substitution frequency file.\n");
+
+  fprintf(fp,"\nExample\n./Amplicon --amplicon Amplicon_in.fq -m b,0.024,0.36,0.68,0.0097 --output Amplicon_deamination.fq\n");
+  fprintf(fp,"./Amplicon --amplicon Amplicon_in.fq -mf ../Test_Examples/MisincorpFile.txt --output Amplicon_mismatch.fq\n");
+  fprintf(fp,"./Amplicon --amplicon Amplicon_in.fq -indel 0.05,0.1,0.1,0.2 --output Amplicon_indel.fq\n");
+  exit(1);
+  return 0;
+}

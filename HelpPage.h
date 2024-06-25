@@ -4,6 +4,8 @@
 // -h or -v
 int HelpPage(FILE *fp);
 
+int AmpliconHelpPage(FILE *fp);
+
 void ErrMsg(double messageno);
 
 // general warnings

@@ -64,6 +64,9 @@ ifdef HTSSRC
 ngsngs: version.h $(OBJ)
 	$(CXX) $(FLAGS)  -o ngsngs *.o $(HTS_LIBDIR) $(LIBS)
 
+amplicon:	
+	g++ Amplicon.cpp $(HTS_LIBDIR) $(LIBS) mrand.o Briggs.o NtSubModels.o add_indels.o HelpPage.o Amplicon_cli.o -D __WITH_MAIN__ -o Amplicon
+
 else
 %.o: %.c
 	$(CC) -c  $(CFLAGS)  $*.c
