@@ -8,15 +8,6 @@
 #include <zlib.h>
 #include <iostream>
 
-/*
-#ifndef KSTRING_T
-#define KSTRING_T kstring_t
-typedef struct __kstring_t {
-	size_t l, m;
-	char *s;
-} kstring_t;
-#endif
-*/
 int SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, double delta, mrand_t *mr,int strand,int& C_to_T_counter,int& G_to_A_counter,int& C_to_T_counter_rev,int& G_to_A_counter_rev){
     int IsDeam = 0;
     assert(L<1024);
@@ -147,7 +138,6 @@ int SimBriggsModel(char seq[], int L, double nv, double lambda, double delta_s, 
 
 int SimBriggsModel_kstring(kstring_t* seq, double nv, double lambda, double delta_s, double delta, mrand_t* mr, int strand, int& C_to_T_counter, int& G_to_A_counter, int& C_to_T_counter_rev, int& G_to_A_counter_rev) {
     int IsDeam = 0;
-    fprintf(stderr,"kstring sequence lenght %zu\n",seq->l);
 
     double dtemp1, dtemp2;
     dtemp1 = mrand_pop(mr);
@@ -172,54 +162,146 @@ int SimBriggsModel_kstring(kstring_t* seq, double nv, double lambda, double delt
         }
     }
 
+    //fprintf(stderr,"kstring 1 %s\n",seq->s);
+
     kstring_t seq_intermediate;
-    memset(&seq_intermediate, 0, sizeof(kstring_t)); // Initialize kstring_t
+    seq_intermediate.l = seq->l;
+    seq_intermediate.m = seq->l;
+    seq_intermediate.s = (char *)malloc((seq->l + 1) * sizeof(char)); // Allocate memory
 
-    kputs(seq->s, &seq_intermediate); // Copy seq to seq_intermediate
+    strcpy(seq_intermediate.s, seq->s); // Copy seq->s to seq_intermediate.s
 
+    //fprintf(stderr,"kstring 2 %s\n",seq_intermediate.s);
+    //seq_intermediate.s[10] = 'X';
+    //fprintf(stderr,"kstring 3 %s\n",seq_intermediate.s);
+    //exit(1);
+    //
     for (int i = 0; i < l; i++) {
         if (seq_intermediate.s[i] == 'C' || seq_intermediate.s[i] == 'c') {
             dtemp1 = mrand_pop(mr);
             double u = dtemp1;
             if (u < delta_s) {
                 IsDeam = 1;
-                kputc('T', seq);
+                seq->s[i] = 'T'; //X
                 if (i == 0 && strand == 0) { C_to_T_counter++; }
                 else if (i == 0 && strand == 1) { C_to_T_counter_rev++; }
             }
             else {
-                kputc(seq_intermediate.s[i], seq);
+              seq->s[i] = seq_intermediate.s[i];
             }
         }
         else {
-            kputc(seq_intermediate.s[i], seq);
+          seq->s[i] = seq_intermediate.s[i];
         }
+
     }
 
     for (int i = 0; i < r; i++) {
-        std::cout << "deamin G>A" << std::endl;
         if (seq_intermediate.s[seq->l - i - 1] == 'G' || seq_intermediate.s[seq->l - i - 1] == 'g') {
             dtemp2 = mrand_pop(mr);
             double u = dtemp2;
             if (u < delta_s) {
                 IsDeam = 1;
-                kputc('A', seq);
+                seq->s[seq->l-i-1] = 'A'; //Q
                 if (i == 0 && strand == 0) { G_to_A_counter++; }
                 else if (i == 0 && strand == 1) { G_to_A_counter_rev++; }
             }
             else {
-                kputc(seq_intermediate.s[seq->l - i - 1], seq);
+              seq->s[seq->l-i-1] = seq_intermediate.s[seq->l-i-1];
             }
         }
         else {
-            kputc(seq_intermediate.s[seq->l - i - 1], seq);
+          seq->s[seq->l-i-1] = seq_intermediate.s[seq->l-i-1];
         }
     }
 
     // Cleanup
     free(seq_intermediate.s);
+    seq_intermediate.s = NULL;
+    seq_intermediate.l = seq_intermediate.m = 0;
 
-    // Other parts of the function remain the same
+    return IsDeam;
+}
+
+int SimBriggsModel_amplicon(kstring_t* seq, double nv, double lambda, double delta_s, double delta, mrand_t* mr){
+    int IsDeam = 0;
+
+    double dtemp1, dtemp2;
+    dtemp1 = mrand_pop(mr);
+    dtemp2 = mrand_pop(mr);
+
+    int l = 0;
+    int r = seq->l - 1;
+
+    while (l + r > seq->l - 2) {
+        l = 0;
+        r = 0;
+        double u_l = dtemp1; // between 0 and 1
+        double u_r = dtemp2; // between 0 and 1
+        dtemp1 = mrand_pop(mr);
+        dtemp2 = mrand_pop(mr);
+
+        if (u_l > 0.5) {
+            l = (int)Random_geometric_k(lambda, mr);
+        }
+        if (u_r > 0.5) {
+            r = (int)Random_geometric_k(lambda, mr);
+        }
+    }
+
+    //fprintf(stderr,"kstring 1 %s\n",seq->s);
+
+    kstring_t seq_intermediate;
+    seq_intermediate.l = seq->l;
+    seq_intermediate.m = seq->l;
+    seq_intermediate.s = (char *)malloc((seq->l + 1) * sizeof(char)); // Allocate memory
+
+    strcpy(seq_intermediate.s, seq->s); // Copy seq->s to seq_intermediate.s
+
+    //fprintf(stderr,"kstring 2 %s\n",seq_intermediate.s);
+    //seq_intermediate.s[10] = 'X';
+    //fprintf(stderr,"kstring 3 %s\n",seq_intermediate.s);
+    //exit(1);
+    //
+    for (int i = 0; i < l; i++) {
+        if (seq_intermediate.s[i] == 'C' || seq_intermediate.s[i] == 'c') {
+          dtemp1 = mrand_pop(mr);
+          double u = dtemp1;
+          if (u < delta_s) {
+            IsDeam = 1;
+            seq->s[i] = 'T'; //X
+          }
+          else {
+            seq->s[i] = seq_intermediate.s[i];
+          }
+        }
+        else {
+          seq->s[i] = seq_intermediate.s[i];
+        }
+
+    }
+
+    for (int i = 0; i < r; i++) {
+        if (seq_intermediate.s[seq->l - i - 1] == 'G' || seq_intermediate.s[seq->l - i - 1] == 'g') {
+          dtemp2 = mrand_pop(mr);
+          double u = dtemp2;
+          if (u < delta_s) {
+            IsDeam = 1;
+            seq->s[seq->l-i-1] = 'A'; //Q
+          }
+          else {
+            seq->s[seq->l-i-1] = seq_intermediate.s[seq->l-i-1];
+          }
+        }
+        else {
+          seq->s[seq->l-i-1] = seq_intermediate.s[seq->l-i-1];
+        }
+    }
+
+    // Cleanup
+    free(seq_intermediate.s);
+    seq_intermediate.s = NULL;
+    seq_intermediate.l = seq_intermediate.m = 0;
 
     return IsDeam;
 }

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include "Sampling.h"
 
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
@@ -177,7 +178,7 @@ void* Sampling_threads(void *arg) {
         strncpy(FragmentSequence + segment1_length, chrseq + segment2_start, segment2_length);
       }
       else{
-        // linear breakpoint
+        // linear fragment
         fragmentLength=posE-posB;
         assert(posE>=posB&&fragmentLength>20);
         memset(FragmentSequence,0,strlen(FragmentSequence));
@@ -203,16 +204,6 @@ void* Sampling_threads(void *arg) {
     }
     //std::cout << "Current read atom "<< current_reads_atom << std::endl;
     //std::cout << FragmentSequence << "s f" << posB << " " << posE << std::endl;
-    
-
-    /*
-    // not implemented yet - nor to be included within the near future as off december 2022
-    if circ
-      if (posE < posB+fraglenth) 
-        memset(FragmentSequence,'0',strlen(FragmentSequence));
-        strncpy(FragmentSequence,chrseq+(posB),fraglength);
-        strncpy(FragmentSequence,chrseq,fraglength-(posE-posB));         
-    */
 
     //Generating random ID unique for each read output
     double rand_val_id = mrand_pop(rand_alloc);

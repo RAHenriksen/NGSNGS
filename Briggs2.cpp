@@ -12,9 +12,7 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>  // std::begin, std::end
-
-#define LENS 4096
-#define MAXBINS 100
+#include <htslib/kstring.h>
 
 extern int refToInt[256];
 extern char NtComp[5];
@@ -257,6 +255,172 @@ int SimBriggsModel2(char *ori, int L, double nv, double lambda, double delta_s, 
   //change the IsDeam to the minimum and maximum position at a given point
   return IsDeam;
 }
+
+int SimBriggsModel2_k(kstring_t* ori, int L, double nv, double lambda, double delta_s, double delta, mrand_t *mr, kstring_t* res[], int strandR1,
+                    int& C_to_T_counter, int& G_to_A_counter,
+                    int& C_total, int& G_total){
+
+  int IsDeam = 0;
+  assert(L < 1024);
+    
+  if (strandR1 == 1) {
+    ReversComplement_k(ori);
+  }
+
+  int l = 0;
+  int r = L - 1;
+
+  while (l + r > L - 2) {
+    l = 0;
+    r = 0;
+    double u_l = mrand_pop(mr);
+    double u_r = mrand_pop(mr);
+
+    if (u_l > 0.5) {
+      l = (int)Random_geometric_k(lambda, mr);
+    }
+    if (u_r > 0.5) {
+      r = (int)Random_geometric_k(lambda, mr);
+      }
+  }
+
+  kstring_t* rasmus = res[0];
+  kstring_t* thorfinn = res[1];
+  kstring_t* thorfinn_rev_comp = res[2];
+  kstring_t* rasmus_rev_comp = res[3];
+
+  strncpy(rasmus->s, ori->s, L);
+  rasmus->l = L;
+  strncpy(thorfinn->s, ori->s, L);
+  thorfinn->l = L;
+  Complement_k(thorfinn);
+
+  std::vector<int> deamin_pos_vec = { -1 };
+
+  for (int i = 0; i < l; i++) {
+    if (rasmus->s[i] == 'C' || rasmus->s[i] == 'c') {
+      if (i == 0) { C_total++; }
+      double u = mrand_pop(mr);
+      if (u < delta_s) {
+        if (i == 0) { C_to_T_counter++; G_to_A_counter++; }
+        rasmus->s[i] = 'T';
+        thorfinn->s[i] = 'A';
+        deamin_pos_vec.push_back(i);
+      }
+    }
+  }
+
+  for (int j = 0; j < r; j++) {
+    if (thorfinn->s[L - j - 1] == 'C' || thorfinn->s[L - j - 1] == 'c') {
+      if (j == 0) { C_total++; }
+      double u = mrand_pop(mr);
+      if (u < delta_s) {
+        if (j == 0) { C_to_T_counter++; G_to_A_counter++; }
+        rasmus->s[L - j - 1] = 'A';
+        thorfinn->s[L - j - 1] = 'T';
+        deamin_pos_vec.push_back((L - j - 1));
+      }
+    }
+  }
+
+  if (nv > 0) {
+    double u_nick_m = mrand_pop(mr);
+    double P_m = nv / ((L - l - r - 1) * nv + 1 - nv);
+    int p_nick_m = l;
+    double CumPm = P_m;
+    while ((u_nick_m > CumPm) && (p_nick_m < L - r - 1)) {
+      CumPm += P_m;
+      p_nick_m += 1;
+    }
+
+    int p_nick_n;
+    double u_nick_n = mrand_pop(mr);
+    double CumPn;
+
+    if (p_nick_m < L - r - 1) {
+      p_nick_n = L - p_nick_m - 2;
+      CumPn = nv;
+      while ((u_nick_n > CumPn) && (p_nick_n < L - l - 1)) {
+        p_nick_n += 1;
+        CumPn += nv * pow(1 - nv, p_nick_m + p_nick_n - L + 2);
+      }
+    }
+    else if (p_nick_m == L - r - 1) {
+      p_nick_n = r;
+      CumPn = nv;
+      while ((u_nick_n > CumPn) && (p_nick_n < L - l - 1)) {
+        p_nick_n += 1;
+        CumPn += nv * pow(1 - nv, p_nick_n - r);
+      }
+    }
+
+    for (int i = l; i < L - r; i++) {
+      if (i < L - p_nick_n - 1 && (rasmus->s[i] == 'C' || rasmus->s[i] == 'c')) {
+        if (i == 0) { C_total++; }
+        double u = mrand_pop(mr);
+        if (u < delta) {
+          rasmus->s[i] = 'T';
+          thorfinn->s[i] = 'A';
+          if (i == 0) { C_to_T_counter++; G_to_A_counter++; }
+          deamin_pos_vec.push_back((i));
+        }
+      }
+      else if (i > p_nick_m && (thorfinn->s[i] == 'C' || thorfinn->s[i] == 'c')) {
+        if (i == (L - 1)) { C_total++; }
+        double u = mrand_pop(mr);
+        if (u < delta) {
+          rasmus->s[i] = 'A';
+          thorfinn->s[i] = 'T';
+          if (i == (L - 1)) { C_to_T_counter++; G_to_A_counter++; }
+          deamin_pos_vec.push_back((i));
+        }
+      }
+      else if (i >= L - p_nick_n - 1 && i <= p_nick_m && (rasmus->s[i] == 'C' || rasmus->s[i] == 'c')) {
+        if (i == 0) { C_total++; }
+        double u = mrand_pop(mr);
+        if (u < delta) {
+          rasmus->s[i] = 'T';
+          if (i == 0) { C_to_T_counter++; }
+          deamin_pos_vec.push_back((i));
+        }
+      }
+      else if (i >= L - p_nick_n - 1 && i <= p_nick_m && (thorfinn->s[i] == 'C' || thorfinn->s[i] == 'c')) {
+        if (i == 0) { C_total++; }
+        double u = mrand_pop(mr);
+        if (u < delta) {
+          thorfinn->s[i] = 'T';
+          if (i == 0) { G_to_A_counter++; }
+          deamin_pos_vec.push_back((i));
+        }
+      }
+    }
+  }
+
+  reverseChar(thorfinn->s, strlen(thorfinn->s));
+  strcpy(rasmus_rev_comp->s, rasmus->s);
+  ReversComplement_k(rasmus_rev_comp);
+  strcpy(thorfinn_rev_comp->s, thorfinn->s);
+  ReversComplement_k(thorfinn_rev_comp);
+
+  res[0] = rasmus;
+  res[1] = thorfinn;
+  res[2] = thorfinn_rev_comp;
+  res[3] = rasmus_rev_comp;
+
+  int mindeaminpos;
+  int maxdeaminpos;
+
+  if (deamin_pos_vec.size() > 1) {
+    IsDeam = 1;
+    mindeaminpos = *std::min_element(deamin_pos_vec.begin() + 1, deamin_pos_vec.end());
+    maxdeaminpos = *std::max_element(deamin_pos_vec.begin() + 1, deamin_pos_vec.end());
+  }
+
+  deamin_pos_vec.clear();
+
+  return IsDeam;
+}
+
   
 #ifdef __WITH_MAIN__
 //g++ Briggs2.cpp -D__WITH_MAIN__ mrand.o

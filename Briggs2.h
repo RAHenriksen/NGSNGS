@@ -7,6 +7,8 @@
 #define BRIGGS2_H
 #include "mrand.h"
 #include "Briggs2.h"
+#include <htslib/kstring.h>
+
 /*
   orginal is a contiguous subsequence of our reference genome which we will call forward or + strand.
   We also assume that original is 5 to 3 prime.
@@ -20,5 +22,9 @@
 
 
 int SimBriggsModel2(char *original, int L, double nv, double lambda, double delta_s, double delta,mrand_t *mr,char **results, int strandR1,int& C_to_T_counter,int& G_to_A_counter,int& C_total,int& G_total);
+
+int SimBriggsModel2_k(kstring_t* ori, int L, double nv, double lambda, double delta_s, double delta, mrand_t *mr, kstring_t* res[], int strandR1,
+                    int& C_to_T_counter, int& G_to_A_counter,
+                    int& C_total, int& G_total);
 
 #endif /* NGSNGSFUNC_H */

@@ -1,7 +1,12 @@
 #include <algorithm>
 #include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <cassert>
+#include <iostream>
 
 #include "NGSNGS_misc.h"
+#include <htslib/kstring.h>
 
 int refToInt[256] = {
   0,1,2,3,4,4,4,4,4,4,4,4,4,4,4,4,//15
@@ -63,3 +68,47 @@ void Complement(char* seq) {
 void reverseChar(char* str,int length) {
     std::reverse(str, str + length);
 }
+
+void Complement_k(kstring_t* seq) {
+  // Complement input sequence in place
+  char *s = seq->s;
+  for (; *s; ++s) {
+    *s = NtComp[refToInt[(unsigned char)*s]];
+  }
+}
+
+void ReversComplement_k(kstring_t* seq) {
+  // Reverse and complement input sequence in place
+  reverseChar(seq->s, seq->l);
+  Complement_k(seq);
+}
+
+
+#ifdef __WITH_MAIN__
+//g++ NGSNGS_misc.cpp -D__WITH_MAIN__
+int main(){
+  // Example usage of kstring_t and Complement_k
+  kstring_t seq;
+  char sequence[] = "ACGTN";
+  seq.s = sequence;
+  seq.l = strlen(sequence);
+  seq.m = seq.l + 1; // Just for safety, usually seq.m is set to the allocated size
+
+  std::cout << "Original sequence: " << seq.s << std::endl;
+
+  Complement_k(&seq);
+
+  std::cout << "Complemented sequence: " << seq.s << std::endl;
+  
+  ReversComplement_k(&seq);
+
+  std::cout << "Reverse complemented sequence: " << seq.s << std::endl;
+
+  reverseChar(seq.s, seq.l);
+
+  std::cout << "Reverse sequence: " << seq.s << std::endl;
+
+  return 0;
+}
+
+#endif

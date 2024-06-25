@@ -1,5 +1,7 @@
 #include "add_indels.h"
 #include "fasta_sampler.h"
+#include <htslib/kstring.h>
+
 const char *bas = "ACGTN";
 const char *bas2 = "QWERY";
 
@@ -73,6 +75,97 @@ void add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_IN
   }
 }
 
+
+void add_indel_amplicon_fqbam(mrand_t *mr,kstring_t* seq,kstring_t* qual,double *pars,int* ops,int ErrProbTypeOffset){
+  int beg = 0;
+  int end = seq->l;
+  //int ops[2] ={0,0};
+  int fragbefore = seq->l;
+
+  int i=0;
+  int qscoresval;
+
+  while(beg<end-1){
+    if(end>2*fragbefore && beg > fragbefore && ((end-beg)>fragbefore)){
+      beg++;
+      continue;
+    }
+
+    //insertions
+    if(mrand_pop(mr)<pars[0]){
+      ops[0]++;
+      int len = Random_geometric_k(pars[2],mr)+1;
+
+      // Ensure there is enough capacity for the insertion
+      if (seq->l + len > seq->m) {
+        size_t new_capacity = seq->l + len;
+        char *new_seq = (char *)realloc(seq->s, new_capacity + 1);
+        char *new_qual = (char *)realloc(qual->s, new_capacity + 1);
+        if (!new_seq || !new_qual) {
+          fprintf(stderr, "Memory reallocation failed\n");
+          free(seq->s);
+          free(qual->s);
+          return;
+        }
+        seq->s = new_seq;
+        qual->s = new_qual;
+        seq->m = qual->m = new_capacity;
+      }
+      
+      // Shift the existing characters to the right
+      memmove(seq->s + beg + len, seq->s + beg, seq->l - beg + 1);
+      memmove(qual->s + beg + len, qual->s + beg, qual->l - beg + 1);
+
+      // Insert new characters
+      for (int i = 0; i < len; i++) {
+        seq->s[beg + i] = bas[mrand_pop_long(mr) %5];
+        int quality_val = (int)(mrand_pop(mr) * 39 + 1);
+        qual->s[beg + i] = (char)(quality_val + ErrProbTypeOffset);
+      }
+
+      //memset(seq->s + beg, 'Q', len);
+      //memset(qual->s + beg, 'B', len);
+
+      // Update the lengths
+      seq->l += len;
+      qual->l += len;
+      beg += len;
+      end += len;
+      continue;
+    }
+
+    // Handle deletion
+    if(mrand_pop(mr)<pars[1]){
+      ops[1]++;
+      int len = Random_geometric_k(pars[3],mr)+1;
+      //two cases: 1) is that deletion is in the middle of the fragment and we should shift all data to the left
+      //2) Deletion will cover the rest of the read. 
+      if(len+beg>=end){
+        //case 2)
+        seq->s[beg] = '\0';
+        qual->s[beg] = '\0';
+        seq->l = beg;
+        qual->l = beg;
+        end = beg+1;
+      }
+      else{
+        //case 1) we dont need to check for running of the data
+        memmove(seq->s + beg, seq->s + beg + len, seq->l - beg - len + 1);
+        memmove(qual->s + beg, qual->s + beg + len, qual->l - beg - len + 1);
+        end -= len;
+        seq->l -= len;
+        qual->l -= len;
+      }
+      continue;
+    }
+    beg++;
+  }
+
+  // Null-terminate the sequences
+  seq->s[seq->l] = '\0';
+  qual->s[qual->l] = '\0';
+}
+
 #ifdef __WITH_MAIN__
 int main(int argc,char **argv){
   char INDEL_INFO[1024];
@@ -92,4 +185,27 @@ int main(int argc,char **argv){
   }
   return 0;
 }
+
+
 #endif
+
+
+      /*
+      if (seq_intermediate.l + len > qual_intermediate.l) {
+          // Reallocate memory to increase the capacity
+          size_t new_capacity = seq_intermediate.l + len;
+          char *new_seq = (char *)realloc(seq_intermediate.s, new_capacity + 1);  // +1 for the null terminator
+          char *new_qual = (char *)realloc(qual_intermediate.s, new_capacity + 1);  // +1 for the null terminator
+          seq_intermediate.s = new_seq;
+          seq_intermediate.l = new_capacity;
+          seq_intermediate.m = new_capacity;
+          seq->l = new_capacity;
+          seq->m = new_capacity;
+
+          qual_intermediate.s = new_qual;
+          qual_intermediate.l = new_capacity;
+          qual_intermediate.m = new_capacity;
+          qual->l = new_capacity;
+          qual->m = new_capacity;
+
+      }*/
