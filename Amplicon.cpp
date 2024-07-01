@@ -5,6 +5,7 @@
 #include "add_indels.h"
 #include "HelpPage.h"
 #include "Amplicon_cli.h"
+#include "Amplicon.h"
 
 #include <cstdio>
 #include <cstring>
@@ -27,28 +28,10 @@
 
 pthread_mutex_t amplicon_write_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-typedef struct {
-  BGZF* amplicon_in_fp;
-  int startLine;
-  int endLine;
-  int threadid;
-  char* Briggs;
-  char* Indel;
-  int rng_type;
-  BGZF* amplicon_out_fp;  // Include the output file in the thread struct
-  long int Seed;
-
-  double* MisMatch;
-  int MisLength;
-  int doMisMatchErr;
-
-  size_t moduloread;
-
-} struct_for_amplicon_threads;
 
 KSEQ_INIT(BGZF*, bgzf_read);
 
-void* ProcessFQ(void* args) {
+void* ProcessFAFQ(void* args) {
   struct_for_amplicon_threads* amp_thread_struct = (struct_for_amplicon_threads*)args;
 
   BGZF* amplicon_in_fp = amp_thread_struct->amplicon_in_fp;
@@ -57,6 +40,9 @@ void* ProcessFQ(void* args) {
   int endLine = amp_thread_struct->endLine;
   int threadid = amp_thread_struct->threadid;
 
+  int filetype = amp_thread_struct->filetype;
+  fprintf(stderr,"INSIDE PROCESSFQ %d\n",filetype);
+  
   //char* Briggs = amp_thread_struct->Briggs;
   //char* IndelInputParam = amp_thread_struct->Indel;
 
@@ -78,6 +64,7 @@ void* ProcessFQ(void* args) {
     free(BriggsParam);
   }
 
+  // initialize indel parameters
   float IndelFuncParam[4];
   if (amp_thread_struct->Indel != NULL){
     char* IndelInputParam = strdup(amp_thread_struct->Indel);
@@ -102,6 +89,9 @@ void* ProcessFQ(void* args) {
 
   // Seek to the appropriate starting line
   kseq_t *FQseq = kseq_init(amplicon_in_fp);
+
+  int ErrProbTypeOffset=33; //quality score offset, 33 only for fastq it should be 0 for bam
+
   while (startLine <= endLine){
     //fprintf(stderr,"line %d\n",startLine);
     if (kseq_read(FQseq) < 0) {
@@ -138,14 +128,17 @@ void* ProcessFQ(void* args) {
       double pars[4] = {IndelFuncParam[0],IndelFuncParam[1],IndelFuncParam[2],IndelFuncParam[3]};
       //fprintf(stderr,"adding stochastic indels with parameters %f \t %f \t %f \t %f\n",pars[0],pars[1],pars[2],pars[3]);
 
-      int ErrProbTypeOffset=33; //only for fastq i should be 0 for bam
-
       int ops[2] ={0,0};
 
       if(pars[1] == 0){
         //only potential insertions
         if(mrand_pop(mr)<pars[0]){
-          add_indel_amplicon_fqbam(mr,&FQseq->seq,&FQseq->qual,pars,ops,ErrProbTypeOffset);
+          if (amp_thread_struct->OutFormat==faT || amp_thread_struct->OutFormat==fagzT){
+            add_indel_amplicon_fa(mr,&FQseq->seq,pars,ops);
+          }
+          else if (amp_thread_struct->OutFormat==fqT || amp_thread_struct->OutFormat==fqgzT){
+            add_indel_amplicon_fqbam(mr,&FQseq->seq,&FQseq->qual,pars,ops,ErrProbTypeOffset);
+          }
         }
         else{
           continue;
@@ -154,14 +147,24 @@ void* ProcessFQ(void* args) {
       else if(pars[0] == 0){
         //only potential deletions
         if(mrand_pop(mr)<pars[1]){
-          add_indel_amplicon_fqbam(mr,&FQseq->seq,&FQseq->qual,pars,ops,ErrProbTypeOffset);
+          if (amp_thread_struct->OutFormat==faT || amp_thread_struct->OutFormat==fagzT){
+            add_indel_amplicon_fa(mr,&FQseq->seq,pars,ops);
+          }
+          else if (amp_thread_struct->OutFormat==fqT || amp_thread_struct->OutFormat==fqgzT){
+            add_indel_amplicon_fqbam(mr,&FQseq->seq,&FQseq->qual,pars,ops,ErrProbTypeOffset);
+          }
         }
         else{
           continue;
         }
       }
       else if(mrand_pop(mr)<pars[0] && mrand_pop(mr)<pars[1]){
-        add_indel_amplicon_fqbam(mr,&FQseq->seq,&FQseq->qual,pars,ops,ErrProbTypeOffset);
+        if (amp_thread_struct->OutFormat==faT || amp_thread_struct->OutFormat==fagzT){
+          add_indel_amplicon_fa(mr,&FQseq->seq,pars,ops);
+        }
+        else if (amp_thread_struct->OutFormat==fqT || amp_thread_struct->OutFormat==fqgzT){
+          add_indel_amplicon_fqbam(mr,&FQseq->seq,&FQseq->qual,pars,ops,ErrProbTypeOffset);
+        }
       }
 
       //fprintf(stderr,"done adding insertions sequence for read \n\t%s\n\t%s\n\t%s\t\n with sizes seq %d \t qual %d\n",FQseq->name.s,FQseq->seq.s,FQseq->qual.s,FQseq->seq.l,FQseq->qual.l);
@@ -180,7 +183,76 @@ void* ProcessFQ(void* args) {
 
     //kseq_read(seq);
     kstring_t thread_out = {0, 0, NULL};  // Initialize kstring_t for the formatted output
-    ksprintf(&thread_out, "%s_mod%d%d%d\n%s\n+\n%s\n",FQseq->name.s,ReadDeam,FragMisMatch,has_indels,FQseq->seq.s, FQseq->qual.s);
+    
+    if (amp_thread_struct->OutFormat==faT || amp_thread_struct->OutFormat==fagzT){
+      ksprintf(&thread_out, ">%s_mod%d%d%d\n%s\n",FQseq->name.s,ReadDeam,FragMisMatch,has_indels,FQseq->seq.s);
+    }
+    else if (amp_thread_struct->OutFormat==fqT || amp_thread_struct->OutFormat==fqgzT){
+      if(filetype == 0){
+        // input amplicon file is fasta format without quality scores, thus we need to generate an artificial quality score sequence
+        fprintf(stderr,"Warning without the nucleotide quality scores present in the input fasta file, an artifical quality score of 40 is created for each nucleotide\n");
+        kstring_t qual;
+        qual.s = NULL; qual.l=qual.m=0;
+        qual.s = (char*)malloc(( FQseq->seq.l + 1) * sizeof(char));
+        qual.m = FQseq->seq.m + 1;  // Set the maximum allocated length
+        qual.l = FQseq->seq.l;   
+
+        memset(qual.s, 'I', FQseq->seq.l);
+        qual.s[FQseq->seq.l] = '\0'; //create the null termination in the end
+        /*for (int i = 0; i < FQseq->seq.l; i++) {
+          fprintf(stderr,"I VALUE %d \t %c \t %c \n",i,FQseq->seq.s[i]);
+          //int quality_val = (int)(mrand_pop(mr) * 39 + 1);
+          qual.s[i] = 'I' ;//(char)(quality_val + ErrProbTypeOffset);
+          std::cout << qual.s[i] << std::endl;
+        }*/
+        ksprintf(&thread_out, "@%s_mod%d%d%d\n%s\n+\n%s\n",FQseq->name.s,ReadDeam,FragMisMatch,has_indels,FQseq->seq.s,qual.s);
+        free(qual.s);
+      }
+      else{
+        ksprintf(&thread_out, "@%s_mod%d%d%d\n%s\n+\n%s\n",FQseq->name.s,ReadDeam,FragMisMatch,has_indels,FQseq->seq.s, FQseq->qual.s);
+      }
+    }
+    else if (amp_thread_struct->OutFormat==samT || amp_thread_struct->OutFormat==bamT|| amp_thread_struct->OutFormat==cramT){
+      // consider adding ba format to simply store the sequence information
+
+      fprintf(stderr,"Warning without alignment information NGSNGS amplicon mode is unable to store the sequence reads in a Sequence Alignment/Map format, try using fa,fa.gz,fq,fq.gz\n");
+      exit(1);
+      /*
+
+      https://github.com/samtools/htslib/blob/develop/htslib/sam.h#L1040C1-L1047C1
+      
+      int bam_set1(bam1_t *bam,
+        size_t l_qname, const char *qname,
+        uint16_t flag, int32_t tid, hts_pos_t pos, uint8_t mapq,
+        size_t n_cigar, const uint32_t *cigar,
+        int32_t mtid, hts_pos_t mpos, hts_pos_t isize,
+        size_t l_seq, const char *seq, const char *qual,
+        size_t l_aux);
+      
+      int SamFlag 4;
+      uint32_t AlignCigar = bam_cigar_gen(FQseq->seq.l, BAM_CSOFT_CLIP);
+      size_t n_cigar = 1;
+      size_t l_aux = 2; 
+      uint8_t mapq = 255;
+      hts_pos_t min_beg = -1;
+      hts_pos_t mpos = -1;
+      hts_pos_t max_end = 0;
+      hts_pos_t insert = -1;
+      
+      int chr_max_end_mate = 0; //PNEXT 0-> unavailable for SE
+
+      int32_t chr_idx = -1;
+      int32_t chr_idx_read = -1;
+
+      bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],
+        seq->name.l,seq->name.s,
+        SamFlag,chr_idx,min_beg,mapq,
+        n_cigar,AlignCigar,
+        chr_idx_read,mpos,insert,
+        seq->seq.l,seq->seq.s,seq->qual.s,
+        l_aux);
+      */
+    }
     //fprintf(stderr,"TID%d_line%d_%s\t%s\t+\t%s\n", threadid, startLine,seq->name.s, seq->seq.s, seq->qual.s);
     pthread_mutex_lock(&amplicon_write_mutex);
     if (bgzf_write(amplicon_out_fp, thread_out.s, thread_out.l) < 0) {
@@ -199,83 +271,79 @@ void* ProcessFQ(void* args) {
   return NULL;
 }
 
-#ifdef __WITH_MAIN__
-
-int main(int argc,char **argv){
-  argStruct *mypars = NULL;
-  mypars = amplicongetpars(argc,argv);
+void* AmpliconFAFQThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_in_fp,int filetype,const char* Amplicon_out_fp,const char* Subprofile,int threads,char *Briggs,char *Indel,int seed,int rng_type,size_t moduloread,size_t totalLines,size_t linesPerThread) {
   
-  if(argc==1||(argc==2&&(strcasecmp(argv[1],"--help")==0||strcasecmp(argv[1],"-h")==0))){
-    HelpPage(stderr);
-    return 0;
+  std::cout << "file type " << filetype << std::endl;
+
+  // initialize file type for output name to convert files
+  const char* suffix = NULL;
+  const char* mode = NULL;
+
+  char fileout[512];
+  const char* fileprefix = Amplicon_out_fp;
+  strcpy(fileout,fileprefix);
+
+  switch(OutFormat){
+    case faT:
+      mode = "wu";
+      suffix = ".fa";
+      break;
+    case fagzT:
+      mode = "wb";
+      suffix = ".fa.gz";
+      break;
+    case fqT:
+      mode = "wu";
+      suffix = ".fq";
+      break;
+    case fqgzT:
+      mode = "w";
+      suffix = ".fq.gz";
+      break;
+    case samT:
+      mode = "ws";
+      suffix = ".sam";
+      break;
+    case bamT:
+      mode = "wb";
+      suffix = ".bam";
+      break;
+    case cramT:
+      mode = "wc";
+      suffix = ".cram";
+      break;
+    default:
+      fprintf(stderr,"\t-> Fileformat is currently not supported \n");
+      break;
   }
-  // Initate parameters
 
-  const char* Amplicon_in_fp = mypars->Amplicon_in_pars;
-  const char* Amplicon_out_fp = mypars->Amplicon_out_pars;
-  int threads = mypars->Threads;
-  char *Briggs = mypars->BriggsBiotin;
-  char *Indel = mypars->Indel;
-  //const char* fastqFile = "Amplicon_in.fq";
-  long int Seed = mypars->Seed;
-  if (mypars->rng_type == -1){
-    #if defined(__linux__) || defined(__unix__)
-      mypars->rng_type = 0;
-    #elif defined(__APPLE__) || defined(__MACH__)
-      mypars->rng_type = 3;
-      //when 0 it will have problems with drand48 reentrant, will default to erand48 (MacroRandType 3)
-    #else
-    #   error "Unknown compiler"
-    #endif
-  }
+  strcat(fileout,suffix);
 
-  // Count the total number of lines in the file
-  long long totalLines = 0;
-
-  BGZF* fp_tmp = bgzf_open(Amplicon_in_fp, "r");
-  kstring_t linecounttmp;linecounttmp.s=NULL;linecounttmp.l=linecounttmp.m=0; // Initialize a kstring_t structure
-  while (bgzf_getline(fp_tmp, '\n', &linecounttmp) != -1){totalLines++;}
-  free(linecounttmp.s);
+  fprintf(stderr,"\t-> File output name is %s\n",fileout);
+  const char* filename_out = fileout;
   
-  // Calculate the number of lines per thread
-  size_t no_reads = totalLines/4;
-  size_t linesPerThread = totalLines / threads;
-  bgzf_close(fp_tmp);
-
-  int modulovalue;
-  if (no_reads > 100){
-    modulovalue = 10;
-  }
-  else{ 
-    modulovalue = 1;
-  }
-  size_t moduloread = no_reads/modulovalue;
-
-  //printf("Total lines %zu \t Total reads %zu \t lines pr threads %zu \n",totalLines,no_reads,linesPerThread);
-
   //generating mismatch matrix to parse for each string
   double* MisMatchFreqArray = new double[LENS];
   int mismatchcyclelength = 0;
   int doMisMatchErr = 0;
-  if (mypars->SubProfile != NULL){
-    MisMatchFreqArray = MisMatchFileArray(MisMatchFreqArray,mypars->SubProfile,mismatchcyclelength);
+  if (Subprofile != NULL){
+    MisMatchFreqArray = MisMatchFileArray(MisMatchFreqArray,Subprofile,mismatchcyclelength);
     doMisMatchErr = 1;
   }
 
-  if(strcasecmp("-indel",*argv)==0){
-    mypars->Indel = strdup(*(++argv));
-  }
 
   BGZF* fp = bgzf_open(Amplicon_in_fp, "r");
   if (fp == NULL) {
-    fprintf(stderr, "Error opening the FastQ file.\n");
-    return 1;
+    fprintf(stderr, "Error opening the input file.\n");
+    exit(1);
+    //return 1;
   }
 
-  BGZF* amplicon_out = bgzf_open(Amplicon_out_fp, "wu");
+  BGZF* amplicon_out = bgzf_open(filename_out, mode);
   if (amplicon_out == NULL) {
     fprintf(stderr, "Error opening output file.\n");
-    return 1;
+    exit(1);
+    //return 1;
   }
 
   // Create an array to hold thread IDs dynamically
@@ -290,15 +358,19 @@ int main(int argc,char **argv){
     int endLine = (i == threads - 1) ? totalLines : startLine + linesPerThread - 1;
 
     //fprintf(stderr, "Thread %d reads in line start %d to line end %d\n", i, startLine, endLine);
+    amp_thread_struct[i].OutFormat = OutFormat;
+    amp_thread_struct[i].filetype = filetype;
     amp_thread_struct[i].moduloread = moduloread;
+    amp_thread_struct[i].totalLines = totalLines;
+    amp_thread_struct[i].linesPerThread = linesPerThread;
     amp_thread_struct[i].amplicon_in_fp = fp;
     amp_thread_struct[i].amplicon_out_fp = amplicon_out;
     amp_thread_struct[i].Briggs = Briggs;
     amp_thread_struct[i].startLine = startLine;
     amp_thread_struct[i].endLine = endLine;
     amp_thread_struct[i].threadid = i;
-    amp_thread_struct[i].Seed = Seed; 
-    amp_thread_struct[i].rng_type = mypars->rng_type;
+    amp_thread_struct[i].Seed = seed; 
+    amp_thread_struct[i].rng_type = rng_type;
 
     // 3) misincorporation matrix
     amp_thread_struct[i].MisMatch = MisMatchFreqArray;
@@ -309,7 +381,7 @@ int main(int argc,char **argv){
     amp_thread_struct[i].Indel = Indel;
 
     // Create each thread
-    pthread_create(&mythreads[i], NULL, ProcessFQ, &amp_thread_struct[i]);
+    pthread_create(&mythreads[i], NULL, ProcessFAFQ, &amp_thread_struct[i]);
   }
   
   // Wait for all threads to finish
@@ -325,6 +397,120 @@ int main(int argc,char **argv){
   // Close the files
   bgzf_close(amplicon_out);
   bgzf_close(fp);
+  
+  return NULL;
+}
+
+#ifdef __WITH_MAIN__
+
+int main(int argc,char **argv){
+  if(argc==1||(argc==2&&(strcasecmp(argv[1],"--help")==0||strcasecmp(argv[1],"-h")==0))){
+    AmpliconHelpPage(stderr);
+    return 0;
+  }
+  argStruct *mypars = NULL;
+  mypars = amplicongetpars(argc,argv);
+  
+  //Initate seed
+  if (mypars->rng_type == -1){
+    #if defined(__linux__) || defined(__unix__)
+      mypars->rng_type = 0;
+    #elif defined(__APPLE__) || defined(__MACH__)
+      mypars->rng_type = 3;
+      //when 0 it will have problems with drand48 reentrant, will default to erand48 (MacroRandType 3)
+    #else
+    #   error "Unknown compiler"
+    #endif
+  }
+
+  const char* Amplicon_in = mypars->Amplicon_in_pars;
+  const char* dot = strrchr(Amplicon_in, '.');
+  // Extract the file extension
+  const char* extension = dot + 1;
+  int filetype;
+  // Print the file extension for debugging purposes
+  printf("File extension: %s\n", extension);
+      
+  if (strcmp(extension, "gz") == 0) {
+    BGZF* fp_tmp = bgzf_open(Amplicon_in, "r");
+
+    char ch;
+    int result = bgzf_read(fp_tmp, &ch, 1);
+    std::cout << "chacs " << ch << std::endl;
+    if (ch == '>'){
+      fprintf(stderr,"input file is in a fasta format %s\n",Amplicon_in);
+      filetype = 0;
+    }
+    else if (ch == '@'){
+      fprintf(stderr,"input file is in a fastq format %s\n",Amplicon_in);
+      filetype = 1;
+    }
+    else {
+      fprintf(stderr,"Unknown file format");
+      bgzf_close(fp_tmp);
+      exit(1);
+    }
+    bgzf_close(fp_tmp);
+  }
+  else if (strcmp(extension, "fa") == 0 || strcmp(extension, "fas") == 0 || strcmp(extension, "fasta") == 0){
+    filetype = 0;
+  }
+  else if (strcmp(extension, "fq") == 0 || strcmp(extension, "fastq") == 0){
+    filetype = 1;
+  }
+  else if (strcmp(extension, "sam") == 0 || strcmp(extension, "bam") == 0 || strcmp(extension, "cram") == 0) {
+    fprintf(stderr,"sequence alignment map format");
+    filetype = 2;
+  }
+  else {
+    fprintf(stderr,"Unknown file format");
+    exit(1);
+  }
+
+  if (filetype < 2){
+    // fasta or fastq
+
+    // Count the total number of lines in the file
+    size_t totalLines = 0;
+
+    BGZF* fp_tmp = bgzf_open(mypars->Amplicon_in_pars, "r");
+
+    kstring_t linecounttmp;linecounttmp.s=NULL;linecounttmp.l=linecounttmp.m=0; // Initialize a kstring_t structure
+    while (bgzf_getline(fp_tmp, '\n', &linecounttmp) != -1){totalLines++;}
+    free(linecounttmp.s);
+    
+    int readlinestructure;
+    if(filetype < 1){ //fastq
+      readlinestructure = 2;
+    }
+    else{ //fastq
+      readlinestructure = 4;
+    }
+    // Calculate the number of lines per thread
+    size_t no_reads = totalLines/readlinestructure;
+    size_t linesPerThread = totalLines / mypars->Threads;
+    bgzf_close(fp_tmp);
+
+    int modulovalue;
+    if (no_reads > 100){
+      modulovalue = 10;
+    }
+    else{ 
+      modulovalue = 1;
+    }
+    size_t moduloread = no_reads/modulovalue;
+
+    fprintf(stderr,"Total lines %zu \t Total reads %zu \t lines pr threads %zu \n",totalLines,no_reads,mypars->Threads);  
+
+    AmpliconFAFQThreadInitialize(mypars->OutFormat,mypars->Amplicon_in_pars,filetype,mypars->Amplicon_out_pars,mypars->SubProfile,mypars->Threads,mypars->BriggsBiotin,mypars->Indel,mypars->Seed,mypars->rng_type,moduloread,totalLines,linesPerThread);
+  }
+  else if (filetype == 2){
+    //insert thread initialization for bam with different read in function
+    //AmpliconBAMThreadInitialize
+    fprintf(stderr,"read in lol\n");
+    exit(1);
+  }
+
 
   fprintf(stderr, "done writing the altered amplicon file\n");
   

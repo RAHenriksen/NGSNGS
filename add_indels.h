@@ -13,6 +13,8 @@ void add_indel(mrand_t *mr,char *fragmentn,int readlength,double *pars,char *IND
 
 void add_indel_kstring(mrand_t *mr,kstring_t* seq,double *pars,char *INDEL_INFO,int* ops);
 
+void add_indel_amplicon_fa(mrand_t *mr,kstring_t* seq,double *pars,int* ops);
+
 void add_indel_amplicon_fqbam(mrand_t *mr,kstring_t* seq,kstring_t* qual,double *pars,int* ops,int ErrProbTypeOffset);
 
 #endif

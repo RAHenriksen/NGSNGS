@@ -19,9 +19,35 @@ argStruct *amplicongetpars(int argc,char ** argv){
   mypars->SubProfile = NULL;
   mypars->Indel = NULL;
 
+  mypars->OutFormat = unknownT;
+
   ++argv;
   while(*argv){
-    if(strcasecmp("-a",*argv)==0 || strcasecmp("--amplicon",*argv)==0){
+    if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
+      fprintf(stderr,"it works\n");
+      ++argv;
+      char *tok = *argv;
+      std::cout << " token is " << tok << std::endl;
+      if(strcasecmp("fa",tok)==0 || strcasecmp("fasta",tok)==0)
+	      mypars->OutFormat = faT;
+      if(strcasecmp("fa.gz",tok)==0 || strcasecmp("fasta.gz",tok)==0)
+	      mypars->OutFormat = fagzT;
+      if(strcasecmp("fq",tok)==0 || strcasecmp("fastq",tok)==0)
+	      mypars->OutFormat = fqT;
+      if(strcasecmp("fq.gz",tok)==0 || strcasecmp("fastq.gz",tok)==0)
+	      mypars->OutFormat = fqgzT;
+      if(strcasecmp("sam",tok)==0)
+	      mypars->OutFormat = samT;
+      if(strcasecmp("bam",tok)==0)
+	      mypars->OutFormat = bamT;
+      if(strcasecmp("cram",tok)==0)
+	      mypars->OutFormat = cramT;
+      if(mypars->OutFormat==unknownT){
+	      fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data Amplicon\nWarning:\n");
+        ErrMsg(7.0);
+      }
+    }
+    else if(strcasecmp("-a",*argv)==0 || strcasecmp("--amplicon",*argv)==0){
       mypars->Amplicon_in_pars = strdup(*(++argv));
     }
     else if(strcasecmp("-o",*argv)==0 || strcasecmp("--output",*argv)==0){
