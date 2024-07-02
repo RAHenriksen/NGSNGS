@@ -35,6 +35,11 @@ git clone https://github.com/RAHenriksen/NGSNGS.git
 cd NGSNGS; make
 ```
 
+### Install Amplicon simulation tool
+```
+make amplicon HTSSRC=../htslib
+```
+
 **NOTE:** Newer version of htslib which includes bam_set1 is required
 
 ## GENERAL

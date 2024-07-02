@@ -258,10 +258,11 @@ int SimBriggsModel_amplicon(kstring_t* seq, double nv, double lambda, double del
 
     strcpy(seq_intermediate.s, seq->s); // Copy seq->s to seq_intermediate.s
 
-    //fprintf(stderr,"kstring 2 %s\n",seq_intermediate.s);
-    //seq_intermediate.s[10] = 'X';
-    //fprintf(stderr,"kstring 3 %s\n",seq_intermediate.s);
-    //exit(1);
+    /*seq_intermediate.s[2] = 'X';
+    fprintf(stderr,"kstring 2 %s\n",seq_intermediate.s);
+    seq_intermediate.s[10] = 'X';
+    fprintf(stderr,"kstring 3 %s\n",seq_intermediate.s);
+    exit(1);*/
     //
     for (int i = 0; i < l; i++) {
         if (seq_intermediate.s[i] == 'C' || seq_intermediate.s[i] == 'c') {

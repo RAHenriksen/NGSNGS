@@ -11,9 +11,14 @@
 #include "HelpPage.h"
 #include "Amplicon_cli.h"
 #include <htslib/kstring.h>
+#include <htslib/sam.h>
 
 struct struct_for_amplicon_threads{
   BGZF* amplicon_in_fp;
+  BGZF* amplicon_out_fp;  // Include the output file in the thread struct
+  samFile* amplicon_in_sam;
+  samFile* amplicon_out_sam; 
+  bam_hdr_t *hdr;
   int filetype;
   int startLine;
   int endLine;
@@ -21,7 +26,6 @@ struct struct_for_amplicon_threads{
   char* Briggs;
   char* Indel;
   int rng_type;
-  BGZF* amplicon_out_fp;  // Include the output file in the thread struct
   long int Seed;
 
   double* MisMatch;
@@ -35,6 +39,10 @@ struct struct_for_amplicon_threads{
   ampliconformat_e OutFormat;
 };
 
-void* AmpliconFAFQThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_in_fp,int filetype,const char* Amplicon_out_fp,const char* Subprofile,int threads,char *Briggs,char *Indel,int seed,int rng_type,size_t moduloread,size_t totalLines,size_t linesPerThread);
+void* ProcessFAFQ(void* args);
+
+void* ProcessBAM(void* args);
+
+void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_in_fp,int filetype,const char* Amplicon_out_fp,const char* Subprofile,int threads,char *Briggs,char *Indel,int seed,int rng_type,size_t moduloread,size_t totalLines,size_t linesPerThread);
 
 #endif

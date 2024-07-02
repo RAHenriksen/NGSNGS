@@ -83,6 +83,51 @@ void ReversComplement_k(kstring_t* seq) {
   Complement_k(seq);
 }
 
+char* PrintCigarBamSet1(size_t n_cigar,const uint32_t *cigar){
+   // Allocate a buffer to store the CIGAR string
+  char *cigar_str = (char *)malloc(n_cigar * 2); // a safe overestimate
+  char *ptr = cigar_str;
+
+  /*size_t l_qname, const char *qname,
+  uint16_t flag, int32_t tid, hts_pos_t pos, uint8_t mapq,
+  size_t n_cigar, const uint32_t *cigar,
+  int32_t mtid, hts_pos_t mpos, hts_pos_t isize,
+  size_t l_seq, const char *seq, const char *qual,
+  size_t l_aux)*/
+
+  // Convert CIGAR to string
+  for (int i = 0; i < n_cigar; ++i) {
+    int len = sprintf(ptr, "%d%c", bam_cigar_oplen(cigar[i]), bam_cigar_opchr(cigar[i]));
+    ptr += len;
+  }
+
+  return cigar_str;
+}
+
+void CreateSeqQualKString(bam1_t *aln, kstring_t *Sequence, kstring_t *Quality){
+  int len = aln->core.l_qseq;
+
+  Sequence->s = (char *) realloc(Sequence->s, len + 1); // allocate memory for the sequence string (+1 for null terminator)
+  Sequence->l = len;
+  Sequence->m = len + 1;
+
+  Quality->s = (char *) realloc(Quality->s, len + 1); // allocate memory for the sequence string (+1 for null terminator)
+  Quality->l = len;
+  Quality->m = len + 1;
+
+  uint8_t *seq_data = bam_get_seq(aln);
+  uint8_t *qual_data = bam_get_qual(aln);
+
+  for (int i = 0; i < len; i++) {
+    Sequence->s[i] = seq_nt16_str[bam_seqi(seq_data, i)]; // convert nucleotide id to IUPAC id
+    Quality->s[i] = qual_data[i];
+  }
+  
+  Sequence->s[len] = '\0'; // null-terminate the string
+  Quality->s[len] = '\0';
+}
+
+
 
 #ifdef __WITH_MAIN__
 //g++ NGSNGS_misc.cpp -D__WITH_MAIN__
