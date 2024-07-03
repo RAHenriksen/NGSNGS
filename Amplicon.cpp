@@ -128,7 +128,7 @@ void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_i
     //const char* output_bam = "test.bam";
     amplicon_out_sam = sam_open_format(filename_out, mode, fmt_hts);
     if (sam_hdr_write(amplicon_out_sam, hdr) < 0) {
-      fprintf(stderr, "Error writing header to BAM file %s\n", amplicon_out_sam);
+      fprintf(stderr, "Error writing header to BAM file %s\n", filename_out);
       bam_hdr_destroy(hdr);
       sam_close(amplicon_out_sam);
       exit(1);

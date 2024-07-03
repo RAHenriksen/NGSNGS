@@ -63,7 +63,8 @@ ifdef HTSSRC
 
 ngsngs: version.h $(OBJ)
 	$(CXX) $(FLAGS)  -o ngsngs *.o $(HTS_LIBDIR) $(LIBS)
-	$(CXX) Amplicon.cpp $(FLAGS) -o amplicon $(HTS_LIBDIR) $(LIBS) mrand.o Briggs.o NtSubModels.o add_indels.o HelpPage.o Amplicon_cli.o NGSNGS_misc.o -D __WITH_MAIN__ 
+
+#$(CXX) Amplicon.cpp $(FLAGS) -o amplicon $(HTS_LIBDIR) $(LIBS) mrand.o Briggs.o NtSubModels.o add_indels.o HelpPage.o Amplicon_cli.o NGSNGS_misc.o -D __WITH_MAIN__ 
 
 else
 %.o: %.c
@@ -76,7 +77,11 @@ else
 
 ngsngs: version.h $(OBJ)
 	$(CXX) $(FLAGS)  -o ngsngs *.o $(LIBS)
-	$(CXX) Amplicon.cpp $(FLAGS) -o amplicon $(LIBS) mrand.o Briggs.o NtSubModels.o add_indels.o HelpPage.o Amplicon_cli.o NGSNGS_misc.o -D __WITH_MAIN__ 
+
+amplicon:	
+	g++ Amplicon.cpp $(HTS_LIBDIR) $(LIBS) mrand.o Briggs.o NtSubModels.o add_indels.o HelpPage.o Amplicon_cli.o NGSNGS_misc.o -D __WITH_MAIN__ -o Amplicon
+
+#$(CXX) Amplicon.cpp $(FLAGS) -o amplicon $(LIBS) mrand.o Briggs.o NtSubModels.o add_indels.o HelpPage.o Amplicon_cli.o NGSNGS_misc.o -D __WITH_MAIN__ 
 
 endif
 

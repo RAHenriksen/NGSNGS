@@ -282,10 +282,10 @@ int main(int argc,char **argv){
 
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in input file (-i): \'%s\': %d\n",mypars->Reference,chr_total);
     if(mypars->Glob_seed_binary == 1){
-      fprintf(stderr,"\t-> Seed is provided (-s): %ld\n",mypars->Glob_seed/1000);
+      fprintf(stderr,"\t-> Seed is provided (-s): %d\n",mypars->Glob_seed/1000);
     }
     else{
-      fprintf(stderr,"\t-> Seed is set at current calendar time: %ld\n",mypars->Glob_seed);
+      fprintf(stderr,"\t-> Seed is set at current calendar time: %d\n",mypars->Glob_seed);
     }
     fprintf(stderr,"\t-> Number of sampling threads used (-t): %d and number of compression threads (-t2): %d\n",mypars->SamplThreads,mypars->CompressThreads);
 
