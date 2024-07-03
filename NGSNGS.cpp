@@ -76,7 +76,7 @@ int main(int argc,char **argv){
       return 1;
     
     fprintf(stderr,"\n\t-> ngsngs version %s: %s (htslib: %s) build(%s %s)\n",NGSNGS_RELEASE,NGSNGS_VERSION,hts_version(),__DATE__,__TIME__); 
-    fprintf(stderr,"\t-> Mycommmand: %s\n",mypars->CommandRun);
+    fprintf(stderr,"\t-> My commmand: %s\n",mypars->CommandRun);
 
     clock_t t = clock();
     time_t t2 = time(NULL);

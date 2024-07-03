@@ -14,7 +14,7 @@ void Complement_k(kstring_t* seq);
 
 void ReversComplement_k(kstring_t* seq);
 
-void CreateSeqQualKString(bam1_t *aln, kstring_t *Sequence, kstring_t *Quality);
+void CreateSeqQualKString(bam1_t *aln, kstring_t *Sequence, kstring_t *Quality,int offset);
 
 char* PrintCigarBamSet1(size_t n_cigar,const uint32_t *cigar);
 

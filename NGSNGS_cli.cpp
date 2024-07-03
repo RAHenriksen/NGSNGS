@@ -320,7 +320,6 @@ argStruct *getpars(int argc,char ** argv){
   return mypars;
 }
 
-
 void argStruct_destroy(argStruct *mypars){
   free(mypars->Reference);
   free(mypars->OutName);

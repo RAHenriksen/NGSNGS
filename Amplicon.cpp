@@ -7,6 +7,8 @@
 #include "Amplicon_cli.h"
 #include "Amplicon.h"
 #include "NGSNGS_misc.h"
+#include "version.h"
+
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -37,8 +39,6 @@ void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_i
   char *Briggs,char *Indel,int seed,
   int rng_type,size_t moduloread,size_t totalLines,size_t linesPerThread) {
   
-  std::cout << "file type " << filetype << std::endl;
-
   // initialize file type for output name to convert files
   const char* suffix = NULL;
   const char* mode = NULL;
@@ -72,10 +72,6 @@ void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_i
       mode = "wb";
       suffix = ".bam";
       break;
-    case cramT:
-      mode = "wc";
-      suffix = ".cram";
-      break;
     default:
       fprintf(stderr,"\t-> Fileformat is currently not supported \n");
       break;
@@ -83,7 +79,7 @@ void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_i
 
   strcat(fileout,suffix);
 
-  fprintf(stderr,"\t-> File output name is %s\n",fileout);
+  //fprintf(stderr,"\t-> File output name is %s\n",fileout);
   const char* filename_out = fileout;
   
   //generating mismatch matrix to parse for each string
@@ -126,7 +122,7 @@ void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_i
     exit(1);
   }
 
-  if(OutFormat == samT || OutFormat == bamT || OutFormat == cramT){
+  if(OutFormat == samT || OutFormat == bamT){
     //output file
     htsFormat *fmt_hts =(htsFormat*) calloc(1,sizeof(htsFormat));
     //const char* output_bam = "test.bam";
@@ -208,7 +204,7 @@ void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_i
   delete[] amp_thread_struct;
 
 
-  if(OutFormat == samT || OutFormat == bamT || OutFormat == cramT){
+  if(OutFormat == samT || OutFormat == bamT){
     sam_close(amplicon_out_sam);
   }
   else{
@@ -238,14 +234,12 @@ void* ProcessFAFQ(void* args){
   int threadid = amp_thread_struct->threadid;
 
   int filetype = amp_thread_struct->filetype;
-  fprintf(stderr,"INSIDE PROCESSFQ %d\n",filetype);
   
   //char* Briggs = amp_thread_struct->Briggs;
   //char* IndelInputParam = amp_thread_struct->Indel;
 
   long int Seed = amp_thread_struct->Seed;
 
-  fprintf(stderr,"Using the provided seed %lu \n",Seed);
   //fprintf(stderr,"initialize thread %d reading chunk starting from line %d to ending line %d\n",threadid,startLine,endLine);
   
   // Initialize briggs parameters
@@ -409,7 +403,7 @@ void* ProcessFAFQ(void* args){
         ksprintf(&thread_out, "@%s_mod%d%d%d\n%s\n+\n%s\n",FQseq->name.s,ReadDeam,FragMisMatch,has_indels,FQseq->seq.s, FQseq->qual.s);
       }
     }
-    else if (amp_thread_struct->OutFormat==samT || amp_thread_struct->OutFormat==bamT|| amp_thread_struct->OutFormat==cramT){
+    else if (amp_thread_struct->OutFormat==samT || amp_thread_struct->OutFormat==bamT){
       // consider adding ba format to simply store the sequence information
 
       fprintf(stderr,"Warning: NGSNGS amplicon mode on fasta or fastq files without alignment information. NGSNGS are unable to store the sequence reads in a Sequence Alignment/Map format, try using fa,fasta,fasta.gz,fa.gz,fq,fastq,fq.gz,fastq.gz output format\n");
@@ -447,21 +441,17 @@ void* ProcessBAM(void* args){
   int threadid = amp_thread_struct->threadid;
 
   int filetype = amp_thread_struct->filetype;
-  fprintf(stderr,"INSIDE PROCESSBAM %d\n",filetype);
   
   //char* Briggs = amp_thread_struct->Briggs;
   //char* IndelInputParam = amp_thread_struct->Indel;
 
   long int Seed = amp_thread_struct->Seed;
-
-  fprintf(stderr,"Using the provided seed %lu \n",Seed);
   //fprintf(stderr,"initialize thread %d reading chunk starting from line %d to ending line %d\n",threadid,startLine,endLine);
   
   
   // Initialize briggs parameters
   float Param[4];
   if (amp_thread_struct->Briggs != NULL){
-    fprintf(stderr,"inside sam briggs\n");
     char* BriggsParam;
     BriggsParam = strdup(amp_thread_struct->Briggs);
     Param[0] = atof(strtok(BriggsParam,"\", \t"));
@@ -495,7 +485,10 @@ void* ProcessBAM(void* args){
   //allocate the random generator
   mrand_t *mr = mrand_alloc(amp_thread_struct->rng_type,Seed);
 
-  int ErrProbTypeOffset=33; //quality score offset, 33 only for fastq it should be 0 for bam
+  int ErrProbTypeOffset = 0;
+  if (amp_thread_struct->OutFormat==fqT || amp_thread_struct->OutFormat==fqgzT){
+    ErrProbTypeOffset=33; //quality score offset, 33 only for fastq it should be 0 for bam
+  }
 
   // Initialize an alignment
   bam1_t *aln = bam_init1();
@@ -535,7 +528,15 @@ void* ProcessBAM(void* args){
 		char *chr = hdr->target_name[aln->core.tid] ; //contig name (chromosome)
     //char *cigar_str =  PrintCigarBamSet1(n_cigar,cigar);
     //Create sequence and quality strings
-    CreateSeqQualKString(aln, &Sequence, &Quality);
+    CreateSeqQualKString(aln, &Sequence, &Quality,ErrProbTypeOffset);
+
+    //Reads aligning to reverse strand is in the orientation of the reference genome, therefore they need to be reverse complemented first
+    if((aln->core.flag&BAM_FREVERSE) != 0){
+      //fprintf(stderr,"qname is %s\tflag is %d\n",qname,flag);
+      //fprintf(stderr,"sequence before \t %s \n",Sequence.s);
+      ReversComplement_k(&Sequence);
+      //fprintf(stderr,"sequence after \t %s \n",Sequence.s);
+    }
 
     /*
     fprintf(stderr,"Sequence 1 %s\n",Sequence.s);
@@ -626,7 +627,7 @@ void* ProcessBAM(void* args){
     }
 
 
-    if (amp_thread_struct->OutFormat==samT || amp_thread_struct->OutFormat==bamT || amp_thread_struct->OutFormat==cramT){
+    if (amp_thread_struct->OutFormat==samT || amp_thread_struct->OutFormat==bamT){
       bam1_t *aln_out = bam_init1();
       //fprintf(stderr,"Sequence 2 %s\n",Sequence.s);
       
@@ -634,7 +635,19 @@ void* ProcessBAM(void* args){
       char* formatted_qname = (char*)malloc(qnamelen + 1);
       sprintf(formatted_qname, ">%s_mod%d%d%d", qname, ReadDeam, FragMisMatch, has_indels);
 
-      bam_set1(aln_out,qnamelen,formatted_qname,flag,tid,pos,mapQ,n_cigar,cigar,mtid,mpos,isize,Sequence.l,Sequence.s,Quality.s,2);
+      /*size_t l_qname, const char *qname,
+      uint16_t flag, int32_t tid, hts_pos_t pos, uint8_t mapq,
+      size_t n_cigar, const uint32_t *cigar,
+      int32_t mtid, hts_pos_t mpos, hts_pos_t isize,
+      size_t l_seq, const char *seq, const char *qual,
+      size_t l_aux*/
+
+      //Reads aligning to reverse strand is in the orientation of the reference genome, before modifications they were reverse complemented, so now with bam output we change the orienation back to the reference genome
+      if((aln->core.flag&BAM_FREVERSE) != 0){
+        ReversComplement_k(&Sequence);
+      }
+
+      bam_set1(aln_out,qnamelen,formatted_qname,flag,tid,pos,mapQ,n_cigar,cigar,mtid,mpos,isize,Sequence.l,Sequence.s,Quality.s,l_aux);
       free(formatted_qname);
 
       pthread_mutex_lock(&amplicon_write_mutex);
@@ -692,140 +705,162 @@ void* ProcessBAM(void* args){
 #ifdef __WITH_MAIN__
 
 int main(int argc,char **argv){
+  argStruct *mypars = NULL;
   if(argc==1||(argc==2&&(strcasecmp(argv[1],"--help")==0||strcasecmp(argv[1],"-h")==0))){
     AmpliconHelpPage(stderr);
     return 0;
   }
-  argStruct *mypars = NULL;
-  mypars = amplicongetpars(argc,argv);
-  
-  //Initate seed
-  if (mypars->rng_type == -1){
-    #if defined(__linux__) || defined(__unix__)
-      mypars->rng_type = 0;
-    #elif defined(__APPLE__) || defined(__MACH__)
-      mypars->rng_type = 3;
-      //when 0 it will have problems with drand48 reentrant, will default to erand48 (MacroRandType 3)
-    #else
-    #   error "Unknown compiler"
-    #endif
+  else if(argc==1||(argc==2&&(strcasecmp(argv[1],"--version")==0||strcasecmp(argv[1],"-v")==0))){
+    fprintf(stderr,"\t-> ngsngs version %s: %s (htslib: %s) build(%s %s)\n",NGSNGS_RELEASE,NGSNGS_VERSION,hts_version(),__DATE__,__TIME__); 
+    return 0;
   }
+  else{
+    mypars = amplicongetpars(argc,argv);
+    if(mypars==NULL)
+      return 1;
+    
+    fprintf(stderr,"\n\t-> ngsngs version %s: %s (htslib: %s) build(%s %s)\n",NGSNGS_RELEASE,NGSNGS_VERSION,hts_version(),__DATE__,__TIME__); 
+    fprintf(stderr,"\t-> My commmand: %s\n",mypars->CommandRun);
 
-  const char* Amplicon_in = mypars->Amplicon_in_pars;
-  const char* dot = strrchr(Amplicon_in, '.');
-  // Extract the file extension
-  const char* extension = dot + 1;
-  int filetype;
-  // Print the file extension for debugging purposes
-  printf("File extension: %s\n", extension);
-      
-  if (strcmp(extension, "gz") == 0) {
-    BGZF* fp_tmp = bgzf_open(Amplicon_in, "r");
+    clock_t t = clock();
+    time_t t2 = time(NULL);
 
-    char ch;
-    int result = bgzf_read(fp_tmp, &ch, 1);
-    std::cout << "chacs " << ch << std::endl;
-    if (ch == '>'){
-      fprintf(stderr,"input file is in a fasta format %s\n",Amplicon_in);
-      filetype = 0;
+    fprintf(stderr,"\t-> Seed is provided (-s): %ld\n",mypars->Seed/1000);
+
+    //Initate seed
+    if (mypars->rng_type == -1){
+      #if defined(__linux__) || defined(__unix__)
+        mypars->rng_type = 0;
+      #elif defined(__APPLE__) || defined(__MACH__)
+        mypars->rng_type = 3;
+        //when 0 it will have problems with drand48 reentrant, will default to erand48 (MacroRandType 3)
+      #else
+      #   error "Unknown compiler"
+      #endif
     }
-    else if (ch == '@'){
-      fprintf(stderr,"input file is in a fastq format %s\n",Amplicon_in);
+
+    const char* Amplicon_in = mypars->Amplicon_in_pars;
+    const char* dot = strrchr(Amplicon_in, '.');
+    // Extract the file extension
+    const char* extension = dot + 1;
+    int filetype;
+    // Print the file extension for debugging purposes
+        
+    if (strcmp(extension, "gz") == 0) {
+      BGZF* fp_tmp = bgzf_open(Amplicon_in, "r");
+
+      char ch;
+      int result = bgzf_read(fp_tmp, &ch, 1);
+      if (ch == '>'){
+        filetype = 0;
+        fprintf(stderr,"\t-> Amplicon mode is chosen with a compressed fasta input file\n");
+      }
+      else if (ch == '@'){
+        fprintf(stderr,"\t-> Amplicon mode is chosen with a compressed fastq input file\n");
+        filetype = 1;
+      }
+      else {
+        fprintf(stderr,"Unknown file format");
+        bgzf_close(fp_tmp);
+        exit(1);
+      }
+      bgzf_close(fp_tmp);
+    }
+    else if (strcmp(extension, "fa") == 0 || strcmp(extension, "fas") == 0 || strcmp(extension, "fasta") == 0){
+      filetype = 0;
+      fprintf(stderr,"\t-> Amplicon mode is chosen with a fasta input file\n");
+    }
+    else if (strcmp(extension, "fq") == 0 || strcmp(extension, "fastq") == 0){
+      fprintf(stderr,"\t-> Amplicon mode is chosen with a fastq input file\n");
       filetype = 1;
+    }
+    else if (strcmp(extension, "sam") == 0 || strcmp(extension, "bam") == 0){
+      fprintf(stderr,"\t-> Amplicon mode is chosen with a Sequence Alignment/Map format input file\n");
+      filetype = 2;
     }
     else {
       fprintf(stderr,"Unknown file format");
-      bgzf_close(fp_tmp);
       exit(1);
     }
-    bgzf_close(fp_tmp);
-  }
-  else if (strcmp(extension, "fa") == 0 || strcmp(extension, "fas") == 0 || strcmp(extension, "fasta") == 0){
-    filetype = 0;
-  }
-  else if (strcmp(extension, "fq") == 0 || strcmp(extension, "fastq") == 0){
-    filetype = 1;
-  }
-  else if (strcmp(extension, "sam") == 0 || strcmp(extension, "bam") == 0 || strcmp(extension, "cram") == 0) {
-    fprintf(stderr,"sequence alignment map format");
-    filetype = 2;
-  }
-  else {
-    fprintf(stderr,"Unknown file format");
-    exit(1);
-  }
 
-  if (filetype < 2){
-    // fasta or fastq
+    if(mypars->OutFormat == faT){fprintf(stderr,"\t-> Amplicon mode is chosen with a fasta output file\n");}
+    else if(mypars->OutFormat == fagzT){fprintf(stderr,"\t-> Amplicon mode is chosen with a compressed fasta output file\n");}
+    else if(mypars->OutFormat == fqT){fprintf(stderr,"\t-> Amplicon mode is chosen with a compressed fastq output file\n");}
+    else if(mypars->OutFormat == fqgzT){fprintf(stderr,"\t-> Amplicon mode is chosen with a compressed fastq output file\n");}
+    else if(mypars->OutFormat == samT || mypars->OutFormat == bamT){fprintf(stderr,"\t-> Amplicon mode is chosen with a Sequence Alignment/Map format output file\n");}
 
-    // Count the total number of lines in the file
-    size_t totalLines = 0;
+    if (filetype < 2){
+      // fasta or fastq
 
-    BGZF* fp_tmp = bgzf_open(mypars->Amplicon_in_pars, "r");
+      // Count the total number of lines in the file
+      size_t totalLines = 0;
 
-    kstring_t linecounttmp;linecounttmp.s=NULL;linecounttmp.l=linecounttmp.m=0; // Initialize a kstring_t structure
-    while (bgzf_getline(fp_tmp, '\n', &linecounttmp) != -1){totalLines++;}
-    free(linecounttmp.s);
-    bgzf_close(fp_tmp);
-    
-    int readlinestructure;
-    if(filetype < 1){//fasta
-      readlinestructure = 2;
+      BGZF* fp_tmp = bgzf_open(mypars->Amplicon_in_pars, "r");
+
+      kstring_t linecounttmp;linecounttmp.s=NULL;linecounttmp.l=linecounttmp.m=0; // Initialize a kstring_t structure
+      while (bgzf_getline(fp_tmp, '\n', &linecounttmp) != -1){totalLines++;}
+      free(linecounttmp.s);
+      bgzf_close(fp_tmp);
+      
+      int readlinestructure;
+      if(filetype < 1){//fasta
+        readlinestructure = 2;
+      }
+      else{ //fastq
+        readlinestructure = 4;
+      }
+      // Calculate the number of lines per thread
+      size_t no_reads = totalLines/readlinestructure;
+      size_t linesPerThread = totalLines / mypars->Threads;
+
+      int modulovalue;
+      if (no_reads > 1000000){
+        modulovalue = 10;
+      }
+      else{ 
+        modulovalue = 1;
+      }
+      size_t moduloread = no_reads/modulovalue;
+
+      //fprintf(stderr,"Total lines %zu \t Total reads %zu \t lines pr threads %zu \n",totalLines,no_reads,mypars->Threads);  
+
+      AmpliconThreadInitialize(mypars->OutFormat,mypars->Amplicon_in_pars,filetype,mypars->Amplicon_out_pars,mypars->SubProfile,mypars->Threads,mypars->BriggsBiotin,mypars->Indel,mypars->Seed,mypars->rng_type,moduloread,totalLines,linesPerThread);
     }
-    else{ //fastq
-      readlinestructure = 4;
-    }
-    // Calculate the number of lines per thread
-    size_t no_reads = totalLines/readlinestructure;
-    size_t linesPerThread = totalLines / mypars->Threads;
+    else if (filetype == 2){
+      // Count the total number of lines in the file
+      size_t totalLines = 0;
+      
+      samFile *AmpliconBam = hts_open(mypars->Amplicon_in_pars, "r");
+      bam_hdr_t *hdr = sam_hdr_read(AmpliconBam);  // Read the header
+      bam1_t *aln = bam_init1();   // Initialize an alignment
+      while(sam_read1(AmpliconBam, hdr, aln) >= 0){totalLines++;}
+      // Clean up
+      bam_destroy1(aln);
+      sam_hdr_destroy(hdr);
+      sam_close(AmpliconBam);
+      //fprintf(stderr,"total lines in bam file %d\n",totalLines);
+      size_t linesPerThread = totalLines / mypars->Threads;
 
-    int modulovalue;
-    if (no_reads > 100){
-      modulovalue = 10;
-    }
-    else{ 
-      modulovalue = 1;
-    }
-    size_t moduloread = no_reads/modulovalue;
+      int modulovalue;
+      if (totalLines > 100){
+        modulovalue = 10;
+      }
+      else{ 
+        modulovalue = 1;
+      }
+      size_t moduloread = totalLines/modulovalue;
 
-    fprintf(stderr,"Total lines %zu \t Total reads %zu \t lines pr threads %zu \n",totalLines,no_reads,mypars->Threads);  
-
-    AmpliconThreadInitialize(mypars->OutFormat,mypars->Amplicon_in_pars,filetype,mypars->Amplicon_out_pars,mypars->SubProfile,mypars->Threads,mypars->BriggsBiotin,mypars->Indel,mypars->Seed,mypars->rng_type,moduloread,totalLines,linesPerThread);
-  }
-  else if (filetype == 2){
-    fprintf(stderr,"succesfully down in the bam function\n");
-    // Count the total number of lines in the file
-    size_t totalLines = 0;
-    
-    samFile *AmpliconBam = hts_open(mypars->Amplicon_in_pars, "r");
-    bam_hdr_t *hdr = sam_hdr_read(AmpliconBam);  // Read the header
-    bam1_t *aln = bam_init1();   // Initialize an alignment
-    while(sam_read1(AmpliconBam, hdr, aln) >= 0){totalLines++;}
-    // Clean up
-    bam_destroy1(aln);
-    sam_hdr_destroy(hdr);
-    sam_close(AmpliconBam);
-    fprintf(stderr,"total lines in bam file %d\n",totalLines);
-    size_t linesPerThread = totalLines / mypars->Threads;
-
-    int modulovalue;
-    if (totalLines > 100){
-      modulovalue = 10;
+      //insert thread initialization for bam with different read in function
+      AmpliconThreadInitialize(mypars->OutFormat,mypars->Amplicon_in_pars,filetype,mypars->Amplicon_out_pars,mypars->SubProfile,mypars->Threads,mypars->BriggsBiotin,mypars->Indel,mypars->Seed,mypars->rng_type,moduloread,totalLines,linesPerThread);
+      /*ProcessBAM(mypars->Amplicon_in_pars);
+      exit(1);*/
     }
-    else{ 
-      modulovalue = 1;
-    }
-    size_t moduloread = totalLines/modulovalue;
 
-    //insert thread initialization for bam with different read in function
-    AmpliconThreadInitialize(mypars->OutFormat,mypars->Amplicon_in_pars,filetype,mypars->Amplicon_out_pars,mypars->SubProfile,mypars->Threads,mypars->BriggsBiotin,mypars->Indel,mypars->Seed,mypars->rng_type,moduloread,totalLines,linesPerThread);
-    /*ProcessBAM(mypars->Amplicon_in_pars);
-    exit(1);*/
+    fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
+    fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));
   }
 
-
-  fprintf(stderr, "done writing the altered amplicon file\n");
-  
+  amplicongetpars_destroy(mypars);
   return 0;
 }
 #endif

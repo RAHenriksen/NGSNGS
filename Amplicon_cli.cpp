@@ -20,14 +20,18 @@ argStruct *amplicongetpars(int argc,char ** argv){
   mypars->Indel = NULL;
 
   mypars->OutFormat = unknownT;
+  
+  mypars->CommandRun = NULL;
+  kstring_t kstr;kstr.s=NULL;kstr.l=kstr.m=0;
+  for(int i=0;i<argc;i++)
+    ksprintf(&kstr,"%s ",argv[i]);
+  mypars->CommandRun = kstr.s;
 
   ++argv;
   while(*argv){
     if(strcasecmp("-f",*argv)==0 || strcasecmp("--format",*argv)==0){
-      fprintf(stderr,"it works\n");
       ++argv;
       char *tok = *argv;
-      std::cout << " token is " << tok << std::endl;
       if(strcasecmp("fa",tok)==0 || strcasecmp("fasta",tok)==0)
 	      mypars->OutFormat = faT;
       if(strcasecmp("fa.gz",tok)==0 || strcasecmp("fasta.gz",tok)==0)
@@ -40,8 +44,6 @@ argStruct *amplicongetpars(int argc,char ** argv){
 	      mypars->OutFormat = samT;
       if(strcasecmp("bam",tok)==0)
 	      mypars->OutFormat = bamT;
-      if(strcasecmp("cram",tok)==0)
-	      mypars->OutFormat = cramT;
       if(mypars->OutFormat==unknownT){
 	      fprintf(stderr,"\nNext Generation Simulator for Next Generator Sequencing Data Amplicon\nWarning:\n");
         ErrMsg(7.0);
@@ -69,7 +71,7 @@ argStruct *amplicongetpars(int argc,char ** argv){
       mypars->Threads = atoi(*(++argv));
     }
     else if(strcasecmp("-s",*argv)==0 || strcasecmp("--seed",*argv)==0){
-      mypars->Seed = atol(*(++argv));
+      mypars->Seed = atol(*(++argv))*1000;
     }
     else if(strcasecmp("-mf",*argv)==0 || strcasecmp("--mismatch",*argv)==0){
       mypars->SubProfile = strdup(*(++argv));
@@ -87,4 +89,12 @@ argStruct *amplicongetpars(int argc,char ** argv){
     ++argv;
   }
   return mypars;
+}
+
+void amplicongetpars_destroy(argStruct *mypars){
+  free(mypars->CommandRun);
+  free(mypars->BriggsBiotin);
+  free(mypars->SubProfile);
+  free(mypars->Indel);
+  delete mypars;
 }

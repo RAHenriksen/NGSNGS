@@ -104,7 +104,7 @@ char* PrintCigarBamSet1(size_t n_cigar,const uint32_t *cigar){
   return cigar_str;
 }
 
-void CreateSeqQualKString(bam1_t *aln, kstring_t *Sequence, kstring_t *Quality){
+void CreateSeqQualKString(bam1_t *aln, kstring_t *Sequence, kstring_t *Quality, int offset){
   int len = aln->core.l_qseq;
 
   Sequence->s = (char *) realloc(Sequence->s, len + 1); // allocate memory for the sequence string (+1 for null terminator)
@@ -120,7 +120,7 @@ void CreateSeqQualKString(bam1_t *aln, kstring_t *Sequence, kstring_t *Quality){
 
   for (int i = 0; i < len; i++) {
     Sequence->s[i] = seq_nt16_str[bam_seqi(seq_data, i)]; // convert nucleotide id to IUPAC id
-    Quality->s[i] = qual_data[i];
+    Quality->s[i] = qual_data[i]+offset;
   }
   
   Sequence->s[len] = '\0'; // null-terminate the string
