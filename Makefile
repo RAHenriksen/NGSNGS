@@ -25,7 +25,7 @@ CSRC = $(wildcard *.c)
 CXXSRC = $(wildcard *.cpp)
 OBJ = $(CSRC:.c=.o) $(CXXSRC:.cpp=.o)
 
-all: ngsngs
+all: ngsngs amplicon
 
 ifneq "$(wildcard .git)" ""
 PACKAGE_VERSION := $(shell git describe --always)
@@ -63,7 +63,9 @@ ifdef HTSSRC
 
 ngsngs: version.h $(OBJ)
 	$(CXX) $(FLAGS)  -o ngsngs *.o $(HTS_LIBDIR) $(LIBS)
-	$(CXX) $(FLAGS) Amplicon.cpp -o amplicon mrand.o Briggs.o NtSubModels.o add_indels.o HelpPage.o Amplicon_cli.o NGSNGS_misc.o $(HTS_LIBDIR) $(LIBS) -D __WITH_MAIN__ 
+
+amplicon:	
+	$(CXX) $(FLAGS) Amplicon.cpp -o Amplicon $(HTS_LIBDIR) $(LIBS) mrand.o Briggs.o NtSubModels.o add_indels.o HelpPage.o Amplicon_cli.o NGSNGS_misc.o -D __WITH_MAIN__ 
 
 else
 %.o: %.c
