@@ -702,7 +702,7 @@ void* ProcessBAM(void* args){
 }
 
 
-#ifdef __WITH_MAIN__
+#ifdef __WITH_MAIN_AMPLICON__
 
 int main(int argc,char **argv){
   argStruct *mypars = NULL;

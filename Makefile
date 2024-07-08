@@ -65,7 +65,7 @@ ngsngs: version.h $(OBJ)
 	$(CXX) $(FLAGS)  -o ngsngs *.o $(HTS_LIBDIR) $(LIBS)
 
 amplicon:	
-	$(CXX) $(FLAGS) Amplicon.cpp -o Amplicon $(HTS_LIBDIR) $(LIBS) mrand.o Briggs.o NtSubModels.o add_indels.o HelpPage.o Amplicon_cli.o NGSNGS_misc.o -D __WITH_MAIN__ 
+	$(CXX) $(FLAGS) Amplicon.cpp -o Amplicon mrand.o Briggs.o NtSubModels.o add_indels.o HelpPage.o Amplicon_cli.o NGSNGS_misc.o $(HTS_LIBDIR) $(LIBS) -D __WITH_MAIN_AMPLICON__ 
 
 else
 %.o: %.c
@@ -80,7 +80,7 @@ ngsngs: version.h $(OBJ)
 	$(CXX) $(FLAGS)  -o ngsngs *.o $(LIBS)
 
 amplicon:	
-	g++ Amplicon.cpp $(HTS_LIBDIR) $(LIBS) mrand.o Briggs.o NtSubModels.o add_indels.o HelpPage.o Amplicon_cli.o NGSNGS_misc.o -D __WITH_MAIN__ -o Amplicon
+	$(CXX) $(FLAGS) Amplicon.cpp -o Amplicon mrand.o Briggs.o NtSubModels.o add_indels.o HelpPage.o Amplicon_cli.o NGSNGS_misc.o $(LIBS) -D __WITH_MAIN_AMPLICON__ 
 
 #$(CXX) Amplicon.cpp $(FLAGS) -o amplicon $(LIBS) mrand.o Briggs.o NtSubModels.o add_indels.o HelpPage.o Amplicon_cli.o NGSNGS_misc.o -D __WITH_MAIN__ 
 
