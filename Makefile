@@ -25,7 +25,7 @@ CSRC = $(wildcard *.c)
 CXXSRC = $(wildcard *.cpp)
 OBJ = $(CSRC:.c=.o) $(CXXSRC:.cpp=.o)
 
-all: ngsngs amplicon
+all: ngsngs
 
 ifneq "$(wildcard .git)" ""
 PACKAGE_VERSION := $(shell git describe --always)
