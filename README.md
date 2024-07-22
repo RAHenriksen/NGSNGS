@@ -12,6 +12,8 @@ NGSNGS is a new program, therefore we are very interested in feedback to solve p
 [Installation](#INSTALLATION-&-REQUIREMENTS)
 
 [Help page](#GENERAL)
+- [NGSNGS - reference based simulation](#NGSNGS)
+- [NGSNGS - amplicon alteration](#AMPLICON)
 
 [Tutorial](#QUICK-TUTORIAL)
 
@@ -57,6 +59,7 @@ make amplicon HTSSRC=../htslib
 ## GENERAL
 Next Generation Simulator for Next Generator Sequencing Data version 0.9.2.1 
 
+### NGSNGS
 ~~~~bash
 Next Generation Simulator for Next Generator Sequencing Data version 0.9.2.1
 
@@ -191,6 +194,64 @@ Simulation Specific:
 	 1 :  			 std::uniform_int_distribution
 	 2 :  			 rand_r
 	 3 :  			 erand48, default for MacOS.
+~~~~
+### AMPLICON
+~~~~bash
+Next Generation Simulator for Next Generator Sequencing Data Amplicon simulation - adding nucleotide alterations to existing empirical data
+
+Usage
+./Amplicon [options] --amplicon <InputSequenceFile> --output <AmpliconOutput>
+-h | --help: 	 Print help page.
+
+Required: 
+-a | --amplicon: 	 Input sequence file in .fq format.
+-o | --output: 		 Prefix for the output sequence file with nucleotide alterations.
+
+Optional: 
+-f   | --format: 	 File format of the simulated amplicon file which can be used for file conversion
+	 Nucletide sequence w. different compression levels. 
+		 <fa||fasta> 
+		 <fa.gz||fasta.gz>	
+	 Nucletide sequence with corresponding quality score w. different compression levels. 
+		 <fq||fastq> 
+		 <fq.gz||fastq.gz>	
+	 Sequence Alignment Map w. different compression levels. 
+		 <sam||bam>
+-s   | --seed: 		 Random seed, default = current calendar time (s).
+-rng | --rand: 		 Pseudo-random number generator, OS specific
+	 <0,1,2,3> 
+	 0 :  	 drand48_r, default for linux or unix, not available for MacOS.
+	 1 :  	 std::uniform_int_distribution
+	 2 :  	 rand_r
+	 3 :  	 erand48, default for MacOS.
+
+Postmortem damage (PMD) - Deamination: 
+
+-m   | --model: 	 Deamination model.
+	 <b,nv,Lambda,Delta_s,Delta_d>  || <briggs,nv,Lambda,Delta_s,Delta_d> 	 Parameters for the damage patterns using the Briggs model.
+	 nv: Nick rate per site. 
+ 	 Lambda: Geometric distribution parameter for overhang length.
+ 	 Delta_s: PMD rate in single-strand regions.
+ 	 Delta_d: PMD rate in double-strand regions.
+	 e.g -m b,0.024,0.36,0.68,0.0097
+
+
+Stochastic Variations: 
+
+-indel: 		 Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.
+	 <InsProb,DelProb,InsParam,DelParam> 	 
+	 Indels 	-indel 0.05,0.1,0.1,0.2 
+	 Insertions 	-indel 0.05,0.0,0.1,0.0 
+	 Deletions 	-indel 0.0,0.5,0.0,0.9 
+
+Nucleotide Alterations: 
+
+-mf  | --mismatch: 	 Nucleotide substitution frequency file.
+
+Example
+./amplicon --amplicon Test_Examples/Amplicon_in.fq -m b,0.024,0.36,0.68,0.0097 --format fq.gz --output Amplicon_deamination
+./amplicon --amplicon Test_Examples/Amplicon_in.fq -indel 0.05,0.1,0.1,0.2 --output Amplicon_indel
+./amplicon --amplicon Test_Examples/Amplicon_in.bam -mf ../Test_Examples/MisincorpFile.txt --format fa.gz --output Amplicon_deamination
 ~~~~
 
 ## QUICK TUTORIAL

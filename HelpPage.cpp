@@ -152,26 +152,31 @@ void WarMsg(double messageno){
 }
 
 int AmpliconHelpPage(FILE *fp){
-  fprintf(fp,"Amplicon simulation - adding nucleotide alterations to existing empirical data\n\n");
-  fprintf(fp,"Usage\n./Amplicon [options] --amplicon <InputSequenceFile.fq> --output <AmpliconOutput.fq>\n");
-  fprintf(fp,"\nOptions: \n");
+  fprintf(fp,"Next Generation Simulator for Next Generator Sequencing Data Amplicon simulation - adding nucleotide alterations to existing empirical data\n\n");
+  fprintf(fp,"Usage\n./Amplicon [options] --amplicon <InputSequenceFile> --output <AmpliconOutput>\n");
   fprintf(fp,"-h | --help: \t Print help page.\n");
+  fprintf(fp,"\nRequired: \n");
   fprintf(fp,"-a | --amplicon: \t Input sequence file in .fq format.\n");
-  fprintf(fp,"-o | --output: \t Output sequence file with nucleotide alterations.\n");
-  fprintf(fp,"-s   | --seed: \t Random seed, default = current calendar time (s).\n");
-  fprintf(fp,"-rng | --rand: \t Pseudo-random number generator, OS specific\n");
+  fprintf(fp,"-o | --output: \t\t Prefix for the output sequence file with nucleotide alterations.\n");
+  fprintf(fp,"\nOptional: \n");
+  fprintf(fp,"-f   | --format: \t File format of the simulated amplicon file which can be used for file conversion\n");
+  fprintf(fp,"\t Nucletide sequence w. different compression levels. \n\t\t <fa||fasta> \n\t\t <fa.gz||fasta.gz>\t\n"); 
+  fprintf(fp,"\t Nucletide sequence with corresponding quality score w. different compression levels. \n\t\t <fq||fastq> \n\t\t <fq.gz||fastq.gz>\t\n"); 
+  fprintf(fp,"\t Sequence Alignment Map w. different compression levels. \n\t\t <sam||bam>\n"); 
+  fprintf(fp,"-s   | --seed: \t\t Random seed, default = current calendar time (s).\n");
+  fprintf(fp,"-rng | --rand: \t\t Pseudo-random number generator, OS specific\n");
   fprintf(fp,"\t <0,1,2,3> \n"); 
   fprintf(fp,"\t 0 :  \t drand48_r, default for linux or unix, not available for MacOS.\n"); 
   fprintf(fp,"\t 1 :  \t std::uniform_int_distribution\n"); 
   fprintf(fp,"\t 2 :  \t rand_r\n"); 
   fprintf(fp,"\t 3 :  \t erand48, default for MacOS.\n"); 
   fprintf(fp,"\nPostmortem damage (PMD) - Deamination: \n\n");
-  fprintf(fp,"-m   | --model: \t Choice of deamination model.\n");
+  fprintf(fp,"-m   | --model: \t Deamination model.\n");
   fprintf(fp,"\t <b,nv,Lambda,Delta_s,Delta_d>  || <briggs,nv,Lambda,Delta_s,Delta_d> \t Parameters for the damage patterns using the Briggs model.\n");
   fprintf(fp,"\t nv: Nick rate per site. \n \t Lambda: Geometric distribution parameter for overhang length.\n \t Delta_s: PMD rate in single-strand regions.\n \t Delta_d: PMD rate in double-strand regions.\n");
   fprintf(fp,"\t e.g -m b,0.024,0.36,0.68,0.0097\n\n");  
   fprintf(fp,"\nStochastic Variations: \n\n");
-  fprintf(fp,"-indel: \t Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.\n");
+  fprintf(fp,"-indel: \t\t Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.\n");
   fprintf(fp,"\t <InsProb,DelProb,InsParam,DelParam> \t \n");
   fprintf(fp,"\t Indels \t-indel 0.05,0.1,0.1,0.2 \n");
   fprintf(fp,"\t Insertions \t-indel 0.05,0.0,0.1,0.0 \n");
@@ -179,9 +184,11 @@ int AmpliconHelpPage(FILE *fp){
   fprintf(fp,"\nNucleotide Alterations: \n\n");
   fprintf(fp,"-mf  | --mismatch: \t Nucleotide substitution frequency file.\n");
 
-  fprintf(fp,"\nExample\n./Amplicon --amplicon Amplicon_in.fq -m b,0.024,0.36,0.68,0.0097 --output Amplicon_deamination.fq\n");
-  fprintf(fp,"./Amplicon --amplicon Amplicon_in.fq -mf ../Test_Examples/MisincorpFile.txt --output Amplicon_mismatch.fq\n");
-  fprintf(fp,"./Amplicon --amplicon Amplicon_in.fq -indel 0.05,0.1,0.1,0.2 --output Amplicon_indel.fq\n");
+  fprintf(fp,"\nExample\n");
+  fprintf(fp,"./amplicon --amplicon Test_Examples/Amplicon_in.fq -m b,0.024,0.36,0.68,0.0097 --format fq.gz --output Amplicon_deamination\n");
+  fprintf(fp,"./amplicon --amplicon Test_Examples/Amplicon_in.fq -indel 0.05,0.1,0.1,0.2 --output Amplicon_indel\n");
+  fprintf(fp,"./amplicon --amplicon Test_Examples/Amplicon_in.bam -mf ../Test_Examples/MisincorpFile.txt --format fa.gz --output Amplicon_deamination\n");
+  //./Amplicon --amplicon Amplicon_in.fq -mf ../Test_Examples/MisincorpFile.txt --output Amplicon_mismatch.fq\n");
   exit(1);
   return 0;
 }

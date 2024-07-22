@@ -72,11 +72,7 @@ void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_i
       mode = "wb";
       suffix = ".bam";
       break;
-    default:
-      fprintf(stderr,"\t-> Fileformat is currently not supported \n");
-      break;
   }
-
   strcat(fileout,suffix);
 
   //fprintf(stderr,"\t-> File output name is %s\n",fileout);
@@ -129,6 +125,9 @@ void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_i
     amplicon_out_sam = sam_open_format(filename_out, mode, fmt_hts);
     if (sam_hdr_write(amplicon_out_sam, hdr) < 0) {
       fprintf(stderr, "Error writing header to BAM file %s\n", filename_out);
+      if(filetype<2){
+        fprintf(stderr, "Unable to perform aplicon simulation with output format as sam/bam, without an input file in a sam/bam format\n");
+      }
       bam_hdr_destroy(hdr);
       sam_close(amplicon_out_sam);
       exit(1);
@@ -754,10 +753,18 @@ int main(int argc,char **argv){
       if (ch == '>'){
         filetype = 0;
         fprintf(stderr,"\t-> Amplicon mode is chosen with a compressed fasta input file\n");
+        if(mypars->OutFormat == unknownT){
+          mypars->OutFormat = fagzT;
+          fprintf(stderr,"\t-> Without the parameter -f the output fileformat is set to the input (-a) file format\n");
+        }
       }
       else if (ch == '@'){
         fprintf(stderr,"\t-> Amplicon mode is chosen with a compressed fastq input file\n");
         filetype = 1;
+        if(mypars->OutFormat == unknownT){
+          mypars->OutFormat = fqgzT;
+          fprintf(stderr,"\t-> Without the parameter -f the output fileformat is set to the input (-a) file format\n");
+        }
       }
       else {
         fprintf(stderr,"Unknown file format");
@@ -769,14 +776,34 @@ int main(int argc,char **argv){
     else if (strcmp(extension, "fa") == 0 || strcmp(extension, "fas") == 0 || strcmp(extension, "fasta") == 0){
       filetype = 0;
       fprintf(stderr,"\t-> Amplicon mode is chosen with a fasta input file\n");
+      if(mypars->OutFormat == unknownT){
+        mypars->OutFormat = faT;
+        fprintf(stderr,"\t-> Without the parameter -f the output fileformat is set to the input (-a) file format\n");
+      }
     }
     else if (strcmp(extension, "fq") == 0 || strcmp(extension, "fastq") == 0){
       fprintf(stderr,"\t-> Amplicon mode is chosen with a fastq input file\n");
       filetype = 1;
+      if(mypars->OutFormat == unknownT){
+        mypars->OutFormat = fqT;
+        fprintf(stderr,"\t-> Without the parameter -f the output fileformat is set to the input (-a) file format\n");
+      }
     }
-    else if (strcmp(extension, "sam") == 0 || strcmp(extension, "bam") == 0){
+    else if (strcmp(extension, "sam") == 0){
       fprintf(stderr,"\t-> Amplicon mode is chosen with a Sequence Alignment/Map format input file\n");
       filetype = 2;
+      if(mypars->OutFormat == unknownT){
+        mypars->OutFormat = samT;
+        fprintf(stderr,"\t-> Without the parameter -f the output fileformat is set to the input (-a) file format\n");
+      }
+    }
+    else if (strcmp(extension, "bam") == 0){
+      fprintf(stderr,"\t-> Amplicon mode is chosen with a Sequence Alignment/Map format input file\n");
+      filetype = 2;
+      if(mypars->OutFormat == unknownT){
+        mypars->OutFormat = bamT;
+        fprintf(stderr,"\t-> Without the parameter -f the output fileformat is set to the input (-a) file format\n");
+      }
     }
     else {
       fprintf(stderr,"Unknown file format");
@@ -788,7 +815,7 @@ int main(int argc,char **argv){
     else if(mypars->OutFormat == fqT){fprintf(stderr,"\t-> Amplicon mode is chosen with a compressed fastq output file\n");}
     else if(mypars->OutFormat == fqgzT){fprintf(stderr,"\t-> Amplicon mode is chosen with a compressed fastq output file\n");}
     else if(mypars->OutFormat == samT || mypars->OutFormat == bamT){fprintf(stderr,"\t-> Amplicon mode is chosen with a Sequence Alignment/Map format output file\n");}
-
+    //exit(1);
     if (filetype < 2){
       // fasta or fastq
 
@@ -796,7 +823,10 @@ int main(int argc,char **argv){
       size_t totalLines = 0;
 
       BGZF* fp_tmp = bgzf_open(mypars->Amplicon_in_pars, "r");
-
+      if (fp_tmp == NULL) {
+          fprintf(stderr, "Error: Could not open file %s for reading.\n", mypars->Amplicon_in_pars);
+          exit(1); // Exit if file could not be opened
+      }
       kstring_t linecounttmp;linecounttmp.s=NULL;linecounttmp.l=linecounttmp.m=0; // Initialize a kstring_t structure
       while (bgzf_getline(fp_tmp, '\n', &linecounttmp) != -1){totalLines++;}
       free(linecounttmp.s);
@@ -822,7 +852,7 @@ int main(int argc,char **argv){
       }
       size_t moduloread = no_reads/modulovalue;
 
-      //fprintf(stderr,"Total lines %zu \t Total reads %zu \t lines pr threads %zu \n",totalLines,no_reads,mypars->Threads);  
+      fprintf(stderr,"\t-> Total number of reads in input file %zu\n",no_reads);  
 
       AmpliconThreadInitialize(mypars->OutFormat,mypars->Amplicon_in_pars,filetype,mypars->Amplicon_out_pars,mypars->SubProfile,mypars->Threads,mypars->BriggsBiotin,mypars->Indel,mypars->Seed,mypars->rng_type,moduloread,totalLines,linesPerThread);
     }
@@ -842,13 +872,15 @@ int main(int argc,char **argv){
       size_t linesPerThread = totalLines / mypars->Threads;
 
       int modulovalue;
-      if (totalLines > 100){
+      if (totalLines > 1000000){
         modulovalue = 10;
       }
       else{ 
         modulovalue = 1;
       }
       size_t moduloread = totalLines/modulovalue;
+
+      fprintf(stderr,"\t-> Total number of reads in input file %zu\n",totalLines);  
 
       //insert thread initialization for bam with different read in function
       AmpliconThreadInitialize(mypars->OutFormat,mypars->Amplicon_in_pars,filetype,mypars->Amplicon_out_pars,mypars->SubProfile,mypars->Threads,mypars->BriggsBiotin,mypars->Indel,mypars->Seed,mypars->rng_type,moduloread,totalLines,linesPerThread);
