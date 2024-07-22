@@ -4,12 +4,18 @@
 Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen \
 Contact: rasmus.henriksen@sund.ku.dk
 
-## VERSION
-Next Generation Simulator for Next Generator Sequencing Data 
-
 This article was [published](https://academic.oup.com/bioinformatics/advance-article/doi/10.1093/bioinformatics/btad041/6994180) in Oxford Academics as an application note the 20th of January 2023.
 
 NGSNGS is a new program, therefore we are very interested in feedback to solve potential problems, as well as ideas for improvements or additions to specific and relevant features.
+
+# Table of Contents
+[Installation](#INSTALLATION-&-REQUIREMENTS)
+[Help page](#GENERAL)
+[Tutorial](#QUICK-TUTORIAL)
+[Input file structure](#Input-file-structure)
+- [Nucleotide quality scores](#Nucleotide-quality-scores-(-q1-and--q2))
+[Citation](#CITATION)
+
 
 ## INSTALLATION & REQUIREMENTS
 ### Dependencies
@@ -41,11 +47,6 @@ make amplicon HTSSRC=../htslib
 ```
 
 **NOTE:** Newer version of htslib which includes bam_set1 is required
-
-# Table of Contents
-- [Help page](#GENERAL)
-- [Tutorial](#QUICK-TUTORIAL)
-- [CITATION](#CITATION)
 
 ## GENERAL
 Next Generation Simulator for Next Generator Sequencing Data version 0.9.2.1 
@@ -214,12 +215,6 @@ Examples of which parameters to include depending on the desired simulations
 ~~~~
 NB! the adapter sequences are only concatenated to the reads, if the inferred cycle length from quality profiles is greater than the fragment length, the poly-X tail is only added if the sequence with adapter length is still below the cycle length (Cycle length - fragment length - adapter length = 150 - 80 - 65 = 5).
 
-## Limitations 
-As of release v0.9.2.1 NGSNGS has the following restrictions on fragment length simulations (-l,-ld,-ld) and the modifications which can be performed on the fragment. These will be addressed in future releases.
-1) The upper limit of fragment lengths is 10000
-2) When simulating deamination fragments below 30 nucleotides will not be deamination 
-3) When simulating deamination fragments above 1024 will not be deaminated in the 3' end with the complementary G>A substitution
-   
 ## Read ID
 All formats shares a similar read ID structure
 ~~~~bash
@@ -237,7 +232,7 @@ S0 is the forward strand and S1 is the reverse strand, mod1000 equals read with 
 * Val3 signifies stochastic structural variations in the sequenced reads, 0 = no variation, 1 = insertions, 2 = deletions, 3 = insertions and deletions. 
 * Val4 signifies sequencing error (dependent on -q1,-q2 or -qs) in the sequenced reads, 0 = no sequencing error, 1 = sequencing error.
 
-## Nucleotide substitution models
+## Input file structure
 ### Nucleotide quality scores (-q1 and -q2)
 Simulating a .fq or .sam format requires a provided nucleotide quality profile (-q1, -q2) with one example (Test_Examples/AccFreqL150R1.txt) and its structure: 
 ~~~~bash
@@ -294,6 +289,12 @@ The CDF of the fragment lengths of Ancient DNA.
 191	1
 ~~~~
 * Given the above nucleotide quality profile, those reads with a fragment length above the inferred the cycle length (150 bp), will have an discrepancy between the read id "length:&lt;Fragmentlength&gt;" and the simulated output sequence length. 
+
+## Limitations 
+As of release v0.9.2.1 NGSNGS has the following restrictions on fragment length simulations (-l,-ld,-ld) and the modifications which can be performed on the fragment. These will be addressed in future releases.
+1) The upper limit of fragment lengths is 10000
+2) When simulating deamination fragments below 30 nucleotides will not be deamination 
+3) When simulating deamination fragments above 1024 will not be deaminated in the 3' end with the complementary G>A substitution
 
 ## CITATION
 Bibtex citation
