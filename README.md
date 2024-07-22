@@ -22,6 +22,8 @@ NGSNGS is a new program, therefore we are very interested in feedback to solve p
 - [Misincorporation file](#Misincorporation-file)
 - [Fragment length distribution file](#Fragment-length-distribution-file)
 
+[Restrictions](#RESTRICTIONS)
+
 [Citation](#CITATION)
 
 
@@ -200,7 +202,7 @@ Simulation Specific:
 Next Generation Simulator for Next Generator Sequencing Data Amplicon simulation - adding nucleotide alterations to existing empirical data
 
 Usage
-./Amplicon [options] --amplicon <InputSequenceFile> --output <AmpliconOutput>
+./amplicon [options] --amplicon <InputSequenceFile> --output <AmpliconOutput>
 -h | --help: 	 Print help page.
 
 Required: 
@@ -357,7 +359,7 @@ The CDF of the fragment lengths distribution (-lf) of the DNA sequences from whi
 ~~~~
 * Given the above nucleotide quality profile, those reads with a fragment length above the inferred the cycle length (150 bp), will have an discrepancy between the read id "length:&lt;Fragmentlength&gt;" and the simulated output sequence length. 
 
-## Limitations 
+## RESTRICTIONS 
 As of release v0.9.2.1 NGSNGS has the following restrictions on fragment length simulations (-l,-ld,-ld) and the modifications which can be performed on the fragment. These will be addressed in future releases.
 1) The upper limit of fragment lengths is 10000
 2) When simulating deamination fragments below 30 nucleotides will not be deamination 
