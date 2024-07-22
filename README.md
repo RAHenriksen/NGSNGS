@@ -10,10 +10,14 @@ NGSNGS is a new program, therefore we are very interested in feedback to solve p
 
 # Table of Contents
 [Installation](#INSTALLATION-&-REQUIREMENTS)
+
 [Help page](#GENERAL)
+
 [Tutorial](#QUICK-TUTORIAL)
+
 [Input file structure](#Input-file-structure)
-- [Nucleotide quality scores](#Nucleotide-quality-scores-(-q1-and--q2))
+- [Nucleotide quality scores](#Nucleotide-quality-scores-(--q1-and--q2))
+
 [Citation](#CITATION)
 
 
