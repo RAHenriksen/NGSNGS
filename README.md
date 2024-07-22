@@ -35,12 +35,17 @@ git clone https://github.com/RAHenriksen/NGSNGS.git
 cd NGSNGS; make
 ```
 
-### Install Amplicon simulation tool
+### Install the Amplicon simulation tool
 ```
 make amplicon HTSSRC=../htslib
 ```
 
 **NOTE:** Newer version of htslib which includes bam_set1 is required
+
+# Table of Contents
+- [Help page](#GENERAL)
+- [Tutorial](#QUICK-TUTORIAL)
+- [CITATION](#CITATION)
 
 ## GENERAL
 Next Generation Simulator for Next Generator Sequencing Data version 0.9.2.1 
@@ -307,11 +312,4 @@ Bibtex citation
 }
 ~~~~
 
-## MISC
-### Example of adding an MD tag directly to the simulated bam files which can be added after simulations
-~~~~bash
-samtools sort -@ 10 -m 2G MycoBactBamSEOut.bam -o MycoBactBamSEOut_sort.bam; 
-samtools index MycoBactBamSEOut_sort.bam; 
-samtools calmd -@ 10 -r -b MycoBactBamSEOut_sort.bam Test_Examples/Mycobacterium_leprae.fa.gz > MycoBactBamSEOut_sort_MD.bam; 
-~~~~
  
