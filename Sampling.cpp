@@ -158,6 +158,13 @@ void* Sampling_threads(void *arg) {
     //get shallow copy of chromosome, offset into, is defined by posB, and posE
     size_t chr_end;
     char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength,chr_end,struct_obj->simmode);
+
+    /*
+    Create some kind of bed file coordinate sampling
+    ellers lav et antal linjer og så randomly sample fra dem.
+    char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength,chr_end,struct_obj->simmode);
+
+    */
     int fragmentLength;
     //extracting a biological fragment of the reference genome
     if(struct_obj->simmode == 1){
