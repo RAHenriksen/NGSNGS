@@ -16,7 +16,9 @@ NGSNGS is a new program, therefore we are very interested in feedback to solve p
 [Tutorial](#QUICK-TUTORIAL)
 
 [Input file structure](#Input-file-structure)
-- [Nucleotide quality scores](#Nucleotide-quality-scores-(--q1-and--q2))
+- [Nucleotide quality scores](#Nucleotide-quality-scores)
+- [Misincorporation file](#Misincorporation-file)
+- [Fragment length distribution file](#Fragment-length-distribution-file)
 
 [Citation](#CITATION)
 
@@ -237,7 +239,7 @@ S0 is the forward strand and S1 is the reverse strand, mod1000 equals read with 
 * Val4 signifies sequencing error (dependent on -q1,-q2 or -qs) in the sequenced reads, 0 = no sequencing error, 1 = sequencing error.
 
 ## Input file structure
-### Nucleotide quality scores (-q1 and -q2)
+### Nucleotide quality scores
 Simulating a .fq or .sam format requires a provided nucleotide quality profile (-q1, -q2) with one example (Test_Examples/AccFreqL150R1.txt) and its structure: 
 ~~~~bash
 Line1: 3		7		16		23		28		34		38		41
@@ -252,13 +254,13 @@ Line750: 1.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0
 Line751: 1.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	
 Line752: 1.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00 	0.000000e+00
 ~~~~
-* The first two lines signifies the possible quality scores to be simulated and their corresponding error probability.
-* The remaining lines are seperated into 5 equal regions, i.e 750/5 -> 150. Signifying the number of positions for which a read can have simulated nucleotide quality scores. The first 150 lines -> A, next T, then G, then C and finally N.
-* When quality profiles are provided (-q1,-q2), NGSNGS infers the cycle length given the number of position with corresponding quality scores (number of lines) and creates a read length limitation (e.g. (752-2)/5 = 150) independent of the fragment length options (-l,-lf,-ld). 
-* To simulate .fastq outputs, the quality profiles needs to be provided. For Sequence-Alignment-Map formats if no quality profile have been provided, then all the quality scores in the nucleotide quality string will be the lowest quality.
+* The first two lines signify the possible quality scores to be simulated and their corresponding error probability.
+* The remaining lines are separated into 5 equal regions, i.e 750/5 -> 150. Signifying the number of positions for which a read can have simulated nucleotide quality scores. The first 150 lines -> A, next T, then G, then C, and finally N.
+* When quality profiles are provided (-q1,-q2), NGSNGS infers the cycle length given the number of positions with corresponding quality scores (number of lines) and creates a read length limitation (e.g. (752-2)/5 = 150) independent of the fragment length options (-l,-lf,-ld). 
+* To simulate .fastq outputs, the quality profiles need to be provided. For Sequence Alignment Map formats, if no quality profile has been provided, then all the quality scores in the nucleotide quality string will be the lowest quality.
 * From the error probability depending on the simulated quality score, sequencing errors will be simulated by equally substituting between the remaining three nucleotides. When providing the '-ne' option sequencing error substitution is disabled.
-### Misincorporation file (-mf)
-This misincorporation file represent the type specific probabilities of any of the bases transitioning to any other nucleotide or not transitioning for every cycle or position of the sequence.
+### Misincorporation file 
+This misincorporation file (-mf) represents the type-specific probabilities of any of the bases transitioning to any other nucleotide or not transitioning for every cycle or position of the sequence.
 The structure (Test_Examples/MisincorpFile.txt) is similar to that of the nucleotide quality profiles, with the number of bases for which nucleotide substitutions can occur being inferred from the dimension.
 ~~~~bash
 	A 	 	T 	 	G  		C
@@ -275,8 +277,8 @@ Line120: 0.003241 	0.015273 	0.019467 	1.000000
 * The substitution pattern from the misincorporation file, represent the substitution of all four nucleotide with the first half being from from both the 5’ termini and the second half being the 3’ termini of a given fragment. 
 * With a dimension of 120 lines, the first 60 represent substitution frequencies of the first 15 positions within the read given the nucleotide belonging to A,T,G or C and the latter half being the last 15 nucleotides.
 
-### Fragment length distribution file (-lf)
-The CDF of the fragment lengths of Ancient DNA.
+### Fragment length distribution file
+The CDF of the fragment lengths distribution (-lf) of the DNA sequences from which the sequence reads are generated.
 ~~~~bash
 35	0.00540914
 36	0.01326621
