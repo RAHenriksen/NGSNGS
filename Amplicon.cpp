@@ -8,6 +8,8 @@
 #include "Amplicon.h"
 #include "NGSNGS_misc.h"
 #include "version.h"
+#include "sample_qscores.h"
+#include "RandSampling.h"
 
 #include <cstdio>
 #include <cstring>
@@ -36,8 +38,10 @@ KSEQ_INIT(BGZF*, bgzf_read);
 void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_in_fp,
   int filetype,const char* Amplicon_out_fp,
   const char* Subprofile,int threads,
-  char *Briggs,char *Indel,int seed,
-  int rng_type,size_t moduloread,size_t totalLines,size_t linesPerThread) {
+  char *Briggs,char *Indel,
+  int seed,int rng_type,
+  int fixqual,int DoSeqErr,const char* QualProfile,int DoSeqErrDist,
+  size_t moduloread,size_t totalLines,size_t linesPerThread) {
   
   // initialize file type for output name to convert files
   const char* suffix = NULL;
@@ -75,6 +79,8 @@ void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_i
   }
   strcat(fileout,suffix);
 
+  ransampl_ws ***QualDist = NULL;
+
   //fprintf(stderr,"\t-> File output name is %s\n",fileout);
   const char* filename_out = fileout;
   
@@ -95,9 +101,21 @@ void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_i
   samFile *amplicon_out_sam = NULL;
   bam_hdr_t *hdr = NULL;
   
+  //create arrays for quality profiles
+  char nt_qual[1024];
+  double nt_err[1024];
+  int inferred_readcycle = 0;
   if(filetype<2){
     // input fa or fastq
     amplicon_in = bgzf_open(Amplicon_in_fp, "r");  
+
+    if(filetype < 1){//sample quality scores for fa input
+      if(DoSeqErrDist > 0){
+        QualDist = ReadQuality(nt_qual,nt_err,33,QualProfile,inferred_readcycle);
+
+        //QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1);
+      }
+    }
   }
   else{
     //input sequence alignment/map format
@@ -172,7 +190,15 @@ void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_i
     amp_thread_struct[i].threadid = i;
     amp_thread_struct[i].Seed = seed; 
     amp_thread_struct[i].rng_type = rng_type;
-
+   
+    // quality scores
+    amp_thread_struct[i].fixqual = fixqual;
+    amp_thread_struct[i].DoSeqErr = DoSeqErr;
+    amp_thread_struct[i].DoSeqErrDist = DoSeqErrDist;
+    amp_thread_struct[i].QualDistProfile = QualDist;
+    amp_thread_struct[i].NtQual = nt_qual;
+    amp_thread_struct[i].NtErr = nt_err;
+      
     // 3) misincorporation matrix
     amp_thread_struct[i].MisMatch = MisMatchFreqArray;
     amp_thread_struct[i].MisLength = (int) mismatchcyclelength;
@@ -202,6 +228,15 @@ void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_i
   delete[] mythreads;
   delete[] amp_thread_struct;
 
+  if(QualProfile != NULL && fixqual == 0){
+    for(int base=0;base<5;base++){
+      for(int pos = 0 ; pos< (int) inferred_readcycle;pos++){
+        ransampl_free(QualDist[base][pos]);
+      }
+      delete[] QualDist[base];
+    }
+    delete[] QualDist;
+  }
 
   if(OutFormat == samT || OutFormat == bamT){
     sam_close(amplicon_out_sam);
@@ -233,7 +268,6 @@ void* ProcessFAFQ(void* args){
   int threadid = amp_thread_struct->threadid;
 
   int filetype = amp_thread_struct->filetype;
-  
   //char* Briggs = amp_thread_struct->Briggs;
   //char* IndelInputParam = amp_thread_struct->Indel;
 
@@ -277,9 +311,12 @@ void* ProcessFAFQ(void* args){
   //allocate the random generator
   mrand_t *mr = mrand_alloc(amp_thread_struct->rng_type,Seed);
 
+  //fprintf(stderr,"process FAFQ %d \n",amp_thread_struct->fixqual);
+
   // Seek to the appropriate starting line
   kseq_t *FQseq = kseq_init(amplicon_in_fp);
 
+  
   int ErrProbTypeOffset=33; //quality score offset, 33 only for fastq it should be 0 for bam
 
   while (startLine <= endLine){
@@ -299,6 +336,7 @@ void* ProcessFAFQ(void* args){
     int FragMisMatch = 0;
     int has_indels = 0;
     int ReadDeam=0;
+    int seq_err = 0;
 
     // deamination
     if (amp_thread_struct->Briggs != NULL){
@@ -312,6 +350,7 @@ void* ProcessFAFQ(void* args){
       FragMisMatch = MisMatchFile_kstring(&FQseq->seq,mr,amp_thread_struct->MisMatch,amp_thread_struct->MisLength);
       //fprintf(stderr,"FragMisMatch val %d \n",FragMisMatch);
     }
+
 
     // Stochastic structural variation model    
     if(amp_thread_struct->Indel != NULL){
@@ -375,31 +414,46 @@ void* ProcessFAFQ(void* args){
     kstring_t thread_out = {0, 0, NULL};  // Initialize kstring_t for the formatted output
     
     if (amp_thread_struct->OutFormat==faT || amp_thread_struct->OutFormat==fagzT){
-      ksprintf(&thread_out, ">%s_mod%d%d%d\n%s\n",FQseq->name.s,ReadDeam,FragMisMatch,has_indels,FQseq->seq.s);
+      ksprintf(&thread_out, ">%s_mod%d%d%d%d\n%s\n",FQseq->name.s,ReadDeam,FragMisMatch,has_indels,seq_err,FQseq->seq.s);
     }
     else if (amp_thread_struct->OutFormat==fqT || amp_thread_struct->OutFormat==fqgzT){
       if(filetype == 0){
-        // input amplicon file is fasta format without quality scores, thus we need to generate an artificial quality score sequence
-        fprintf(stderr,"Warning without the nucleotide quality scores present in the input fasta file, an artifical quality score of 40 is created for each nucleotide\n");
+        //fprintf(stderr,"INSIDE OUTPUT FORMAT %d \n",amp_thread_struct->fixqual);
         kstring_t qual;
         qual.s = NULL; qual.l=qual.m=0;
         qual.s = (char*)malloc(( FQseq->seq.l + 1) * sizeof(char));
         qual.m = FQseq->seq.m + 1;  // Set the maximum allocated length
-        qual.l = FQseq->seq.l;   
+        qual.l = FQseq->seq.l;
+          
+          //if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){
 
-        memset(qual.s, 'I', FQseq->seq.l);
-        qual.s[FQseq->seq.l] = '\0'; //create the null termination in the end
-        /*for (int i = 0; i < FQseq->seq.l; i++) {
-          fprintf(stderr,"I VALUE %d \t %c \t %c \n",i,FQseq->seq.s[i]);
-          //int quality_val = (int)(mrand_pop(mr) * 39 + 1);
-          qual.s[i] = 'I' ;//(char)(quality_val + ErrProbTypeOffset);
-          std::cout << qual.s[i] << std::endl;
-        }*/
-        ksprintf(&thread_out, "@%s_mod%d%d%d\n%s\n+\n%s\n",FQseq->name.s,ReadDeam,FragMisMatch,has_indels,FQseq->seq.s,qual.s);
+        if(amp_thread_struct->fixqual > 0 && amp_thread_struct->DoSeqErrDist == 0){
+          //simulates a fixed quality score
+          char fixedscore = (char)(amp_thread_struct->fixqual + ErrProbTypeOffset);
+
+          if(amp_thread_struct->DoSeqErr){
+            seq_err = sample_qscores_fix_amplicon(mr,&FQseq->seq,fixedscore,ErrProbTypeOffset);
+          }
+          memset(qual.s, fixedscore, FQseq->seq.l);
+        }
+        else if(amp_thread_struct->DoSeqErrDist > 0 && amp_thread_struct->fixqual == 0){
+          seq_err = sample_qscores_amplicon(&FQseq->seq,&qual,amp_thread_struct->QualDistProfile,amp_thread_struct->NtQual,mr,amp_thread_struct->DoSeqErr,ErrProbTypeOffset);
+        }
+        else{
+          fprintf(stderr,"\t-> Conflicting parameters with both a quality profile (-q) and fixed quality score (-qs)\n");
+          exit(1);
+        }
+
+        //fprintf(stderr,"Fixedscore %c\n",fixedscore);
+        qual.s[FQseq->seq.l] = '\0'; //create the null termination in the end*/
+
+        ksprintf(&thread_out, "@%s_mod%d%d%d%d\n%s\n+\n%s\n",FQseq->name.s,ReadDeam,FragMisMatch,has_indels,seq_err,FQseq->seq.s,qual.s);
         free(qual.s);
+        qual.s = NULL;
+        qual.l = qual.m = 0;
       }
       else{
-        ksprintf(&thread_out, "@%s_mod%d%d%d\n%s\n+\n%s\n",FQseq->name.s,ReadDeam,FragMisMatch,has_indels,FQseq->seq.s, FQseq->qual.s);
+        ksprintf(&thread_out, "@%s_mod%d%d%d%d\n%s\n+\n%s\n",FQseq->name.s,ReadDeam,FragMisMatch,has_indels,seq_err,FQseq->seq.s, FQseq->qual.s);
       }
     }
     else if (amp_thread_struct->OutFormat==samT || amp_thread_struct->OutFormat==bamT){
@@ -553,7 +607,7 @@ void* ProcessBAM(void* args){
     int FragMisMatch = 0;
     int has_indels = 0;
     int ReadDeam=0;
-    
+    int seq_err = 0;
     // deamination
     if (amp_thread_struct->Briggs != NULL){
       int strand = mrand_pop(mr)>0.5?0:1;
@@ -630,9 +684,9 @@ void* ProcessBAM(void* args){
       bam1_t *aln_out = bam_init1();
       //fprintf(stderr,"Sequence 2 %s\n",Sequence.s);
       
-      size_t qnamelen = snprintf(NULL, 0, ">%s_mod%d%d%d", qname, ReadDeam, FragMisMatch, has_indels);
+      size_t qnamelen = snprintf(NULL, 0, ">%s_mod%d%d%d%d", qname, ReadDeam, FragMisMatch, has_indels,seq_err);
       char* formatted_qname = (char*)malloc(qnamelen + 1);
-      sprintf(formatted_qname, ">%s_mod%d%d%d", qname, ReadDeam, FragMisMatch, has_indels);
+      sprintf(formatted_qname, ">%s_mod%d%d%d%d", qname, ReadDeam, FragMisMatch, has_indels,seq_err);
 
       /*size_t l_qname, const char *qname,
       uint16_t flag, int32_t tid, hts_pos_t pos, uint8_t mapq,
@@ -659,10 +713,10 @@ void* ProcessBAM(void* args){
       kstring_t thread_out = {0, 0, NULL};  // Initialize kstring_t for the formatted output
       
       if (amp_thread_struct->OutFormat==faT || amp_thread_struct->OutFormat==fagzT){
-        ksprintf(&thread_out, ">%s_mod%d%d%d\n%s\n",qname,ReadDeam,FragMisMatch,has_indels,Sequence.s);
+        ksprintf(&thread_out, ">%s_mod%d%d%d%d\n%s\n",qname,ReadDeam,FragMisMatch,has_indels,seq_err,Sequence.s);
       }
       else if (amp_thread_struct->OutFormat==fqT || amp_thread_struct->OutFormat==fqgzT){
-        ksprintf(&thread_out, "@%s_mod%d%d%d\n%s\n+\n%s\n",qname,ReadDeam,FragMisMatch,has_indels,Sequence.s, Quality.s);
+        ksprintf(&thread_out, "@%s_mod%d%d%d%d\n%s\n+\n%s\n",qname,ReadDeam,FragMisMatch,has_indels,seq_err,Sequence.s, Quality.s);
       }
       //fprintf(stderr,"TID%d_line%d_%s\t%s\t+\t%s\n", threadid, startLine,seq->name.s, seq->seq.s, seq->qual.s);
       pthread_mutex_lock(&amplicon_write_mutex);
@@ -723,7 +777,6 @@ int main(int argc,char **argv){
 
     clock_t t = clock();
     time_t t2 = time(NULL);
-
     fprintf(stderr,"\t-> Seed is provided (-s): %ld\n",mypars->Seed/1000);
 
     //Initate seed
@@ -816,8 +869,14 @@ int main(int argc,char **argv){
     else if(mypars->OutFormat == fqgzT){fprintf(stderr,"\t-> Amplicon mode is chosen with a compressed fastq output file\n");}
     else if(mypars->OutFormat == samT || mypars->OutFormat == bamT){fprintf(stderr,"\t-> Amplicon mode is chosen with a Sequence Alignment/Map format output file\n");}
     //exit(1);
+    int DoSeqErrDist = 0;
+
     if (filetype < 2){
       // fasta or fastq
+      if(mypars->QualProfile != NULL){
+        fprintf(stderr,"\t-> Simulating quality scores from provided profile (-q) %s\n",mypars->QualProfile);  
+        DoSeqErrDist = 1;
+      }
 
       // Count the total number of lines in the file
       size_t totalLines = 0;
@@ -853,8 +912,11 @@ int main(int argc,char **argv){
       size_t moduloread = no_reads/modulovalue;
 
       fprintf(stderr,"\t-> Total number of reads in input file %zu\n",no_reads);  
-
-      AmpliconThreadInitialize(mypars->OutFormat,mypars->Amplicon_in_pars,filetype,mypars->Amplicon_out_pars,mypars->SubProfile,mypars->Threads,mypars->BriggsBiotin,mypars->Indel,mypars->Seed,mypars->rng_type,moduloread,totalLines,linesPerThread);
+      //fprintf(stderr,"filetype < 2 fix qual %d\n",mypars->fixqual);
+      AmpliconThreadInitialize(mypars->OutFormat,mypars->Amplicon_in_pars,filetype,mypars->Amplicon_out_pars,mypars->SubProfile,
+        mypars->Threads,mypars->BriggsBiotin,mypars->Indel,mypars->Seed,mypars->rng_type,
+        mypars->fixqual,mypars->DoSeqErr,mypars->QualProfile,DoSeqErrDist,
+        moduloread,totalLines,linesPerThread);
     }
     else if (filetype == 2){
       // Count the total number of lines in the file
@@ -883,7 +945,10 @@ int main(int argc,char **argv){
       fprintf(stderr,"\t-> Total number of reads in input file %zu\n",totalLines);  
 
       //insert thread initialization for bam with different read in function
-      AmpliconThreadInitialize(mypars->OutFormat,mypars->Amplicon_in_pars,filetype,mypars->Amplicon_out_pars,mypars->SubProfile,mypars->Threads,mypars->BriggsBiotin,mypars->Indel,mypars->Seed,mypars->rng_type,moduloread,totalLines,linesPerThread);
+      AmpliconThreadInitialize(mypars->OutFormat,mypars->Amplicon_in_pars,filetype,mypars->Amplicon_out_pars,mypars->SubProfile,
+        mypars->Threads,mypars->BriggsBiotin,mypars->Indel,mypars->Seed,mypars->rng_type,
+        mypars->fixqual,mypars->DoSeqErr,mypars->QualProfile,DoSeqErrDist,
+        moduloread,totalLines,linesPerThread);
       /*ProcessBAM(mypars->Amplicon_in_pars);
       exit(1);*/
     }

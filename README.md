@@ -227,6 +227,11 @@ Optional:
 	 2 :  	 rand_r
 	 3 :  	 erand48, default for MacOS.
 
+Sequencing errors:
+-q  | --quality: 	Read Quality profile to simulate nucleotide quality scores for fasta input file to generate fastq output.
+-qs | --qualityscore:	Simulate a fixed nucleotide quality score for fasta input file to generate fastq output.
+-ne  | --noerror: 	Disabling the sequencing error substitutions based on nucleotide qualities from the provided quality profile -q or fixed score -qs.
+
 Postmortem damage (PMD) - Deamination: 
 
 -m   | --model: 	 Deamination model.
@@ -253,7 +258,9 @@ Nucleotide Alterations:
 Example
 ./amplicon --amplicon Test_Examples/Amplicon_in.fq -m b,0.024,0.36,0.68,0.0097 --format fq.gz --output Amplicon_deamination
 ./amplicon --amplicon Test_Examples/Amplicon_in.fq -indel 0.05,0.1,0.1,0.2 --output Amplicon_indel
+./amplicon --amplicon Test_Examples/Amplicon_in.fa --format fq -q Test_Examples/AccFreqL150R1.txt --output Amplicon_seqerr
 ./amplicon --amplicon Test_Examples/Amplicon_in.bam -mf ../Test_Examples/MisincorpFile.txt --format fa.gz --output Amplicon_deamination
+
 ~~~~
 
 ## QUICK TUTORIAL

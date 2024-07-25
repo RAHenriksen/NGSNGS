@@ -6,6 +6,7 @@
 #include "mrand.h"
 #include "fasta_sampler.h"
 #include <htslib/kstring.h>
+#include "RandSampling.h"
 
 int Random_geometric_k(const double p,mrand_t *mr);
 //pars is a general placeholder used for representing general parameters. Currently it is , insertion rate (prob), length(expontial lambda),deletion rate (prob), length(expontial lambda),

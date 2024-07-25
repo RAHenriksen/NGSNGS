@@ -1,8 +1,10 @@
 #include <zlib.h>
 #include <cstring>
 #include <cassert>
-#include "sample_qscores.h"
+#include <htslib/kstring.h>
+
 #include "RandSampling.h"
+#include "sample_qscores.h"
 #include "mrand.h"
 #include "NGSNGS_misc.h"
 
@@ -15,7 +17,7 @@ extern char refToChar[256];
 
 double phred2Prob[256];
 
-ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const char *freqfile){
+ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const char *freqfile,int &inferredreadcycle){
   for(int qscore =0 ;qscore<256;qscore++){
     double d = qscore;
     phred2Prob[qscore] = pow(10,((-d)/10));
@@ -30,16 +32,15 @@ ransampl_ws ***ReadQuality(char *ntqual, double *ErrProb, int ntcharoffset,const
     all_lines.push_back(strdup(buf));
   gzclose(gz);
 
-  int readcycle = (all_lines.size()-2)/5;
-
+  inferredreadcycle = (all_lines.size()-2)/5;
   //loop over inputdata
   int nbins = -1;
   double probs[MAXBINS];
   for(int b=0;b<5;b++){
-    dists[b] = new ransampl_ws *[readcycle];
-    for(int pos = 0 ; pos<readcycle;pos++){
+    dists[b] = new ransampl_ws *[inferredreadcycle];
+    for(int pos = 0 ; pos<inferredreadcycle;pos++){
       int at = 0;
-      probs[at++] = atof(strtok(all_lines[2+b*readcycle+pos],"\n\t "));
+      probs[at++] = atof(strtok(all_lines[2+b*inferredreadcycle+pos],"\n\t "));
       char *tok = NULL;
       while(((tok=strtok(NULL,"\n\t ")))){
 	      probs[at++] = atof(tok);
@@ -80,7 +81,6 @@ int sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *Nt
     double dtemp2 = mrand_pop(mr);
     
     char inbase = refToInt[bases[i]];
-
     int qscore_idx =  ransampl_draw2(ws[inbase][i],dtemp1,dtemp2);//ransampl_draw2(ws[inbase][i],1,1); //ransampl_draw2(ws[inbase][i],dtemp1,dtemp2);
 
     qscores[i] = NtQuals[qscore_idx];
@@ -96,6 +96,35 @@ int sample_qscores(char *bases, char *qscores,int len,ransampl_ws ***ws,char *Nt
       }
     }
   }
+
+  return seq_err;
+}
+
+int sample_qscores_amplicon(kstring_t* seq,kstring_t* qual,ransampl_ws ***ws,char *NtQuals,mrand_t *mr,int simError, int ntcharoffset){
+  int seq_err = 0;
+
+  for(int i = 0;i<seq->l;i++){
+    double dtemp1 = mrand_pop(mr);
+    double dtemp2 = mrand_pop(mr);
+
+    int qscore_idx =  ransampl_draw2(ws[refToInt[seq->s[i]]][i],dtemp1,dtemp2);//ransampl_draw2(ws[inbase][i],1,1); //ransampl_draw2(ws[inbase][i],dtemp1,dtemp2);
+    qual->s[i] = NtQuals[qscore_idx];
+  
+    char inbase = refToInt[seq->s[i]];
+
+    if (simError){
+      double tmprand = mrand_pop(mr);
+      if ( tmprand < phred2Prob[qual->s[i]-ntcharoffset]){
+
+        int outbase=(int)floor(4.0*phred2Prob[qual->s[i]-ntcharoffset]*tmprand);//DRAGON
+        while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
+        seq->s[i] = intToRef[outbase];
+        seq_err = 1;
+      }
+    }  
+  }
+
+
   return seq_err;
 }
 
@@ -132,6 +161,48 @@ int sample_qscores_fix(char *bases, char *qscores, int qscoresval,int len,mrand_
   return seq_err;
 }
 
+//void add_indel_amplicon_fa(mrand_t *mr,kstring_t* seq,double *pars,int* ops){
+//add_indel_amplicon_fqbam(mr,&FQseq->seq,&FQseq->qual,pars,ops,ErrProbTypeOffset);
+
+int sample_qscores_fix_amplicon(mrand_t *mr,kstring_t* seq,int qscoresval,int ntcharoffset){
+  //std::cout << seq->s << std::endl;
+  int seq_err = 0;
+  
+  kstring_t seq_intermediate;
+  seq_intermediate.l = seq->l;
+  seq_intermediate.m = seq->l;
+  seq_intermediate.s = (char *)malloc((seq->l + 1) * sizeof(char)); // Allocate memory
+  strcpy(seq_intermediate.s, seq->s); // Copy seq->s to seq_intermediate.s
+  
+
+  for(int qscore =0 ;qscore<256;qscore++){
+    double d = qscore;
+    phred2Prob[qscore] = pow(10,((-d)/10));
+  }
+
+  for(int i = 0;i<seq->l;i++){
+    char inbase = refToInt[seq->s[i]];
+
+    double tmprand = mrand_pop(mr);
+    //fprintf(stderr,"inside simerror %f \n",phred2Prob[qscoresval-33]);
+    //exit(1);
+    if ( tmprand < phred2Prob[qscoresval-ntcharoffset]){
+      int outbase=(int)floor(4.0*phred2Prob[qscoresval]*tmprand);
+      while (((outbase=((int)floor(4*mrand_pop(mr))))) == inbase);
+	    seq_intermediate.s[i] = intToRef[outbase];
+      seq->s[i] = seq_intermediate.s[i];
+      seq_err = 1;
+    }
+  }
+
+  seq->s[seq->l] = '\0';
+
+  free(seq_intermediate.s);
+  seq_intermediate.s = NULL;
+  seq_intermediate.l = seq_intermediate.m = 0;
+
+  return seq_err;
+}
 
 #ifdef __WITH_MAIN__
 int main(int argc, char **argv){

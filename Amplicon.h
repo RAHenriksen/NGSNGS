@@ -27,6 +27,13 @@ struct struct_for_amplicon_threads{
   char* Indel;
   int rng_type;
   long int Seed;
+  
+  int fixqual;
+  int DoSeqErr;
+  int DoSeqErrDist;
+  ransampl_ws ***QualDistProfile;
+  char *NtQual;
+  double *NtErr;
 
   double* MisMatch;
   int MisLength;
@@ -43,6 +50,6 @@ void* ProcessFAFQ(void* args);
 
 void* ProcessBAM(void* args);
 
-void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_in_fp,int filetype,const char* Amplicon_out_fp,const char* Subprofile,int threads,char *Briggs,char *Indel,int seed,int rng_type,size_t moduloread,size_t totalLines,size_t linesPerThread);
+void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_in_fp,int filetype,const char* Amplicon_out_fp,const char* Subprofile,int threads,char *Briggs,char *Indel,int seed,int rng_type,int fixqual,const char* QualProfile,size_t moduloread,size_t totalLines,size_t linesPerThread);
 
 #endif

@@ -262,7 +262,8 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
         ReadLengthFile(no_elem,Frag_len,Frag_freq,Sizefile);
     }
     else{no_elem = -1;}
-    
+
+    int inferred_readcycle = 0;
     const char *freqfile_r1; //"Qual_profiles/AccFreqL150R1.txt";
     const char *freqfile_r2;
     int outputoffset = qualstringoffset;
@@ -275,10 +276,10 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     freqfile_r1 = QualProfile1;
     if(strcasecmp("true",QualStringFlag)==0){
       if(QualProfile1 != NULL && FixedQual == 0){
-        QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1);
+        QualDist = ReadQuality(nt_qual_r1,ErrArray_r1,outputoffset,freqfile_r1,inferred_readcycle);
         if(PE==SeqType){
           freqfile_r2 = QualProfile2;
-          QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2);
+          QualDist2 = ReadQuality(nt_qual_r2,ErrArray_r2,outputoffset,freqfile_r2,inferred_readcycle);
         }
       }
     }

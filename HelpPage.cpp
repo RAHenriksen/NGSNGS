@@ -170,6 +170,10 @@ int AmpliconHelpPage(FILE *fp){
   fprintf(fp,"\t 1 :  \t std::uniform_int_distribution\n"); 
   fprintf(fp,"\t 2 :  \t rand_r\n"); 
   fprintf(fp,"\t 3 :  \t erand48, default for MacOS.\n"); 
+  fprintf(fp,"\nSequencing errors: \n\n");
+  fprintf(fp,"\t-q  | --quality: \t\t Read Quality profile to simulate nucleotide quality scores for fasta input file to generate fastq output.\n");
+  fprintf(fp,"\t-qs | --qualityscore: \t\t Simulate a fixed nucleotide quality score for fasta input file to generate fastq output.\n");
+  fprintf(fp,"\t-ne  | --noerror: \t\t Disabling the sequencing error substitutions based on nucleotide qualities from the provided quality profile -q or fixed score -qs.\n");
   fprintf(fp,"\nPostmortem damage (PMD) - Deamination: \n\n");
   fprintf(fp,"-m   | --model: \t Deamination model.\n");
   fprintf(fp,"\t <b,nv,Lambda,Delta_s,Delta_d>  || <briggs,nv,Lambda,Delta_s,Delta_d> \t Parameters for the damage patterns using the Briggs model.\n");
@@ -187,7 +191,8 @@ int AmpliconHelpPage(FILE *fp){
   fprintf(fp,"\nExample\n");
   fprintf(fp,"./amplicon --amplicon Test_Examples/Amplicon_in.fq -m b,0.024,0.36,0.68,0.0097 --format fq.gz --output Amplicon_deamination\n");
   fprintf(fp,"./amplicon --amplicon Test_Examples/Amplicon_in.fq -indel 0.05,0.1,0.1,0.2 --output Amplicon_indel\n");
-  fprintf(fp,"./amplicon --amplicon Test_Examples/Amplicon_in.bam -mf ../Test_Examples/MisincorpFile.txt --format fa.gz --output Amplicon_deamination\n");
+  fprintf(fp,"./amplicon --amplicon Test_Examples/Amplicon_in.fa --format fq -q Test_Examples/AccFreqL150R1.txt --output Amplicon_seqerr\n");
+  fprintf(fp,"./amplicon --amplicon Test_Examples/Amplicon_in.bam -mf Test_Examples/MisincorpFile.txt --format fa.gz --output Amplicon_deamination\n");
   //./Amplicon --amplicon Amplicon_in.fq -mf ../Test_Examples/MisincorpFile.txt --output Amplicon_mismatch.fq\n");
   exit(1);
   return 0;

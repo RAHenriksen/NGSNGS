@@ -17,6 +17,9 @@ typedef struct{
   long int Seed;
   char *SubProfile;           //filename for misincorperation, typespecific and position specific
   int rng_type;
+  int fixqual;
+  int DoSeqErr;
+  char *QualProfile; 
   ampliconformat_e OutFormat ;  //fq, fq.gz, fa, fa.gz, sam, bam, cram
   char *CommandRun;           //actual command run in same order
 

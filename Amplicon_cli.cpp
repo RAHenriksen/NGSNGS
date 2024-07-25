@@ -19,6 +19,11 @@ argStruct *amplicongetpars(int argc,char ** argv){
   mypars->SubProfile = NULL;
   mypars->Indel = NULL;
 
+  //quality
+  mypars->fixqual = 0;
+  mypars->DoSeqErr = 1;
+  mypars->QualProfile = NULL;
+  
   mypars->OutFormat = unknownT;
   
   mypars->CommandRun = NULL;
@@ -82,6 +87,15 @@ argStruct *amplicongetpars(int argc,char ** argv){
     else if(strcasecmp("-rng",*argv)==0 || strcasecmp("--rand",*argv)==0){
       mypars->rng_type = atoi(*(++argv));
     }
+    else if(strcasecmp("-qs",*argv)==0 || strcasecmp("--qualityscore",*argv)==0){
+      mypars->fixqual = atoi(*(++argv));
+    }
+    else if(strcasecmp("-ne",*argv)==0 || strcasecmp("--noerror",*argv)==0){
+      mypars->DoSeqErr = 0;//"F";
+    }
+    else if(strcasecmp("-q",*argv)==0 || strcasecmp("--quality",*argv)==0){
+      mypars->QualProfile = strdup(*(++argv));
+    }
     else{
       fprintf(stderr,"unrecognized input option %s, see help page\n\n",*(argv));
       exit(0);
@@ -96,5 +110,6 @@ void amplicongetpars_destroy(argStruct *mypars){
   free(mypars->BriggsBiotin);
   free(mypars->SubProfile);
   free(mypars->Indel);
+  free(mypars->QualProfile);
   delete mypars;
 }
