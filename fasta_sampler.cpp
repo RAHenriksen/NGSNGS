@@ -1,5 +1,6 @@
 
 #include "fasta_sampler.h"
+#include "NGSNGS_misc.h"
 #include "RandSampling.h"
 #include "mrand.h"
 #include <htslib/faidx.h>
@@ -39,49 +40,36 @@ void fasta_sampler_print(FILE *fp,fasta_sampler *fs){
   fprintf(fp,"------------\n");
 }
 
-fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
-  
-  std::vector<char *> SubsetChr;
-  if (SpecificChr != NULL){
-    SubsetChr.push_back(strtok(strdup(SpecificChr),"\", \t"));
-    char *chrtok = NULL;
-    while(((chrtok=strtok(NULL,"\", \t"))))
-      SubsetChr.push_back(strdup(chrtok));
-    fprintf(stderr,"\t-> Number of entries in chromosome list: %lu\n",SubsetChr.size());
-  }
+fasta_sampler *fasta_sampler_alloc_full(const char *fa){
 
   fasta_sampler *fs = new fasta_sampler;
   fs->ws = NULL;
   fs->fai = NULL;
   assert(((fs->fai =fai_load(fa)))!=NULL);
   
-  if(SubsetChr.size()==0)
-    fs->nref = faidx_nseq(fs->fai);
-  else
-    fs->nref = SubsetChr.size();
-
+  fs->nref = faidx_nseq(fs->fai);
   fs->seqs = new char* [fs->nref];
   fs->seqs_l = new int[fs->nref];
   fs->seqs_names = new char *[fs->nref];
   fs->realnameidx = new int[fs->nref];
-  if(SubsetChr.size()==0)
-    for(int i=0;i<fs->nref;i++){
-      fs->seqs_names[i] = strdup(faidx_iseq(fs->fai,i));
-      fs->char2idx[fs->seqs_names[i]] = i;
-      fs->seqs[i] = fai_fetch(fs->fai,fs->seqs_names[i],fs->seqs_l+i);
-    }
-  else{
-    int at = 0;
-    for(int i=0;i<(int)SubsetChr.size();i++){
-      if( faidx_has_seq(fs->fai, SubsetChr[i])){
-        fs->seqs_names[at] = strdup(SubsetChr[i]);
-        fs->seqs[at] = fai_fetch(fs->fai,fs->seqs_names[i],fs->seqs_l+at);
-        fs->char2idx[fs->seqs_names[i]] = at;
-        at++;
-      }
-    }
-    fs->nref = at;
+
+  for(int i=0;i<fs->nref;i++){
+    fs->seqs_names[i] = strdup(faidx_iseq(fs->fai,i));
+    fs->char2idx[fs->seqs_names[i]] = i;
+    fs->seqs[i] = fai_fetch(fs->fai,fs->seqs_names[i],fs->seqs_l+i);
+    /*
+    abstract    Fetch the sequence in a region.
+    param  fai  Pointer to the faidx_t struct
+    param  reg  Region in the format "chr2:20,000-30,000"
+    param  len  Length of the region; -2 if seq not present, -1 general error
+    return      Pointer to the sequence; null on failure
+
+    @discussion The returned sequence is allocated by malloc family
+    and should be destroyed by end users by calling free() on it.
+    char *fai_fetch(const faidx_t *fai, const char *reg, int *len);
+     */
   }
+
   for(int i=0;i<fs->nref;i++)
     fs->realnameidx[i] = i;
 
@@ -91,8 +79,159 @@ fasta_sampler *fasta_sampler_alloc(const char *fa,const char *SpecificChr){
     exit(1);
   }
   fasta_sampler_setprobs(fs);
+
+  return fs;
+}
+
+fasta_sampler *fasta_sampler_alloc_subset(const char *fa,const char *SpecificChr){
+  
+  std::vector<char *> SubsetChr;
+  
+  SubsetChr.push_back(strtok(strdup(SpecificChr),"\", \t"));
+  char *chrtok = NULL;
+  while(((chrtok=strtok(NULL,"\", \t"))))
+    SubsetChr.push_back(strdup(chrtok));
+  fprintf(stderr,"\t-> Number of entries in chromosome list: %lu\n",SubsetChr.size());
+
+  fasta_sampler *fs = new fasta_sampler;
+  fs->ws = NULL;
+  fs->fai = NULL;
+  assert(((fs->fai =fai_load(fa)))!=NULL);
+  
+  fs->nref = SubsetChr.size();
+
+  fs->seqs = new char* [fs->nref];
+  fs->seqs_l = new int[fs->nref];
+  fs->seqs_names = new char *[fs->nref];
+  fs->realnameidx = new int[fs->nref];
+  
+  int at = 0;
+  for(int i=0;i<(int)SubsetChr.size();i++){
+    if(faidx_has_seq(fs->fai, SubsetChr[i])){
+      fs->seqs_names[at] = strdup(SubsetChr[i]);
+      fs->seqs[at] = fai_fetch(fs->fai,fs->seqs_names[i],fs->seqs_l+at);
+      fs->char2idx[fs->seqs_names[i]] = at;
+      at++;
+    }
+  }
+  fs->nref = at;
+  
+  for(int i=0;i<fs->nref;i++)
+    fs->realnameidx[i] = i;
+
+  fprintf(stderr,"\t-> Number of nref %d in file: \'%s\' and selected %d chromosomes/contigs/scaffolds \n",faidx_nseq(fs->fai),fa,fs->nref);
+  if(fs->nref==0){
+    fprintf(stderr,"\t-> Possible error, no sequences loaded\n");
+    exit(1);
+  }
+  fasta_sampler_setprobs(fs);
+
+  //couldn't i in theory close down the reference here and now?
   for(int i=0;i<(int)SubsetChr.size();i++)
     free(SubsetChr[i]);
+  return fs;
+}
+
+fasta_sampler *fasta_sampler_alloc_bedentry(const char *fa,const char *bedfilename,size_t flanking){
+
+  fasta_sampler *fs = new fasta_sampler;
+  fs->ws = NULL;
+  fs->fai = NULL;
+  assert(((fs->fai =fai_load(fa)))!=NULL);
+
+  int BedEntryCount = 0;
+  BedEntry* BedEntries = NULL;
+
+  //read in the bed entries
+  BedEntries = readBedFile(bedfilename,&BedEntryCount);
+  //sort the coordinates
+  sortBedEntries(BedEntries, BedEntryCount);
+
+  //merge the coordinates
+  int mergedCount = 0;
+  BedEntry* mergedEntries = mergeOverlappingRegions(BedEntries, BedEntryCount, &mergedCount);
+  int ReferenceCount = 0;
+  BedEntry* ReferenceEntries = checkbedentriesfasta(fs,mergedEntries,mergedCount,&ReferenceCount);
+  
+  fprintf(stderr,"\t-> Input bed file had %d regions, after merging the overlapping regions there is %d and post-filtering there is %d\n",BedEntryCount,mergedCount,ReferenceCount);
+  
+  /*
+  fprintf(stderr,"original count %d \t merge %d \t filtered %d\n",BedEntryCount,mergedCount,ReferenceCount);
+  
+  for (int i = 0; i < ReferenceCount; i++) {
+    fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", ReferenceEntries[i].chromosome, ReferenceEntries[i].start, ReferenceEntries[i].end);
+  }
+  */
+
+  fs->nref = ReferenceCount; 
+  
+  fs->seqs = new char* [fs->nref];
+  fs->seqs_l = new int[fs->nref];
+  fs->seqs_names = new char *[fs->nref];
+  fs->realnameidx = new int[fs->nref];
+
+  /*for (int i = 0; i < BedEntryCount; i++) {
+    fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", bedentries2[i].chromosome, bedentries2[i].start-flanking, bedentries2[i].end+flanking);
+  }*/
+ 
+      /*
+    abstract    Fetch the sequence in a region.
+    param  fai  Pointer to the faidx_t struct
+    param  reg  Region in the format "chr2:20,000-30,000"
+    param  len  Length of the region; -2 if seq not present, -1 general error
+    return      Pointer to the sequence; null on failure
+
+    @discussion The returned sequence is allocated by malloc family
+    and should be destroyed by end users by calling free() on it.
+    char *fai_fetch(const faidx_t *fai, const char *reg, int *len);
+     */
+     
+  //create the names to extract the region defined in the bed entry
+  for(int i=0;i<fs->nref;i++){
+    //ReferenceEntries[i].chromosome should still be in accordance with the reference genome
+    size_t refchr_length = faidx_seq_len(fs->fai, ReferenceEntries[i].chromosome);
+    size_t bedflankstart; 
+    size_t bedflankend;   
+    
+    if((int)(ReferenceEntries[i].start-flanking) < 0){
+      //fprintf(stderr,"case 1 \t %d\n",(ReferenceEntries[i].start-flanking));
+      bedflankstart = 1; 
+    }
+    else if((int)(ReferenceEntries[i].start-flanking) > 0){
+      //fprintf(stderr,"case 2 \t %d\n",(ReferenceEntries[i].start-flanking));
+      bedflankstart = ReferenceEntries[i].start-flanking; 
+    }
+    
+    if((ReferenceEntries[i].end+flanking) < refchr_length){
+      //fprintf(stderr,"case 3 \t %d\n",(ReferenceEntries[i].end+flanking));
+      bedflankend = ReferenceEntries[i].end + flanking;
+    }
+    if((ReferenceEntries[i].end+flanking) > refchr_length){
+      //fprintf(stderr,"case 4 \t %d\n",(ReferenceEntries[i].end+flanking));
+      bedflankend = refchr_length-1;
+    }
+
+    int length = snprintf(NULL, 0, "%s:%d-%d", ReferenceEntries[i].chromosome, bedflankstart, bedflankend);
+    fs->seqs_names[i] = (char*) malloc((length + 1) * sizeof(char));
+    sprintf(fs->seqs_names[i], "%s:%d-%d", ReferenceEntries[i].chromosome, bedflankstart, bedflankend);
+  }
+
+  for(int i=0;i<fs->nref;i++){
+    fs->char2idx[fs->seqs_names[i]] = i;
+    //fprintf(stderr,"names are %s\n",fs->seqs_names[i]);
+    fs->seqs[i] = fai_fetch(fs->fai,fs->seqs_names[i],fs->seqs_l+i);
+  }
+
+  for(int i=0;i<fs->nref;i++)
+    fs->realnameidx[i] = i;
+
+  fprintf(stderr,"\t-> Number of nref %d in file: \'%s\'\n",fs->nref,fa);
+  if(fs->nref==0){
+    fprintf(stderr,"\t-> Possible error, no sequences loaded\n");
+    exit(1);
+  }
+  fasta_sampler_setprobs(fs);
+
   return fs;
 }
 

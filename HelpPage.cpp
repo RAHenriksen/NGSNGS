@@ -47,6 +47,12 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t-q2  | --quality2: \t\t Read Quality profile for for second read pair (PE) for fastq or sequence alignment map formats.\n");
   fprintf(fp,"\t-qs  | --qualityscore: \t\t Fixed quality score, for both read pairs in fastq or sequence alignment map formats. It overwrites the quality profiles.\n");
   fprintf(fp,"\n----- Optional ----- \n");
+  fprintf(fp,"\nSimulation mode: \n\n");
+  fprintf(fp,"\t-sim  | --simulation: \t\t Read Quality profile for single-end reads (SE) or first read pair (PE) for fastq or sequence alignment map formats.\n");
+  fprintf(fp,"\t\t<circ||circular> \t Gamma distribution, given a shape and scale, e.g. Gam,20,2.\n");
+  fprintf(fp,"\t-chr | --chromosomes: \t\t Specific chromosomes from input reference file to simulate from.\n\n");
+  fprintf(fp,"\t-reg | --region: \t\t Input bed file with regions of interest.\n\n");
+  fprintf(fp,"\t-fl | --flanking: \t\t Fixed number of nucleotides flanking the regions of interest (-reg) in both ends.\n\n");
   fprintf(fp,"\nReference Variations: \n\n");
   fprintf(fp,"\t-mr | --mutationrate: \t\t\t Adding stochastic variations to the reference genome (-i) from a fixed mutation rate, conflicts with number of variations (-v), default = 0.0\n");
   fprintf(fp,"\t-g | --generations: \t\t\t Adding stochastic variations to the reference genome (-i) according to the fixed mutation rate (-mr) across numerous generations, default = 1\n");
@@ -80,7 +86,6 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t-cl  | --cycle: \t\t Read cycle length, the maximum length of sequence reads, if not provided the cycle length will be inferred from quality profiles (q1,q2).\n");
   fprintf(fp,"\t-ll  | --lowerlimit: \t\t Lower fragment length limit, default = 30. The minimum fragment length for deamination is 30, so simulated fragments below will be fixed at 30.\n");
   fprintf(fp,"\t-bl  | --bufferlength: \t\t Buffer length for generated sequence reads stored in the output files, default = 30000000.\n");
-  fprintf(fp,"\t-chr | --chromosomes: \t\t Specific chromosomes from input reference file to simulate from.\n\n");
   fprintf(fp,"\t-a1  | --adapter1: \t\t Adapter sequence to add for simulated reads (SE) or first read pair (PE).\n");
   fprintf(fp,"\t\t e.g. Illumina TruSeq Adapter 1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG \n\n");
   fprintf(fp,"\t-a2  | --adapter2: \t\t Adapter sequence to add for second read pair (PE). \n");

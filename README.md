@@ -11,6 +11,8 @@ NGSNGS is a new program, therefore we are very interested in feedback to solve p
 # Table of Contents
 [Installation](#INSTALLATION-&-REQUIREMENTS)
 
+[Additions/improvements/alterations](#ADDITIONS/IMPROVEMENTS/ALTERATIONS)
+
 [Help page](#GENERAL)
 - [NGSNGS - reference based simulation](#NGSNGS)
 - [NGSNGS - amplicon alteration](#AMPLICON)
@@ -57,6 +59,16 @@ make amplicon HTSSRC=../htslib
 ```
 
 **NOTE:** Newer version of htslib which includes bam_set1 is required
+
+## ADDITIONS/IMPROVEMENTS/ALTERATIONS
+The following features has been added since its publication in January 2023. See helppage for usage [Help page](#GENERAL)
+
+* Fixed quality score (-qs): creating one fixed quality score with identical sequencing error for each nucleotide.
+* Circular simulation mode (-sim circ): enable the possibility of simulating sequencing reads crossing the reference genome end coordinate - to simulate bacterial or mitochondria amongst others
+* Stochastic mutation rate (-mr) : adding stochastic variation to the input reference genome (-i)
+* Fixed number of stochastic SNP's (-v): adds a fixed number of randomg mutations ot the input reference genome (-i)
+* Simulate reads solely for regions of interest across the genome (-reg): the coordinates from which the reads are sampled needs to be in a bed file structure. With the possibility of adding a number of nucleotides in both the start and end of the region by providing the flanking option -fl. This can be used for CAPTURE sequencing simulation
+* Added an amplicon simulation mode: simulate sequencing errors, mutations or deamination on your empirical data, while allowing for file conversion, see [NGSNGS - amplicon alteration](#AMPLICON)
 
 ## GENERAL
 Next Generation Simulator for Next Generator Sequencing Data version 0.9.2.1 

@@ -53,7 +53,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
                         char CommandArray[LENS],const char* version,int HeaderIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile,
-                        int Duplicates,int Lowerlimit,double mutationrate, size_t referencevariations, int generations,int simmode){
+                        int Duplicates,int Lowerlimit,double mutationrate, size_t referencevariations, int generations,int simmode,size_t flankingregion, const char* BedFile){
                           
   //creating an array with the arguments to create multiple threads;
 
@@ -62,7 +62,23 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   
   //allocate for reference file
   time_t t_ref = time(NULL);
-  fasta_sampler *reffasta = fasta_sampler_alloc(refSseq,Specific_Chr);
+  fasta_sampler *reffasta;
+
+  int bedfilesample = 0;
+  if(Specific_Chr == NULL && BedFile == NULL){
+    //fprintf(stderr,"INSIDE FULL\n");
+    reffasta = fasta_sampler_alloc_full(refSseq);
+  }
+  else if(Specific_Chr != NULL && BedFile == NULL){
+    //fprintf(stderr,"INSIDE SUB\n");
+    reffasta = fasta_sampler_alloc_subset(refSseq,Specific_Chr);
+  }
+  else if(Specific_Chr == NULL && BedFile != NULL){
+    //fprintf(stderr,"INSIDE BED\n");
+    //fprintf(stderr,"bed file %s \t flanking %lu \n",BedFile,flankingregion);
+    reffasta = fasta_sampler_alloc_bedentry(refSseq,BedFile,flankingregion);
+    bedfilesample = 1; // to parse with threads to enable read id splitting chromosome name to create accurate coordinates
+  }
   
   fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome with the full length %zu\n",reffasta->nref,reffasta->seq_l_total);
   fprintf(stderr, "\t-> Done reading in the reference file, walltime used =  %.2f sec\n", (float)(time(NULL) - t_ref));
@@ -328,6 +344,8 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].threadseed = seed;
       struct_for_threads[i].rng_type = RandMacro;
       struct_for_threads[i].simmode = simmode;
+      struct_for_threads[i].bedfilesample = bedfilesample;
+
       // Sequence alteration models
       // 1) nucleotide quality score and sequencing errors,  
       struct_for_threads[i].QualFlag = QualStringFlag;

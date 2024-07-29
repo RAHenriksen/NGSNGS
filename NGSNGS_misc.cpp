@@ -11,6 +11,8 @@
 #include <htslib/sam.h>
 #include <htslib/vcf.h>
 #include <htslib/bgzf.h>
+#include "fasta_sampler.h"
+
 #define INITIAL_BED_CAPACITY 100
 
 int refToInt[256] = {
@@ -167,6 +169,100 @@ BedEntry* readBedFile(const char* filename, int* entryCount){
   *entryCount = tmpcount;
   fclose(file);
   return bedentries;
+}
+
+// Comparison function for qsort
+int compareBedEntries(const void* a, const void* b) {
+    BedEntry* entryA = (BedEntry*)a;
+    BedEntry* entryB = (BedEntry*)b;
+
+    int chromCompare = strcmp(entryA->chromosome, entryB->chromosome);
+    if (chromCompare == 0) {
+        return (entryA->start - entryB->start);
+    } else {
+        return chromCompare;
+    }
+}
+
+void sortBedEntries(BedEntry* entries, int entryCount) {
+    qsort(entries, entryCount, sizeof(BedEntry), compareBedEntries);
+}
+
+BedEntry* mergeOverlappingRegions(BedEntry* entries, int entryCount, int* mergedCount) {
+    if (entryCount == 0) {
+        *mergedCount = 0;
+        return NULL;
+    }
+
+    BedEntry* mergedEntries = (BedEntry*) malloc(entryCount * sizeof(BedEntry));
+    if (!mergedEntries) {
+        fprintf(stderr,"Error allocating memory for merged entries");
+        return NULL;
+    }
+
+    int j = 0;
+    mergedEntries[j] = entries[0];
+
+    for (int i = 1; i < entryCount; i++) {
+        if (strcmp(mergedEntries[j].chromosome, entries[i].chromosome) == 0 && mergedEntries[j].end >= entries[i].start) {
+            // There is an overlap, so merge the regions
+            if (entries[i].end > mergedEntries[j].end) {
+                mergedEntries[j].end = entries[i].end;
+            }
+        } else {
+            // No overlap, move to the next entry
+            j++;
+            mergedEntries[j] = entries[i];
+        }
+    }
+
+    *mergedCount = j + 1;
+    return mergedEntries;
+}
+
+BedEntry* checkbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCount,int* ReferenceCount) {
+  if (entryCount == 0) {
+    *ReferenceCount = 0;
+    return NULL;
+  }
+    
+  int n_seqs = faidx_nseq(fs->fai);
+  /*for(int i=0;i<n_seqs;i++){
+    const char *chrname = faidx_iseq(fs->fai,i);
+    fprintf(stderr,"nref val %d \t and name %s\n",i,chrname);
+  }*/
+
+  int warning = 0;
+
+  BedEntry* ReferenceEntries = (BedEntry*) malloc(entryCount * sizeof(BedEntry));
+  int reference_int = 0;
+  for(int i=0;i<n_seqs;i++){
+    const char *chrname = faidx_iseq(fs->fai,i);
+    //fprintf(stderr,"nref val %d \t and name %s\n",i,chrname);
+    for (int j = 0; j < entryCount; j++) {
+      char region[1024];
+      sprintf(region, "%s:%d-%d", entries[j].chromosome,entries[j].start,entries[j].end);
+      if (strcmp(chrname, entries[j].chromosome) == 0) {
+        //fprintf(stderr,"ref seq %d \t entry val %d \n",i,j);
+        //fprintf(stderr,"Bed entry %s \t and name %s \t %d \t %d\n",entries[j].chromosome,chrname,entries[j].start,entries[j].end);
+        strcpy(ReferenceEntries[reference_int].chromosome,entries[j].chromosome);
+        ReferenceEntries[reference_int].start = entries[j].start;
+        ReferenceEntries[reference_int].end = entries[j].end;
+        reference_int++; 
+      }
+      else{
+        warning =1 ;
+        continue;
+      }
+    }
+  }
+  
+  if(warning==1)
+    fprintf(stderr,"\t -> Discrepancy between input reference genome (-i) and input bed file, some regions in bed is not present in reference or some chromosomes in reference is not present in bed file, and these remains unused for further simulation \n");
+
+  *ReferenceCount = reference_int;
+
+  return ReferenceEntries;
 }
 
 int VCFtoBED(const char* bcffilename, int id,int range,BedEntry** bedentries, int* entryCount){
@@ -350,8 +446,35 @@ int main(){
   for (int i = 0; i < entryCount2; i++) {
     fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", bedentries2[i].chromosome, bedentries2[i].start, bedentries2[i].end);
   }
-  fprintf(stderr,"----------------------\n");
   free(bedentries2);
+  fprintf(stderr,"---------------------- sort ----------------------\n");
+  
+  int entryCount3 = 0;
+  const char* bedfilename2 = "Coord2.bed";
+  BedEntry* bedentries3 = NULL;
+
+  fprintf(stderr,"entrycount before read bed file %d \n",entryCount3);
+  bedentries3 = readBedFile(bedfilename2,&entryCount3);
+  fprintf(stderr,"entrycount after read bed file %d \n",entryCount3);
+  fprintf(stderr,"----\n");
+
+  for (int i = 0; i < entryCount3; i++) {
+    fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", bedentries3[i].chromosome, bedentries3[i].start, bedentries3[i].end);
+  }
+  fprintf(stderr,"----\n");
+  sortBedEntries(bedentries3, entryCount3);
+
+  for (int i = 0; i < entryCount3; i++) {
+    fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", bedentries3[i].chromosome, bedentries3[i].start, bedentries3[i].end);
+  }
+  fprintf(stderr,"---------------------- merge ----------------------\n");
+
+  int mergedCount = 0;
+  BedEntry* mergedEntries = mergeOverlappingRegions(bedentries3, entryCount3, &mergedCount);
+
+  for (int i = 0; i < mergedCount; i++) {
+    fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", mergedEntries[i].chromosome, mergedEntries[i].start, mergedEntries[i].end);
+  }
 
   return 0;
 }

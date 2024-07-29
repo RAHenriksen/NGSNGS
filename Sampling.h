@@ -71,6 +71,8 @@ struct Parsarg_for_Sampling_thread{
   float *IndelFuncParam;
   int DoIndel;
   const char* IndelDumpFile;
+
+  int bedfilesample;
 };
 
 void* Sampling_threads(void *arg);

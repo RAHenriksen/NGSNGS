@@ -36,6 +36,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Glob_seed = (int) time(NULL);
   mypars->Glob_seed_binary = 0;
   mypars->rng_type = -1;
+  mypars->BedFile = NULL;
 
   // Sequence alteration models
   // 1) nucleotide quality score and sequencing errors,  
@@ -246,7 +247,13 @@ argStruct *getpars(int argc,char ** argv){
       char * tok = *(++argv);
       if(strcasecmp("circ",tok)==0 || strcasecmp("circular",tok)==0)
 	      mypars->simmode = 1;
-    }  
+    }
+    else if(strcasecmp("-fl",*argv)==0 || strcasecmp("--flanking",*argv)==0){
+      mypars->flankingregion = atol(*(++argv));
+    }
+    else if(strcasecmp("-reg",*argv)==0 || strcasecmp("--region",*argv)==0){
+      mypars->BedFile = strdup(*(++argv));
+    }
     else{
       fprintf(stderr,"Unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
       return NULL;
@@ -332,7 +339,8 @@ void argStruct_destroy(argStruct *mypars){
   free(mypars->CommandRun);
   if(mypars->Chromosomes)
     free(mypars->Chromosomes);
-
+  if(mypars->BedFile)
+    free(mypars->BedFile);
   free(mypars->vcffile);
   free(mypars->Adapter1);
   free(mypars->Adapter2);

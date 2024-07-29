@@ -6,6 +6,7 @@
 #include <map> //for map
 #include "RandSampling.h"
 #include "mrand.h"
+
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
 #include <htslib/vcf.h>
@@ -35,7 +36,10 @@ typedef struct{
   ploidymap  pldmap; 
 }fasta_sampler;
 
-fasta_sampler *fasta_sampler_alloc(const char *,const char *);
+fasta_sampler *fasta_sampler_alloc_full(const char *fa);
+fasta_sampler *fasta_sampler_alloc_subset(const char *fa,const char *SpecificChr);
+fasta_sampler *fasta_sampler_alloc_bedentry(const char *fa,const char *bedfilename,size_t flanking);
+
 void fasta_sampler_destroy(fasta_sampler *fs);
 char* sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength,size_t& chr_end,int simmode);
 void fasta_sampler_setprobs(fasta_sampler *fs);

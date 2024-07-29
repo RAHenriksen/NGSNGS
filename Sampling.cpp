@@ -461,7 +461,30 @@ void* Sampling_threads(void *arg) {
       }
       //so now everything is on 5->3 and some of them will be reverse complement to referene
       //now everything is the same strand as reference, which we call plus/+
-      snprintf(READ_ID,512,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
+
+      if(struct_obj->bedfilesample == 1){
+        // Make a copy of the string to tokenize
+        char input[50];  // Ensure this is large enough for the input string
+        strcpy(input, chr);
+
+        char *token;
+        const char *delimiters = ":-";
+
+        // Extract the first token
+        token = strtok(input, delimiters);
+        char *chrtmp = token;
+        // Extract the second token (convert to size_t)
+        token = strtok(NULL, delimiters);
+        size_t secondToken = (size_t)strtoul(token, NULL, 10);
+        // Extract the third token (convert to size_t)
+        token = strtok(NULL, delimiters);
+        size_t thirdToken = (size_t)strtoul(token, NULL, 10);
+        //printf("First token: %s \t Second token: %zu \t Third token: %zu\n", chrtmp,secondToken,thirdToken);
+        snprintf(READ_ID,512,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chrtmp,secondToken+posB,secondToken+posE-1,fraglength,ReadDeam,FragMisMatch,has_indels);
+      }
+      else{
+        snprintf(READ_ID,512,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
+      }
 
       //fprintf(stderr,"read id %s \n\t %s\n",READ_ID,seq_r1);
       int nsofts[2] = {0,0}; //this will contain the softclip information to be used by sam/bam/cram output format for adapter and polytail

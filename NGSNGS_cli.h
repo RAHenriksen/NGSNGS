@@ -40,6 +40,8 @@ typedef struct{
   char *LengthDist;           //name of pdf used for simulating fraglengths (incl parameters)
   char *Poly;                 //poly-X tail, added after the adapter sequence if output reade are lower than inferred cycle length, e.g. -p G or -p A
   char *Chromosomes;          //subsetting chromosome of interested, -chr chrX
+  char *BedFile;
+  size_t flankingregion;
   int rng_type;               //pseudo-random number generator type, drand48 or rand or drand48_r etc
   char *vcffile;              //filename for bcf
   char *CommandRun;           //actual command run in same order

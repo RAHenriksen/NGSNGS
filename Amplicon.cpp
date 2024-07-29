@@ -314,6 +314,7 @@ void* ProcessFAFQ(void* args){
   //fprintf(stderr,"process FAFQ %d \n",amp_thread_struct->fixqual);
 
   // Seek to the appropriate starting line
+  // overvej en wrapper her med en kseq_init som kan læse nogle specifikke antal linjer ind.
   kseq_t *FQseq = kseq_init(amplicon_in_fp);
 
   
