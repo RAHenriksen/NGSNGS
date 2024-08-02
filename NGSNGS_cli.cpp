@@ -37,6 +37,8 @@ argStruct *getpars(int argc,char ** argv){
   mypars->Glob_seed_binary = 0;
   mypars->rng_type = -1;
   mypars->BedFile = NULL;
+  mypars->flankingregion = 30;
+  mypars->MaskBed = 0;
 
   // Sequence alteration models
   // 1) nucleotide quality score and sequencing errors,  
@@ -254,11 +256,14 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-reg",*argv)==0 || strcasecmp("--region",*argv)==0){
       mypars->BedFile = strdup(*(++argv));
     }
+    else if(strcasecmp("-mask",*argv)==0 || strcasecmp("--mask",*argv)==0){
+      mypars->MaskBed = 1;
+    }
     else{
       fprintf(stderr,"Unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
       return NULL;
     }
-  
+     
     ++argv;
   }
 

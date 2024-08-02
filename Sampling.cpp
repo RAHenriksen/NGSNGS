@@ -48,7 +48,7 @@ void* Sampling_threads(void *arg) {
 
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
   mrand_t *rand_alloc = mrand_alloc(struct_obj->rng_type,loc_seed);
-
+  fprintf(stderr,"THREAD NO %d \n",struct_obj->threadno);
   // sequence reads, original, modified, with adapters, pe
   char READ_ID[512];
   char *FragmentSequence = (char*) calloc(LENS,1);
@@ -158,7 +158,11 @@ void* Sampling_threads(void *arg) {
     //get shallow copy of chromosome, offset into, is defined by posB, and posE
     size_t chr_end;
     char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength,chr_end,struct_obj->simmode);
-
+     
+    fprintf(stderr,"checking correct load of references\n");
+    fasta_sampler_print2(struct_obj->reffasta);
+    fprintf(stderr,"printing fasta files for thread %d\n",struct_obj->threadno);
+    
     /*
     Create some kind of bed file coordinate sampling
     ellers lav et antal linjer og så randomly sample fra dem.

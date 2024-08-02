@@ -52,6 +52,7 @@ typedef struct{
   double mutationrate;        //fixated mutation rate to alter reference genome
   int generations;           //mutation rate for a certain number of generations which alters the reference genome
   size_t referencevariations; //adding a fixed number of variations to the reference genome
+  int MaskBed;
 }argStruct;
 argStruct *getpars(int argc,char ** argv);
 void argStruct_destroy(argStruct *mypars);

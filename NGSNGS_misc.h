@@ -39,6 +39,8 @@ BedEntry* mergeOverlappingRegions(BedEntry* entries, int entryCount, int* merged
 
 BedEntry* checkbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCount,int* ReferenceCount);
 
+BedEntry* maskbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCount,int* ReferenceCount);
+
 // create internal structure of a bed file from the vcf to create region from which we sample
 int VCFtoBED(const char* bcffilename, int id,int range,BedEntry** bedentries, int* entryCount);
 

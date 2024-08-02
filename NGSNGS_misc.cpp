@@ -265,6 +265,75 @@ BedEntry* checkbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCoun
   return ReferenceEntries;
 }
 
+BedEntry* maskbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCount,int* ReferenceCount) {
+  if (entryCount == 0) {
+    *ReferenceCount = 0;
+    return NULL;
+  }
+
+  int region_capacity = INITIAL_BED_CAPACITY;
+
+  int n_seqs = faidx_nseq(fs->fai);
+
+  int warning = 0;
+
+  BedEntry* ReferenceEntries = (BedEntry*) malloc(region_capacity * sizeof(BedEntry)); //think about how many i actually need for allocation
+  int reference_int = 0;
+  
+  for(int i=0;i<n_seqs;i++){
+    const char *chrname = faidx_iseq(fs->fai,i);
+    size_t seq_len = faidx_seq_len(fs->fai, chrname);
+    //fprintf(stderr,"----------\nnref val %d \t and name %s \t length %lu\n",i,chrname,seq_len);
+    
+    // first entry
+    
+    int tmp_start = 1;
+    int tmp_end = seq_len; //entries[0].start - 1;
+    int identified = 0;
+    
+    for (int j = 0; j < entryCount; j++){
+      //fprintf(stderr,"reference %d \t entrycount %d\n",i,j);
+      if((strcmp(chrname, entries[j].chromosome) == 0)){
+        identified = 1;
+        if(tmp_start < entries[j].start){
+          //fprintf(stderr,"Bed entry %s \t and name %s \t %d \t %d\n",entries[j].chromosome,chrname,tmp_start,entries[j].start);
+          strcpy(ReferenceEntries[reference_int].chromosome,entries[j].chromosome);
+          ReferenceEntries[reference_int].start = tmp_start;
+          ReferenceEntries[reference_int].end = entries[j].start;
+          
+          tmp_start = entries[j].end;
+          reference_int++;
+        }
+        // Check if this is the last region and handle the case
+        if (j == (entryCount - 1) && tmp_start < seq_len) {
+          //fprintf(stderr,"%s\t%d\t%d\n",chrname,tmp_start, seq_len);
+
+          strcpy(ReferenceEntries[reference_int].chromosome,entries[j].chromosome);
+          ReferenceEntries[reference_int].start = tmp_start;
+          ReferenceEntries[reference_int].end = seq_len;
+
+          reference_int++;
+        }
+      }
+    }
+
+    // If the chromosome is not found in the bed file, output the whole chromosome
+    if (!identified) {
+      //fprintf(stderr,"%s\t%d\t%d\n",chrname,tmp_start, seq_len);
+      strcpy(ReferenceEntries[reference_int].chromosome,chrname);
+      ReferenceEntries[reference_int].start = tmp_start;
+      ReferenceEntries[reference_int].end = seq_len;
+      
+      reference_int++;
+    }
+  }
+  
+  //fprintf(stderr,"number of entries %d\n",reference_int);
+  *ReferenceCount = reference_int;
+
+  return ReferenceEntries;
+}
+
 int VCFtoBED(const char* bcffilename, int id,int range,BedEntry** bedentries, int* entryCount){
 
   //create the bed entry struct
