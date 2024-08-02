@@ -57,6 +57,8 @@ fasta_sampler *fasta_sampler_alloc_full(const char *fa){
   fs->ws = NULL;
   fs->fai = NULL;
   assert(((fs->fai =fai_load(fa)))!=NULL);
+  fs->BedReferenceEntries = NULL;
+  fs->BedReferenceCount = 0;
   
   fs->nref = faidx_nseq(fs->fai);
   fs->seqs = new char* [fs->nref];
@@ -108,6 +110,8 @@ fasta_sampler *fasta_sampler_alloc_subset(const char *fa,const char *SpecificChr
   fs->ws = NULL;
   fs->fai = NULL;
   assert(((fs->fai =fai_load(fa)))!=NULL);
+  fs->BedReferenceEntries = NULL;
+  fs->BedReferenceCount = 0;
   
   fs->nref = SubsetChr.size();
 
@@ -149,6 +153,8 @@ fasta_sampler *fasta_sampler_alloc_bedentry(const char *fa,const char *bedfilena
   fs->ws = NULL;
   fs->fai = NULL;
   assert(((fs->fai =fai_load(fa)))!=NULL);
+  fs->BedReferenceEntries = NULL;
+  fs->BedReferenceCount = 0;
 
   int BedEntryCount = 0;
   BedEntry* BedEntries = NULL;
@@ -163,71 +169,48 @@ fasta_sampler *fasta_sampler_alloc_bedentry(const char *fa,const char *bedfilena
   BedEntry* mergedEntries = mergeOverlappingRegions(BedEntries, BedEntryCount, &mergedCount);
   free(BedEntries);
 
-  int ReferenceCount = 0;
-  BedEntry* ReferenceEntries = checkbedentriesfasta(fs,mergedEntries,mergedCount,&ReferenceCount);
+  fs->BedReferenceEntries = checkbedentriesfasta(fs,mergedEntries,mergedCount,&fs->BedReferenceCount);
   free(mergedEntries);
 
-  fprintf(stderr,"\t-> Input bed file had %d regions, after merging the overlapping regions there is %d and post-filtering there is %d\n",BedEntryCount,mergedCount,ReferenceCount);
-  
-  /*
-  fprintf(stderr,"original count %d \t merge %d \t filtered %d\n",BedEntryCount,mergedCount,ReferenceCount);
-  
-  for (int i = 0; i < ReferenceCount; i++) {
-    fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", ReferenceEntries[i].chromosome, ReferenceEntries[i].start, ReferenceEntries[i].end);
-  }
-  */
-
-  fs->nref = ReferenceCount; 
-  
+  fprintf(stderr,"\t-> Input bed file had %d regions, after merging the overlapping regions there is %d and post-filtering there is %d\n",BedEntryCount,mergedCount,fs->BedReferenceCount);
+ 
+  fs->nref = fs->BedReferenceCount; 
   fs->seqs = new char* [fs->nref];
   fs->seqs_l = new int[fs->nref];
   fs->seqs_names = new char *[fs->nref];
   fs->realnameidx = new int[fs->nref];
-
-  /*for (int i = 0; i < BedEntryCount; i++) {
-    fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", bedentries2[i].chromosome, bedentries2[i].start-flanking, bedentries2[i].end+flanking);
-  }*/
- 
-      /*
-    abstract    Fetch the sequence in a region.
-    param  fai  Pointer to the faidx_t struct
-    param  reg  Region in the format "chr2:20,000-30,000"
-    param  len  Length of the region; -2 if seq not present, -1 general error
-    return      Pointer to the sequence; null on failure
-
-    @discussion The returned sequence is allocated by malloc family
-    and should be destroyed by end users by calling free() on it.
-    char *fai_fetch(const faidx_t *fai, const char *reg, int *len);
-     */
      
-  //create the names to extract the region defined in the bed entry
+  //create the names to extract the region defined in the bed entry when using fai_fetch
   for(int i=0;i<fs->nref;i++){
     //ReferenceEntries[i].chromosome should still be in accordance with the reference genome
-    size_t refchr_length = faidx_seq_len(fs->fai, ReferenceEntries[i].chromosome);
+    size_t refchr_length = faidx_seq_len(fs->fai, fs->BedReferenceEntries[i].chromosome);
     size_t bedflankstart; 
     size_t bedflankend;   
     
-    if((int)(ReferenceEntries[i].start-flanking) < 0){
+    if((int)(fs->BedReferenceEntries[i].start-flanking) < 0){
       //fprintf(stderr,"case 1 \t %d\n",(ReferenceEntries[i].start-flanking));
-      bedflankstart = 1; 
+      bedflankstart = 1;
     }
-    else if((int)(ReferenceEntries[i].start-flanking) > 0){
+    else if((int)(fs->BedReferenceEntries[i].start-flanking) > 0){
       //fprintf(stderr,"case 2 \t %d\n",(ReferenceEntries[i].start-flanking));
-      bedflankstart = ReferenceEntries[i].start-flanking; 
+      bedflankstart = fs->BedReferenceEntries[i].start-flanking; 
     }
     
-    if((ReferenceEntries[i].end+flanking) < refchr_length){
+    if((fs->BedReferenceEntries[i].end+flanking) < refchr_length){
       //fprintf(stderr,"case 3 \t %d\n",(ReferenceEntries[i].end+flanking));
-      bedflankend = ReferenceEntries[i].end + flanking;
+      bedflankend = fs->BedReferenceEntries[i].end + flanking;
     }
-    if((ReferenceEntries[i].end+flanking) > refchr_length){
+    if((fs->BedReferenceEntries[i].end+flanking) > refchr_length){
       //fprintf(stderr,"case 4 \t %d\n",(ReferenceEntries[i].end+flanking));
       bedflankend = refchr_length-1;
     }
 
-    int length = snprintf(NULL, 0, "%s:%d-%d", ReferenceEntries[i].chromosome, bedflankstart, bedflankend);
+    fs->BedReferenceEntries[i].start = bedflankstart;
+    fs->BedReferenceEntries[i].end = bedflankend;
+
+    int length = snprintf(NULL, 0, "%s:%d-%d", fs->BedReferenceEntries[i].chromosome, bedflankstart, bedflankend);
     fs->seqs_names[i] = (char*) malloc((length + 1) * sizeof(char));
-    sprintf(fs->seqs_names[i], "%s:%d-%d", ReferenceEntries[i].chromosome, bedflankstart, bedflankend);
+    sprintf(fs->seqs_names[i], "%s:%d-%d", fs->BedReferenceEntries[i].chromosome, bedflankstart, bedflankend);
   }
 
   for(int i=0;i<fs->nref;i++){
@@ -238,8 +221,6 @@ fasta_sampler *fasta_sampler_alloc_bedentry(const char *fa,const char *bedfilena
 
   for(int i=0;i<fs->nref;i++)
     fs->realnameidx[i] = i;
-
-  free(ReferenceEntries);
 
   fprintf(stderr,"\t-> Number of nref %d in file: \'%s\'\n",fs->nref,fa);
   if(fs->nref==0){
@@ -257,59 +238,51 @@ fasta_sampler *fasta_sampler_alloc_maskbedentry(const char *fa,const char *bedfi
   fs->ws = NULL;
   fs->fai = NULL;
   assert(((fs->fai =fai_load(fa)))!=NULL);
+  fs->BedReferenceEntries = NULL;
+  fs->BedReferenceCount = 0;
 
   int BedEntryCount = 0;
   BedEntry* BedEntries = NULL;
 
   //read in the bed entries
   BedEntries = readBedFile(bedfilename,&BedEntryCount);
+  for (int i = 0; i < BedEntryCount; i++){fprintf(stderr,"read bed file information bed entry \t%s\t%d\t%d\n", BedEntries[i].chromosome, BedEntries[i].start, BedEntries[i].end);}
   fprintf(stderr,"DONE readBedFile\n");
 
   //sort the coordinates
   sortBedEntries(BedEntries, BedEntryCount);
+  for (int i = 0; i < BedEntryCount; i++){fprintf(stderr,"sort bed file information bed entry \t%s\t%d\t%d\n", BedEntries[i].chromosome, BedEntries[i].start, BedEntries[i].end);}
   fprintf(stderr,"DONE sortBedEntries\n");
   
   //merge the coordinates
   int mergedCount = 0;
   BedEntry* mergedEntries = mergeOverlappingRegions(BedEntries, BedEntryCount, &mergedCount);
+  for (int i = 0; i < mergedCount; i++){fprintf(stderr,"merge bed file information bed entry \t%s\t%d\t%d\n", mergedEntries[i].chromosome, mergedEntries[i].start, mergedEntries[i].end);}
   free(BedEntries);
 
   int ReferenceCount = 0;
   fprintf(stderr,"DONE mergeOverlappingRegions\n");
+
+  fs->BedReferenceEntries = maskbedentriesfasta(fs,mergedEntries,mergedCount,&fs->BedReferenceCount);
   
-  BedEntry* ReferenceEntries = maskbedentriesfasta(fs,mergedEntries,mergedCount,&ReferenceCount);
+  fprintf(stderr,"\t-> Input bed file had %d regions, after merging the overlapping regions there is %d and post-filtering there is %d\n",BedEntryCount,mergedCount,fs->BedReferenceCount);
+
+  exit(1);
   free(mergedEntries);
   fprintf(stderr,"DONE maskbedentriesfasta\n");
 
-  //exit(1);
-  
-
-  //fprintf(stderr,"\t-> Input bed file had %d regions, after merging the overlapping regions there is %d and post-filtering there is %d\n",BedEntryCount,mergedCount,ReferenceCount);
-  
-  /*
-  fprintf(stderr,"original count %d \t merge %d \t filtered %d\n",BedEntryCount,mergedCount,ReferenceCount);
-  
-  for (int i = 0; i < ReferenceCount; i++) {
-    fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", ReferenceEntries[i].chromosome, ReferenceEntries[i].start, ReferenceEntries[i].end);
-  }
-  */
-
-  fs->nref = ReferenceCount; 
-  
+  fs->nref = fs->BedReferenceCount; 
   fs->seqs = new char* [fs->nref];
   fs->seqs_l = new int[fs->nref];
   fs->seqs_names = new char *[fs->nref];
   fs->realnameidx = new int[fs->nref];
 
-  /*for (int i = 0; i < BedEntryCount; i++) {
-    fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", bedentries2[i].chromosome, bedentries2[i].start-flanking, bedentries2[i].end+flanking);
-  }*/
 
   //create the names to extract the region defined in the bed entry
   for(int i=0;i<fs->nref;i++){
-    int length = snprintf(NULL, 0, "%s:%d-%d", ReferenceEntries[i].chromosome,  ReferenceEntries[i].start, ReferenceEntries[i].end);
+    int length = snprintf(NULL, 0, "%s:%d-%d", fs->BedReferenceEntries[i].chromosome,  fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
     fs->seqs_names[i] = (char*) malloc((length + 1) * sizeof(char));
-    sprintf(fs->seqs_names[i], "%s:%d-%d", ReferenceEntries[i].chromosome, ReferenceEntries[i].start, ReferenceEntries[i].end);
+    sprintf(fs->seqs_names[i], "%s:%d-%d", fs->BedReferenceEntries[i].chromosome, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
   }
 
   for(int i=0;i<fs->nref;i++){
@@ -320,8 +293,6 @@ fasta_sampler *fasta_sampler_alloc_maskbedentry(const char *fa,const char *bedfi
 
   for(int i=0;i<fs->nref;i++)
     fs->realnameidx[i] = i;
-
-  free(ReferenceEntries);
 
   fprintf(stderr,"\t-> Number of nref %d in file: \'%s\'\n",fs->nref,fa);
   if(fs->nref==0){
@@ -396,6 +367,8 @@ void fasta_sampler_destroy(fasta_sampler *fs){
     delete [] it->second;
   }
   ransampl_free(fs->ws);
+
+  free(fs->BedReferenceEntries);
   delete fs;
 }
 

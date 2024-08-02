@@ -48,7 +48,6 @@ void* Sampling_threads(void *arg) {
 
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
   mrand_t *rand_alloc = mrand_alloc(struct_obj->rng_type,loc_seed);
-  fprintf(stderr,"THREAD NO %d \n",struct_obj->threadno);
   // sequence reads, original, modified, with adapters, pe
   char READ_ID[512];
   char *FragmentSequence = (char*) calloc(LENS,1);
@@ -158,10 +157,11 @@ void* Sampling_threads(void *arg) {
     //get shallow copy of chromosome, offset into, is defined by posB, and posE
     size_t chr_end;
     char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength,chr_end,struct_obj->simmode);
-     
+    
+    /*fprintf(stderr,"index %d \n",chr_idx);
     fprintf(stderr,"checking correct load of references\n");
     fasta_sampler_print2(struct_obj->reffasta);
-    fprintf(stderr,"printing fasta files for thread %d\n",struct_obj->threadno);
+    fprintf(stderr,"printing fasta files for thread %d\n",struct_obj->threadno);*/
     
     /*
     Create some kind of bed file coordinate sampling
@@ -466,30 +466,25 @@ void* Sampling_threads(void *arg) {
       //so now everything is on 5->3 and some of them will be reverse complement to referene
       //now everything is the same strand as reference, which we call plus/+
 
-      if(struct_obj->bedfilesample == 1){
-        // Make a copy of the string to tokenize
-        char input[50];  // Ensure this is large enough for the input string
-        strcpy(input, chr);
+      if(struct_obj->reffasta->BedReferenceEntries != NULL){
+        /*fprintf(stderr,"PROVIDED BED FILE \n");
+        fprintf(stderr,"read id %s \n",READ_ID);
+        fprintf(stderr,"checking matches \t index %d \t read %s \t bed entry %s \t %d \t %d\n",chr_idx,READ_ID,
+          struct_obj->reffasta->BedReferenceEntries[chr_idx].chromosome,
+          struct_obj->reffasta->BedReferenceEntries[chr_idx].start,
+          struct_obj->reffasta->BedReferenceEntries[chr_idx].end);*/
 
-        char *token;
-        const char *delimiters = ":-";
+        snprintf(READ_ID,512,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,
+          struct_obj->reffasta->BedReferenceEntries[chr_idx].chromosome,
+          struct_obj->reffasta->BedReferenceEntries[chr_idx].start+posB,
+          struct_obj->reffasta->BedReferenceEntries[chr_idx].start+posE-1,
+          fraglength,ReadDeam,FragMisMatch,has_indels);
 
-        // Extract the first token
-        token = strtok(input, delimiters);
-        char *chrtmp = token;
-        // Extract the second token (convert to size_t)
-        token = strtok(NULL, delimiters);
-        size_t secondToken = (size_t)strtoul(token, NULL, 10);
-        // Extract the third token (convert to size_t)
-        token = strtok(NULL, delimiters);
-        size_t thirdToken = (size_t)strtoul(token, NULL, 10);
-        //printf("First token: %s \t Second token: %zu \t Third token: %zu\n", chrtmp,secondToken,thirdToken);
-        snprintf(READ_ID,512,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chrtmp,secondToken+posB,secondToken+posE-1,fraglength,ReadDeam,FragMisMatch,has_indels);
       }
       else{
         snprintf(READ_ID,512,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
       }
-
+      
       //fprintf(stderr,"read id %s \n\t %s\n",READ_ID,seq_r1);
       int nsofts[2] = {0,0}; //this will contain the softclip information to be used by sam/bam/cram output format for adapter and polytail
       //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail
@@ -774,6 +769,7 @@ void* Sampling_threads(void *arg) {
     }
     delete[] FragRes;
   }
+
   if (struct_obj->bgzf_fp[0]){
     if (fqs[0]->l > 0){
       pthread_mutex_lock(&write_mutex);

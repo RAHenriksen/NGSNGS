@@ -22,6 +22,7 @@
 #include "fasta_sampler.h"
 #include "add_variants.h"
 #include "add_indels.h"
+#include "NGSNGS_misc.h"
 
 #define LENS 10000
 
@@ -82,12 +83,21 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     reffasta = fasta_sampler_alloc_bedentry(refSseq,BedFile,flankingregion);
     fprintf(stderr,"\t-> Done extracting the bed file entries from the provided reference genome\n");
     bedfilesample = 1; // to parse with threads to enable read id splitting chromosome name to create accurate coordinates
+    //fprintf(stderr,"reference count frmo bed file %d \n",reffasta->BedReferenceCount);
+
+    /*for (int i = 0; i < reffasta->BedReferenceCount; i++) {fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", reffasta->BedReferenceEntries[i].chromosome, reffasta->BedReferenceEntries[i].start, reffasta->BedReferenceEntries[i].end);}*/
   }
   else if(MaskBed == 1 && BedFile != NULL && Specific_Chr == NULL){
     //fprintf(stderr,"INSIDE MASK BED\n");
     reffasta = fasta_sampler_alloc_maskbedentry(refSseq,BedFile,flankingregion);
     fprintf(stderr,"\t-> Done masking the bed file entries from the provided reference genome\n");
     bedfilesample = 1;
+    fprintf(stderr,"reference count frmo bed file %d \n",reffasta->BedReferenceCount);
+    for (int i = 0; i < reffasta->BedReferenceCount; i++){
+      fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", reffasta->BedReferenceEntries[i].chromosome, reffasta->BedReferenceEntries[i].start, reffasta->BedReferenceEntries[i].end);
+    }
+
+    exit(1);
   }
   
   fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome with the full length %zu\n",reffasta->nref,reffasta->seq_l_total);
@@ -160,11 +170,10 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   //std::cout << reffasta->seq_l_total << std::endl;
   //std::cout << reffasta->nref << std::endl;
   
-  fasta_sampler_print2(reffasta);
-  fprintf(stderr,"printing fasta files\n");
+  //fasta_sampler_print2(reffasta);
+  //fprintf(stderr,"printing fasta files\n");
   //exit(1);
   if (reffasta->seqs != NULL){
-    fprintf(stderr,"INSIDE sampling for threads\n");
     Parsarg_for_Sampling_thread *struct_for_threads = new Parsarg_for_Sampling_thread[nthreads];
 
     // declare files and headers
@@ -341,13 +350,13 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       bgzf_mt(bgzf_fp[2],threadwriteno,256); //
     }
 
-    fprintf(stderr,"before nthreads and ref fasta\n");
+    //fprintf(stderr,"before nthreads and ref fasta\n");
     for (int i = 0; i < nthreads; i++){
       struct_for_threads[i].reffasta = reffasta;
   
-      fprintf(stderr,"checking correct load of references\n");
+      /*fprintf(stderr,"checking correct load of references\n");
       fasta_sampler_print2(struct_for_threads[i].reffasta);
-      fprintf(stderr,"printing fasta files for thread %d\n",i);
+      fprintf(stderr,"printing fasta files for thread %d\n",i);*/
 
       // The output format, output files, and structural elements for SAM outputs
       struct_for_threads[i].OutputFormat = OutputFormat;
@@ -418,7 +427,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].Align = Align;
 
     }
-    fprintf(stderr,"done with for loop\n");
+    //fprintf(stderr,"done with for loop\n");
 
     //fprintf(stderr,"THREADREADS 1 %zu \n",reads);
     size_t ThreadReads = (size_t) floor( reads / (double) thread_no);
@@ -437,15 +446,14 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       for (int i = 0; i < nthreads; i++){
 	      int ret = pthread_create(&mythreads[i],&attr,Sampling_threads,&struct_for_threads[i]);
         if (ret != 0) {
-          fprintf(stderr, "Error creating thread: %s\n", strerror(ret));
+          fprintf(stderr, "Error creating thread: %s\n");
+          exit(1);
         }
       }
-      fprintf(stderr,"done with pthread create\n");
 
       for (int i = 0; i < nthreads; i++){  
 	      pthread_join(mythreads[i],NULL);
       }
-      fprintf(stderr,"done with pthread join\n");
     }
     if(bgzf_fp[0]!=NULL){
       bgzf_close(bgzf_fp[0]);
@@ -472,7 +480,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
     
     delete[] mythreads; //pthread_t *mythreads = new pthread_t[nthreads]; 
-    fprintf(stderr,"done with delete mythreads\n");
     if(QualProfile1 != NULL && FixedQual == 0){
       for(int base=0;base<5;base++){
         for(int pos = 0 ; pos< (int) readcycle;pos++){

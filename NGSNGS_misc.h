@@ -6,13 +6,6 @@
 #include <htslib/sam.h>
 #include <htslib/vcf.h>
 #include <htslib/bgzf.h>
-#define MAX_CHROM_NAME_LEN 100
-
-typedef struct {
-    char chromosome[MAX_CHROM_NAME_LEN];
-    int start;
-    int end;
-} BedEntry;
 
 void ReversComplement(char* seq);
 
@@ -33,7 +26,6 @@ BedEntry* readBedFile(const char* filename, int* entryCount); // Function to rea
 int compareBedEntries(const void* a, const void* b); // compare the entries
 
 void sortBedEntries(BedEntry* entries, int entryCount); // sort the entries according to chromosome and coordinates
-
 
 BedEntry* mergeOverlappingRegions(BedEntry* entries, int entryCount, int* mergedCount); //create the overlapping entries
 

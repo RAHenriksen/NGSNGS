@@ -6,10 +6,10 @@
 #include <map> //for map
 #include "RandSampling.h"
 #include "mrand.h"
-
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
 #include <htslib/vcf.h>
+#define MAX_CHROM_NAME_LEN 100
 
 struct ltstr
 {
@@ -23,6 +23,13 @@ typedef std::map<const char *,int,ltstr> char2int;
 
 typedef std::map<int,int*> ploidymap;
 
+// Declaration of BedEntry
+typedef struct {
+    char chromosome[MAX_CHROM_NAME_LEN];
+    int start;
+    int end;
+} BedEntry;
+
 typedef struct{
   faidx_t *fai;
   int nref;
@@ -33,7 +40,9 @@ typedef struct{
   ransampl_ws *ws;
   char2int char2idx;
   int *realnameidx;
-  ploidymap  pldmap; 
+  ploidymap  pldmap;
+  BedEntry* BedReferenceEntries;
+  int BedReferenceCount;
 }fasta_sampler;
 
 fasta_sampler *fasta_sampler_alloc_full(const char *fa);
