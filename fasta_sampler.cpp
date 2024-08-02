@@ -246,30 +246,30 @@ fasta_sampler *fasta_sampler_alloc_maskbedentry(const char *fa,const char *bedfi
 
   //read in the bed entries
   BedEntries = readBedFile(bedfilename,&BedEntryCount);
-  for (int i = 0; i < BedEntryCount; i++){fprintf(stderr,"read bed file information bed entry \t%s\t%d\t%d\n", BedEntries[i].chromosome, BedEntries[i].start, BedEntries[i].end);}
-  fprintf(stderr,"DONE readBedFile\n");
+  //for (int i = 0; i < BedEntryCount; i++){fprintf(stderr,"read bed file information bed entry \t%s\t%d\t%d\n", BedEntries[i].chromosome, BedEntries[i].start, BedEntries[i].end);}
+  //fprintf(stderr,"DONE readBedFile\n");
 
   //sort the coordinates
   sortBedEntries(BedEntries, BedEntryCount);
-  for (int i = 0; i < BedEntryCount; i++){fprintf(stderr,"sort bed file information bed entry \t%s\t%d\t%d\n", BedEntries[i].chromosome, BedEntries[i].start, BedEntries[i].end);}
-  fprintf(stderr,"DONE sortBedEntries\n");
+  //for (int i = 0; i < BedEntryCount; i++){fprintf(stderr,"sort bed file information bed entry \t%s\t%d\t%d\n", BedEntries[i].chromosome, BedEntries[i].start, BedEntries[i].end);}
+  //fprintf(stderr,"DONE sortBedEntries\n");
   
   //merge the coordinates
   int mergedCount = 0;
   BedEntry* mergedEntries = mergeOverlappingRegions(BedEntries, BedEntryCount, &mergedCount);
-  for (int i = 0; i < mergedCount; i++){fprintf(stderr,"merge bed file information bed entry \t%s\t%d\t%d\n", mergedEntries[i].chromosome, mergedEntries[i].start, mergedEntries[i].end);}
+  //for (int i = 0; i < mergedCount; i++){fprintf(stderr,"merge bed file information bed entry \t%s\t%d\t%d\n", mergedEntries[i].chromosome, mergedEntries[i].start, mergedEntries[i].end);}
   free(BedEntries);
 
   int ReferenceCount = 0;
-  fprintf(stderr,"DONE mergeOverlappingRegions\n");
+  //fprintf(stderr,"DONE mergeOverlappingRegions\n");
 
   fs->BedReferenceEntries = maskbedentriesfasta(fs,mergedEntries,mergedCount,&fs->BedReferenceCount);
   
-  fprintf(stderr,"\t-> Input bed file had %d regions, after merging the overlapping regions there is %d and post-filtering there is %d\n",BedEntryCount,mergedCount,fs->BedReferenceCount);
+  //fprintf(stderr,"\t-> Input bed file had %d regions, after merging the overlapping regions there is %d and post-filtering there is %d\n",BedEntryCount,mergedCount,fs->BedReferenceCount);
+  //for (int i = 0; i < fs->BedReferenceCount; i++){fprintf(stderr,"merge bed file information bed entry \t%s\t%d\t%d\n", fs->BedReferenceEntries[i].chromosome, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);}
 
-  exit(1);
   free(mergedEntries);
-  fprintf(stderr,"DONE maskbedentriesfasta\n");
+  //fprintf(stderr,"DONE maskbedentriesfasta\n");
 
   fs->nref = fs->BedReferenceCount; 
   fs->seqs = new char* [fs->nref];
