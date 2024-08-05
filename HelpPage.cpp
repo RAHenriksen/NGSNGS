@@ -48,11 +48,11 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t-qs  | --qualityscore: \t\t Fixed quality score, for both read pairs in fastq or sequence alignment map formats. It overwrites the quality profiles.\n");
   fprintf(fp,"\n----- Optional ----- \n");
   fprintf(fp,"\nSimulation mode: \n\n");
-  fprintf(fp,"\t-sim  | --simulation: \t\t Read Quality profile for single-end reads (SE) or first read pair (PE) for fastq or sequence alignment map formats.\n");
-  fprintf(fp,"\t\t<circ||circular> \t Gamma distribution, given a shape and scale, e.g. Gam,20,2.\n");
+  fprintf(fp,"\t-circ  | --circular: \t\t Circular simulations - Creating breakpoint reads crossing end coordinate of the reference genome for bacterial or mitochondrial simulation.\n");
   fprintf(fp,"\t-chr | --chromosomes: \t\t Specific chromosomes from input reference file to simulate from.\n\n");
-  fprintf(fp,"\t-reg | --region: \t\t Input bed file with regions of interest.\n\n");
-  fprintf(fp,"\t-fl | --flanking: \t\t Fixed number of nucleotides flanking the regions of interest (-reg) in both ends.\n\n");
+  fprintf(fp,"\t-incl | --include: \t\t Simulate sequencing reads solely from regions of interest within the input bed file.\n\n");
+  fprintf(fp,"\t-excl | --exclude: \t\t Simulate sequencing reads masking the regions within the input bed file.\n\n");
+  fprintf(fp,"\t-fl | --flanking: \t\t Fixed number of nucleotides flanking the regions of interest (-incl) in both ends, default = 30.\n\n");
   fprintf(fp,"\nReference Variations: \n\n");
   fprintf(fp,"\t-mr | --mutationrate: \t\t\t Adding stochastic variations to the reference genome (-i) from a fixed mutation rate, conflicts with number of variations (-v), default = 0.0\n");
   fprintf(fp,"\t-g | --generations: \t\t\t Adding stochastic variations to the reference genome (-i) according to the fixed mutation rate (-mr) across numerous generations, default = 1\n");

@@ -64,10 +64,11 @@ make amplicon HTSSRC=../htslib
 The following features has been added since its publication in January 2023. See helppage for usage [Help page](#GENERAL)
 
 * Fixed quality score (-qs): creating one fixed quality score with identical sequencing error for each nucleotide.
-* Circular simulation mode (-sim circ): enable the possibility of simulating sequencing reads crossing the reference genome end coordinate - to simulate bacterial or mitochondria amongst others
+* Circular simulation mode (-circ): enable the possibility of simulating sequencing reads crossing the reference genome end coordinate - to simulate bacterial or mitochondria amongst others
 * Stochastic mutation rate (-mr) : adding stochastic variation to the input reference genome (-i)
 * Fixed number of stochastic SNP's (-v): adds a fixed number of randomg mutations ot the input reference genome (-i)
-* Simulate reads solely for regions of interest across the genome (-reg): the coordinates from which the reads are sampled needs to be in a bed file structure. With the possibility of adding a number of nucleotides in both the start and end of the region by providing the flanking option -fl. This can be used for CAPTURE sequencing simulation
+* Simulate reads solely for regions of interest across the genome (-incl): the coordinates from which the reads are sampled needs to be in a bed file structure. With the possibility of adding a number of nucleotides in both the start and end of the region by providing the flanking option -fl. This can be used for CAPTURE sequencing simulation
+* Simulate reads by masking regions across the genome (-excl): the coordinates for the regions to be excluded should be in a bed file structure.
 * Added an amplicon simulation mode: simulate sequencing errors, mutations or deamination on your empirical data, while allowing for file conversion, see [NGSNGS - amplicon alteration](#AMPLICON)
 
 ## GENERAL
@@ -138,8 +139,11 @@ Format specific:
 ----- Optional -----
 
 Simulation mode:
--sim | --simulation:
-	<circ||circular>		Circular simulations - Creating breakpoint reads crossing end coordinate of the reference genome for bacterial or mitochondrial simulation. 
+-circ | --circular:		 Circular simulations - Creating breakpoint reads crossing end coordinate of the reference genome for bacterial or mitochondrial simulation. 
+-chr | --chromosomes: 		 Specific chromosomes from input reference file.
+-incl | --include: 		 Simulate sequencing reads solely from regions of interest within the input bed file.
+-excl | --exclude: 		 Simulate sequencing reads masking the regions within the input bed file.
+-fl | --flanking: 		 Fixed number of nucleotides flanking the regions of interest (-incl) in both ends, default = 30.
 
 Reference Variations:
 
@@ -188,7 +192,6 @@ Read Specific:
 -cl  | --cycle:			 Read cycle length, the maximum length of sequence reads, if not provided the cycle length will be inferred from quality profiles (q1,q2).
 -ll  | --lowerlimit:	 	fragment length limit, default = 30. The minimum fragment length for deamination is 30, so simulated fragments below will be fixed at 30. 
 -bl  | --bufferlength:		 Buffer length for generated sequence reads stored in the output files, default = 30000000.
--chr | --chromosomes: 		 Specific chromosomes from input reference file.
 -a1  | --adapter1: 		 Adapter sequence to add for simulated reads (SE) or first read pair (PE).
 	 e.g. Illumina TruSeq Adapter 1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG 
 

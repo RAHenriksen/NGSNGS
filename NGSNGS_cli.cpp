@@ -245,18 +245,17 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-v",*argv)==0 || strcasecmp("--variations",*argv)==0){
       mypars->referencevariations = atol(*(++argv));
     }
-    else if(strcasecmp("-sim",*argv)==0 || strcasecmp("--simulation",*argv)==0){
-      char * tok = *(++argv);
-      if(strcasecmp("circ",tok)==0 || strcasecmp("circular",tok)==0)
-	      mypars->simmode = 1;
+    else if(strcasecmp("-circ",*argv)==0 || strcasecmp("--circular",*argv)==0){
+      mypars->simmode = 1;
     }
     else if(strcasecmp("-fl",*argv)==0 || strcasecmp("--flanking",*argv)==0){
       mypars->flankingregion = atol(*(++argv));
     }
-    else if(strcasecmp("-reg",*argv)==0 || strcasecmp("--region",*argv)==0){
+    else if(strcasecmp("-incl",*argv)==0 || strcasecmp("--include",*argv)==0){
       mypars->BedFile = strdup(*(++argv));
     }
-    else if(strcasecmp("-mask",*argv)==0 || strcasecmp("--mask",*argv)==0){
+    else if(strcasecmp("-excl",*argv)==0 || strcasecmp("--exclude",*argv)==0){
+      mypars->BedFile = strdup(*(++argv));
       mypars->MaskBed = 1;
     }
     else{

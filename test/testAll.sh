@@ -10,6 +10,7 @@ A2=AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT
 MF=../Test_Examples/MisincorpFile.txt
 VCFDIR=../Test_Examples
 VCFIN=../Test_Examples/hg19MSub.fa
+BEDIN=../Test_Examples/hg19MSubCapture.bed
 
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "------------------------------------------- Testing NGSNGS examples -------------------------------------------"
@@ -248,15 +249,29 @@ fi
 
 samtools view L1000PESortMD.bam > L1000PESortMD.txt
 
-echo "---------------------------------------------------------------------------------------------------------------"
-echo "---------------------------------- V) Testing CAPTURE sequencing simulations ----------------------------------"
+echo "-------------------------------------------------------------------------------ªª--------------------------------"
+echo "----------------------- V) Testing different simulation types, circular and capture ----------------------"
 echo "---------------------------------------------------------------------------------------------------------------"
 
 echo " "
 echo "------------------------------------------------------------------------"
 echo "1) Testing single-end capture simulations from provided bed file regions"
 echo "------------------------------------------------------------------------"
-${PRG}  -i ../Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 1 -l 100 -seq SE -reg ../Test_Examples/hg19MSubCapture.bed -f fa -o TestMSubCapture
+${PRG} -i ${VCFIN} -r 1000 -t 1 -s 1 -l 100 -seq SE --circular -qs 35 -f fq -o TestMSubCircular
+
+awk '/@.*MT:[0-9]+-[0-9]+_length:[0-9]+/ {
+    match($0, /MT:[0-9]+-([0-9]+)_length:[0-9]+/, arr)
+    if (arr[1] > 500) {
+        count++
+    }
+}
+END {print count}' TestMSubCircular.fq &> BreakPointReadsMT.txt
+
+echo " "
+echo "------------------------------------------------------------------------"
+echo "2) Testing single-end capture simulations from provided bed file regions"
+echo "------------------------------------------------------------------------"
+${PRG} -i ${VCFIN} -r 1000 -t 1 -s 1 -l 100 -seq SE -incl ${BEDIN} -f fa -o TestMSubCapture
 
 ranges=$(grep '>' TestMSubCapture.fa | cut -f4 -d_ | cut -f2 -d:)
 
@@ -306,13 +321,13 @@ END {
     # Print the total number of overlaps and non-overlapping reads
     print "Total overlapping reads found for capture:" total_overlap_count > "overlaps.txt";
     print "Total non-overlapping reads found for capture:" total_non_overlap_count > "nonoverlaps.txt";
-}' ../Test_Examples/hg19MSubCapture.bed
+}' ${BEDIN}
 
 echo " "
 echo "---------------------------------------------------------------------------"
-echo "2) Testing single-end capture simulations masking provided bed file regions"
+echo "3) Testing single-end capture simulations masking provided bed file regions"
 echo "---------------------------------------------------------------------------"
-${PRG}  -i ../Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 1 -l 100 -seq SE -reg ../Test_Examples/hg19MSubCapture.bed -mask -f fa -o TestMSubMaskCapture
+${PRG} -i ${VCFIN} -r 1000 -t 1 -s 1 -l 100 -seq SE -excl ${BEDIN} -f fa -o TestMSubMaskCapture
 
 ranges=$(grep '>' TestMSubMaskCapture.fa | cut -f4 -d_ | cut -f2 -d:)
 
@@ -362,7 +377,7 @@ END {
     # Print the total number of overlaps and non-overlapping reads
     print "Total overlapping reads found for masked capture:" total_overlap_count >> "overlaps.txt";
     print "Total non-overlapping reads found for masked capture:" total_non_overlap_count >> "nonoverlaps.txt";
-}' ../Test_Examples/hg19MSubCapture.bed
+}' ${BEDIN}
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "--------------------------------------------------- MD5SUM ----------------------------------------------------"

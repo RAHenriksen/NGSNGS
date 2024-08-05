@@ -96,7 +96,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     for (int i = 0; i < reffasta->BedReferenceCount; i++){
       fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", reffasta->BedReferenceEntries[i].chromosome, reffasta->BedReferenceEntries[i].start, reffasta->BedReferenceEntries[i].end);
     }*/
-
   }
   
   fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome with the full length %zu\n",reffasta->nref,reffasta->seq_l_total);

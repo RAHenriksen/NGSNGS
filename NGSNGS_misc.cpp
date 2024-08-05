@@ -283,10 +283,7 @@ BedEntry* maskbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCount
   for(int i=0;i<n_seqs;i++){
     const char *chrname = faidx_iseq(fs->fai,i);
     size_t seq_len = faidx_seq_len(fs->fai, chrname);
-    //fprintf(stderr,"----------\nnref val %d \t and name %s \t length %lu\n",i,chrname,seq_len);
-    
-    // first entry
-    
+
     int tmp_start = 1;
     int chr_not_present = 0;
     int capture_present_chr_end = 0;
@@ -305,17 +302,6 @@ BedEntry* maskbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCount
           tmp_start = entries[j].end;
           reference_int++;
         }
-        //Check if this is the last region and handle the case
-        /*if (j == (entryCount - 1) && tmp_start < seq_len) {
-          fprintf(stderr,"last entry\n");
-          fprintf(stderr,"%s\t%d\t%d\n",chrname,tmp_start, seq_len);
-
-          strcpy(ReferenceEntries[reference_int].chromosome,entries[j].chromosome);
-          ReferenceEntries[reference_int].start = tmp_start;
-          ReferenceEntries[reference_int].end = seq_len;
-
-          reference_int++;
-        }*/
       }
     }
 
@@ -328,18 +314,8 @@ BedEntry* maskbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCount
       reference_int++;
     }
 
-    // If the chromosome is not found in the bed file, output the whole chromosome
-    /*if (!chr_not_present) {
-      fprintf(stderr,"%s\t%d\t%d\n",chrname,1, seq_len);
-      strcpy(ReferenceEntries[reference_int].chromosome,chrname);
-      ReferenceEntries[reference_int].start = 1;
-      ReferenceEntries[reference_int].end = seq_len;
-      
-      reference_int++;
-    }*/
   }
   
-  //fprintf(stderr,"number of entries %d\n",reference_int);
   *ReferenceCount = reference_int;
 
   return ReferenceEntries;
