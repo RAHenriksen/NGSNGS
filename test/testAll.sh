@@ -247,6 +247,122 @@ if [ $MDcheck4 -ne 1 ]; then
 fi
 
 samtools view L1000PESortMD.bam > L1000PESortMD.txt
+
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "---------------------------------- V) Testing CAPTURE sequencing simulations ----------------------------------"
+echo "---------------------------------------------------------------------------------------------------------------"
+
+echo " "
+echo "------------------------------------------------------------------------"
+echo "1) Testing single-end capture simulations from provided bed file regions"
+echo "------------------------------------------------------------------------"
+${PRG}  -i ../Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 1 -l 100 -seq SE -reg ../Test_Examples/hg19MSubCapture.bed -f fa -o TestMSubCapture
+
+ranges=$(grep '>' TestMSubCapture.fa | cut -f4 -d_ | cut -f2 -d:)
+
+awk -v ranges="$ranges" '
+BEGIN {
+    # Split the input ranges into an array
+    split(ranges, arr, " ");
+    for (i in arr) {
+        split(arr[i], range, "-");
+        start[i] = range[1];
+        end[i] = range[2];
+    }
+    total_overlap_count = 0;
+    total_non_overlap_count = 0;
+    overlaps = "";
+    non_overlaps = "";
+    seen_non_overlap_reads = "";
+}
+{
+    # Read start and end positions from the BED file
+    bed_start = $2;
+    bed_end = $3;
+    overlap_found = 0;
+    overlap_not_found = 0;
+
+    # Check for overlap with each range
+    for (i in start) {
+        if (start[i] < bed_end && end[i] > bed_start) {
+            overlap_found++;
+        }
+        else{
+            overlap_not_found++;
+        }
+    }
+    
+    # If overlap is found
+    if (overlap_found > 0) {
+        total_overlap_count += overlap_found;
+        overlaps = overlaps $1 "\t" bed_start "\t" bed_end "\n";
+    } else {
+        # If no overlap is found
+        total_non_overlap_count += overlap_not_found;
+        non_overlaps = non_overlaps $1 "\t" bed_start "\t" bed_end "\n";
+    }
+}
+END {
+    # Print the total number of overlaps and non-overlapping reads
+    print "Total overlapping reads found for capture:" total_overlap_count > "overlaps.txt";
+    print "Total non-overlapping reads found for capture:" total_non_overlap_count > "nonoverlaps.txt";
+}' ../Test_Examples/hg19MSubCapture.bed
+
+echo " "
+echo "---------------------------------------------------------------------------"
+echo "2) Testing single-end capture simulations masking provided bed file regions"
+echo "---------------------------------------------------------------------------"
+${PRG}  -i ../Test_Examples/hg19MSub.fa -r 1000 -t 1 -s 1 -l 100 -seq SE -reg ../Test_Examples/hg19MSubCapture.bed -mask -f fa -o TestMSubMaskCapture
+
+ranges=$(grep '>' TestMSubMaskCapture.fa | cut -f4 -d_ | cut -f2 -d:)
+
+awk -v ranges="$ranges" '
+BEGIN {
+    # Split the input ranges into an array
+    split(ranges, arr, " ");
+    for (i in arr) {
+        split(arr[i], range, "-");
+        start[i] = range[1];
+        end[i] = range[2];
+    }
+    total_overlap_count = 0;
+    total_non_overlap_count = 0;
+    overlaps = "";
+    non_overlaps = "";
+    seen_non_overlap_reads = "";
+}
+{
+    # Read start and end positions from the BED file
+    bed_start = $2;
+    bed_end = $3;
+    overlap_found = 0;
+    overlap_not_found = 0;
+
+    # Check for overlap with each range
+    for (i in start) {
+        if (start[i] < bed_end && end[i] > bed_start) {
+            overlap_found++;
+        }
+        else{
+            overlap_not_found++;
+        }
+    }
+    
+    # If overlap is found
+    if (overlap_found > 0) {
+        total_overlap_count += overlap_found;
+        overlaps = overlaps $1 "\t" bed_start "\t" bed_end "\n";
+    } else {
+        # If no overlap is found
+        total_non_overlap_count += overlap_not_found;
+        non_overlaps = non_overlaps $1 "\t" bed_start "\t" bed_end "\n";
+    }
+}
+END {
+    # Print the total number of overlaps and non-overlapping reads
+    print "Total overlapping reads found for masked capture:" total_overlap_count >> "overlaps.txt";
+    print "Total non-overlapping reads found for masked capture:" total_non_overlap_count >> "nonoverlaps.txt";
+}' ../Test_Examples/hg19MSubCapture.bed
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "--------------------------------------------------- MD5SUM ----------------------------------------------------"

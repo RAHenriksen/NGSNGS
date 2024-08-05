@@ -258,7 +258,7 @@ BedEntry* checkbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCoun
   }
   
   if(warning==1)
-    fprintf(stderr,"\t -> Discrepancy between input reference genome (-i) and input bed file, some regions in bed is not present in reference or some chromosomes in reference is not present in bed file, and these remains unused for further simulation \n");
+    fprintf(stderr,"\t-> iscrepancy between input referenDce genome (-i) and input bed file, some regions in bed is not present in reference or some chromosomes in reference is not present in bed file, and these remains unused for further simulation \n");
 
   *ReferenceCount = reference_int;
 
