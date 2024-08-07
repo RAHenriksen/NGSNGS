@@ -11,6 +11,7 @@ MF=../Test_Examples/MisincorpFile.txt
 VCFDIR=../Test_Examples
 VCFIN=../Test_Examples/hg19MSub.fa
 BEDIN=../Test_Examples/hg19MSubCapture.bed
+VCFFILE=../Test_Examples/ChrMtSubSNPDiploid.vcf 
 
 # Function to handle errors
 handle_error() {
@@ -423,6 +424,15 @@ END {
     print "Total overlapping reads found for masked capture:" total_overlap_count >> "overlaps.txt";
     print "Total non-overlapping reads found for masked capture:" total_non_overlap_count >> "nonoverlaps.txt";
 }' ${BEDIN}
+
+echo " "
+echo "---------------------------------------------------------------------"
+echo "4) Testing single-end capture simulations of variations from vcf file"
+echo "---------------------------------------------------------------------"
+${PRG} -i ${VCFIN} -r 1000 -s 1 -l 100 -seq SE -vcf ${VCFFILE} -id 0 -f fq -qs 40 -ne -fl 200 --capture -o DiploidCapture
+handle_error
+
+
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "--------------------------------------------------- MD5SUM ----------------------------------------------------"
