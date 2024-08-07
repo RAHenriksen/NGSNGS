@@ -321,40 +321,6 @@ void* Sampling_threads(void *arg) {
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
       qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0';
 
-      /*//now copy the actual sequence into seq_r1 and seq_r2 if PE 
-      if(strandR1==1){
-        if(struct_obj->DoBriggs){
-          //fprintf(stderr,"WHAT IS DEAMINATION FRAG %d\n",FragNo);
-          strncpy(seq_r1,FragRes[FragNo],maxbases);
-          if (FragNo==0||FragNo==2){
-            strncpy(seq_r1,FragRes[FragNo],maxbases);
-            //strncpy(seq_r1,FragRes[FragNo],maxbases);
-            //fprintf(stderr,"inside frag no %d \nseq\t%s\n",FragNo,seq_r1);
-          }
-          else if (FragNo==1||FragNo==3){
-            strncpy(seq_r1,FragRes[FragNo]+(fraglength-maxbases),maxbases);
-            //fprintf(stderr,"inside LOL frag no %d \nseq\t%s\n",FragNo,FragRes[FragNo]);
-            //strncpy(seq_r1,FragRes[FragNo],maxbases);
-          }
-        }
-        else{
-          // copying from opposite strand
-          strncpy(seq_r1,FragRes[FragNo]+(fraglength-maxbases),maxbases);
-        }
-        }
-      }
-      else{
-        if(struct_obj->DoBriggs){
-          strncpy(seq_r1,FragRes[FragNo],maxbases);
-        }
-        else{
-          strncpy(seq_r1,FragRes[FragNo],maxbases);
-        }
-      //std::cout << " bases " << maxbases << " " << FragRes[FragNo] << std::endl;
-      strncpy(seq_r1,FragRes[FragNo],maxbases);
-      //std::cout << " bases " << seq_r1 << " " << std::endl;
-      }*/
-
       if(SE==struct_obj->SeqType){
         if(struct_obj->DoBriggs){
           strncpy(seq_r1,FragRes[FragNo],maxbases);
@@ -466,7 +432,7 @@ void* Sampling_threads(void *arg) {
       //so now everything is on 5->3 and some of them will be reverse complement to referene
       //now everything is the same strand as reference, which we call plus/+
 
-      if(struct_obj->reffasta->BedReferenceEntries != NULL){
+      if(struct_obj->bedfilesample == 1){
         /*fprintf(stderr,"PROVIDED BED FILE \n");
         fprintf(stderr,"read id %s \n",READ_ID);
         fprintf(stderr,"checking matches \t index %d \t read %s \t bed entry %s \t %d \t %d\n",chr_idx,READ_ID,
@@ -479,7 +445,25 @@ void* Sampling_threads(void *arg) {
           struct_obj->reffasta->BedReferenceEntries[chr_idx].start+posB,
           struct_obj->reffasta->BedReferenceEntries[chr_idx].start+posE-1,
           fraglength,ReadDeam,FragMisMatch,has_indels);
-
+        
+        /*
+        //checking the chromosome names
+        for(int i=0;i<struct_obj->reffasta->nref;i++){
+          fprintf(stderr,"chromosome index %d \t name %s\n",i,struct_obj->reffasta->BedReferenceEntries[i].chromosome);
+        }
+        */
+      }
+      else if(struct_obj->VCFcapture == 1){
+        /*fprintf(stderr,"VCF CAPTURE READS \n");
+        for(int i=0;i<struct_obj->reffasta->nref;i++){
+          fprintf(stderr,"chromosome index %d \t name %s\n",i,struct_obj->reffasta->seqs_names[i]);
+        }*/
+        snprintf(READ_ID,512,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,
+          struct_obj->reffasta->seqs_names[chr_idx],posB+1,posE,
+          fraglength,ReadDeam,FragMisMatch,has_indels);
+        
+        //fprintf(stderr,"ID %s \t posB %d \t posE %d\n",READ_ID,posB,posE);
+        //exit(1);
       }
       else{
         snprintf(READ_ID,512,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);

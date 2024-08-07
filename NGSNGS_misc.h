@@ -33,6 +33,8 @@ BedEntry* checkbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCoun
 
 BedEntry* maskbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCount,int* ReferenceCount);
 
+BedEntry* vcftobedentries(const char* bcffilename, int id,size_t flanking, int* entryCount,int* ploidy);
+
 // create internal structure of a bed file from the vcf to create region from which we sample
 int VCFtoBED(const char* bcffilename, int id,int range,BedEntry** bedentries, int* entryCount);
 

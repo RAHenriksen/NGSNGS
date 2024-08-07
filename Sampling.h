@@ -73,6 +73,7 @@ struct Parsarg_for_Sampling_thread{
   const char* IndelDumpFile;
 
   int bedfilesample;
+  int VCFcapture;
 };
 
 void* Sampling_threads(void *arg);

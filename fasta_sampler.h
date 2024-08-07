@@ -28,6 +28,7 @@ typedef struct {
     char chromosome[MAX_CHROM_NAME_LEN];
     int start;
     int end;
+    char** variants;
 } BedEntry;
 
 typedef struct{
@@ -49,6 +50,7 @@ fasta_sampler *fasta_sampler_alloc_full(const char *fa);
 fasta_sampler *fasta_sampler_alloc_subset(const char *fa,const char *SpecificChr);
 fasta_sampler *fasta_sampler_alloc_bedentry(const char *fa,const char *bedfilename,size_t flanking);
 fasta_sampler *fasta_sampler_alloc_maskbedentry(const char *fa,const char *bedfilename,size_t flanking);
+fasta_sampler *fasta_sampler_alloc_vcf(const char *fa, const char *bcffilename,int id,size_t flanking);
 
 void fasta_sampler_destroy(fasta_sampler *fs);
 char* sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength,size_t& chr_end,int simmode);

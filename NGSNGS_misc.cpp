@@ -321,6 +321,159 @@ BedEntry* maskbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCount
   return ReferenceEntries;
 }
 
+BedEntry* vcftobedentries(const char* bcffilename, int id,size_t flanking, int* entryCount,int* ploidy){
+  //fprintf(stderr,"NGSNGS_misc.cpp \t INSIDE VCF BED ENTRY\n");
+  int region_capacity = INITIAL_BED_CAPACITY;
+  BedEntry* bedentries = (BedEntry*) malloc(region_capacity * sizeof(BedEntry));
+  if (!bedentries) {
+    fprintf(stderr,"Error allocating memory");
+    exit(1);
+  }
+
+  //open the vcf file and store the header information
+  htsFile *bcf = bcf_open(bcffilename, "r");
+
+  if (!bcf) {
+    fprintf(stderr, "Error: Unable to open BCF file: %s\n", bcffilename);
+    free(bedentries);
+    exit(1);
+  }
+
+  // initialize header
+  bcf_hdr_t *bcf_head = bcf_hdr_read(bcf);
+  if (!bcf_head) {
+    fprintf(stderr, "Error: Unable to read BCF header\n");
+    bcf_close(bcf);
+    free(bedentries);
+    exit(1);
+  }
+
+  // initialize vcf information
+  bcf1_t *brec = bcf_init();
+  if (!brec) {
+    fprintf(stderr, "Error: Unable to initialize BCF record\n");
+    bcf_hdr_destroy(bcf_head);
+    bcf_close(bcf);
+    free(bedentries);
+    exit(1);
+  }
+
+  // extracting sample information
+  int nsamples = bcf_hdr_nsamples(bcf_head);
+  int32_t ngt_arr = 0;     
+  int32_t *gt_arr = NULL;
+  int ngt;
+  int inferred_ploidy =5;//assume max ploidy is five, this will be adjusted when parsing data
+  int32_t nodatagt[2]={bcf_gt_unphased(0),bcf_gt_unphased(1)};
+  int32_t *mygt=NULL;
+  int whichsample = id; //index of individual
+  
+  if (whichsample < 0 || whichsample >= nsamples) {
+    fprintf(stderr, "Error: Sample index out of range\n");
+    bcf_hdr_destroy(bcf_head);
+    bcf_destroy(brec);
+    bcf_close(bcf);
+    free(bedentries);
+    exit(1);
+  }
+
+  const char *sample_name = bcf_hdr_int2id(bcf_head, BCF_DT_SAMPLE, whichsample);
+  //fprintf(stderr,"NGSNGS_misc.cpp \t The number of individuals present in the bcf header is %d with the chosen individual being %s\n",nsamples,sample_name);
+
+  int seqnames_l;
+  const char **bcf_chrom_names = bcf_hdr_seqnames(bcf_head,&seqnames_l);
+  bcf_idpair_t *chr_info = bcf_head->id[BCF_DT_CTG];
+
+  int variant_number = 0;
+  // extract the bcf file information to create the bedstruct
+  while (bcf_read(bcf, bcf_head, brec) == 0) {
+    bcf_unpack((bcf1_t *)brec, BCF_UN_ALL);
+
+    ngt = bcf_get_genotypes(bcf_head, brec, &gt_arr, &ngt_arr);
+    assert(ngt>0);
+    assert((ngt %nsamples)==0);
+    inferred_ploidy = ngt/nsamples;
+      
+    mygt = gt_arr+inferred_ploidy*whichsample;
+    if(bcf_gt_is_missing(mygt[0])){
+      fprintf(stderr,"\t-> Genotype is missing for pos: %ld will skip\n",brec->pos+1);
+      continue;
+    }
+    int fai_chr = brec->rid;
+    if (fai_chr == -1) {
+      fprintf(stderr, "Error: Chromosome name not found in the reference\n");
+      exit(1);
+    }
+    // create the coordinate information in our internal bed struct from which we sample data
+    int chr_end = chr_info[fai_chr].val->info[0];
+      
+    if (variant_number >= region_capacity) {
+      region_capacity *= 2;
+      BedEntry* temp = (BedEntry*) realloc(bedentries, region_capacity * sizeof(BedEntry));
+
+      if (!temp) {
+        fprintf(stderr,"Error reallocating memory for bed entries\n");
+        free(bedentries);
+        bcf_hdr_destroy(bcf_head);
+        bcf_destroy(brec);
+        bcf_close(bcf);
+        exit(1);
+      }
+      bedentries = temp;
+    }
+    
+    //sscanf(line, "%s %d %d", bedentries[*entryCount].chromosome, &bedentries[*entryCount].start, &bedentries[*entryCount].end);
+    
+    strcpy(bedentries[variant_number].chromosome,bcf_hdr_id2name(bcf_head, brec->rid));
+
+    int tmp_start = (size_t) brec->pos - (size_t) flanking; //size_t is unsigned integer thus non-negative values
+    size_t tmp_end = (size_t) brec->pos + (size_t) flanking; //size_t is unsigned integer thus non-negative values
+
+    // i dont add the flanking to the start yet, i need to store the position of the variant first to alter the sequence
+    bedentries[variant_number].start = brec->pos;
+
+    if(tmp_start < 1){
+      bedentries[variant_number].end = brec->pos + flanking;
+    }
+    else if(tmp_end > chr_end){
+      bedentries[variant_number].end = chr_end;
+    }
+    else{
+      bedentries[variant_number].end = brec->pos + flanking;
+    }
+
+
+    //fprintf(stderr,"postition %d \t allele 1 is %s \t allele 2 is %s \n",brec->pos+1,brec->d.allele[bcf_gt_allele(mygt[0])],brec->d.allele[bcf_gt_allele(mygt[1])]);
+
+    bedentries[variant_number].variants = new char *[inferred_ploidy];
+    for (int v = 0; v < inferred_ploidy; v++){
+      const char* allele_str = brec->d.allele[bcf_gt_allele(mygt[v])];
+      bedentries[variant_number].variants[v] = strdup(allele_str); // Duplicate the string
+      //fprintf(stderr,"NGSNGS_misc.cpp \t bed entry allele is %d \t %d \t %d \t %d \t %s \n",variant_number,v,bedentries[variant_number].start,bedentries[variant_number].end,bedentries[variant_number].variants[v]);
+      //brec->d.allele[bcf_gt_allele(mygt[v])]
+    }
+    //fprintf(stderr,"postition %d \t allele 1 is %s \t allele 2 is %s \n",brec->pos+1,brec->d.allele[bcf_gt_allele(mygt[0])],brec->d.allele[bcf_gt_allele(mygt[1])]);
+    variant_number++;
+  }
+
+  /*
+  fprintf(stderr,"NGSNGS_misc.cpp \t BEDENTRIES with %d entries and ploidy %d\n",variant_number,inferred_ploidy);
+  fprintf(stderr,"NGSNGS_misc.cpp \t bed entry allele is \t %d \t %d \t %s \t %s  \n",bedentries[0].start,bedentries[0].end,bedentries[0].variants[0],bedentries[0].variants[0]);
+  fprintf(stderr,"NGSNGS_misc.cpp \t bed entry allele is \t %d \t %d \t %s \t %s  \n",bedentries[1].start,bedentries[1].end,bedentries[1].variants[0],bedentries[1].variants[1]);
+  fprintf(stderr,"NGSNGS_misc.cpp \t The inferred ploidy being %d\n",inferred_ploidy);
+  */
+  
+  *ploidy = inferred_ploidy;
+  *entryCount = variant_number;
+
+  bcf_hdr_destroy(bcf_head);
+  bcf_destroy(brec);
+  bcf_close(bcf);
+
+  //fprintf(stderr,"NGSNGS_misc.cpp \t DONE INSIDE VCF BED ENTRY\n");
+  return bedentries;
+}
+
 int VCFtoBED(const char* bcffilename, int id,int range,BedEntry** bedentries, int* entryCount){
 
   //create the bed entry struct

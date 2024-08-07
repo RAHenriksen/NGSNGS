@@ -307,6 +307,84 @@ fasta_sampler *fasta_sampler_alloc_maskbedentry(const char *fa,const char *bedfi
   return fs;
 }
 
+fasta_sampler *fasta_sampler_alloc_vcf(const char *fa, const char *bcffilename,int id,size_t flanking){
+  //fprintf(stderr,"fasta_sampler.cpp \t INSIDE FASTA SAMPLE ALLOC VCF\n");
+  fasta_sampler *fs = new fasta_sampler;
+  fs->ws = NULL;
+  fs->fai = NULL;
+  assert(((fs->fai =fai_load(fa)))!=NULL);
+  fs->BedReferenceEntries = NULL;
+  fs->BedReferenceCount = 0;
+  int ploidy = 5;
+  //read in the bed entries
+  fs->BedReferenceEntries = vcftobedentries(bcffilename,id,flanking, &fs->BedReferenceCount,&ploidy);
+  
+  //fprintf(stderr,"fasta_sampler.cpp \t Done with vcftobedentries bed entries %d \t %d\n",fs->BedReferenceCount,ploidy);
+
+  fs->nref = fs->BedReferenceCount*ploidy; 
+  //fprintf(stderr,"total entries %d\n",fs->nref);
+  fs->seqs = new char* [fs->nref];
+  fs->seqs_l = new int[fs->nref];
+  fs->seqs_names = new char *[fs->nref];
+  fs->realnameidx = new int[fs->nref];
+
+  int nref_entry=0;
+
+  for(int i = 0; i < fs->BedReferenceCount; i++) {
+    for(int j = 0; j < ploidy; j++) {
+      //fprintf(stderr,"---------------\nentries in ref %d\t %d\t%d\n",nref_entry,i,j);
+      //fprintf(stderr,"%s:%d-%d:%s\n", fs->BedReferenceEntries[i].chromosome, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end, fs->BedReferenceEntries[i].variants[j]);
+      
+      int tmp_start = 0; //size_t is unsigned integer thus non-negative values
+      if((int)((size_t) fs->BedReferenceEntries[i].start - (size_t) flanking) < 1){
+        tmp_start = 1;
+      }
+      else{
+        tmp_start = fs->BedReferenceEntries[i].start;
+      }
+
+      int length = snprintf(NULL, 0, "%s:%d-%d", fs->BedReferenceEntries[i].chromosome, tmp_start, fs->BedReferenceEntries[i].end);
+      fs->seqs_names[nref_entry] = (char*) malloc((length + 1) * sizeof(char));
+      //sprintf(fs->seqs_names[nref_entry], "%s:%d-%d", fs->BedReferenceEntries[i].chromosome, tmp_start, fs->BedReferenceEntries[i].end);
+      
+      char chr_reg_tmp[128];
+      snprintf(chr_reg_tmp,sizeof(chr_reg_tmp),"%s:%d-%d", fs->BedReferenceEntries[i].chromosome, tmp_start, fs->BedReferenceEntries[i].end);
+
+      //fprintf(stderr,"fs->seqs_names[i] %d \t %s\n",i,fs->seqs_names[nref_entry]);
+      
+      fs->char2idx[fs->seqs_names[nref_entry]] = nref_entry;
+      //fprintf(stderr,"names are %s\n",fs->seqs_names[i]);
+      fs->seqs[nref_entry] = fai_fetch(fs->fai,chr_reg_tmp,fs->seqs_l+nref_entry);
+      //std::cout << fs->seqs[nref_entry] << std::endl;
+      //std::cout << fs->BedReferenceEntries[i].variants[j] << std::endl;
+      fs->seqs[nref_entry][fs->BedReferenceEntries[i].start] = *fs->BedReferenceEntries[i].variants[j];
+      //std::cout << fs->seqs[nref_entry] << std::endl;
+      sprintf(fs->seqs_names[nref_entry], "%sallele%d:%d-%d", fs->BedReferenceEntries[i].chromosome, j+1,tmp_start, fs->BedReferenceEntries[i].end);
+      /*
+      sprintf(fs->seqs_names[nref_entry], "%sallele%d:%d-%d", fs->BedReferenceEntries[i].chromosome);
+      fprintf(stderr,"fs->seqs_names[i] %d \t %s\n",i,fs->seqs_names[nref_entry]);
+      fprintf(stderr,"fs->seqs_names[i] %d \t %s\t bed %s\n",i,fs->seqs_names[nref_entry],fs->BedReferenceEntries[i].chromosome);
+      */
+      nref_entry++;
+    }
+  }
+
+  for(int i=0;i<fs->nref;i++){
+    fs->realnameidx[i] = i;
+    //fprintf(stderr,"names %s\n",fs->seqs_names[i]); //printing the chromosome names to ensure accurate nomenclature of the alleles
+  }
+  //fprintf(stderr,"\t-> Number of nref %d in file: \'%s\'\n",fs->nref,fa);
+  if(fs->nref==0){
+    //fprintf(stderr,"\t-> Possible error, no sequences loaded\n");
+    exit(1);
+  }
+  fasta_sampler_setprobs(fs);
+
+  //fprintf(stderr,"fasta_sampler.cpp \t DONE INSIDE FASTA SAMPLE ALLOC VCF\n");
+
+  return fs;
+}
+
 //functions returns head of chromosome, with posB, posE, chr_idx and fraglength set accordingly
 char *sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength, size_t &chr_end, int simmode){
   chr_idx = 0;

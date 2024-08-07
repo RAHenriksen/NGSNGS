@@ -407,7 +407,7 @@ int main(int argc,char **argv){
                       mypars->vcffile,IndelFuncParam,DoIndel,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,
                       mypars->Align,mypars->KstrBuf,mypars->DumpFile,mypars->IndelDumpFile,mypars->Duplicates,mypars->LowerLimit,
                       mypars->mutationrate,mypars->referencevariations,mypars->generations,mypars->simmode,
-                      mypars->flankingregion,mypars->BedFile,mypars->MaskBed);
+                      mypars->flankingregion,mypars->BedFile,mypars->MaskBed,mypars->CaptureVCF);
                         
     fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);

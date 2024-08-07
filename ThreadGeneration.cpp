@@ -55,7 +55,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
                         char CommandArray[LENS],const char* version,int HeaderIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile,
                         int Duplicates,int Lowerlimit,double mutationrate, size_t referencevariations, int generations,int simmode,
-                        size_t flankingregion, const char* BedFile, int MaskBed){
+                        size_t flankingregion, const char* BedFile, int MaskBed,int CaptureVCF){
                           
   //creating an array with the arguments to create multiple threads;
 
@@ -67,41 +67,57 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   fasta_sampler *reffasta;
 
   int bedfilesample = 0;
-  if(Specific_Chr == NULL && BedFile == NULL && MaskBed == 0){
+  int vcfcapture = 0;
+
+  if(Specific_Chr == NULL && BedFile == NULL && MaskBed == 0 && CaptureVCF == 0){
     //fprintf(stderr,"INSIDE FULL\n");
     reffasta = fasta_sampler_alloc_full(refSseq);
-    fprintf(stderr,"\t-> Done extracting all chromosomes from the provided reference genome\n");
+    fprintf(stderr,"\t-> Allocated memory for full genome with %d chromosomes/contigs/scaffolds from input reference genome (-i) with the full length %zu nt\n",reffasta->nref,reffasta->seq_l_total);
   }
-  else if(Specific_Chr != NULL && BedFile == NULL && MaskBed == 0){
+  else if(Specific_Chr != NULL && BedFile == NULL && MaskBed == 0 && CaptureVCF == 0){
     //fprintf(stderr,"INSIDE SUB\n");
     reffasta = fasta_sampler_alloc_subset(refSseq,Specific_Chr);
-    fprintf(stderr,"\t-> Done extracting the provided chromosomes from the provided reference genome\n");
+    fprintf(stderr,"\t-> Allocated memory for subset (-chr) of the input reference genome (-i) with %d chromosomes/contigs/scaffolds with the full length %zu nt\n",reffasta->nref,reffasta->seq_l_total);
   }
-  else if(Specific_Chr == NULL && BedFile != NULL && MaskBed == 0){
+  else if(Specific_Chr == NULL && BedFile != NULL && MaskBed == 0 && CaptureVCF == 0){
     //fprintf(stderr,"INSIDE BED\n");
     //fprintf(stderr,"bed file %s \t flanking %lu \n",BedFile,flankingregion);
     reffasta = fasta_sampler_alloc_bedentry(refSseq,BedFile,flankingregion);
-    fprintf(stderr,"\t-> Done extracting the bed file entries from the provided reference genome\n");
     bedfilesample = 1; // to parse with threads to enable read id splitting chromosome name to create accurate coordinates
     //fprintf(stderr,"reference count frmo bed file %d \n",reffasta->BedReferenceCount);
-
     /*for (int i = 0; i < reffasta->BedReferenceCount; i++) {fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", reffasta->BedReferenceEntries[i].chromosome, reffasta->BedReferenceEntries[i].start, reffasta->BedReferenceEntries[i].end);}*/
+    fprintf(stderr,"\t-> Allocated memory for regions of interest (-incl) from the input reference genome (-i) with %d chromosomes/contigs/scaffolds with the full length %zu nt\n",reffasta->nref,reffasta->seq_l_total);
   }
-  else if(MaskBed == 1 && BedFile != NULL && Specific_Chr == NULL){
+  else if(Specific_Chr == NULL && BedFile != NULL && MaskBed == 1 && CaptureVCF == 0){
     //fprintf(stderr,"INSIDE MASK BED\n");
     reffasta = fasta_sampler_alloc_maskbedentry(refSseq,BedFile,flankingregion);
-    fprintf(stderr,"\t-> Done masking the bed file entries from the provided reference genome\n");
     bedfilesample = 1;
     /*fprintf(stderr,"reference count frmo bed file %d \n",reffasta->BedReferenceCount);
     for (int i = 0; i < reffasta->BedReferenceCount; i++){
       fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", reffasta->BedReferenceEntries[i].chromosome, reffasta->BedReferenceEntries[i].start, reffasta->BedReferenceEntries[i].end);
     }*/
+    fprintf(stderr,"\t-> Allocated memory masking regions (-excl) within the genome from the input reference genome (-i) with a total of %d chromosomes/contigs/scaffolds with the full length %zu nt\n",reffasta->nref,reffasta->seq_l_total);
+  }
+  else if(Specific_Chr == NULL && BedFile == NULL && MaskBed == 0 && CaptureVCF == 1){
+    if(VariantFile){
+      reffasta = fasta_sampler_alloc_vcf(refSseq,VariantFile,HeaderIndiv,flankingregion);
+      vcfcapture = 1;
+    }
+    else{
+      fprintf(stderr,"For --capture simulation, please provide -vcf file or consider simulating regions of interest (-incl) or mask regions (-excl) using bed file\n");
+      exit(1);
+    }
+    fprintf(stderr,"\t-> Allocated memory capturing regions (--capture) with variants (-vcf) within the genome from the input reference genome (-i) with %d chromosomes/contigs/scaffolds with the full length %zu nt\n",reffasta->nref,reffasta->seq_l_total);
+  }
+  else{
+    fprintf(stderr,"\t-> error allocation memory for %d chromosomes/contigs/scaffolds from input reference genome - please check with helppage in terms of parameters and the simulation mode\n",reffasta->nref);
+    fprintf(stderr,"\t\t conflicts might arise depending on chosen -i, -chr, -bed, -vcf & -capture\n");
+    exit(1);
   }
   
-  fprintf(stderr,"\t-> Allocated memory for %d chromosomes/contigs/scaffolds from input reference genome with the full length %zu\n",reffasta->nref,reffasta->seq_l_total);
   fprintf(stderr, "\t-> Done reading in the reference file, walltime used =  %.2f sec\n", (float)(time(NULL) - t_ref));
   //exit(1);
-  if(VariantFile){
+  if(VariantFile && CaptureVCF == 0){
     add_variants(reffasta,VariantFile,HeaderIndiv);
     if(FileDump!=NULL){
       char dumpfile1[512];
@@ -374,6 +390,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       struct_for_threads[i].rng_type = RandMacro;
       struct_for_threads[i].simmode = simmode;
       struct_for_threads[i].bedfilesample = bedfilesample;
+      struct_for_threads[i].VCFcapture = vcfcapture;
 
       // Sequence alteration models
       // 1) nucleotide quality score and sequencing errors,  
