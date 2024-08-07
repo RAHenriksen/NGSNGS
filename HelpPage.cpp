@@ -62,6 +62,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t-id  | --indiv: \t\t Integer value (0 - index) for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).\n");
   fprintf(fp,"\t\t e.g -id 0\t\t First individual in the provided vcf file.\n");
   fprintf(fp,"\t-DumpVCF:	\t\t The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided vcf file (-vcf|-bcf), for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.\n");
+  fprintf(fp,"\t-cap | --capture: \t\t\t Simulates sequence reads solely from regions with variants provided by -vcf input, each variant is treated as an indepdent region\n");
   fprintf(fp,"\nStochastic Variations: \n\n");
   fprintf(fp,"\t-indel: \t\t\t Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.\n");
   fprintf(fp,"\t\t <InsProb,DelProb,InsParam,DelParam> \t \n");

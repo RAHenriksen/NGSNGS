@@ -9,9 +9,9 @@ This article was [published](https://academic.oup.com/bioinformatics/advance-art
 NGSNGS is a new program, therefore we are very interested in feedback to solve potential problems, as well as ideas for improvements or additions to specific and relevant features.
 
 # Table of Contents
-[Installation](#INSTALLATION-&-REQUIREMENTS)
+[Installation](#installation--requirements)
 
-[Additions/improvements/alterations](#ADDITIONS/IMPROVEMENTS/ALTERATIONS)
+[Additions, Improvements, Alterations](#additions-improvements-alterations)
 
 [Help page](#GENERAL)
 - [NGSNGS - reference based simulation](#NGSNGS)
@@ -29,7 +29,7 @@ NGSNGS is a new program, therefore we are very interested in feedback to solve p
 [Citation](#CITATION)
 
 
-## INSTALLATION & REQUIREMENTS
+## INSTALLATION REQUIREMENTS
 ### Dependencies
 `NGSNGS` requires `HTSlib`, a library used for handling high-throughput sequencing data.
 
@@ -60,7 +60,7 @@ make amplicon HTSSRC=../htslib
 
 **NOTE:** Newer version of htslib which includes bam_set1 is required
 
-## ADDITIONS/IMPROVEMENTS/ALTERATIONS
+## ADDITIONS, IMPROVEMENTS, ALTERATIONS
 The following features has been added since its publication in January 2023. See helppage for usage [Help page](#GENERAL)
 
 * Fixed quality score (-qs): creating one fixed quality score with identical sequencing error for each nucleotide.
@@ -69,8 +69,8 @@ The following features has been added since its publication in January 2023. See
 * Fixed number of stochastic SNP's (-v): adds a fixed number of randomg mutations ot the input reference genome (-i)
 * Simulate reads solely for regions of interest across the genome (-incl): the coordinates from which the reads are sampled needs to be in a bed file structure. With the possibility of adding a number of nucleotides in both the start and end of the region by providing the flanking option -fl. This can be used for CAPTURE sequencing simulation
 * Simulate reads by masking regions across the genome (-excl): the coordinates for the regions to be excluded should be in a bed file structure.
+* Added capture (-cap|--capture) simulations of regions solely containing variants provided by the vcf or bcf file (-vcf|-bcf)
 * Added an amplicon simulation mode: simulate sequencing errors, mutations or deamination on your empirical data, while allowing for file conversion, see [NGSNGS - amplicon alteration](#AMPLICON)
-
 ## GENERAL
 Next Generation Simulator for Next Generator Sequencing Data version 0.9.2.1 
 
@@ -158,6 +158,7 @@ Genetic Variations:
 	 e.g -id 0	 	First individual in the provided vcf file. 
 -DumpVCF:			 The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided
 				 vcf file, for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.
+-cap | --capture	Simulates sequence reads solely from regions with variants provided by -vcf input, each variant is treated as an indepdent region
 
 Stochastic Variations:
 
