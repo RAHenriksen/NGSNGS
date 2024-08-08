@@ -502,7 +502,14 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     if (p.pool)
       hts_tpool_destroy(p.pool);
     
-    fasta_sampler_destroy(reffasta);
+    if(CaptureVCF == 0 && linkage == 0){
+      fprintf(stderr,"Non capture clean\n");
+      fasta_sampler_destroy(reffasta);
+    }
+    else{
+      fprintf(stderr,"capture clean\n");
+      fasta_sampler_destroy_captureLD(reffasta);
+    }
 
     for(int i=0;i<nthreads;i++)
       free(struct_for_threads[i].list_of_reads);
