@@ -35,7 +35,8 @@ BedEntry* maskbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCount
 
 BedEntry* vcftobedentries(const char* bcffilename, int id,size_t flanking, int* entryCount,int* ploidy);
 
-// create internal structure of a bed file from the vcf to create region from which we sample
-int VCFtoBED(const char* bcffilename, int id,int range,BedEntry** bedentries, int* entryCount);
+void addVariant(BedEntry* entry, const char* variant,int position);
+
+BedEntry* VCFLinkageDisequilibrium(BedEntry* entries, int entryCount, int* mergedCount,int ploidy,size_t flanking);
 
 #endif

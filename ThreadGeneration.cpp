@@ -55,7 +55,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
                         char CommandArray[LENS],const char* version,int HeaderIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile,
                         int Duplicates,int Lowerlimit,double mutationrate, size_t referencevariations, int generations,int simmode,
-                        size_t flankingregion, const char* BedFile, int MaskBed,int CaptureVCF){
+                        size_t flankingregion, const char* BedFile, int MaskBed,int CaptureVCF,int linkage){
                           
   //creating an array with the arguments to create multiple threads;
 
@@ -68,18 +68,20 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 
   int bedfilesample = 0;
   int vcfcapture = 0;
-
-  if(Specific_Chr == NULL && BedFile == NULL && MaskBed == 0 && CaptureVCF == 0){
+  int LD = 0;
+  
+  // Allocation for reference genomes depending on simulation type
+  if(Specific_Chr == NULL && BedFile == NULL && MaskBed == 0 && CaptureVCF == 0 && linkage == 0){
     //fprintf(stderr,"INSIDE FULL\n");
     reffasta = fasta_sampler_alloc_full(refSseq);
     fprintf(stderr,"\t-> Allocated memory for full genome with %d chromosomes/contigs/scaffolds from input reference genome (-i) with the full length %zu nt\n",reffasta->nref,reffasta->seq_l_total);
   }
-  else if(Specific_Chr != NULL && BedFile == NULL && MaskBed == 0 && CaptureVCF == 0){
+  else if(Specific_Chr != NULL && BedFile == NULL && MaskBed == 0 && CaptureVCF == 0 && linkage == 0){
     //fprintf(stderr,"INSIDE SUB\n");
     reffasta = fasta_sampler_alloc_subset(refSseq,Specific_Chr);
     fprintf(stderr,"\t-> Allocated memory for subset (-chr) of the input reference genome (-i) with %d chromosomes/contigs/scaffolds with the full length %zu nt\n",reffasta->nref,reffasta->seq_l_total);
   }
-  else if(Specific_Chr == NULL && BedFile != NULL && MaskBed == 0 && CaptureVCF == 0){
+  else if(Specific_Chr == NULL && BedFile != NULL && MaskBed == 0 && CaptureVCF == 0 && linkage == 0){
     //fprintf(stderr,"INSIDE BED\n");
     //fprintf(stderr,"bed file %s \t flanking %lu \n",BedFile,flankingregion);
     reffasta = fasta_sampler_alloc_bedentry(refSseq,BedFile,flankingregion);
@@ -88,7 +90,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     /*for (int i = 0; i < reffasta->BedReferenceCount; i++) {fprintf(stderr,"bed file information bed entry \t%s\t%d\t%d\n", reffasta->BedReferenceEntries[i].chromosome, reffasta->BedReferenceEntries[i].start, reffasta->BedReferenceEntries[i].end);}*/
     fprintf(stderr,"\t-> Allocated memory for regions of interest (-incl) from the input reference genome (-i) with %d chromosomes/contigs/scaffolds with the full length %zu nt\n",reffasta->nref,reffasta->seq_l_total);
   }
-  else if(Specific_Chr == NULL && BedFile != NULL && MaskBed == 1 && CaptureVCF == 0){
+  else if(Specific_Chr == NULL && BedFile != NULL && MaskBed == 1 && CaptureVCF == 0 && linkage == 0){
     //fprintf(stderr,"INSIDE MASK BED\n");
     reffasta = fasta_sampler_alloc_maskbedentry(refSseq,BedFile,flankingregion);
     bedfilesample = 1;
@@ -98,7 +100,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     }*/
     fprintf(stderr,"\t-> Allocated memory masking regions (-excl) within the genome from the input reference genome (-i) with a total of %d chromosomes/contigs/scaffolds with the full length %zu nt\n",reffasta->nref,reffasta->seq_l_total);
   }
-  else if(Specific_Chr == NULL && BedFile == NULL && MaskBed == 0 && CaptureVCF == 1){
+  else if(Specific_Chr == NULL && BedFile == NULL && MaskBed == 0 && CaptureVCF == 1 && linkage == 0){
     if(VariantFile){
       reffasta = fasta_sampler_alloc_vcf(refSseq,VariantFile,HeaderIndiv,flankingregion);
       vcfcapture = 1;
@@ -109,6 +111,17 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     }
     fprintf(stderr,"\t-> Allocated memory capturing regions (--capture) with variants (-vcf) within the genome from the input reference genome (-i) with %d chromosomes/contigs/scaffolds with the full length %zu nt\n",reffasta->nref,reffasta->seq_l_total);
   }
+  else if(Specific_Chr == NULL && BedFile == NULL && MaskBed == 0 && CaptureVCF == 0 && linkage == 1){
+    fprintf(stderr,"THREAD INSIDE LINKAGE\n");
+    if(VariantFile){
+      reffasta = fasta_sampler_alloc_vcf_LD(refSseq,VariantFile,HeaderIndiv,flankingregion);
+      LD = 1;
+    }
+    else{
+      fprintf(stderr,"For linkage disequilibrium simulation, please provide -vcf file or consider simulating regions of interest (-incl) or mask regions (-excl) using bed file\n");
+      exit(1);
+    }
+  }
   else{
     fprintf(stderr,"\t-> error allocation memory for %d chromosomes/contigs/scaffolds from input reference genome - please check with helppage in terms of parameters and the simulation mode\n",reffasta->nref);
     fprintf(stderr,"\t\t conflicts might arise depending on chosen -i, -chr, -bed, -vcf & -capture\n");
@@ -117,7 +130,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   
   fprintf(stderr, "\t-> Done reading in the reference file, walltime used =  %.2f sec\n", (float)(time(NULL) - t_ref));
   //exit(1);
-  if(VariantFile && CaptureVCF == 0){
+  if(VariantFile && CaptureVCF == 0 && linkage == 0){
     add_variants(reffasta,VariantFile,HeaderIndiv);
     if(FileDump!=NULL){
       char dumpfile1[512];
@@ -470,6 +483,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
 	      pthread_join(mythreads[i],NULL);
       }
     }
+    
     if(bgzf_fp[0]!=NULL){
       bgzf_close(bgzf_fp[0]);
     }
@@ -481,12 +495,12 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     }
     free(bgzf_fp); //free the calloc
      
-     if(SAMHeader)
-      sam_hdr_destroy(SAMHeader);
-     if(SAMout)
-       sam_close(SAMout);
-     if (p.pool)
-       hts_tpool_destroy(p.pool);
+    if(SAMHeader)
+    sam_hdr_destroy(SAMHeader);
+    if(SAMout)
+      sam_close(SAMout);
+    if (p.pool)
+      hts_tpool_destroy(p.pool);
     
     fasta_sampler_destroy(reffasta);
 

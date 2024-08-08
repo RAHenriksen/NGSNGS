@@ -54,6 +54,7 @@ typedef struct{
   size_t referencevariations; //adding a fixed number of variations to the reference genome
   int MaskBed;
   int CaptureVCF;              //filename for bcf
+  int linkage;
 }argStruct;
 argStruct *getpars(int argc,char ** argv);
 void argStruct_destroy(argStruct *mypars);

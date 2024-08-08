@@ -430,19 +430,24 @@ BedEntry* vcftobedentries(const char* bcffilename, int id,size_t flanking, int* 
     size_t tmp_end = (size_t) brec->pos + (size_t) flanking; //size_t is unsigned integer thus non-negative values
 
     // i dont add the flanking to the start yet, i need to store the position of the variant first to alter the sequence
-    bedentries[variant_number].start = brec->pos;
-
+    int n = 1;
+    bedentries[variant_number].overlappositions = (int*) malloc(n * sizeof(int));;
     if(tmp_start < 1){
+      bedentries[variant_number].start = 1;
       bedentries[variant_number].end = brec->pos + flanking;
     }
     else if(tmp_end > chr_end){
+      bedentries[variant_number].start = brec->pos - flanking;
       bedentries[variant_number].end = chr_end;
     }
     else{
+      bedentries[variant_number].start = brec->pos - flanking;
       bedentries[variant_number].end = brec->pos + flanking;
     }
-
-
+    //bedentries[variant_number].overlappositions[0] = brec->pos;
+    bedentries[variant_number].overlappositions[0] = (int)(brec->pos +1);
+    /*fprintf(stderr,"flanking start %d \t flanking end %d \t variation %d \n",bedentries[variant_number].start,bedentries[variant_number].end,bedentries[variant_number].overlappositions[0]);
+    exit(1);*/
     //fprintf(stderr,"postition %d \t allele 1 is %s \t allele 2 is %s \n",brec->pos+1,brec->d.allele[bcf_gt_allele(mygt[0])],brec->d.allele[bcf_gt_allele(mygt[1])]);
 
     bedentries[variant_number].variants = new char *[inferred_ploidy];
@@ -474,131 +479,98 @@ BedEntry* vcftobedentries(const char* bcffilename, int id,size_t flanking, int* 
   return bedentries;
 }
 
-int VCFtoBED(const char* bcffilename, int id,int range,BedEntry** bedentries, int* entryCount){
-
-  //create the bed entry struct
-  int region_capacity = INITIAL_BED_CAPACITY;
-  *bedentries = (BedEntry*) malloc(region_capacity * sizeof(BedEntry));  // Cast to BedEntry*
-
-  //open the vcf file and store the header information
-  htsFile *bcf = bcf_open(bcffilename, "r");
-
-  if (!bcf) {
-    fprintf(stderr, "Error: Unable to open BCF file: %s\n", bcffilename);
-    free(*bedentries);
-    exit(1);
-  }
-
-  bcf_hdr_t *bcf_head = bcf_hdr_read(bcf);
-  if (!bcf_head) {
-    fprintf(stderr, "Error: Unable to read BCF header\n");
-    bcf_close(bcf);
-    free(*bedentries);
-    exit(1);
-  }
-
-  // initialize vcf information
-  bcf1_t *brec = bcf_init();
-  if (!brec) {
-    fprintf(stderr, "Error: Unable to initialize BCF record\n");
-    bcf_hdr_destroy(bcf_head);
-    bcf_close(bcf);
-    free(*bedentries);
-    exit(1);
-  }
-
-  int nsamples = bcf_hdr_nsamples(bcf_head);
-  int32_t ngt_arr = 0;     
-  int32_t *gt_arr = NULL;
-  int ngt;
-  int inferred_ploidy =5;//assume max ploidy is five, this will be adjusted when parsing data
-  int32_t nodatagt[2]={bcf_gt_unphased(0),bcf_gt_unphased(1)};
-  int32_t *mygt=NULL;
-  int whichsample = id; //index of individual
-
-  if (whichsample < 0 || whichsample >= nsamples) {
-    fprintf(stderr, "Error: Sample index out of range\n");
-    bcf_hdr_destroy(bcf_head);
-    bcf_destroy(brec);
-    bcf_close(bcf);
-    free(bedentries);
-    exit(1);
-  }
-
-  const char *sample_name = bcf_hdr_int2id(bcf_head, BCF_DT_SAMPLE, whichsample);
-  fprintf(stderr,"The number of individuals present in the bcf header is %d with the chosen individual being %s\n",nsamples,sample_name);
-
-  int seqnames_l;
-  const char **bcf_chrom_names = bcf_hdr_seqnames(bcf_head,&seqnames_l);
-  bcf_idpair_t *chr_info = bcf_head->id[BCF_DT_CTG];
-
-  int variant_number = 0;
-  // extract the bcf file information to create the bedstruct
-  while (bcf_read(bcf, bcf_head, brec) == 0) {
-    bcf_unpack((bcf1_t *)brec, BCF_UN_ALL);
-
-    ngt = bcf_get_genotypes(bcf_head, brec, &gt_arr, &ngt_arr);
-    assert(ngt>0);
-    assert((ngt %nsamples)==0);
-    inferred_ploidy = ngt/nsamples;
-      
-    mygt = gt_arr+inferred_ploidy*whichsample;
-     if(bcf_gt_is_missing(mygt[0])){
-      fprintf(stderr,"\t-> Genotype is missing for pos: %ld will skip\n",brec->pos+1);
-      continue;
+void addVariant(BedEntry* entry, const char* variant,int position) {
+    // Reallocate memory for the list of variants
+    char** newVariants = (char**) realloc(entry->variants, (entry->variantCount + 1) * sizeof(char*));
+    int* newPositions = (int*) realloc(entry->overlappositions, (entry->variantCount + 1) * sizeof(int));
+    if (!newVariants || !newPositions) {
+        fprintf(stderr, "Error reallocating memory for variants or positions\n");
+        return;
     }
-    int fai_chr = brec->rid;
-    if (fai_chr == -1) {
-      fprintf(stderr, "Error: Chromosome name not found in the reference\n");
-      return 1;
+    entry->variants = newVariants;
+    entry->overlappositions = newPositions;
+
+    // Add the new variant to the array
+    entry->variants[entry->variantCount] = strdup(variant);
+    if (!entry->variants[entry->variantCount]) {
+        fprintf(stderr, "Error allocating memory for variant string\n");
+        return;
+    }
+    entry->overlappositions[entry->variantCount] = position; // Store the position
+
+    // Update the variant count
+    entry->variantCount++;
+}
+
+BedEntry* VCFLinkageDisequilibrium(BedEntry* entries, int entryCount, int* mergedCount,int ploidy,size_t flanking) {
+    fprintf(stderr,"INSIDE MERGE VCF\n");
+    if (entryCount == 0) {
+        *mergedCount = 0;
+        return NULL;
     }
 
-    // create the coordinate information in our internal bed struct from which we sample data
-    variant_number++;
-    int chr_end = chr_info[fai_chr].val->info[0];
-      
-    if (variant_number >= region_capacity) {
-      region_capacity *= 2;
-      BedEntry* temp = (BedEntry*) realloc(*bedentries, region_capacity * sizeof(BedEntry));
+    BedEntry* mergedEntries = (BedEntry*) malloc(entryCount * sizeof(BedEntry));
+    if (!mergedEntries) {
+        fprintf(stderr,"Error allocating memory for merged entries");
+        return NULL;
+    }
 
-      if (!temp) {
-        fprintf(stderr,"Error reallocating memory for bed entries\n");
-        free(*bedentries);
-        bcf_hdr_destroy(bcf_head);
-        bcf_destroy(brec);
-        bcf_close(bcf);
-        exit(1);
+    /*for(int i = 0; i < entryCount; i++) {
+      for(int j = 0; j < ploidy; j++) {
+        fprintf(stderr,"entry %d\t ploidy %d\t%s\t%d\t%d\t%s\n",i,j,entries[i].chromosome,entries[i].start,entries[i].end,entries[i].variants[j]);
       }
-      *bedentries = temp;
+    }
+    fprintf(stderr,"BEFORE MERGE\n");
+    */
+
+    // Initialize the first entry
+    int j = 0;
+    mergedEntries[j] = entries[0];
+    mergedEntries[j].variantCount = 0;
+    mergedEntries[j].variants = NULL;
+    mergedEntries[j].overlappositions = NULL;
+
+    // Add initial variants
+    for (int k = 0; k < ploidy; k++) {
+        addVariant(&mergedEntries[j], entries[0].variants[k],entries[0].start+flanking);
     }
 
-    //sscanf(line, "%s %d %d", bedentries[*entryCount].chromosome, &bedentries[*entryCount].start, &bedentries[*entryCount].end);
-      
-    strncpy((*bedentries)[variant_number-1].chromosome,bcf_hdr_id2name(bcf_head, brec->rid),MAX_CHROM_NAME_LEN - 1);
-    (*bedentries)[variant_number-1].chromosome[MAX_CHROM_NAME_LEN - 1] = '\0'; //null termination for chromosome name
+    for (int i = 1; i < entryCount; i++) {
+      if (strcmp(mergedEntries[j].chromosome, entries[i].chromosome) == 0 && mergedEntries[j].end >= entries[i].start) {
+        // There is an overlap, so merge the regions
+        if (entries[i].end > mergedEntries[j].end) {
+          mergedEntries[j].end = entries[i].end;
+        }
+        // Add new variants
+        for (int k = 0; k < ploidy; k++) {
+          addVariant(&mergedEntries[j], entries[i].variants[k],entries[i].start+flanking);
+        }
+      }
+      else {
+        // No overlap, move to the next entry
+        j++;
+        mergedEntries[j] = entries[i];
+        mergedEntries[j].variantCount = 0;
+        mergedEntries[j].variants = NULL;
+        mergedEntries[j].overlappositions = NULL;
 
-    if((brec->pos - range) < 1){
-      (*bedentries)[variant_number-1].start = 1;
-      (*bedentries)[variant_number-1].end = brec->pos + range;
+        // Add variants for new entry
+        for (int k = 0; k < ploidy; k++) {
+          addVariant(&mergedEntries[j], entries[i].variants[k], entries[i].start+flanking);
+        }
+      }
     }
-    else if((brec->pos + range) > chr_end){
-      (*bedentries)[variant_number-1].start = brec->pos - range;
-      (*bedentries)[variant_number-1].end = chr_end;
-    }
-    else{
-      (*bedentries)[variant_number-1].start = brec->pos - range;
-      (*bedentries)[variant_number-1].end = brec->pos + range;
-    }
-  }
-  fprintf(stderr,"The inferred ploidy being %d\n",inferred_ploidy);
+    
+    fprintf(stderr,"AFTER MERGE\n");
 
-  *entryCount = variant_number;
-
-  bcf_hdr_destroy(bcf_head);
-  bcf_destroy(brec);
-  bcf_close(bcf);
-
-  return 0;
+    /*for (int i = 0; i < j + 1; i++) {
+      for (int k = 0; k < mergedEntries[i].variantCount; k++) {
+        fprintf(stderr,"entry %d\t%s\t%d\t%d\t%s\t%d\n", i, mergedEntries[i].chromosome, mergedEntries[i].start, mergedEntries[i].end,mergedEntries[i].variants[k],mergedEntries[i].overlappositions[k]);
+      }
+      fprintf(stderr,"\n---------\n");
+    }*/
+    *mergedCount = j + 1;
+    return mergedEntries;
 }
 
 #ifdef __WITH_MAIN__

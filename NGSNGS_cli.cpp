@@ -40,6 +40,8 @@ argStruct *getpars(int argc,char ** argv){
   mypars->flankingregion = 30;
   mypars->MaskBed = 0;
   mypars->CaptureVCF = 0;
+  mypars->linkage = 0;
+
   // Sequence alteration models
   // 1) nucleotide quality score and sequencing errors,  
   mypars->QualProfile1 = NULL;
@@ -260,6 +262,10 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-cap",*argv)==0 || strcasecmp("--capture",*argv)==0){
       mypars->CaptureVCF = 1;
+    }
+    else if(strcasecmp("-linkage",*argv)==0 || strcasecmp("--linkagedisequilibrium",*argv)==0){
+      mypars->linkage = 1;
+      fprintf(stderr,"CLI - PRINT LINKAGE\n");
     }
     else{
       fprintf(stderr,"Unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
