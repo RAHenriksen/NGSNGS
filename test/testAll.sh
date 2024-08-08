@@ -432,7 +432,12 @@ echo "---------------------------------------------------------------------"
 ${PRG} -i ${VCFIN} -r 1000 -s 1 -l 100 -seq SE -vcf ${VCFFILE} -id 0 -f fq -qs 40 -ne -fl 200 --capture -o DiploidCapture
 handle_error
 
-
+echo " "
+echo "------------------------------------------------------------------------------------"
+echo "5) Testing single-end linkage disequilibrium simulations of variations from vcf file"
+echo "------------------------------------------------------------------------------------"
+${PRG} -i ${VCFIN} -r 1000 -s 1 -l 100 -seq SE -vcf ${VCFFILE} -t 1 -id 2 -f fa -fl 200 -linkage -o DiploidLinkage
+handle_error
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "--------------------------------------------------- MD5SUM ----------------------------------------------------"
