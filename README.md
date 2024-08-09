@@ -70,6 +70,7 @@ The following features has been added since its publication in January 2023. See
 * Simulate reads solely for regions of interest across the genome (-incl): the coordinates from which the reads are sampled needs to be in a bed file structure. With the possibility of adding a number of nucleotides in both the start and end of the region by providing the flanking option -fl. This can be used for CAPTURE sequencing simulation
 * Simulate reads by masking regions across the genome (-excl): the coordinates for the regions to be excluded should be in a bed file structure.
 * Added capture (-cap|--capture) simulations of regions solely containing variants provided by the vcf or bcf file (-vcf|-bcf)
+* Added simulation of variants in LD (-linkage), by merging those regions in vcf which overlaps with each other after adding number of flanking (-fl) nucleotide to the variant position
 * Added an amplicon simulation mode: simulate sequencing errors, mutations or deamination on your empirical data, while allowing for file conversion, see [NGSNGS - amplicon alteration](#AMPLICON)
 ## GENERAL
 Next Generation Simulator for Next Generator Sequencing Data version 0.9.2.1 

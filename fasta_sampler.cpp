@@ -392,11 +392,22 @@ fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilenam
 
   BedEntries = vcftobedentries(bcffilename,id,flanking, &BedEntryCount,&ploidy);
   //fprintf(stderr,"read bed entries\n");
-
   //merge the coordinates
   int mergedCount = 0;
   fs->BedReferenceEntries = VCFLinkageDisequilibrium(BedEntries,BedEntryCount, &fs->BedReferenceCount,ploidy,flanking);
   
+  // Free memory created from the vcf file
+  //fprintf(stderr,"ploidy %d BedEntryCount \t %d\n",BedEntryCount,BedEntries[0].ploidy);
+  for(int i = 0; i<BedEntryCount;i++){
+    for(int j = 0; j < BedEntries[i].ploidy; j++){
+      free(BedEntries[i].variants[j]);
+    }
+    //std::cout << *BedEntries[i].variants[0] << std::endl;
+    free(BedEntries[i].overlappositions);
+    free(BedEntries[i].variants);
+  }
+  free(BedEntries);
+
   fs->nref = fs->BedReferenceCount*ploidy; 
   //fprintf(stderr,"total entries %d\n",fs->nref);
   fs->seqs = new char* [fs->nref];
@@ -406,36 +417,56 @@ fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilenam
 
   int nref_entry=0;
 
-  fprintf(stderr,"before fai_fetch loop\n");
+  //fprintf(stderr,"before fai_fetch loop\n");
   for(int i = 0; i < fs->BedReferenceCount; i++) {
-    fprintf(stderr,"ref %d \t variant count %d \n",i,fs->BedReferenceEntries[i].variantCount);
+    //fprintf(stderr,"ref %d \t variant count %d \n",i,fs->BedReferenceEntries[i].variantCount);
     for(int j = 0; j < ploidy; j++) {
+
+      
       int length = snprintf(NULL, 0, "%s:%d-%d", fs->BedReferenceEntries[i].chromosome,fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
       fs->seqs_names[nref_entry] = (char*) malloc((length + 1) * sizeof(char));
+      if (fs->seqs_names[nref_entry] == NULL) {
+        fprintf(stderr, "Error allocating memory for seqs_names\n");
+        exit(1);
+      }
+      memset(fs->seqs_names[nref_entry], 0, (length + 1) * sizeof(char));
       //sprintf(fs->seqs_names[nref_entry], "%s:%d-%d", fs->BedReferenceEntries[i].chromosome, tmp_start, fs->BedReferenceEntries[i].end);
       char chr_reg_tmp[128];
       snprintf(chr_reg_tmp,sizeof(chr_reg_tmp),"%s:%d-%d", fs->BedReferenceEntries[i].chromosome,fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
 
-
-      fprintf(stderr,"fs->seqs_names[i] %d \t %s\n",i,chr_reg_tmp);
-
-      fs->char2idx[fs->seqs_names[nref_entry]] = nref_entry;
-      
       fs->seqs[nref_entry] = fai_fetch(fs->fai,chr_reg_tmp,fs->seqs_l+nref_entry);
+      
+      if (fs->seqs[nref_entry] == NULL) {
+        fprintf(stderr, "Error fetching sequence from fai\n");
+        exit(1);
+      }
+      
+      //fprintf(stderr,"fs->seqs_names[i] %d \t %s\n",i,chr_reg_tmp);
+      
       for (int v=0;v<(fs->BedReferenceEntries[i].variantCount/ploidy);v++){
         // adding the variations stored within each merged bed entry
         int var_tmp_idx = v*ploidy+j;
         int var_pos_tmp = fs->BedReferenceEntries[i].overlappositions[var_tmp_idx] - fs->BedReferenceEntries[i].start+1;
         
+        if (var_pos_tmp >= 0 && var_pos_tmp < fs->seqs_l[nref_entry]) {
+          fs->seqs[nref_entry][var_pos_tmp] = *fs->BedReferenceEntries[i].variants[var_tmp_idx];
+        }
+        else {
+          fprintf(stderr, "Error: var_pos_tmp out of bounds.\n");
+        }
+
         fs->seqs[nref_entry][var_pos_tmp] = *fs->BedReferenceEntries[i].variants[var_tmp_idx];
       }
       fs->seqs[nref_entry][fs->BedReferenceEntries[i].overlappositions[0]-1] = *fs->BedReferenceEntries[i].variants[j];
-      snprintf(fs->seqs_names[nref_entry], length + 1, "%sallele%d:%d-%d", fs->BedReferenceEntries[i].chromosome, j+1, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
-   
+      
+      int new_length = snprintf(NULL, 0, "%sallele%d:%d-%d", fs->BedReferenceEntries[i].chromosome, j+1, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
+      fs->seqs_names[nref_entry] = (char*) realloc(fs->seqs_names[nref_entry], (new_length + 1) * sizeof(char));
+      fs->char2idx[fs->seqs_names[nref_entry]] = nref_entry;
+
+      snprintf(fs->seqs_names[nref_entry], new_length + 1, "%sallele%d:%d-%d", fs->BedReferenceEntries[i].chromosome, j+1, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);   
       nref_entry++;
     }
   }
-  fprintf(stderr,"done with sequence var\n");
   
   for(int i=0;i<fs->nref;i++){
     fs->realnameidx[i] = i;
@@ -552,12 +583,18 @@ void fasta_sampler_destroy_captureLD(fasta_sampler *fs){
     }
   }
   else{
-    for(int i = 0; i < (fs->nref/fs->BedReferenceEntries[0].ploidy); i++){
-      for(int j = 0; j < fs->BedReferenceEntries[i].ploidy; j++){
-        free(fs->BedReferenceEntries[i].variants[j]);
+    //fprintf(stderr,"entry count %d \t nref %d \t ploidy %d\n",fs->BedReferenceCount,fs->nref,fs->BedReferenceEntries[0].ploidy);
+    for(int i = 0; i < fs->BedReferenceCount; i++){
+      if (fs->BedReferenceEntries[i].variants){
+        for(int j = 0; j < fs->BedReferenceEntries[i].variantCount; j++){ //variantCount
+          free(fs->BedReferenceEntries[i].variants[j]);
+        }
+        free(fs->BedReferenceEntries[i].variants);
       }
-      free(fs->BedReferenceEntries[i].overlappositions);
-      free(fs->BedReferenceEntries[i].variants);
+      if (fs->BedReferenceEntries[i].overlappositions) {
+        free(fs->BedReferenceEntries[i].overlappositions); // Free the positions array
+      }
+      //fprintf(stderr,"TEST %d \n",fs->BedReferenceEntries[i].variantCount);
     }
   }
 

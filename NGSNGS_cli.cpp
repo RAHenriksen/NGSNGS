@@ -265,7 +265,6 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-linkage",*argv)==0 || strcasecmp("--linkagedisequilibrium",*argv)==0){
       mypars->linkage = 1;
-      fprintf(stderr,"CLI - PRINT LINKAGE\n");
     }
     else{
       fprintf(stderr,"Unrecognized input option %s, see NGSNGS help page\n\n",*(argv));
@@ -284,6 +283,11 @@ argStruct *getpars(int argc,char ** argv){
       //putting an upper limit on the number of compression threads
       mypars->CompressThreads = 12;
     }
+  }
+
+  if(mypars->linkage == 1 && mypars->CaptureVCF == 1){
+    fprintf(stderr,"Conflicting simulations for genome-of-interest with variants, please provide either -linkage or -capture");
+    exit(1);  
   }
 
   // Ensure the required argument are parsed after all arguments have been provided

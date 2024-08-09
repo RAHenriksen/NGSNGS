@@ -529,7 +529,6 @@ BedEntry* vcftobedentries(const char* bcffilename, int id,size_t flanking, int* 
     variant_number++;
   }
 
-  fprintf(stderr,"WHAT IS THE VARIANT NUMBR %d\n",variant_number);
   *ploidy = inferred_ploidy;
   *entryCount = variant_number;
 
@@ -565,7 +564,6 @@ void addVariant(BedEntry* entry, const char* variant,int position) {
 }
 
 BedEntry* VCFLinkageDisequilibrium(BedEntry* entries, int entryCount, int* mergedCount,int ploidy,size_t flanking) {
-    fprintf(stderr,"INSIDE MERGE VCF\n");
     if (entryCount == 0) {
         *mergedCount = 0;
         return NULL;

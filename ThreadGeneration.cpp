@@ -112,7 +112,6 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     fprintf(stderr,"\t-> Allocated memory capturing regions (--capture) with variants (-vcf) within the genome from the input reference genome (-i) with %d chromosomes/contigs/scaffolds with the full length %zu nt\n",reffasta->nref,reffasta->seq_l_total);
   }
   else if(Specific_Chr == NULL && BedFile == NULL && MaskBed == 0 && CaptureVCF == 0 && linkage == 1){
-    fprintf(stderr,"THREAD INSIDE LINKAGE\n");
     if(VariantFile){
       reffasta = fasta_sampler_alloc_vcf_LD(refSseq,VariantFile,HeaderIndiv,flankingregion);
       LD = 1;
@@ -503,11 +502,9 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
       hts_tpool_destroy(p.pool);
     
     if(CaptureVCF == 0 && linkage == 0){
-      fprintf(stderr,"Non capture clean\n");
       fasta_sampler_destroy(reffasta);
     }
     else{
-      fprintf(stderr,"capture clean\n");
       fasta_sampler_destroy_captureLD(reffasta);
     }
 
