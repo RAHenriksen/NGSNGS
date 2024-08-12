@@ -27,6 +27,7 @@ argStruct *getpars(int argc,char ** argv){
   mypars->DumpFile = NULL;
   mypars->IndelDumpFile = NULL;
   mypars->HeaderIndiv=-1;
+  mypars->NameIndiv = NULL;
   mypars->Align=1;
 
   // Thread generation and sampling specific information
@@ -226,6 +227,9 @@ argStruct *getpars(int argc,char ** argv){
     else if(strcasecmp("-id",*argv)==0 || strcasecmp("--indiv",*argv)==0){
       mypars->HeaderIndiv = atoi(*(++argv));
     }
+    else if(strcasecmp("-name",*argv)==0 || strcasecmp("--headername",*argv)==0){
+      mypars->NameIndiv = strdup(*(++argv));;
+    }
     else if(strcasecmp("-rng",*argv)==0 || strcasecmp("--rand",*argv)==0){
       mypars->rng_type = atoi(*(++argv));
     }
@@ -341,6 +345,12 @@ argStruct *getpars(int argc,char ** argv){
     //if(mypars->mutationrate<0.0 || mypars->referencevariations<0){ErrMsg(15.1);}
   }
 
+  //vcf
+  if(mypars->HeaderIndiv>=0 && mypars->NameIndiv!=NULL){
+    fprintf(stderr,"\n%s\nWarning:\n",NGSNGS_msg);
+    ErrMsg(16.0);
+  }
+  
   return mypars;
 }
 

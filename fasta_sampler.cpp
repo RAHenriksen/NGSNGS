@@ -307,7 +307,7 @@ fasta_sampler *fasta_sampler_alloc_maskbedentry(const char *fa,const char *bedfi
   return fs;
 }
 
-fasta_sampler *fasta_sampler_alloc_vcf(const char *fa, const char *bcffilename,int id,size_t flanking){
+fasta_sampler *fasta_sampler_alloc_vcf(const char *fa, const char *bcffilename,int id,const char* Name,size_t flanking){
   //fprintf(stderr,"fasta_sampler.cpp \t INSIDE FASTA SAMPLE ALLOC VCF\n");
   fasta_sampler *fs = new fasta_sampler;
   fs->ws = NULL;
@@ -317,7 +317,7 @@ fasta_sampler *fasta_sampler_alloc_vcf(const char *fa, const char *bcffilename,i
   fs->BedReferenceCount = 0;
   int ploidy = 5;
   //read in the bed entries
-  fs->BedReferenceEntries = vcftobedentries(bcffilename,id,flanking, &fs->BedReferenceCount,&ploidy);
+  fs->BedReferenceEntries = vcftobedentries(bcffilename,id,Name,flanking, &fs->BedReferenceCount,&ploidy);
   
   //fprintf(stderr,"fasta_sampler.cpp \t Done with vcftobedentries bed entries %d \t %d\n",fs->BedReferenceCount,ploidy);
 
@@ -375,7 +375,7 @@ fasta_sampler *fasta_sampler_alloc_vcf(const char *fa, const char *bcffilename,i
   return fs;
 }
 
-fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilename,int id,size_t flanking){
+fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilename,int id,const char* Name,size_t flanking){
   //fprintf(stderr,"fasta_sampler.cpp \t INSIDE FASTA SAMPLE ALLOC VCF\n");
   fasta_sampler *fs = new fasta_sampler;
   fs->ws = NULL;
@@ -390,7 +390,7 @@ fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilenam
   int BedEntryCount = 0;
   BedEntry* BedEntries = NULL;
 
-  BedEntries = vcftobedentries(bcffilename,id,flanking, &BedEntryCount,&ploidy);
+  BedEntries = vcftobedentries(bcffilename,id,Name,flanking,&BedEntryCount,&ploidy);
   //fprintf(stderr,"read bed entries\n");
   //merge the coordinates
   int mergedCount = 0;

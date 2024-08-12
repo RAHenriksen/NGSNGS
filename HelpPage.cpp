@@ -61,6 +61,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t-bcf | -vcf: \t\t\t Variant Calling Format (.vcf) or binary format (.bcf)\n");
   fprintf(fp,"\t-id  | --indiv: \t\t Integer value (0 - index) for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).\n");
   fprintf(fp,"\t\t e.g -id 0\t\t First individual in the provided vcf file.\n");
+  fprintf(fp,"\t-name  | --headername: \t\t The name of an individual defined in bcf header from -vcf/-bcf input file, conflicts with -id.\n");
   fprintf(fp,"\t-DumpVCF:	\t\t The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided vcf file (-vcf|-bcf), for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.\n");
   fprintf(fp,"\t-cap | --capture: \t\t\t Simulates sequence reads solely from regions with variants provided by -vcf input, each variant is treated as an indepdent region\n");
   fprintf(fp,"\t-linkage | --linkagedisequilibrium: \t\t\t Simulates sequence reads from regions with variants provided by -vcf in close proximity as being in LD, by simulating variants together\n");
@@ -146,6 +147,7 @@ void ErrMsg(double messageno){
   else if(messageno == 14.0){fprintf(stderr,"\nPoly tail error: Missing adapter sequence, provide adapter sequence (-a1,-a2) as well\n");}
   else if(messageno == 15.0){fprintf(stderr,"\nReference variation error: provide either a mutation rate (-mr) or number of variations to include to the reference genome\n");}
   else if(messageno == 15.1){fprintf(stderr,"\nCannot parse the provided mutation rate (-mr) or number of variations to include (-v) please provide a non-negative \n");}
+  else if(messageno == 16.0){fprintf(stderr,"\nConflicting parameters: cannot parse both individual index (-id) and name (-name) of the individual in vcf header to extract GT\n");}
   else {fprintf(stderr,"\nError with input parameters, see helppage (-h)");}
   fprintf(stderr,"see helppage (-h)\n");
   exit(1);

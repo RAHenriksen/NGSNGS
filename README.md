@@ -71,6 +71,7 @@ The following features has been added since its publication in January 2023. See
 * Simulate reads by masking regions across the genome (-excl): the coordinates for the regions to be excluded should be in a bed file structure.
 * Added capture (-cap|--capture) simulations of regions solely containing variants provided by the vcf or bcf file (-vcf|-bcf)
 * Added simulation of variants in LD (-linkage), by merging those regions in vcf which overlaps with each other after adding number of flanking (-fl) nucleotide to the variant position
+* Added -name | --headername option to provide an individuals name when simulating variants from vcf files, with the name defined in vcf header
 * Added an amplicon simulation mode: simulate sequencing errors, mutations or deamination on your empirical data, while allowing for file conversion, see [NGSNGS - amplicon alteration](#AMPLICON)
 ## GENERAL
 Next Generation Simulator for Next Generator Sequencing Data version 0.9.2.1 
@@ -157,9 +158,12 @@ Genetic Variations:
 -bcf | -vcf: 			 Variant Calling Format (.vcf) or binary format (.bcf)
 -id  | --indiv: 		 Integer value (0 - index) for the number of a specific individual defined in bcf header from -vcf/-bcf input file, default = -1 (no individual selected).
 	 e.g -id 0	 	First individual in the provided vcf file. 
+-name | --headername: 	The name of an individual defined in bcf header from -vcf/-bcf input file, conflicts with -id.
+
 -DumpVCF:			 The prefix of an internally generated fasta file, containing the sequences representing the haplotypes with the variations from the provided
 				 vcf file, for diploid individuals the fasta file contains two copies of the reference genome with the each allelic genotype.
 -cap | --capture	Simulates sequence reads solely from regions with variants provided by -vcf input, each variant is treated as an indepdent region
+-linkage | --linkagedisequilibrium	Simulates sequence reads from regions with variants provided by -vcf input, where varaiants in close proximity is treated as being in LD and simulated together
 
 Stochastic Variations:
 

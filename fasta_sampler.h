@@ -53,8 +53,8 @@ fasta_sampler *fasta_sampler_alloc_full(const char *fa);
 fasta_sampler *fasta_sampler_alloc_subset(const char *fa,const char *SpecificChr);
 fasta_sampler *fasta_sampler_alloc_bedentry(const char *fa,const char *bedfilename,size_t flanking);
 fasta_sampler *fasta_sampler_alloc_maskbedentry(const char *fa,const char *bedfilename,size_t flanking);
-fasta_sampler *fasta_sampler_alloc_vcf(const char *fa, const char *bcffilename,int id,size_t flanking);
-fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilename,int id,size_t flanking);
+fasta_sampler *fasta_sampler_alloc_vcf(const char *fa, const char *bcffilename,int id,const char* Name,size_t flanking);
+fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilename,int id,const char* Name,size_t flanking);
 
 void fasta_sampler_destroy(fasta_sampler *fs);
 void fasta_sampler_destroy_captureLD(fasta_sampler *fs);

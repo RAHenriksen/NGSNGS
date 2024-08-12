@@ -33,7 +33,7 @@ BedEntry* checkbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCoun
 
 BedEntry* maskbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCount,int* ReferenceCount);
 
-BedEntry* vcftobedentries(const char* bcffilename, int id,size_t flanking, int* entryCount,int* ploidy);
+BedEntry* vcftobedentries(const char* bcffilename, int id,const char* Name,size_t flanking, int* entryCount,int* ploidy);
 
 void addVariant(BedEntry* entry, const char* variant,int position);
 

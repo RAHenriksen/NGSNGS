@@ -53,7 +53,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int FixedQual,int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
                         int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
-                        char CommandArray[LENS],const char* version,int HeaderIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile,
+                        char CommandArray[LENS],const char* version,int HeaderIndiv,const char* NameIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile,
                         int Duplicates,int Lowerlimit,double mutationrate, size_t referencevariations, int generations,int simmode,
                         size_t flankingregion, const char* BedFile, int MaskBed,int CaptureVCF,int linkage){
                           
@@ -102,7 +102,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   }
   else if(Specific_Chr == NULL && BedFile == NULL && MaskBed == 0 && CaptureVCF == 1 && linkage == 0){
     if(VariantFile){
-      reffasta = fasta_sampler_alloc_vcf(refSseq,VariantFile,HeaderIndiv,flankingregion);
+      reffasta = fasta_sampler_alloc_vcf(refSseq,VariantFile,HeaderIndiv,NameIndiv,flankingregion);
       vcfcapture = 1;
     }
     else{
@@ -113,7 +113,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   }
   else if(Specific_Chr == NULL && BedFile == NULL && MaskBed == 0 && CaptureVCF == 0 && linkage == 1){
     if(VariantFile){
-      reffasta = fasta_sampler_alloc_vcf_LD(refSseq,VariantFile,HeaderIndiv,flankingregion);
+      reffasta = fasta_sampler_alloc_vcf_LD(refSseq,VariantFile,HeaderIndiv,NameIndiv,flankingregion);
       LD = 1;
     }
     else{
@@ -130,7 +130,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   fprintf(stderr, "\t-> Done reading in the reference file, walltime used =  %.2f sec\n", (float)(time(NULL) - t_ref));
   //exit(1);
   if(VariantFile && CaptureVCF == 0 && linkage == 0){
-    add_variants(reffasta,VariantFile,HeaderIndiv);
+    add_variants(reffasta,VariantFile,HeaderIndiv,NameIndiv);
     if(FileDump!=NULL){
       char dumpfile1[512];
       const char* dumpfile1prefix = FileDump;

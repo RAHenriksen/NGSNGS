@@ -321,7 +321,7 @@ BedEntry* maskbedentriesfasta(fasta_sampler *fs,BedEntry* entries,int entryCount
   return ReferenceEntries;
 }
 
-BedEntry* vcftobedentries(const char* bcffilename, int id,size_t flanking, int* entryCount,int* ploidy){
+BedEntry* vcftobedentries(const char* bcffilename, int id,const char* Name,size_t flanking, int* entryCount,int* ploidy){
   //fprintf(stderr,"NGSNGS_misc.cpp \t INSIDE VCF BED ENTRY\n");
   int region_capacity = INITIAL_BED_CAPACITY;
   BedEntry* bedentries = (BedEntry*) malloc(region_capacity * sizeof(BedEntry));
@@ -366,9 +366,27 @@ BedEntry* vcftobedentries(const char* bcffilename, int id,size_t flanking, int* 
   int inferred_ploidy =5;//assume max ploidy is five, this will be adjusted when parsing data
   //int32_t nodatagt[2]={bcf_gt_unphased(0),bcf_gt_unphased(1)};
   int32_t *mygt=NULL;
-  int whichsample = id; //index of individual
   
-  if (whichsample < 0 || whichsample >= nsamples) {
+  int whichsample = -1;
+  if(id < 0){
+    for (int i = 0; i < nsamples; i++){
+      const char *sample_name = bcf_hdr_int2id(bcf_head, BCF_DT_SAMPLE, i);
+      //fprintf(stderr,"SAMPLE NAME IS %s \n",sample_name);
+      //fprintf(stderr,"PROVIDE INPUT IS %s \n",Name);
+      if(strcasecmp(sample_name,Name)==0){
+        //fprintf(stderr,"provided index is %d with name %s and option name %s\n",i,sample_name,Name);
+        whichsample = (int)i;
+        break;
+      }
+    }
+  }
+  else{
+    whichsample = (int)id; //index of individual
+  }
+  
+  //fprintf(stderr,"whichsample is %d\n",whichsample);
+  
+  if ((int)whichsample < 0 ) {
     fprintf(stderr, "Error: Sample index out of range\n");
     bcf_hdr_destroy(bcf_head);
     bcf_destroy(brec);
@@ -376,8 +394,6 @@ BedEntry* vcftobedentries(const char* bcffilename, int id,size_t flanking, int* 
     free(bedentries);
     exit(1);
   }
-
-  const char *sample_name = bcf_hdr_int2id(bcf_head, BCF_DT_SAMPLE, whichsample);
   //fprintf(stderr,"NGSNGS_misc.cpp \t The number of individuals present in the bcf header is %d with the chosen individual being %s\n",nsamples,sample_name);
 
   int seqnames_l;
@@ -423,25 +439,6 @@ BedEntry* vcftobedentries(const char* bcffilename, int id,size_t flanking, int* 
         bcf_close(bcf);
         exit(1);
       }
-      /*
-      more extensive mem clean up failure? think about this if its necessary
-      if (!temp) {
-                fprintf(stderr, "Error reallocating memory for bed entries\n");
-                for (int i = 0; i < variant_number; ++i) {
-                    free(bedentries[i].overlappositions);
-                    for (int j = 0; j < bedentries[i].variantCount; ++j) {
-                        free(bedentries[i].variants[j]);
-                    }
-                    free(bedentries[i].variants);
-                }
-                free(bedentries);
-                bcf_hdr_destroy(bcf_head);
-                bcf_destroy(brec);
-                bcf_close(bcf);
-                exit(1);
-            }
-      */
-
       bedentries = temp;
       //free(temp);
 

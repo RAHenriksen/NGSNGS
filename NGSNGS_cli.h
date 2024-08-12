@@ -46,6 +46,7 @@ typedef struct{
   char *vcffile;              //filename for bcf
   char *CommandRun;           //actual command run in same order
   int HeaderIndiv;            //samplename from VCF/BCF file
+  char *NameIndiv;            //samplename from VCF/BCF file
   int Align;                  //Storing sequence reads with- or without alignment information in the sequence alignment map/format
   size_t KstrBuf;             //buffer size for kstring length
   char *Indel;                //adding stochastic indels

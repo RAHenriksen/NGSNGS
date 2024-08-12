@@ -1,25 +1,7 @@
 #include <map>
 #include <htslib/vcf.h>
 #include "fasta_sampler.h"
-
-typedef struct{
-  int rid;
-  int pos;
-  int *gt;
-}bcfkey;
-
-struct bcfkey_cmp
-{
-  bool operator()(bcfkey s1,bcfkey s2) const
-  {
-    if(s1.rid==s2.rid)
-      return s1.pos<s2.pos;
-    return s1.rid<s2.rid;
-  }
-};
-
-//NB notice that proper rid is NOT bcf1_t->rid but bcfkey->rid which has been shifted relative to fs
-typedef std::map<bcfkey,bcf1_t*,bcfkey_cmp> bcfmap;
+#include "add_variants.h"
 
 int verbose2000 = 0;
 int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
@@ -266,7 +248,7 @@ void add_variant(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32
 }
 
 //if minus one then ref and alt fields are used, if nonnegative then it is used as offset to which genotype to use from the GT fields
-int add_variants(fasta_sampler *fs,const char *bcffilename,int whichsample){
+int add_variants(fasta_sampler *fs,const char *bcffilename,int id,const char* Name){
   if(bcffilename==NULL)
     return 0;
   htsFile *bcf = bcf_open(bcffilename, "r");
@@ -282,65 +264,65 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int whichsample){
   int ngt;
   int inferred_ploidy =5;//assume max ploidy is five, this will be adjusted when parsing data
   int32_t nodatagt[2]={bcf_gt_unphased(0),bcf_gt_unphased(1)};
-  if(nsamples==0&&whichsample!=-1){
-    fprintf(stderr,"\t-> You have supplied -id but your vcf does not contain GT tag\n");
+
+  //int32_t nodatagt[2]={bcf_gt_unphased(0),bcf_gt_unphased(1)};
+  int32_t *mygt=NULL;
+  
+  int whichsample = -1;
+  if((int)id < 0){
+    for (int i = 0; i < nsamples; i++){
+      const char *sample_name = bcf_hdr_int2id(bcf_head, BCF_DT_SAMPLE, i);
+      //fprintf(stderr,"SAMPLE NAME IS %s \n",sample_name);
+      //fprintf(stderr,"PROVIDE INPUT IS %s \n",Name);
+      if(strcasecmp(sample_name,Name)==0){
+        //fprintf(stderr,"provided index is %d with name %s and option name %s\n",i,sample_name,Name);
+        whichsample = (int)i;
+        break;
+      }
+    }
+  }
+  else{
+    whichsample = (int)id; //index of individual
+  }
+  
+  //fprintf(stderr,"-------\nwhichsample is %d-------\n",whichsample);
+  
+  if ((int)whichsample < 0 ) {
+    fprintf(stderr, "Error: Sample index out of range\n");
+    bcf_hdr_destroy(bcf_head);
+    bcf_destroy(brec);
+    bcf_close(bcf);
     exit(1);
   }
-  if(whichsample>=nsamples){
-    fprintf(stderr,"\t-> You have supplied -id %d, but your vcf only contains: %d sample\n",whichsample,nsamples);
-    exit(1);
-  }
-  if(nsamples==1&&whichsample==-1){
-    fprintf(stderr,"\t-> Your vcf contains one sample, and you you have not supplied -id option, will base sampling on GT for first sample\n");
-    whichsample = 0;
-  }
-  if(nsamples>1&&whichsample==-1){
-    fprintf(stderr,"\t-> Your vcf contains more than one sample, and you you have not supplied -id option \n");
-    exit(1);
-  }
-  if(nsamples==0)
-    fprintf(stderr,"\t-> Your vcf does not contain genotypes. Will use ref and alt column of the vcf for sampling\n");
-  else
-    fprintf(stderr,"\t-> nsamples in vcf: %d will use GT in sample: %d (zero indexed)\n",nsamples,whichsample);
-  inferred_ploidy = 2;
+  
   bcfmap mybcfmap;
   
   while(((ret=bcf_read(bcf,bcf_head,brec)))==0){
     bcf_unpack((bcf1_t*)brec, BCF_UN_ALL);
     int fai_chr = bcf_idx_2_fasta_idx[brec->rid];
     
-    if(fai_chr==-1){
-      fprintf(stderr,"chrname: %s does not exists in fasta reference\n",bcf_hdr_id2name(bcf_head,brec->rid));
+    if (fai_chr == -1) {
+      fprintf(stderr, "Error: Chromosome name not found in the reference\n");
+      bcf_hdr_destroy(bcf_head);
+      bcf_destroy(brec);
+      bcf_close(bcf);
       exit(1);
     }
-    if(whichsample!=-1){
-      ngt = bcf_get_genotypes(bcf_head, brec, &gt_arr, &ngt_arr);
-      assert(ngt>0);
 
-      assert((ngt %nsamples)==0);
-      inferred_ploidy = ngt/nsamples;
-    }
-    #if 0
-      fprintf(stderr,"brec->pos: %d nallele: %d\n",brec->pos,brec->n_allele);
-      for(int i=0;i<brec->n_allele;i++)
-        fprintf(stderr,"nal:%d %s %zu\n",i,brec->d.allele[i],strlen(brec->d.allele[i]));
-    #endif
-    if(brec->n_allele==1){
-      fprintf(stderr,"\t-> Only Reference allele defined for pos: %ld will skip\n",brec->pos+1);
-      continue;
-    }
-    //check if parental chromosomes exists otherwise add them
-    extend_fasta_sampler(fs,fai_chr,inferred_ploidy);
-    
-    int32_t *mygt=NULL;
-    if(whichsample==-1)
-      mygt = nodatagt;
-    else
-      mygt = gt_arr+inferred_ploidy*whichsample;
+    ngt = bcf_get_genotypes(bcf_head, brec, &gt_arr, &ngt_arr);
+    assert(ngt>0);
+    assert((ngt %nsamples)==0);
+    inferred_ploidy = ngt/nsamples;
+
+    mygt = gt_arr+inferred_ploidy*whichsample;
     if(bcf_gt_is_missing(mygt[0])){
       fprintf(stderr,"\t-> Genotype is missing for pos: %ld will skip\n",brec->pos+1);
       continue;
     }
+
+    //check if parental chromosomes exists otherwise add them
+    extend_fasta_sampler(fs,fai_chr,inferred_ploidy);
+
     //figure out if its an indel
     int isindel  = 0;
     bcfkey key;
