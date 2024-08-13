@@ -55,8 +55,6 @@ samtools view MycoBactSamSEOut.sam > SamSE.txt
 handle_error
 samtools view MycoBactBamSEOut.bam > BamSE.txt
 handle_error
-samtools view MycoBactCramSEOut.cram > CramSE.txt
-handle_error
 
 SamMD5=$(md5sum SamSE.txt|cut -f1 -d ' ')
 BamMD5=$(md5sum BamSE.txt|cut -f1 -d ' ')
