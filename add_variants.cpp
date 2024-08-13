@@ -4,7 +4,7 @@
 #include "add_variants.h"
 
 int verbose2000 = 0;
-int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
+int *fabcflookup(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
   int seqnames_l;
   const char **bcf_chrom_names = bcf_hdr_seqnames(bcf_hdr,&seqnames_l);
   fprintf(stderr,"\t-> Raw number of contigs from bcf: %d\n",seqnames_l);
@@ -39,69 +39,6 @@ int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo){
   return lookup;
 }
 
-int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
-  if(ploidy ==1){
-    //ploidy is haploid, will perform updownstream sorting of the reverse positions
-    ploidymap::iterator it = fs->pldmap.find(fs_chr_idx);
-    if(it!=fs->pldmap.end()){
-      return 0;
-    }
-    int *pldmap = new int[5];
-    pldmap[0]=fs_chr_idx;
-    pldmap[1]=pldmap[2]=pldmap[3]=pldmap[4]=-1;
-    fs->pldmap[fs_chr_idx] = pldmap;
-    return 0;
-  }
-  int isThere  = 1;
-  char buf[1024];
-  for(int i=1;i<ploidy;i++){
-    snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[fs_chr_idx],i);
-    char2int::iterator it= fs->char2idx.find(buf);
-    if(it==fs->char2idx.end())
-      isThere  = 0;
-  }
-  if(isThere == 0){
-    // Will duplicate chromosomes to emulate parental chromosomes
-    int nref = fs->nref+ploidy-1;
-    char **seqs = (char**) new char*[nref];
-    char **seqs_names = (char**) new char*[nref];
-    int *seqs_l = new int[nref];
-    int *realnameidx = new int[nref];
-    int *pldmap = new int[5];
-    for(int i=0;i<fs->nref;i++){
-      seqs[i] = fs->seqs[i];
-      seqs_names[i] = fs->seqs_names[i];
-      seqs_l[i] =fs->seqs_l[i];
-      realnameidx[i] = fs->realnameidx[i];
-    }
-    delete [] fs->seqs;
-    delete [] fs->seqs_names;
-    delete [] fs->seqs_l;
-    delete [] fs->realnameidx;
-
-    fs->seqs = seqs;
-    fs->seqs_names = seqs_names;
-    fs->seqs_l = seqs_l;
-    fs->realnameidx = realnameidx;
-    ploidymap::iterator it = fs->pldmap.find(fs_chr_idx);
-    assert(it==fs->pldmap.end());
-    pldmap[0] = fs_chr_idx;
-    for(int i=1;i<ploidy;i++) {
-      snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[fs_chr_idx],i);
-      fs->seqs[fs->nref+i-1] = strdup(seqs[fs_chr_idx]);
-      fs->seqs_names[fs->nref+i-1] = strdup(buf);
-      fs->seqs_l[fs->nref+i-1] = fs->seqs_l[fs_chr_idx];
-      fs->char2idx[fs->seqs_names[fs->nref+i-1]] =fs->nref+i-1;
-      fs->realnameidx[fs->nref+i-1] = fs_chr_idx;
-      pldmap[i] = fs->nref+i-1;
-    }
-    fs->pldmap[fs_chr_idx]  = pldmap;
-    fs->nref = nref;
-    
-  }
-  return 0;
-}
-
 /*
   Assumption, input map is sorted according to chr and position.
   reset is set to one when change of chromosome is detected. This will flush remainder of chrosomes.
@@ -110,6 +47,7 @@ int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
 */
 
 void add_indels_simple(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
+  //fprintf(stderr,"simple indels \n");
   int last[ploidy];
   int last_fid = -1;
   int reset = 1;
@@ -225,7 +163,6 @@ void add_indels_simple(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int plo
 }
 
 void add_ins_complex(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
-  fprintf(stderr,"INSIDE add_variants.cpp add_indels function \n");
   int last[ploidy]; // last processed position
   int last_fid = -1;
   int reset = 1;
@@ -249,9 +186,7 @@ void add_ins_complex(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploid
     }
 
     if(reset){
-      fprintf(stderr,"INSIDE RESET\n");
       if(fsoffsets!=NULL){
-        fprintf(stderr,"INSIDE RESET IF\n");
         for(int i=0;i<ploidy;i++){
           // Update reference sequences with the modified indels
           strcat(indels[i],fs->seqs[fsoffsets[i]]+last[i]);
@@ -270,9 +205,6 @@ void add_ins_complex(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploid
       
       reset = 0;
     }
-
-    fprintf(stderr,"OUTSIDE RESET\n");
-
     bcf1_t *brec = it->second;
     bcf_unpack(brec, BCF_UN_ALL);
 
@@ -309,12 +241,12 @@ void add_ins_complex(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploid
       }
 
       if(allele_length_diff < 0){
-        fprintf(stderr,"deletion");
+        //deletion
         //is deletion then we just skip the number of bases
         last[i] = pos+abs(allele_length_diff);
       }
       else if(allele_length_diff > 0){
-        fprintf(stderr,"insertion\n");
+        //insertion
         // Replace the reference allele with the alternative allele
         if (it->first.gt[i] > 0){
           if (strlen(indels[i]) + alt_length < maxsize) {
@@ -327,7 +259,7 @@ void add_ins_complex(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploid
         }
       }
       else {
-        fprintf(stderr,"SNP SNP SNP \n");
+        //snp
         last[i] = pos + 1; // No change if the allele is the same
       }
     }
@@ -347,14 +279,10 @@ void add_ins_complex(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploid
 }
 
 //fasta sampler struct, index for chromosomenaem, position, the alleles, the genotypes and the ploidy. 
-void add_variant(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32_t *gts, int ploidy){
+void add_snp(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32_t *gts, int ploidy){
+  //fprintf(stderr,"simple snps \n");
   // Adding genotype information for chromosome,pos,ploidy
   char buf[1024];
-  #if 0
-  for(int i=0;0&&i<ploidy;i++){
-    fprintf(stderr,"%d) gt: %d and GT alleles are  '%s' (first one should be reference?)\n",i,bcf_gt_allele(gts[i]),alleles[i]);
-  }
-  #endif
 
   //now lets add snp
   for(int i=0;i<ploidy;i++){
@@ -371,7 +299,7 @@ void add_variant(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32
 }
 
 //if minus one then ref and alt fields are used, if nonnegative then it is used as offset to which genotype to use from the GT fields
-int add_variants(fasta_sampler *fs,const char *bcffilename,int id,const char* Name){
+int add_vcf_variants(fasta_sampler *fs,const char *bcffilename,int id,const char* Name){
   if(bcffilename==NULL)
     return 0;
   htsFile *bcf = bcf_open(bcffilename, "r");
@@ -379,7 +307,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int id,const char* Na
   bcf1_t *brec = bcf_init();
   // So this could be the parameter to change for which individual
   int max_l;
-  int *bcf_idx_2_fasta_idx = mapper(bcf_head,fs->char2idx,max_l);
+  int *bcf_idx_2_fasta_idx = fabcflookup(bcf_head,fs->char2idx,max_l);
   int ret = -1;
   int nsamples = bcf_hdr_nsamples(bcf_head);
   int32_t ngt_arr = 0;     
@@ -392,9 +320,10 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int id,const char* Na
   int32_t *mygt=NULL;
   
   int whichsample = -1;
+  const char *sample_name;
   if((int)id < 0){
     for (int i = 0; i < nsamples; i++){
-      const char *sample_name = bcf_hdr_int2id(bcf_head, BCF_DT_SAMPLE, i);
+      sample_name = bcf_hdr_int2id(bcf_head, BCF_DT_SAMPLE, i);
       //fprintf(stderr,"SAMPLE NAME IS %s \n",sample_name);
       //fprintf(stderr,"PROVIDE INPUT IS %s \n",Name);
       if(strcasecmp(sample_name,Name)==0){
@@ -406,6 +335,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int id,const char* Na
   }
   else{
     whichsample = (int)id; //index of individual
+    sample_name = bcf_hdr_int2id(bcf_head, BCF_DT_SAMPLE, whichsample);
   }
   
   //fprintf(stderr,"-------\nwhichsample is %d-------\n",whichsample);
@@ -461,18 +391,17 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int id,const char* Na
 
       int ref_length = strlen(brec->d.allele[0]);
       int alt_length = strlen(brec->d.allele[bcf_gt_allele(mygt[i])]);
-      fprintf(stderr,"GT %d | %d \t Ref %s \t Len %d \t ALT %s \t Len %d \n",key.gt[0],key.gt[1],brec->d.allele[0],ref_length,brec->d.allele[bcf_gt_allele(mygt[i])],alt_length);
+      //fprintf(stderr,"GT %d | %d \t Ref %s \t Len %d \t ALT %s \t Len %d \n",key.gt[0],key.gt[1],brec->d.allele[0],ref_length,brec->d.allele[bcf_gt_allele(mygt[i])],alt_length);
       
       if(ref_length == 1 && alt_length == 1){
-        fprintf(stderr,"SNPS \n");
         //snp
         issnp = 1;
-        add_variant(fs,fai_chr,brec->pos,brec->d.allele,mygt,inferred_ploidy);
+        add_snp(fs,fai_chr,brec->pos,brec->d.allele,mygt,inferred_ploidy);
       }
       else if(ref_length > alt_length){
         //deletion
         if(alt_length == 1){
-          fprintf(stderr,"Simple deletion with ref length %d \t alt length %d\n",ref_length,alt_length);
+          //fprintf(stderr,"Simple deletion with ref length %d \t alt length %d\n",ref_length,alt_length);
           isindel = 1;
           key.rid=fai_chr;
           key.pos= (int) brec->pos;
@@ -482,7 +411,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int id,const char* Na
       } 
       else if(alt_length > ref_length){
         if(ref_length == 1){
-          fprintf(stderr,"Simple insertion with ref length %d \t alt length %d\n",ref_length,alt_length);
+          //fprintf(stderr,"Simple insertion with ref length %d \t alt length %d\n",ref_length,alt_length);
           isindel = 1;
           key.rid=fai_chr;
           key.pos= (int) brec->pos;
@@ -490,7 +419,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int id,const char* Na
           simple_indels[key] =simpl_ins_dup;
         }
         else if(ref_length > 1){
-          fprintf(stderr,"Complex insertion with ref length %d \t alt length %d\n",ref_length,alt_length);
+          //fprintf(stderr,"Complex insertion with ref length %d \t alt length %d\n",ref_length,alt_length);
           isindel = 1;
           key.rid=fai_chr;
           key.pos= (int) brec->pos;
@@ -501,7 +430,7 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int id,const char* Na
     }
   }
 
-  fprintf(stderr,"\t-> Done adding snp variants\n");
+  fprintf(stderr,"\t-> Done adding the provided variants from the -vcf\n");
   if(simple_indels.size()>0){
     //fprintf(stderr,"\t-> Found some indels, these will now be added to internal datastructures\n");
     add_indels_simple(fs,simple_indels,bcf_head,inferred_ploidy);
@@ -510,7 +439,43 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int id,const char* Na
     //fprintf(stderr,"\t-> Found some indels, these will now be added to internal datastructures\n");
     add_ins_complex(fs,complex_insertions,bcf_head,inferred_ploidy);
   }
-    
+
+  /*
+  rename chromosomes
+
+        int new_length = snprintf(NULL, 0, "%sallele%d:%d-%d", fs->BedReferenceEntries[i].chromosome, j+1, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
+      fs->seqs_names[nref_entry] = (char*) realloc(fs->seqs_names[nref_entry], (new_length + 1) * sizeof(char));
+      fs->char2idx[fs->seqs_names[nref_entry]] = nref_entry;
+
+      snprintf(fs->seqs_names[nref_entry], new_length + 1, "%sallele%d:%d-%d", fs->BedReferenceEntries[i].chromosome, j+1, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);   
+      nref_entry++;
+  */  
+ 
+
+  
+  // for potential renames of the chromosomes
+
+  for(int i = 0; i < fs->nref;){
+    for(int j = 0; j < inferred_ploidy; j++) {
+      char *position = strstr(fs->seqs_names[j], "_ngsngs");
+      // If the match is found, shift the string to start from this match
+      if (position != NULL) {
+        *position = '\0';//memmove(fs->seqs_names[j], position, strlen(position) + 1);
+      }
+      char chr_reg_tmp[128];
+      snprintf(chr_reg_tmp,sizeof(chr_reg_tmp),"%s",fs->seqs_names[j]);      
+
+      int new_length = snprintf(NULL, 0, "%s_%s_allele_%d",fs->seqs_names[j],sample_name,j);
+      //fprintf(stderr,"number of ref %d \t ref name %s_%s_allele_%d \t pos %s\n",i,fs->seqs_names[j],sample_name,j,position);
+      fs->seqs_names[j] = (char*) realloc(fs->seqs_names[j], (new_length + 1) * sizeof(char));
+      fs->char2idx[fs->seqs_names[j]] = j;
+      snprintf(fs->seqs_names[j], new_length + 1, "%s_%s_allele_%d",chr_reg_tmp,sample_name,j);
+      //fprintf(stderr,"i val %d \t j val %d\n",i,j+i);
+    }
+    i=i+inferred_ploidy;
+  }
+  
+  
   free(gt_arr);
   delete[] bcf_idx_2_fasta_idx;
   fasta_sampler_setprobs(fs);
@@ -535,7 +500,7 @@ int main(int argc,char **argv){
   fprintf(stderr,"Done adding fasta, will now add variants\n");
   fasta_sampler_print(stderr,fs);
 
-  add_variants(fs,vcf,1);
+  add_vcf_variants(fs,vcf,1);
   fasta_sampler_print(stderr,fs);
   char *chr; //this is an unallocated pointer to a chromosome name, eg chr1, chrMT etc
   int chr_idx;

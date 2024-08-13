@@ -144,54 +144,6 @@ echo "--------------------------------------------------------------------------
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "1) Testing Single-end, simulating genetic variations, SNP, Insertion and deletions from Haploid vcf files, 
-         for three indivdiuals with different genotype (represented as 0 1 or 2), homozygous for reference 
-         and alternative and heterozygous. The alterede reference genome containing the variants are saved in 
-         the HaploidRef*fa file and the simulated data are stored in the HaploidRes*fq."
-echo "---------------------------------------------------------------------------------------------------------------"
-echo " "
-for file in $(ls ${VCFDIR}/*Haploid*); do 
-    for indiv in 0 1 2; do 
-        Type=$(ls ${file}| sed 's/.*Sub//'|sed 's/Haploid.vcf//');
-        echo ${file} Type ${Type} indiv ${indiv}; 
-        ../ngsngs -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne -vcf ${file} -id ${indiv} -DumpVCF HaploidRef_${Type}_${indiv} -q1 ${Q1} -chr MT -f fq -o HaploidRes_${Type}_${indiv}    
-        handle_error
-        #md5sum HaploidRef_${Type}_${indiv}.fa >> MycoBactTest.md5;
-        #md5sum HaploidRes_${Type}_${indiv}.fq >> MycoBactTest.md5;
-        echo " ";
-    done; 
-done
-
-echo "---------------------------------------------------------------------------------------------------------------"
-echo "2) Testing Single-end, simulating genetic variations, SNP, Insertion and deletions from Diploid vcf files, 
-         for three indivdiuals with different genotype (represented as 0 1 or 2), homozygous for reference 
-         and alternative and heterozygous The alterede reference genome containing the variants are saved in 
-         the DiploidRef*fa file and the simulated data are stored in the DiploidRes*fq."
-echo "---------------------------------------------------------------------------------------------------------------"
-
-for file in $(ls ${VCFDIR}/*Diploid*); do 
-    for indiv in 0 1 2; do 
-        Type=$(ls ${file}| sed 's/.*Sub//'|sed 's/Diploid.vcf//');
-        echo " ";
-        echo ${file} Type ${Type} indiv ${indiv}; 
-        ../ngsngs -i ${VCFIN} -r 100 -s 1 -l 80 -seq SE -ne -vcf ${file} -id ${indiv} -DumpVCF DiploidRef_${Type}_${indiv} -q1 ${Q1} -chr MT -f fq -o DiploidRes_${Type}_${indiv}   
-        handle_error
-        #md5sum DiploidRef_${Type}_${indiv}.fa >> MycoBactTest.md5;
-        #md5sum DiploidRes_${Type}_${indiv}.fq >> MycoBactTest.md5;
-    done;
-done;
-echo " "
-echo "---------------------------------------------------------------------------------------------------------------"
-echo "3) Testing Single-end, simulating stochastic variations, insertion or deletions, no error, length file "
-echo "---------------------------------------------------------------------------------------------------------------"
-
-${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.0,0.05,0.0,0.9 -q1 ${Q1} -DumpIndel DelTmp -f fq -o DelOut
-handle_error
-${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ne -indel 0.05,0.0,0.9,0.0 -q1 ${Q1} -DumpIndel InsTmp -f fq -o InsOut
-handle_error
-
-echo " "
-echo "---------------------------------------------------------------------------------------------------------------"
 echo "4) Testing Single-end, simulating fixed quality score of 30, with fragment lower-limit"
 echo "---------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ll 50 -qs 30 -f fq -o MycoBactQSLLSEOUT
@@ -202,13 +154,6 @@ if [ $No_SeqErr -ne 62 ]; then
     echo "Warning different number of reads containing sequencing error with a fixed quality score of 30"; exit 1;
 fi
 
-if [ 0 -eq 1 ]; then
-    md5sum MycoBactQSLLSEOUT.fq >> MycoBactTest.md5
-    md5sum DelOut.fq >> MycoBactTest.md5
-    md5sum InsOut.fq >> MycoBactTest.md5
-    md5sum DelTmp.txt >> MycoBactTest.md5
-    md5sum InsTmp.txt >> MycoBactTest.md5
-fi
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "5) Testing mutation rate (reference genome 1.9%), sampling with replacement when below lower limit (30), 
@@ -443,4 +388,4 @@ echo "--------------------------------------------------------------------------
 echo "--------------------------------------------------- MD5SUM ----------------------------------------------------"
 echo "---------------------------------------------------------------------------------------------------------------"
 echo " "
-md5sum -c MycoBactTest.md5 || exit 2;
+md5sum -c TestAll.md5 || exit 2;

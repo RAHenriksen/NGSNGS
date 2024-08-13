@@ -87,10 +87,16 @@ endif
 
 clean:	
 	rm -f ngsngs amplicon *.o *.d version.h a.out
-	rm -f test/*.fa test/*.fq test/*.sam test/*.txt
+	rm -f test/*.fa test/*.fq* test/*.*am test/*.txt
+
+cleantest:	
+	rm -f test/*.fa test/*.fq* test/*.*am test/*.txt
 
 test:
 	echo "Subprograms is being tested"
-	cd test; ./testAll.sh
+	cd test; ./testAll.sh; ./testVariants.sh
 
+testvariants:
+	echo "Subprograms simulating variants is being tested"
+	cd test; ./testVariants.sh
 force:

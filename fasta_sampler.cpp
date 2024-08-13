@@ -607,6 +607,69 @@ void fasta_sampler_destroy_captureLD(fasta_sampler *fs){
   delete fs;
 }
 
+int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
+  if(ploidy ==1){
+    //ploidy is haploid, will perform updownstream sorting of the reverse positions
+    ploidymap::iterator it = fs->pldmap.find(fs_chr_idx);
+    if(it!=fs->pldmap.end()){
+      return 0;
+    }
+    int *pldmap = new int[5];
+    pldmap[0]=fs_chr_idx;
+    pldmap[1]=pldmap[2]=pldmap[3]=pldmap[4]=-1;
+    fs->pldmap[fs_chr_idx] = pldmap;
+    return 0;
+  }
+  int isThere  = 1;
+  char buf[1024];
+  for(int i=1;i<ploidy;i++){
+    snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[fs_chr_idx],i);
+    char2int::iterator it= fs->char2idx.find(buf);
+    if(it==fs->char2idx.end())
+      isThere  = 0;
+  }
+  if(isThere == 0){
+    // Will duplicate chromosomes to emulate parental chromosomes
+    int nref = fs->nref+ploidy-1;
+    char **seqs = (char**) new char*[nref];
+    char **seqs_names = (char**) new char*[nref];
+    int *seqs_l = new int[nref];
+    int *realnameidx = new int[nref];
+    int *pldmap = new int[5];
+    for(int i=0;i<fs->nref;i++){
+      seqs[i] = fs->seqs[i];
+      seqs_names[i] = fs->seqs_names[i];
+      seqs_l[i] =fs->seqs_l[i];
+      realnameidx[i] = fs->realnameidx[i];
+    }
+    delete [] fs->seqs;
+    delete [] fs->seqs_names;
+    delete [] fs->seqs_l;
+    delete [] fs->realnameidx;
+
+    fs->seqs = seqs;
+    fs->seqs_names = seqs_names;
+    fs->seqs_l = seqs_l;
+    fs->realnameidx = realnameidx;
+    ploidymap::iterator it = fs->pldmap.find(fs_chr_idx);
+    assert(it==fs->pldmap.end());
+    pldmap[0] = fs_chr_idx;
+    for(int i=1;i<ploidy;i++) {
+      snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[fs_chr_idx],i);
+      fs->seqs[fs->nref+i-1] = strdup(seqs[fs_chr_idx]);
+      fs->seqs_names[fs->nref+i-1] = strdup(buf);
+      fs->seqs_l[fs->nref+i-1] = fs->seqs_l[fs_chr_idx];
+      fs->char2idx[fs->seqs_names[fs->nref+i-1]] =fs->nref+i-1;
+      fs->realnameidx[fs->nref+i-1] = fs_chr_idx;
+      pldmap[i] = fs->nref+i-1;
+    }
+    fs->pldmap[fs_chr_idx]  = pldmap;
+    fs->nref = nref;
+    
+  }
+  return 0;
+}
+
 #ifdef __WITH_MAIN__
 int main(int argc,char**argv){
 

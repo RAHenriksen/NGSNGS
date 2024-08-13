@@ -130,7 +130,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
   fprintf(stderr, "\t-> Done reading in the reference file, walltime used =  %.2f sec\n", (float)(time(NULL) - t_ref));
   //exit(1);
   if(VariantFile && CaptureVCF == 0 && linkage == 0){
-    add_variants(reffasta,VariantFile,HeaderIndiv,NameIndiv);
+    add_vcf_variants(reffasta,VariantFile,HeaderIndiv,NameIndiv);
     if(FileDump!=NULL){
       char dumpfile1[512];
       const char* dumpfile1prefix = FileDump;
