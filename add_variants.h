@@ -25,10 +25,12 @@ int *mapper(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo);
 
 int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy);
 
-void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy);
-
 void add_variant(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32_t *gts, int ploidy);
 
 int add_variants(fasta_sampler *fs,const char *bcffilename,int HeaderIndiv,const char* Name);
+
+void add_indels_simple(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy);
+
+void add_ins_complex(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy);
 
 #endif

@@ -109,7 +109,7 @@ int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
   event is then updated by incrementing reference bp for indel. 
 */
 
-void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
+void add_indels_simple(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
   int last[ploidy];
   int last_fid = -1;
   int reset = 1;
@@ -121,9 +121,9 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
 
   maxsize += 1000;
 
-  char **elephant =new char*[ploidy];
+  char **indels =new char*[ploidy];
   for(int i=0;i<ploidy;i++)
-    elephant[i] =(char*) calloc(maxsize,sizeof(char));
+    indels[i] =(char*) calloc(maxsize,sizeof(char));
 
   #if 0  
   for(bcfmap::iterator it=mybcfmap.begin();0&&it!=mybcfmap.end();it++){
@@ -144,10 +144,10 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
       if(fsoffsets!=NULL){
         for(int i=0;i<ploidy;i++){
 
-          strcat(elephant[i],fs->seqs[fsoffsets[i]]+last[i]);
-          fs->seqs_l[fsoffsets[i]] = strlen(elephant[i]);
+          strcat(indels[i],fs->seqs[fsoffsets[i]]+last[i]);
+          fs->seqs_l[fsoffsets[i]] = strlen(indels[i]);
           free(fs->seqs[i]);
-          fs->seqs[i] = elephant[i];
+          fs->seqs[i] = indels[i];
         }
       }
 
@@ -171,13 +171,16 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
           last[i] = it->first.pos;
       }
       int nitems2copy = brec->pos-last[i]+1;
-      assert(strlen(elephant[i])+brec->pos-last[i]< (size_t)maxsize );//funky assert
-      strncat(elephant[i],fs->seqs[fsoffsets[i]]+last[i],nitems2copy);
+      assert(strlen(indels[i])+brec->pos-last[i]< (size_t)maxsize );//funky assert
+      strncat(indels[i],fs->seqs[fsoffsets[i]]+last[i],nitems2copy);
       char *allele = NULL;
       allele = it->second->d.allele[it->first.gt[i]];
       assert(allele!=NULL);
-            
-      int turbocharge =0;
+      
+      int ref_length = strlen(it->second->d.allele[0]);
+      int alt_length = strlen(it->second->d.allele[it->first.gt[i]]);
+      int allele_length_diff = strlen(allele)-ref_length;
+
       #if 0
       int isdel = 0;
       int isins = 0;
@@ -192,16 +195,14 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
         fprintf(stderr,"Insertion of length: %d \n",isdel);
       }
       #endif
-      if(it->first.gt[i]>0)
-	      turbocharge =  strlen(allele)-strlen(it->second->d.allele[0]);
-	      
-      if(turbocharge<0){
+
+      if(allele_length_diff<0){
         //is deletion then we just skip the number of bases
-        last[i] = brec->pos+abs(turbocharge)+1;
+        last[i] = brec->pos+abs(allele_length_diff)+1;
       }
-      else if(turbocharge>0){
-        assert(strlen(elephant[i])+strlen(allele)<strlen(elephant[i])+maxsize);
-        strncat(elephant[i],allele+1,strlen(allele));
+      else if(allele_length_diff>0){
+        assert(strlen(indels[i])+strlen(allele)<strlen(indels[i])+maxsize);
+        strncat(indels[i],allele+1,strlen(allele));
         last[i] = brec->pos+1;
       }
       else{
@@ -214,13 +215,135 @@ void add_indels(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
   if(fsoffsets!=NULL){
     for(int i=0;i<ploidy;i++){
       
-      strcat(elephant[i],fs->seqs[fsoffsets[i]]+last[i]);
-      fs->seqs_l[fsoffsets[i]] = strlen(elephant[i]);
+      strcat(indels[i],fs->seqs[fsoffsets[i]]+last[i]);
+      fs->seqs_l[fsoffsets[i]] = strlen(indels[i]);
       free(fs->seqs[i]);
-      fs->seqs[i] = elephant[i];
+      fs->seqs[i] = indels[i];
     }
   }
-  delete[] elephant;
+  delete[] indels;
+}
+
+void add_ins_complex(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploidy){
+  fprintf(stderr,"INSIDE add_variants.cpp add_indels function \n");
+  int last[ploidy]; // last processed position
+  int last_fid = -1;
+  int reset = 1;
+  int maxsize = -1;
+  int *fsoffsets = NULL;
+  for(int i=0;i<fs->nref;i++)
+    if(fs->seqs_l[i]>maxsize)
+      maxsize= fs->seqs_l[i];
+
+  maxsize += 1000;
+
+  char **indels =new char*[ploidy];
+  for(int i=0;i<ploidy;i++)
+    indels[i] =(char*) calloc(maxsize,sizeof(char));
+
+  for(bcfmap::iterator it=mybcfmap.begin();it!=mybcfmap.end();it++){
+
+    if(it->first.rid!=last_fid){
+      last_fid = it->first.rid;
+      reset = 1;
+    }
+
+    if(reset){
+      fprintf(stderr,"INSIDE RESET\n");
+      if(fsoffsets!=NULL){
+        fprintf(stderr,"INSIDE RESET IF\n");
+        for(int i=0;i<ploidy;i++){
+          // Update reference sequences with the modified indels
+          strcat(indels[i],fs->seqs[fsoffsets[i]]+last[i]);
+          fs->seqs_l[fsoffsets[i]] = strlen(indels[i]);
+          free(fs->seqs[i]);
+          fs->seqs[i] = indels[i];
+        }
+      }
+
+      ploidymap::iterator it = fs->pldmap.find(last_fid);
+      assert(it!=fs->pldmap.end());
+      fsoffsets = it->second;
+      for(int i=0;i<ploidy;i++){
+	      last[i] = 0;
+      }
+      
+      reset = 0;
+    }
+
+    fprintf(stderr,"OUTSIDE RESET\n");
+
+    bcf1_t *brec = it->second;
+    bcf_unpack(brec, BCF_UN_ALL);
+
+    // Iterate over each allele in sample 
+    for(int i=0;i<ploidy;i++) {
+      //first copy contigous block from last operator
+      if(last[i]>it->first.pos){
+        last[i] = it->first.pos;
+      }
+
+      int ref_length = strlen(it->second->d.allele[0]);
+      int alt_length = strlen(it->second->d.allele[it->first.gt[i]]);
+      
+      char *allele = NULL;
+      allele = it->second->d.allele[it->first.gt[i]];
+      assert(allele!=NULL);
+      
+      int allele_length_diff = strlen(allele)-ref_length;
+
+      int pos = brec->pos;
+      
+      int GT_indiv = it->first.gt[i];
+      int nitems2copy;
+      if(GT_indiv == 0){
+        //when equal to reference the index of position differs compared to insertions of the alternative
+        nitems2copy = pos - last[i] + 1;
+      }
+      else{
+        nitems2copy =  pos - last[i];
+      }
+
+      if (strlen(indels[i]) + nitems2copy < (size_t)maxsize) {
+        strncat(indels[i], fs->seqs[fsoffsets[i]] + last[i], nitems2copy);
+      }
+
+      if(allele_length_diff < 0){
+        fprintf(stderr,"deletion");
+        //is deletion then we just skip the number of bases
+        last[i] = pos+abs(allele_length_diff);
+      }
+      else if(allele_length_diff > 0){
+        fprintf(stderr,"insertion\n");
+        // Replace the reference allele with the alternative allele
+        if (it->first.gt[i] > 0){
+          if (strlen(indels[i]) + alt_length < maxsize) {
+            strncat(indels[i], allele, alt_length);
+          }
+          last[i] = pos + ref_length; // Update the last position to skip over the ref allele
+        }
+        else {
+          last[i] = pos + 1; // No change if the allele is the same
+        }
+      }
+      else {
+        fprintf(stderr,"SNP SNP SNP \n");
+        last[i] = pos + 1; // No change if the allele is the same
+      }
+    }
+    bcf_destroy(brec);
+    delete [] it->first.gt;
+  }
+  if(fsoffsets!=NULL){
+    for(int i=0;i<ploidy;i++){
+      
+      strcat(indels[i],fs->seqs[fsoffsets[i]]+last[i]);
+      fs->seqs_l[fsoffsets[i]] = strlen(indels[i]);
+      free(fs->seqs[i]);
+      fs->seqs[i] = indels[i];
+    }
+  }
+  delete[] indels;
 }
 
 //fasta sampler struct, index for chromosomenaem, position, the alleles, the genotypes and the ploidy. 
@@ -295,8 +418,9 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int id,const char* Na
     exit(1);
   }
   
-  bcfmap mybcfmap;
-  
+  bcfmap simple_indels;
+  bcfmap complex_insertions;
+
   while(((ret=bcf_read(bcf,bcf_head,brec)))==0){
     bcf_unpack((bcf1_t*)brec, BCF_UN_ALL);
     int fai_chr = bcf_idx_2_fasta_idx[brec->rid];
@@ -324,35 +448,69 @@ int add_variants(fasta_sampler *fs,const char *bcffilename,int id,const char* Na
     extend_fasta_sampler(fs,fai_chr,inferred_ploidy);
 
     //figure out if its an indel
-    int isindel  = 0;
+     //figure out if its an indel
+    int isdel  = 0;
+    int isins  = 0;
+    
     bcfkey key;
     key.gt = new int[inferred_ploidy];
     for(int i=0;i<inferred_ploidy;i++){
+      int issnp = 0;
+      int isindel  = 0;
       key.gt[i] = bcf_gt_allele(mygt[i]);
-      if(strlen(brec->d.allele[bcf_gt_allele(mygt[i])])>1) 
-	      isindel =1;
-      if(strlen(brec->d.allele[0])>1)//this is confusion
-	      isindel =1;
-    }
-    if(isindel==0){
-      add_variant(fs,fai_chr,brec->pos,brec->d.allele,mygt,inferred_ploidy);
-      //fprintf(stderr,"\t-> Found an variant as rid: %d pos:%lld\n",brec->rid,brec->pos+1);
-    }
-    else{
-      //fprintf(stderr,"\t-> Found an indel as rid: %d pos:%lld\n",brec->rid,brec->pos+1);
-      key.rid=fai_chr;
-      key.pos= (int) brec->pos;
-      bcf1_t *duped= bcf_dup(brec);
-      mybcfmap[key] =duped;
-    }
-  }
-  fprintf(stderr,"\t-> Done adding snp variants\n");
-  if(mybcfmap.size()>0){
-    //fprintf(stderr,"\t-> Found some indels, these will now be added to internal datastructures\n");
-    add_indels(fs,mybcfmap,bcf_head,inferred_ploidy);
 
+      int ref_length = strlen(brec->d.allele[0]);
+      int alt_length = strlen(brec->d.allele[bcf_gt_allele(mygt[i])]);
+      fprintf(stderr,"GT %d | %d \t Ref %s \t Len %d \t ALT %s \t Len %d \n",key.gt[0],key.gt[1],brec->d.allele[0],ref_length,brec->d.allele[bcf_gt_allele(mygt[i])],alt_length);
+      
+      if(ref_length == 1 && alt_length == 1){
+        fprintf(stderr,"SNPS \n");
+        //snp
+        issnp = 1;
+        add_variant(fs,fai_chr,brec->pos,brec->d.allele,mygt,inferred_ploidy);
+      }
+      else if(ref_length > alt_length){
+        //deletion
+        if(alt_length == 1){
+          fprintf(stderr,"Simple deletion with ref length %d \t alt length %d\n",ref_length,alt_length);
+          isindel = 1;
+          key.rid=fai_chr;
+          key.pos= (int) brec->pos;
+          bcf1_t *simpl_del_dup= bcf_dup(brec);
+          simple_indels[key] =simpl_del_dup;
+        }
+      } 
+      else if(alt_length > ref_length){
+        if(ref_length == 1){
+          fprintf(stderr,"Simple insertion with ref length %d \t alt length %d\n",ref_length,alt_length);
+          isindel = 1;
+          key.rid=fai_chr;
+          key.pos= (int) brec->pos;
+          bcf1_t *simpl_ins_dup= bcf_dup(brec);
+          simple_indels[key] =simpl_ins_dup;
+        }
+        else if(ref_length > 1){
+          fprintf(stderr,"Complex insertion with ref length %d \t alt length %d\n",ref_length,alt_length);
+          isindel = 1;
+          key.rid=fai_chr;
+          key.pos= (int) brec->pos;
+          bcf1_t *complex_ins_dup= bcf_dup(brec);
+          complex_insertions[key] = complex_ins_dup;
+        }
+      }
+    }
   }
-  
+
+  fprintf(stderr,"\t-> Done adding snp variants\n");
+  if(simple_indels.size()>0){
+    //fprintf(stderr,"\t-> Found some indels, these will now be added to internal datastructures\n");
+    add_indels_simple(fs,simple_indels,bcf_head,inferred_ploidy);
+  }
+  if(complex_insertions.size()>0){
+    //fprintf(stderr,"\t-> Found some indels, these will now be added to internal datastructures\n");
+    add_ins_complex(fs,complex_insertions,bcf_head,inferred_ploidy);
+  }
+    
   free(gt_arr);
   delete[] bcf_idx_2_fasta_idx;
   fasta_sampler_setprobs(fs);
