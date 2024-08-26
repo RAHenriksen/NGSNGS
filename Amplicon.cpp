@@ -89,7 +89,8 @@ void* AmpliconThreadInitialize(ampliconformat_e OutFormat,const char* Amplicon_i
   int mismatchcyclelength = 0;
   int doMisMatchErr = 0;
   if (Subprofile != NULL){
-    MisMatchFreqArray = MisMatchFileArray(MisMatchFreqArray,Subprofile,mismatchcyclelength);
+    int numElements = 0;
+    MisMatchFileArray(MisMatchFreqArray,Subprofile,mismatchcyclelength,numElements);
     doMisMatchErr = 1;
   }
 

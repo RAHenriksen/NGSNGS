@@ -49,14 +49,19 @@ argStruct *getpars(int argc,char ** argv){
   mypars->QualProfile2 = NULL;
   mypars->FixedQual = 0;
   mypars->DoSeqErr = 1;
+
   // 2) briggs model
   mypars->Briggs = NULL;
   mypars->BriggsBiotin = NULL;
   mypars->Duplicates = 1;
+  
   // 3) misincorporation matrix
   mypars->SubProfile = NULL;
+  mypars->MisMatchMatrix_bdam = NULL;
+  mypars->M3outname = NULL;
   // 4) Bcf file and variation incorporation
   mypars->vcffile = NULL;
+
   // 5) random variations to the reference genome
   mypars->mutationrate = 0.0;
   mypars->generations = 1;
@@ -171,6 +176,12 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-mf",*argv)==0 || strcasecmp("--mismatch",*argv)==0){
       mypars->SubProfile = strdup(*(++argv));
+    }
+    else if(strcasecmp("-m3",*argv)==0 || strcasecmp("--mismatchmatrix",*argv)==0){
+      mypars->MisMatchMatrix_bdam = strdup(*(++argv));
+    }
+    else if(strcasecmp("-Dumpm3",*argv)==0){
+      mypars->M3outname = strdup(*(++argv));
     }
     else if(strcasecmp("-ne",*argv)==0 || strcasecmp("--noerror",*argv)==0){
       mypars->DoSeqErr = 0;//"F";
@@ -374,6 +385,8 @@ void argStruct_destroy(argStruct *mypars){
   free(mypars->QualProfile1);
   free(mypars->QualProfile2);
   free(mypars->SubProfile);
+  free(mypars->MisMatchMatrix_bdam);
+  free(mypars->M3outname);
   free(mypars->Briggs);
   free(mypars->BriggsBiotin);
   free(mypars->Poly);

@@ -52,7 +52,7 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
                         const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,int readcycle,int readcycle_fix,
                         int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int FixedQual,int threadwriteno,
                         const char* QualStringFlag,const char* Polynt,int DoSeqErr,const char* Specific_Chr,
-                        int doMisMatchErr,const char* SubProfile,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
+                        int doMisMatchErr,const char* SubProfile,const char* MisMatchMatrix,const char* M3outname,int MisLength,int RandMacro,const char *VariantFile,float IndelFuncParam[4],int DoIndel,
                         char CommandArray[LENS],const char* version,int HeaderIndiv,const char* NameIndiv,int Align,size_t BufferLength,const char* FileDump,const char* IndelDumpFile,
                         int Duplicates,int Lowerlimit,double mutationrate, size_t referencevariations, int generations,int simmode,
                         size_t flankingregion, const char* BedFile, int MaskBed,int CaptureVCF,int linkage){
@@ -361,8 +361,23 @@ void* ThreadInitialization(const char* refSseq,int thread_no, int seed, size_t r
     //generating mismatch matrix to parse for each string
     double* MisMatchFreqArray = new double[LENS];
     int mismatchcyclelength = 0;
+    int numElements = 0;
     if (SubProfile != NULL){
-      MisMatchFreqArray = MisMatchFileArray(MisMatchFreqArray,SubProfile,mismatchcyclelength);
+      MisMatchFileArray(MisMatchFreqArray,SubProfile,mismatchcyclelength,numElements);
+      //exit(1);
+    }
+    if (MisMatchMatrix != NULL){
+      const char* dumpM3full = NULL;
+      if(M3outname!=NULL){
+        char dumpM3[512];
+        const char* dumpM3prefix = M3outname;
+        const char* dumpM3suffix = ".txt";
+        strcpy(dumpM3,dumpM3prefix);
+        strcat(dumpM3,dumpM3suffix);
+        dumpM3full = dumpM3;
+      }
+      MisMatchMetaFileArray(MisMatchFreqArray,MisMatchMatrix,mismatchcyclelength,numElements,dumpM3full);  
+      //exit(1);
     }
 
     if(IndelDumpFile!=NULL){

@@ -29,6 +29,8 @@ typedef struct{
   char *QualProfile2;         //filename for quality prof, for R2 used only in PE
   int FixedQual;
   char *SubProfile;           //filename for misincorperation, typespecific and position specific
+  char *MisMatchMatrix_bdam;
+  char *M3outname;
   int DoSeqErr;               //adding potential sequencing errors
   char *Briggs;               //the four briggs parameters for the none biotin model
   char *BriggsBiotin;         //the four briggs parameters in relation to Biotin

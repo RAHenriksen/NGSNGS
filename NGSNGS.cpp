@@ -376,8 +376,17 @@ int main(int argc,char **argv){
     
     if (mypars->SubProfile != NULL)
       doMisMatchErr = 1;
-
+    
+    if (mypars->MisMatchMatrix_bdam != NULL)
+      doMisMatchErr = 2;
+    
     if(mypars->SubProfile != NULL && mypars->Briggs != NULL){
+      ErrMsg(12.0);
+    }
+    else if(mypars->SubProfile != NULL && mypars->MisMatchMatrix_bdam != NULL){
+      ErrMsg(12.0);
+    }
+    else if(mypars->MisMatchMatrix_bdam != NULL && mypars->Briggs != NULL){
       ErrMsg(12.0);
     }
 
@@ -403,7 +412,7 @@ int main(int argc,char **argv){
                       AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->OutFormat,mypars->seq_type,
                       Param,DoBriggs,DoBriggsBiotin,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,readcycle,mypars->CycleLength,
                       qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->FixedQual,mypars->CompressThreads,QualStringFlag,Polynt,
-                      mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,DeamLength,mypars->rng_type,
+                      mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,mypars->MisMatchMatrix_bdam,mypars->M3outname,DeamLength,mypars->rng_type,
                       mypars->vcffile,IndelFuncParam,DoIndel,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,mypars->NameIndiv,
                       mypars->Align,mypars->KstrBuf,mypars->DumpFile,mypars->IndelDumpFile,mypars->Duplicates,mypars->LowerLimit,
                       mypars->mutationrate,mypars->referencevariations,mypars->generations,mypars->simmode,
