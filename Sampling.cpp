@@ -299,7 +299,7 @@ void* Sampling_threads(void *arg) {
       FragRes = new char *[FragTotal];
       FragRes[0] = FragmentSequence;
       ReadDeam=0;
-      ReadDeam = SimBriggsModel(FragRes[0],fragmentLength,struct_obj->BriggsParam[0],
+      ReadDeam = Biotin_ds_454Roche(FragRes[0],fragmentLength,struct_obj->BriggsParam[0],
 		    struct_obj->BriggsParam[1],
 		    struct_obj->BriggsParam[2], 
 		    struct_obj->BriggsParam[3],rand_alloc,

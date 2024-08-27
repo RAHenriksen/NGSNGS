@@ -21,7 +21,7 @@ struct bcfkey_cmp
 //NB notice that proper rid is NOT bcf1_t->rid but bcfkey->rid which has been shifted relative to fs
 typedef std::map<bcfkey,bcf1_t*,bcfkey_cmp> bcfmap;
 
-int *fabcflookup(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &bongo);
+int *fabcflookup(bcf_hdr_t *bcf_hdr,char2int &fai2idx,int &maxIndex);
 
 void add_snp(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32_t *gts, int ploidy);
 

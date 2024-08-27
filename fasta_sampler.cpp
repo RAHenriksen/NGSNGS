@@ -13,25 +13,45 @@
 
 #define MAXBINS 100
 
-
 void fasta_sampler_setprobs(fasta_sampler *fs){
+  /*
+  fasta_sampler_setprobs - calculates the total length of all sequences, computes the probability of selecting each sequence based on its length, 
+  and updates the sampling weights.
+  
+  @param fs: A pointer to a `fasta_sampler` struct. The function modifies the `ws` field to allocate new sampling weights and update the probabilities.
+  */
+
   //add sampling operation
   if(fs->ws)
-    ransampl_free(fs->ws);
-  fs->ws = ransampl_alloc(fs->nref);
-  double *p = new double[fs->nref];
+    ransampl_free(fs->ws);  // Free previously allocated sampling weights
+
+  fs->ws = ransampl_alloc(fs->nref); // Allocate new sampling weights
+
+  double *p = new double[fs->nref]; // Create an array to store probabilities
+
+  // Calculate the total length of all sequences
   fs->seq_l_total =0;
   for(int i=0;i<fs->nref;i++){
     fs->seq_l_total += fs->seqs_l[i];
   }
+
+  // Compute the probability for each sequence based on its length
   for(int i=0;i<fs->nref;i++)
     p[i] = ((double) fs->seqs_l[i])/fs->seq_l_total;
   
+  // Update sampling weights with the computed probabilities
   ransampl_set(fs->ws,p);
   delete [] p;
 }
 
 void fasta_sampler_print(FILE *fp,fasta_sampler *fs){
+  /*
+  fasta_sampler_print - Prints information about the `fasta_sampler` object
+  
+  @param fp: A file pointer where the information will be printed.
+  @param fs: A pointer to a `fasta_sampler` struct. The function retrieves and prints its internal details.
+  */
+  
   fprintf(fp,"--------------\n[%s]\tfai: %p nref: %d\n",__FUNCTION__,fs->fai,fs->nref);
   for(int i=0;i<fs->nref;i++)
     fprintf(fp,"[%s]\tidx:%d) name:%s example:%.15s length: %d realidx: %d\n",__FUNCTION__,i,fs->seqs_names[i],fs->seqs[i],fs->seqs_l[i],fs->realnameidx[i]);
@@ -42,6 +62,15 @@ void fasta_sampler_print(FILE *fp,fasta_sampler *fs){
 }
 
 void fasta_sampler_print2(fasta_sampler *fs){
+  /*
+  fasta_sampler_print2 - Prints detailed information about the `fasta_sampler` object to the standard error stream.
+  
+  This function outputs information including the file index, number of references, sequence details, and character-to-integer mappings, 
+  similar to `fasta_sampler_print`, but prints to the standard error stream instead.
+  
+  @param fs: A pointer to a `fasta_sampler` struct. The function retrieves and prints its internal details.
+  */
+
   fprintf(stderr,"--------------\n[%s]\tfai: %p nref: %d\n",__FUNCTION__,fs->fai,fs->nref);
   for(int i=0;i<fs->nref;i++)
     fprintf(stderr,"[%s]\tidx:%d) name:%s example:%.15s length: %d realidx: %d\n",__FUNCTION__,i,fs->seqs_names[i],fs->seqs[i],fs->seqs_l[i],fs->realnameidx[i]);
@@ -52,12 +81,23 @@ void fasta_sampler_print2(fasta_sampler *fs){
 }
 
 fasta_sampler *fasta_sampler_alloc_full(const char *fa){
+  /*
+  fasta_sampler_alloc_full - Allocates and initializes a `fasta_sampler` object based on the entire input reference FASTA file (-i).
+    This function creates a new `fasta_sampler` instance, loads sequence data from a FASTA file, and initializes internal fields such as sequence names,
+    lengths, and sampling weights. It also verifies that sequences are successfully loaded and sets up initial probabilities for sampling.
+  
+  @param fa: A string representing the path to the FASTA file from which sequences will be loaded.
+  @return: A pointer to a newly allocated `fasta_sampler` struct with initialized fields and loaded sequences. Returns NULL on failure.
+  */
 
+  // Allocate memory for the fasta_sampler object and load index
   fasta_sampler *fs = new fasta_sampler;
   fs->ws = NULL;
   fs->fai = NULL;
   assert(((fs->fai =fai_load(fa)))!=NULL);
-  fs->BedReferenceEntries = NULL;
+
+  // Initialize the number of references and allocate memory for sequence data,
+  fs->BedReferenceEntries = NULL; // the bedreference is part of the struct but remains unused in this function
   fs->BedReferenceCount = 0;
   
   fs->nref = faidx_nseq(fs->fai);
@@ -66,6 +106,7 @@ fasta_sampler *fasta_sampler_alloc_full(const char *fa){
   fs->seqs_names = new char *[fs->nref];
   fs->realnameidx = new int[fs->nref];
 
+  // Fetch and store sequence names, lengths, and actual sequences
   for(int i=0;i<fs->nref;i++){
     fs->seqs_names[i] = strdup(faidx_iseq(fs->fai,i));
     fs->char2idx[fs->seqs_names[i]] = i;
@@ -83,6 +124,7 @@ fasta_sampler *fasta_sampler_alloc_full(const char *fa){
      */
   }
 
+  // initialize names with indices
   for(int i=0;i<fs->nref;i++)
     fs->realnameidx[i] = i;
 
@@ -91,25 +133,38 @@ fasta_sampler *fasta_sampler_alloc_full(const char *fa){
     fprintf(stderr,"\t-> Possible error, no sequences loaded\n");
     exit(1);
   }
+
+  // Set initial probabilities for sampling
   fasta_sampler_setprobs(fs);
 
+  // the initialized fasta_sampler object from which our sequence read is sampled
   return fs;
 }
 
 fasta_sampler *fasta_sampler_alloc_subset(const char *fa,const char *SpecificChr){
+  /*
+  fasta_sampler_alloc_subset - Allocates and initializes a `fasta_sampler` object based on a desired subset of the contigs present within the input reference FASTA file (-i).
   
+  @param fa: A string representing the path to the FASTA file from which sequences will be loaded.
+  @param SpecificChr: A comma-separated string of chromosome or contig names to be included in the subset.
+  
+  similar to fasta_sampler_alloc_full function
+  */
+
+  // initialize vector to store subset which is extracted from comma seperated list by tokenizing the string
   std::vector<char *> SubsetChr;
-  
   SubsetChr.push_back(strtok(strdup(SpecificChr),"\", \t"));
   char *chrtok = NULL;
   while(((chrtok=strtok(NULL,"\", \t"))))
     SubsetChr.push_back(strdup(chrtok));
   fprintf(stderr,"\t-> Number of entries in chromosome list: %lu\n",SubsetChr.size());
 
+  // Allocate memory for the fasta_sampler object and load index similar to fasta_sampler_alloc_full function
   fasta_sampler *fs = new fasta_sampler;
   fs->ws = NULL;
   fs->fai = NULL;
   assert(((fs->fai =fai_load(fa)))!=NULL);
+
   fs->BedReferenceEntries = NULL;
   fs->BedReferenceCount = 0;
   
@@ -121,6 +176,7 @@ fasta_sampler *fasta_sampler_alloc_subset(const char *fa,const char *SpecificChr
   fs->realnameidx = new int[fs->nref];
   
   int at = 0;
+  // Fetch and store sequence names, lengths, and actual sequences for the desired subset defined in the vector
   for(int i=0;i<(int)SubsetChr.size();i++){
     if(faidx_has_seq(fs->fai, SubsetChr[i])){
       fs->seqs_names[at] = strdup(SubsetChr[i]);
@@ -139,44 +195,58 @@ fasta_sampler *fasta_sampler_alloc_subset(const char *fa,const char *SpecificChr
     fprintf(stderr,"\t-> Possible error, no sequences loaded\n");
     exit(1);
   }
+
+  // Set initial probabilities for sampling
   fasta_sampler_setprobs(fs);
 
-  //couldn't i in theory close down the reference here and now?
+  // the fasta_sampler object is succesfully created so free memory for the names of subset contigs in the vector
   for(int i=0;i<(int)SubsetChr.size();i++)
     free(SubsetChr[i]);
+  
+  // the initialized fasta_sampler object with desired subset from which our sequence read is sampled
   return fs;
 }
 
 fasta_sampler *fasta_sampler_alloc_bedentry(const char *fa,const char *bedfilename,size_t flanking){
+  /*
+  fasta_sampler_alloc_bedentry - Allocates and initializes a `fasta_sampler` object based on capture simulations extracting regions of interest from provided bed files from an input reference FASTA file (-i).
+  
+  @param fa: A string representing the path to the FASTA file from which sequences will be loaded.
+  @param bedfilename: A string representing the path to the BED file containing the regions of interest
+  @param flanking: A size_t value specifying the number of bases to include as flanking regions around each BED entry.
 
+  similar to fasta_sampler_alloc_full function
+  */
+
+  // Allocate memory for the fasta_sampler object and load index
   fasta_sampler *fs = new fasta_sampler;
   fs->ws = NULL;
   fs->fai = NULL;
   assert(((fs->fai =fai_load(fa)))!=NULL);
   fs->BedReferenceEntries = NULL;
   fs->BedReferenceCount = 0;
-
   int BedEntryCount = 0;
   BedEntry* BedEntries = NULL;
 
   //read in the bed entries
   BedEntries = readBedFile(bedfilename,&BedEntryCount);
-  //sort the coordinates
+
+  //sort the coordinates of the bed entries
   sortBedEntries(BedEntries, BedEntryCount);
 
-  //merge the coordinates
+  //merge the bed entries with overlapping regions of interest
   int mergedCount = 0;
   BedEntry* mergedEntries = mergeOverlappingRegions(BedEntries, BedEntryCount, &mergedCount);
   free(BedEntries);
 
+  //Check if merged regions of interest is present within provided reference file
   fs->BedReferenceEntries = checkbedentriesfasta(fs,mergedEntries,mergedCount,&fs->BedReferenceCount);
 
   //for (int i = 0; i < fs->BedReferenceCount; i++){fprintf(stderr,"merge bed file information bed entry \t%s\t%d\t%d\n", fs->BedReferenceEntries[i].chromosome, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);}
 
   free(mergedEntries);
 
-  //fprintf(stderr,"\t-> Input bed file had %d regions, after merging the overlapping regions there is %d and post-filtering there is %d\n",BedEntryCount,mergedCount,fs->BedReferenceCount);
- 
+  // Initialize the number of references and allocate memory for sequence data,
   fs->nref = fs->BedReferenceCount; 
   fs->seqs = new char* [fs->nref];
   fs->seqs_l = new int[fs->nref];
@@ -189,36 +259,40 @@ fasta_sampler *fasta_sampler_alloc_bedentry(const char *fa,const char *bedfilena
     size_t refchr_length = faidx_seq_len(fs->fai, fs->BedReferenceEntries[i].chromosome);
     size_t bedflankstart; 
     size_t bedflankend;   
-    
+  
+    // Adjust start and end positions with flanking regions, ensuring they are within sequence bounds
+
     if((int)(fs->BedReferenceEntries[i].start-flanking) < 0){
-      //fprintf(stderr,"case 1 \t %d\n",(ReferenceEntries[i].start-flanking));
+      //Case 1: region of interest with flanking region to start coordinate extends outside chromosome start
       bedflankstart = 1;
     }
     else if((int)(fs->BedReferenceEntries[i].start-flanking) > 0){
-      //fprintf(stderr,"case 2 \t %d\n",(ReferenceEntries[i].start-flanking));
+      //Case 2: region of interest has flanking nucleotides substracted from start coordinate
       bedflankstart = fs->BedReferenceEntries[i].start-flanking; 
     }
     
     if((fs->BedReferenceEntries[i].end+flanking) < refchr_length){
-      //fprintf(stderr,"case 3 \t %d\n",(ReferenceEntries[i].end+flanking));
+      //Case 3: region of interest with flanking nucleotides added to end coordinate
       bedflankend = fs->BedReferenceEntries[i].end + flanking;
     }
     if((fs->BedReferenceEntries[i].end+flanking) > refchr_length){
-      //fprintf(stderr,"case 4 \t %d\n",(ReferenceEntries[i].end+flanking));
+      //Case 4: region of interest with flanking nucleotides added to end coordinate extends outside chromosome end
       bedflankend = refchr_length-1;
     }
 
+    // addjust merge bed entries coordinates according to the new flanking coordinates
     fs->BedReferenceEntries[i].start = bedflankstart;
     fs->BedReferenceEntries[i].end = bedflankend;
 
+    // Create a string representation of the sequence region for fetching to match string when using samtools faidx chr1:10000-100100
     int length = snprintf(NULL, 0, "%s:%d-%d", fs->BedReferenceEntries[i].chromosome, bedflankstart, bedflankend);
     fs->seqs_names[i] = (char*) malloc((length + 1) * sizeof(char));
     sprintf(fs->seqs_names[i], "%s:%d-%d", fs->BedReferenceEntries[i].chromosome, bedflankstart, bedflankend);
   }
 
+  // Fetch and store sequence names, lengths, and actual sequences for regions of interest
   for(int i=0;i<fs->nref;i++){
     fs->char2idx[fs->seqs_names[i]] = i;
-    //fprintf(stderr,"names are %s\n",fs->seqs_names[i]);
     fs->seqs[i] = fai_fetch(fs->fai,fs->seqs_names[i],fs->seqs_l+i);
   }
 
@@ -232,65 +306,72 @@ fasta_sampler *fasta_sampler_alloc_bedentry(const char *fa,const char *bedfilena
   }
   fasta_sampler_setprobs(fs);
 
+  // the initialized fasta_sampler object with regions of interest from which our sequence read is sampled
   return fs;
 }
 
 fasta_sampler *fasta_sampler_alloc_maskbedentry(const char *fa,const char *bedfilename,size_t flanking){
+  /*
+  fasta_sampler_alloc_maskbedentry - Allocates and initializes a `fasta_sampler` object based on capture simulations excluding genomic regions from a provided bed files from an input reference FASTA file (-i).
+  
+  @param fa: A string representing the path to the FASTA file from which sequences will be loaded.
+  @param bedfilename: A string representing the path to the BED file containing the regions to be excluded
+  @param flanking: A size_t value specifying the number of bases to include as flanking regions around each BED entry.
 
+  similar to fasta_sampler_alloc_bedentry function
+  */
+
+  // Allocate memory for the fasta_sampler object and load index
   fasta_sampler *fs = new fasta_sampler;
   fs->ws = NULL;
   fs->fai = NULL;
   assert(((fs->fai =fai_load(fa)))!=NULL);
   fs->BedReferenceEntries = NULL;
   fs->BedReferenceCount = 0;
-
   int BedEntryCount = 0;
   BedEntry* BedEntries = NULL;
 
   //read in the bed entries
   BedEntries = readBedFile(bedfilename,&BedEntryCount);
   //for (int i = 0; i < BedEntryCount; i++){fprintf(stderr,"read bed file information bed entry \t%s\t%d\t%d\n", BedEntries[i].chromosome, BedEntries[i].start, BedEntries[i].end);}
-  //fprintf(stderr,"DONE readBedFile\n");
 
   //sort the coordinates
   sortBedEntries(BedEntries, BedEntryCount);
   //for (int i = 0; i < BedEntryCount; i++){fprintf(stderr,"sort bed file information bed entry \t%s\t%d\t%d\n", BedEntries[i].chromosome, BedEntries[i].start, BedEntries[i].end);}
-  //fprintf(stderr,"DONE sortBedEntries\n");
   
-  //merge the coordinates
+  //merge the bed entries with overlapping regions of interest
   int mergedCount = 0;
   BedEntry* mergedEntries = mergeOverlappingRegions(BedEntries, BedEntryCount, &mergedCount);
   //for (int i = 0; i < mergedCount; i++){fprintf(stderr,"merge bed file information bed entry \t%s\t%d\t%d\n", mergedEntries[i].chromosome, mergedEntries[i].start, mergedEntries[i].end);}
   free(BedEntries);
 
   int ReferenceCount = 0;
-  //fprintf(stderr,"DONE mergeOverlappingRegions\n");
 
+  //Exclude (mask) merged genomic regions from the provided reference file
   fs->BedReferenceEntries = maskbedentriesfasta(fs,mergedEntries,mergedCount,&fs->BedReferenceCount);
   
   //fprintf(stderr,"\t-> Input bed file had %d regions, after merging the overlapping regions there is %d and post-filtering there is %d\n",BedEntryCount,mergedCount,fs->BedReferenceCount);
   //for (int i = 0; i < fs->BedReferenceCount; i++){fprintf(stderr,"merge bed file information mask bed entry \t%s\t%d\t%d\n", fs->BedReferenceEntries[i].chromosome, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);}
 
   free(mergedEntries);
-  //fprintf(stderr,"DONE maskbedentriesfasta\n");
 
+  // Initialize the number of references and allocate memory for sequence data,
   fs->nref = fs->BedReferenceCount; 
   fs->seqs = new char* [fs->nref];
   fs->seqs_l = new int[fs->nref];
   fs->seqs_names = new char *[fs->nref];
   fs->realnameidx = new int[fs->nref];
 
-
-  //create the names to extract the region defined in the bed entry
+  //create the names to extract the region outside of the coordinates defined in the bed entry
   for(int i=0;i<fs->nref;i++){
     int length = snprintf(NULL, 0, "%s:%d-%d", fs->BedReferenceEntries[i].chromosome,  fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
     fs->seqs_names[i] = (char*) malloc((length + 1) * sizeof(char));
     sprintf(fs->seqs_names[i], "%s:%d-%d", fs->BedReferenceEntries[i].chromosome, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
   }
 
+  // Fetch and store sequence names, lengths, and actual sequences for regions of interest
   for(int i=0;i<fs->nref;i++){
     fs->char2idx[fs->seqs_names[i]] = i;
-    //fprintf(stderr,"names are %s\n",fs->seqs_names[i]);
     fs->seqs[i] = fai_fetch(fs->fai,fs->seqs_names[i],fs->seqs_l+i);
   }
 
@@ -304,11 +385,25 @@ fasta_sampler *fasta_sampler_alloc_maskbedentry(const char *fa,const char *bedfi
   }
   fasta_sampler_setprobs(fs);
 
+  // the initialized fasta_sampler object without the provided genomic regions from which our sequence read is sampled
   return fs;
 }
 
 fasta_sampler *fasta_sampler_alloc_vcf(const char *fa, const char *bcffilename,int id,const char* Name,size_t flanking){
-  //fprintf(stderr,"fasta_sampler.cpp \t INSIDE FASTA SAMPLE ALLOC VCF\n");
+   /*
+  fasta_sampler_alloc_vcf - Allocates and initializes a `fasta_sampler` object from an input reference FASTA file (-i) based on capture simulations 
+    extracting regions of interest in close proximity to the variant positions from a provided vcf
+  
+  @param fa: A string representing the path to the FASTA file from which sequences will be loaded.
+  @param bcffilename: A string representing the path to the VCF file containing the variant information.
+  @param id: An integer representing the identifier of an individual defined in the VCF header.
+  @param Name: A string representing the name of an individual defined in the VCF header.
+  @param flanking: A size_t value specifying the number of bases to include as flanking regions around the position in each VCF entry.
+ 
+  similar to fasta_sampler_alloc_bedentry function
+  */
+  
+  // Allocate memory for the fasta_sampler object and load index
   fasta_sampler *fs = new fasta_sampler;
   fs->ws = NULL;
   fs->fai = NULL;
@@ -316,13 +411,12 @@ fasta_sampler *fasta_sampler_alloc_vcf(const char *fa, const char *bcffilename,i
   fs->BedReferenceEntries = NULL;
   fs->BedReferenceCount = 0;
   int ploidy = 5;
-  //read in the bed entries
-  fs->BedReferenceEntries = vcftobedentries(bcffilename,id,Name,flanking, &fs->BedReferenceCount,&ploidy);
   
-  //fprintf(stderr,"fasta_sampler.cpp \t Done with vcftobedentries bed entries %d \t %d\n",fs->BedReferenceCount,ploidy);
+  //Convert positions of vcf entries into a bed format with the provided flanking regions
+  fs->BedReferenceEntries = vcftobedentries(bcffilename,id,Name,flanking, &fs->BedReferenceCount,&ploidy);
 
+  // Initialize the number of references and allocate memory for sequence data,
   fs->nref = fs->BedReferenceCount*ploidy; 
-  //fprintf(stderr,"total entries %d\n",fs->nref);
   fs->seqs = new char* [fs->nref];
   fs->seqs_l = new int[fs->nref];
   fs->seqs_names = new char *[fs->nref];
@@ -330,6 +424,7 @@ fasta_sampler *fasta_sampler_alloc_vcf(const char *fa, const char *bcffilename,i
 
   int nref_entry=0;
 
+  //create the names to extract the region obtained from variant positions using fai_fetch by also creating internal copies of the contigs depending on the ploidy
   for(int i = 0; i < fs->BedReferenceCount; i++) {
     for(int j = 0; j < ploidy; j++) {
       int length = snprintf(NULL, 0, "%s:%d-%d", fs->BedReferenceEntries[i].chromosome, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
@@ -352,14 +447,15 @@ fasta_sampler *fasta_sampler_alloc_vcf(const char *fa, const char *bcffilename,i
           exit(1);
       }
 
+      // Modify the fasta_sampler contig sequence to include variant
       fs->seqs[nref_entry][fs->BedReferenceEntries[i].overlappositions[0]-fs->BedReferenceEntries[i].start] = *fs->BedReferenceEntries[i].variants[j];
 
+      // Update sequence name to reflect the allele and region
       int new_length = snprintf(NULL, 0, "%sallele%d:%d-%d", fs->BedReferenceEntries[i].chromosome, j+1, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
       fs->seqs_names[nref_entry] = (char*) realloc(fs->seqs_names[nref_entry], (new_length + 1) * sizeof(char));
       fs->char2idx[fs->seqs_names[nref_entry]] = nref_entry;
 
       snprintf(fs->seqs_names[nref_entry], new_length + 1, "%sallele%d:%d-%d", fs->BedReferenceEntries[i].chromosome, j+1, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
-
 
       nref_entry++;
     }
@@ -372,11 +468,28 @@ fasta_sampler *fasta_sampler_alloc_vcf(const char *fa, const char *bcffilename,i
     exit(1);
   }
   fasta_sampler_setprobs(fs);
+
+  // the initialized fasta_sampler object with regions solely overlapping the desired variant entries within a vcf file, each contig contains only one vcf entry
+
   return fs;
 }
 
 fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilename,int id,const char* Name,size_t flanking){
-  //fprintf(stderr,"fasta_sampler.cpp \t INSIDE FASTA SAMPLE ALLOC VCF\n");
+  /*
+  fasta_sampler_alloc_vcf_LD - Allocates and initializes a `fasta_sampler` object from an input reference FASTA file (-i) based on capture simulations 
+    extracting regions of interest in close proximity to the variant positions from a provided vcf, assuming those regions with variants which overlap is in Linkage Disequilibrium
+    such that the copies of the contigs can contain numerous variants
+  
+  @param fa: A string representing the path to the FASTA file from which sequences will be loaded.
+  @param bcffilename: A string representing the path to the VCF file containing the variant information.
+  @param id: An integer representing the identifier of an individual defined in the VCF header.
+  @param Name: A string representing the name of an individual defined in the VCF header.
+  @param flanking: A size_t value specifying the number of bases to include as flanking regions around the position in each VCF entry.
+ 
+  similar to fasta_sampler_alloc_vcf function
+  */
+
+  // Allocate memory for the fasta_sampler object and load index
   fasta_sampler *fs = new fasta_sampler;
   fs->ws = NULL;
   fs->fai = NULL;
@@ -385,29 +498,27 @@ fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilenam
   fs->BedReferenceCount = 0;
   int ploidy = 5;
 
-  //read in the bed entries
-
   int BedEntryCount = 0;
   BedEntry* BedEntries = NULL;
 
+  //Convert positions of vcf entries into a bed format with the provided flanking regions
   BedEntries = vcftobedentries(bcffilename,id,Name,flanking,&BedEntryCount,&ploidy);
-  //fprintf(stderr,"read bed entries\n");
-  //merge the coordinates
+
+  //merge those regions after flanking nucleotides has been added to variant position - assuming variants in LD
   int mergedCount = 0;
   fs->BedReferenceEntries = VCFLinkageDisequilibrium(BedEntries,BedEntryCount, &fs->BedReferenceCount,ploidy,flanking);
   
   // Free memory created from the vcf file
-  //fprintf(stderr,"ploidy %d BedEntryCount \t %d\n",BedEntryCount,BedEntries[0].ploidy);
   for(int i = 0; i<BedEntryCount;i++){
     for(int j = 0; j < BedEntries[i].ploidy; j++){
       free(BedEntries[i].variants[j]);
     }
-    //std::cout << *BedEntries[i].variants[0] << std::endl;
     free(BedEntries[i].overlappositions);
     free(BedEntries[i].variants);
   }
   free(BedEntries);
 
+  // Initialize the number of references and allocate memory for sequence data,
   fs->nref = fs->BedReferenceCount*ploidy; 
   //fprintf(stderr,"total entries %d\n",fs->nref);
   fs->seqs = new char* [fs->nref];
@@ -417,12 +528,10 @@ fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilenam
 
   int nref_entry=0;
 
-  //fprintf(stderr,"before fai_fetch loop\n");
+  //create the names to extract the region obtained from variant positions using fai_fetch by also creating internal copies of the contigs depending on the ploidy
   for(int i = 0; i < fs->BedReferenceCount; i++) {
-    //fprintf(stderr,"ref %d \t variant count %d \n",i,fs->BedReferenceEntries[i].variantCount);
     for(int j = 0; j < ploidy; j++) {
 
-      
       int length = snprintf(NULL, 0, "%s:%d-%d", fs->BedReferenceEntries[i].chromosome,fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
       fs->seqs_names[nref_entry] = (char*) malloc((length + 1) * sizeof(char));
       if (fs->seqs_names[nref_entry] == NULL) {
@@ -440,7 +549,6 @@ fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilenam
         fprintf(stderr, "Error fetching sequence from fai\n");
         exit(1);
       }
-      
       //fprintf(stderr,"fs->seqs_names[i] %d \t %s\n",i,chr_reg_tmp);
       
       for (int v=0;v<(fs->BedReferenceEntries[i].variantCount/ploidy);v++){
@@ -448,6 +556,7 @@ fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilenam
         int var_tmp_idx = v*ploidy+j;
         int var_pos_tmp = fs->BedReferenceEntries[i].overlappositions[var_tmp_idx] - fs->BedReferenceEntries[i].start+1;
         
+        // Modify the fasta_sampler contig sequence to include variant
         if (var_pos_tmp >= 0 && var_pos_tmp < fs->seqs_l[nref_entry]) {
           fs->seqs[nref_entry][var_pos_tmp] = *fs->BedReferenceEntries[i].variants[var_tmp_idx];
         }
@@ -459,6 +568,7 @@ fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilenam
       }
       fs->seqs[nref_entry][fs->BedReferenceEntries[i].overlappositions[0]-1] = *fs->BedReferenceEntries[i].variants[j];
       
+      // Update sequence name to reflect the allele and region
       int new_length = snprintf(NULL, 0, "%sallele%d:%d-%d", fs->BedReferenceEntries[i].chromosome, j+1, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
       fs->seqs_names[nref_entry] = (char*) realloc(fs->seqs_names[nref_entry], (new_length + 1) * sizeof(char));
       fs->char2idx[fs->seqs_names[nref_entry]] = nref_entry;
@@ -468,43 +578,71 @@ fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilenam
     }
   }
   
+  // Initialize the realnameidx with indices
   for(int i=0;i<fs->nref;i++){
     fs->realnameidx[i] = i;
   }
-  //fprintf(stderr,"\t-> Number of nref %d in file: \'%s\'\n",fs->nref,fa);
   if(fs->nref==0){
     fprintf(stderr,"\t-> Possible error, no sequences loaded\n");
     exit(1);
   }
   fasta_sampler_setprobs(fs);
-
-  //fprintf(stderr,"fasta_sampler.cpp \t DONE INSIDE FASTA SAMPLE ALLOC VCF\n");
+  
+  // the initialized fasta_sampler object with regions solely overlapping the desired variant entries within a vcf file, assuming variants in LD are present within the same contig 
 
   return fs;
 }
 
 //functions returns head of chromosome, with posB, posE, chr_idx and fraglength set accordingly
 char *sample(fasta_sampler *fs,mrand_t *mr,char **chromoname,int &chr_idx,int &posB,int &posE,int &fraglength, size_t &chr_end, int simmode){
+  /*
+  sample - Samples a chromosome randomly within a FASTA sampler and extract a fragment from a random region wiht a specified length.
+ 
+  @param fs: A pointer to the `fasta_sampler` struct containing the sequence data.
+  @param mr: A pointer to the random number generator.
+  @param chromoname: A pointer to a string where the name of the selected chromosome will be stored.
+  @param chr_idx: An integer reference where the index of the selected chromosome will be stored.
+  @param posB: An integer reference where the starting position of the fragment will be stored.
+  @param posE: An integer reference where the ending position of the fragment will be stored.
+  @param fraglength: An integer representing the length of the fragment to sample.
+  @param chr_end: A size_t reference where the length of the selected chromosome will be stored.
+  @param simmode: An integer indicating the simulation mode (0 for linear simulations and 1 for circular simulations).
+   
+  @return: A pointer to the sequence of the selected chromosome.
+  */
+
   chr_idx = 0;
+
+  // Randomly select a chromosome index if more than one chromosome is available
   if(fs->nref>1)
     chr_idx = ransampl_draw2(fs->ws,mrand_pop(mr),mrand_pop(mr));
+
+  // Set the chromosome name, its length and the regional positions
   *chromoname = fs->seqs_names[chr_idx];
   chr_end = fs->seqs_l[chr_idx];
   posB = mrand_pop(mr)*fs->seqs_l[chr_idx]; //abs(mrand_pop_long(mr)) % fs->seqs_l[chr_idx];
   posE = posB +fraglength;
   
+  // linear simulations, move the end point to ensure no crossing of the breakpoint.
   if(posE>=fs->seqs_l[chr_idx] && simmode == 0){
-    // linear simulations, move the end point to ensure no crossing of the breakpoint.
     posE=fs->seqs_l[chr_idx];
     posB=posE-fraglength;
   }
   
+  // extract and return the sequence of the selected chromosome
   char *ret =fs->seqs[chr_idx]; 
   chr_idx = fs->realnameidx[chr_idx];
   return ret;
 }
 
 void dump_internal(fasta_sampler *fs,const char* filename){
+  /*
+  dump_internal - Saves the sequences from a `fasta_sampler` to a BGZF-compressed file.
+  
+  @param fs: A pointer to the `fasta_sampler` struct containing the sequences.
+  @param filename: A string representing the path to the output file where the sequences will be saved.
+ */
+
   kstring_t *fa_s[1];
   fa_s[0] =(kstring_t*) calloc(1,sizeof(kstring_t));
   fa_s[0]->s = NULL;
@@ -533,6 +671,12 @@ void dump_internal(fasta_sampler *fs,const char* filename){
 }
 
 void fasta_sampler_destroy(fasta_sampler *fs){
+  /*
+  fasta_sampler_destroy - cleans up allocated memory for the fasta_sampler object
+  
+  @param fs: A pointer to the `fasta_sampler` struct containing the sequences.
+  */
+
   fai_destroy(fs->fai);
   for(int i=0;i<fs->nref;i++){
     free(fs->seqs[i]);
@@ -554,6 +698,12 @@ void fasta_sampler_destroy(fasta_sampler *fs){
 }
 
 void fasta_sampler_destroy_captureLD(fasta_sampler *fs){
+    /*
+  fasta_sampler_destroy_captureLD - cleans up allocated memory for the fasta_sampler object created when assuming variants are in LD
+  
+  @param fs: A pointer to the `fasta_sampler` struct containing the sequences.
+  */
+
   if (fs == NULL) return;
 
   fai_destroy(fs->fai);
@@ -608,18 +758,33 @@ void fasta_sampler_destroy_captureLD(fasta_sampler *fs){
 }
 
 int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
+  /*
+  extend_fasta_sampler - Extends the `fasta_sampler` instance to accommodate additional ploidy levels for a given chromosome. 
+    By modifying the object in place, creating internal copies of the chromosome containing the alleles from a provided vcf file 
+
+  @param fs: A pointer to the `fasta_sampler` struct that will be extended.
+  @param fs_chr_idx: The index of the chromosome to be extended in the `fasta_sampler`.
+  @param ploidy: The desired ploidy level for the chromosome.
+
+ */
+
   if(ploidy ==1){
-    //ploidy is haploid, will perform updownstream sorting of the reverse positions
+    // Ploidy is haploid; check if chromosome is already in the map
     ploidymap::iterator it = fs->pldmap.find(fs_chr_idx);
     if(it!=fs->pldmap.end()){
+      // Chromosome is already present, no extension needed
       return 0;
     }
+
+    // Create a new ploidy map entry for haploid chromosomes
     int *pldmap = new int[5];
     pldmap[0]=fs_chr_idx;
     pldmap[1]=pldmap[2]=pldmap[3]=pldmap[4]=-1;
     fs->pldmap[fs_chr_idx] = pldmap;
     return 0;
   }
+
+  // Check if all required ploidy levels are already present
   int isThere  = 1;
   char buf[1024];
   for(int i=1;i<ploidy;i++){
@@ -636,21 +801,28 @@ int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
     int *seqs_l = new int[nref];
     int *realnameidx = new int[nref];
     int *pldmap = new int[5];
+
+    // Copy existing sequences and metadata
     for(int i=0;i<fs->nref;i++){
       seqs[i] = fs->seqs[i];
       seqs_names[i] = fs->seqs_names[i];
       seqs_l[i] =fs->seqs_l[i];
       realnameidx[i] = fs->realnameidx[i];
     }
+  
+    // Free original fasta_sampler object
     delete [] fs->seqs;
     delete [] fs->seqs_names;
     delete [] fs->seqs_l;
     delete [] fs->realnameidx;
 
+    // Update `fasta_sampler` with new arrays
     fs->seqs = seqs;
     fs->seqs_names = seqs_names;
     fs->seqs_l = seqs_l;
     fs->realnameidx = realnameidx;
+
+    // Create and extend the fasta_sampler object with the new ploidy levels
     ploidymap::iterator it = fs->pldmap.find(fs_chr_idx);
     assert(it==fs->pldmap.end());
     pldmap[0] = fs_chr_idx;
