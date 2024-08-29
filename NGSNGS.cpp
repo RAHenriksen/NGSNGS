@@ -60,6 +60,8 @@ void catchkill(){
 }
 
 int main(int argc,char **argv){
+  // NEXT GENERATION SIMULATOR FOR NEXT GENERATION SEQUENCING DATA - Rasmus Amund Henriksen, Lei Zhao, Thorfinn Sand Korneliussen 
+  
   argStruct *mypars = NULL;
   if(argc==1||(argc==2&&(strcasecmp(argv[1],"--help")==0||strcasecmp(argv[1],"-h")==0))){
     HelpPage(stderr);
@@ -83,7 +85,8 @@ int main(int argc,char **argv){
 
     outputformat_e OutputFormat = mypars->OutFormat;
     double readcov = mypars->coverage;
-    //fprintf(stderr,"DESIRED COVERAGE %f \n",readcov);
+
+    // OS specific random number generator
     if (mypars->rng_type == -1){
       #if defined(__linux__) || defined(__unix__)
         mypars->rng_type = 0;
@@ -102,8 +105,9 @@ int main(int argc,char **argv){
     int nlines = 0;
     const char* SizeDist = mypars->LengthDist;
     double mean_length = 0;
-    int SizeDistType=-1;double val1 = 0; double val2  = 0;
+    int SizeDistType=-1;double SizeDistval1 = 0; double SizeDistval2  = 0;
     
+    // quality profile and cycle length relevant for specific formats (fastq and sequence alignment map format)
     if(OutputFormat==fqT|| OutputFormat== fqgzT ||OutputFormat==samT ||OutputFormat==bamT|| OutputFormat== cramT){
       if (mypars->CycleLength != 0){
         readcycle = mypars->CycleLength;
@@ -133,6 +137,7 @@ int main(int argc,char **argv){
       }
     }
 
+    // Fragment length (-l, -lf, -ld)
     if (mypars->Length != 0){
       if (mypars->Length < 0){ErrMsg(3.0);}
       else{
@@ -143,7 +148,6 @@ int main(int argc,char **argv){
       } 
     }
     else if (mypars->LengthFile != NULL){
-      //fprintf(stderr,"INSIDE LENGTH FILE\n");
       FILE *fp = fopen(mypars->LengthFile, "r");
       int Len_prev; int Len_cur;
       float CummFreq_cur, CummFreq_prev;
@@ -177,7 +181,6 @@ int main(int argc,char **argv){
           fclose(fp_tmp);
           readcycle = (int) Len_cur_tmp;
         }
-        //fprintf(stderr,"LEn cur %d \t %d \t cycle %d \t",Len_cur,Len_cur_tmp,readcycle);
         
         //std::cout << " s 1 " <<mean_length << " z " << Len_prev << std::endl;
         mean_length += Len_prev * ((double)(CummFreq_prev));
@@ -209,29 +212,22 @@ int main(int argc,char **argv){
       char* Dist;
       char* DistParam = strdup(SizeDist);
       Dist = strtok(DistParam,",");
-      val1 = atof(strtok (NULL, ","));
+      SizeDistval1 = atof(strtok (NULL, ","));
       char* tmp = strtok(NULL, ",");
-      if(tmp == NULL){val2 = 0;}
-      else{val2 = atof(tmp);}
+      if(tmp == NULL){SizeDistval2 = 0;}
+      else{SizeDistval2 = atof(tmp);}
       
-      if (strcasecmp(Dist,"Uni")==0){SizeDistType=2;mean_length=(double)(0.5*(val1+val2));}
-      else if (strcasecmp(Dist,"Norm")==0){SizeDistType=3;mean_length= (double)val1;}
-      else if (strcasecmp(Dist,"LogNorm")==0){SizeDistType=4;mean_length= (double)exp((val1+((val2*val2)/2)));}
-      else if (strcasecmp(Dist,"Pois")==0){SizeDistType=5;mean_length= (double)val1;}
-      else if (strcasecmp(Dist,"Exp")==0){SizeDistType=6;mean_length= (double)(1/val1);}
-      else if (strcasecmp(Dist,"Gam")==0){SizeDistType=7;mean_length= (double)(val1*val2);}
+      if (strcasecmp(Dist,"Uni")==0){SizeDistType=2;mean_length=(double)(0.5*(SizeDistval1+SizeDistval2));}
+      else if (strcasecmp(Dist,"Norm")==0){SizeDistType=3;mean_length= (double)SizeDistval1;}
+      else if (strcasecmp(Dist,"LogNorm")==0){SizeDistType=4;mean_length= (double)exp((SizeDistval1+((SizeDistval2*SizeDistval2)/2)));}
+      else if (strcasecmp(Dist,"Pois")==0){SizeDistType=5;mean_length= (double)SizeDistval1;}
+      else if (strcasecmp(Dist,"Exp")==0){SizeDistType=6;mean_length= (double)(1/SizeDistval1);}
+      else if (strcasecmp(Dist,"Gam")==0){SizeDistType=7;mean_length= (double)(SizeDistval1*SizeDistval2);}
       else if (mypars->Length >0){ErrMsg(5.0);}
       free((char *)Dist);
       fprintf(stderr,"\t-> Mean fragment length calculated from the provided length distribution (-ld) and parameters is %f nt\n",mean_length);
     }
-    
-    /*std::cout << " x " << mean_length << std::endl;
-    std::cout << " read " << readcycle << std::endl;
-    readcycle = mean_length;
-    fprintf(stderr,"SIZEDISTTYPE %d \t FRAG DIST MEAN LENGTH %f 1\n",SizeDistType,mean_length);
-    std::cout << " x " << mean_length << std::endl;
-    std::cout << " read " << readcycle << std::endl;
-    */
+
     if (mypars->CycleLength == 0 && mypars->QualProfile1 == NULL){
       readcycle = (int) mean_length;
       fprintf(stderr,"\t-> The read cycle length is equal to the mean length from the length distribution (-ld) or fixed length (-l): %d\n",readcycle);
@@ -240,8 +236,7 @@ int main(int argc,char **argv){
       fprintf(stderr,"\t-> The read cycle length is either provided (-cl): %d or inferred from the quality profile dimension (-q1): %d\n",mypars->CycleLength,readcycle);
     }
 
-    // READ IN THE FASTQ FILE
-
+    // read in reference genome to calculate the number of reads or coverage depending on genome length
     faidx_t *seq_ref = NULL;
     seq_ref  = fai_load(mypars->Reference);
     
@@ -258,7 +253,7 @@ int main(int argc,char **argv){
     }
     //fprintf(stderr,"NOW IM AFTER NREADS %zu \n",mypars->nreads);
     
-    //now compute the number of reads required across all threads
+    //now compute the number of reads required across all threads depending on genome size when providing a depth of coverage, NB. when -c > 1 the breadth of coverage will also converge towards 1 due to uniform sampling of positions 
     if (readcov > 0.0){
       size_t genome_size = 0;
 
@@ -278,7 +273,6 @@ int main(int argc,char **argv){
       }
     }
 
-    //size_t nreads_per_thread = mypars->nreads/mypars->SamplThreads;
 
     fprintf(stderr,"\t-> Number of contigs/scaffolds/chromosomes in input file (-i): \'%s\': %d\n",mypars->Reference,chr_total);
     if(mypars->Glob_seed_binary == 1){
@@ -292,6 +286,7 @@ int main(int argc,char **argv){
     if (readcov > 0.0){fprintf(stderr,"\t-> Number of reads to be simulated %zu, based on the desired coverage (-c): %f\n",mypars->nreads,mypars->coverage);}
     else{fprintf(stderr,"\t-> Number of reads to be simulated (-r): %zu\n",mypars->nreads);}
 
+    // additional nucleotides for sequencing reads 
     int AddAdapt = 0;
     const char* Polynt;
     if (mypars->Adapter1 != NULL){
@@ -304,7 +299,8 @@ int main(int argc,char **argv){
       if (mypars->Poly != NULL){ErrMsg(14.0);}
       else{Polynt = "F";}
     }
-    // QUALITY PROFILES
+    
+    // read in quality profiles
     const char* QualStringFlag;
     if (mypars->QualProfile1 == NULL && mypars->FixedQual == 0){QualStringFlag = "false";}
     else{QualStringFlag = "true";}
@@ -338,9 +334,10 @@ int main(int argc,char **argv){
     if(fqT==OutputFormat|| fqgzT==OutputFormat)
       qualstringoffset = 33;
     
+    // PMD
     int DoBriggs = 0;
     int DoBriggsBiotin = 0;
-    float Param[4];
+    float PMDParam[4];
     if (mypars->Briggs != NULL || mypars->BriggsBiotin != NULL){
       char* BriggsParam;
       if (mypars->Briggs != NULL){
@@ -352,14 +349,15 @@ int main(int argc,char **argv){
         DoBriggsBiotin = 1;
       }
       
-      Param[0] = myatof(strtok(BriggsParam,"\", \t"));
-      Param[1] = myatof(strtok(NULL,"\", \t"));
-      Param[2] = myatof(strtok(NULL,"\", \t"));
-      Param[3] = myatof(strtok(NULL,"\", \t"));
+      PMDParam[0] = myatof(strtok(BriggsParam,"\", \t"));
+      PMDParam[1] = myatof(strtok(NULL,"\", \t"));
+      PMDParam[2] = myatof(strtok(NULL,"\", \t"));
+      PMDParam[3] = myatof(strtok(NULL,"\", \t"));
       
       free(BriggsParam);
     }
     
+    // Stochastic indels
     int DoIndel = 0;
     float IndelFuncParam[4];
     if (mypars->Indel != NULL){
@@ -373,6 +371,7 @@ int main(int argc,char **argv){
     }
 
     int doMisMatchErr = 0;
+    int MisMatchLength = 0;
     
     if (mypars->SubProfile != NULL)
       doMisMatchErr = 1;
@@ -390,7 +389,6 @@ int main(int argc,char **argv){
       ErrMsg(12.0);
     }
 
-    int DeamLength = 0;
 
     if(DoBriggsBiotin==1){
       fprintf(stderr,"\t-> Number of PCR duplicates for non-biotin simulated deamination model is %d\n",mypars->Duplicates);
@@ -408,20 +406,39 @@ int main(int argc,char **argv){
       }
     }*/
 
-    ThreadInitialization(mypars->Reference,mypars->SamplThreads,mypars->Glob_seed,mypars->nreads,mypars->OutName,
-                      AddAdapt,mypars->Adapter1,mypars->Adapter2,mypars->OutFormat,mypars->seq_type,
-                      Param,DoBriggs,DoBriggsBiotin,mypars->LengthFile,mypars->Length,SizeDistType,val1,val2,readcycle,mypars->CycleLength,
-                      qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->FixedQual,mypars->CompressThreads,QualStringFlag,Polynt,
-                      mypars->DoSeqErr,mypars->Chromosomes,doMisMatchErr,mypars->SubProfile,mypars->MisMatchMatrix_bdam,mypars->M3outname,DeamLength,mypars->rng_type,
-                      mypars->vcffile,IndelFuncParam,DoIndel,mypars->CommandRun,NGSNGS_VERSION,mypars->HeaderIndiv,mypars->NameIndiv,
-                      mypars->Align,mypars->KstrBuf,mypars->DumpFile,mypars->IndelDumpFile,mypars->Duplicates,mypars->LowerLimit,
-                      mypars->mutationrate,mypars->referencevariations,mypars->generations,mypars->simmode,
-                      mypars->flankingregion,mypars->BedFile,mypars->MaskBed,mypars->CaptureVCF,mypars->linkage);
-                        
-    fai_destroy(seq_ref); //ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0) definitely lost: 120 bytes in 5 blocks
+    // Initialize the sampling threads
+    ThreadInitialization(
+      NGSNGS_VERSION,mypars->CommandRun,mypars->SamplThreads,mypars->CompressThreads,mypars->KstrBuf,
+      mypars->Reference,mypars->Chromosomes,mypars->Glob_seed,mypars->rng_type,
+      mypars->OutName,mypars->OutFormat,mypars->Align,mypars->seq_type,mypars->simmode,mypars->nreads, mypars->flankingregion,mypars->BedFile,mypars->MaskBed,
+      mypars->LengthFile,mypars->Length,SizeDistType,SizeDistval1,SizeDistval2,mypars->LowerLimit,
+      AddAdapt,mypars->Adapter1,mypars->Adapter2,Polynt,
+      mypars->DoSeqErr,QualStringFlag,qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->FixedQual,readcycle,mypars->CycleLength,
+      doMisMatchErr,mypars->SubProfile,MisMatchLength,mypars->MisMatchMatrix_bdam,mypars->M3outname,
+      PMDParam,DoBriggs,DoBriggsBiotin,mypars->Duplicates,
+      mypars->mutationrate,mypars->referencevariations,mypars->generations,
+      mypars->vcffile,mypars->HeaderIndiv,mypars->NameIndiv,mypars->VCFDumpFile,mypars->CaptureVCF,mypars->linkage,
+      IndelFuncParam,DoIndel,mypars->IndelDumpFile);
+
+    /*
+    NGSNGS overall - @param const char* version,char CommandArray[LENS],int thread_no,int threadwriteno,size_t BufferLength
+    Reference specific - @param const char* refSseq,const char* Specific_Chr,int seed,int RandMacro,
+    simulation and output specific - @param const char* OutputName,outputformat_e OutputFormat,int Align,seqtype_e SeqType,int simmode,size_t reads,size_t flankingregion, const char* BedFile, int MaskBed,
+    fragment length specific - @param const char* Sizefile,int FixedSize,int SizeDistType, double val1, double val2,int Lowerlimit,
+    Additional nucleotide post simulation specific - @param int AddAdapt,const char* Adapter_1,const char* Adapter_2,const char* Polynt,
+    Sequencing error (fastq,sam,bam,cram) specific - @param int DoSeqErr,const char* QualStringFlag,int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int FixedQual,int readcycle,int readcycle_fix,
+    Nucleotide misincorporation specific - @param int doMisMatchErr,const char* SubProfile,int MisLength,const char* MisMatchMatrix,const char* M3outname,
+    PMD specific - @param float BriggsParam[4],int DoBriggs,int DoBriggsBiotin,int Duplicates,
+    Reference specific stochastic variation - @param double mutationrate, size_t referencevariations, int generations,
+    Allele specific variations - @param const char *VariantFile,int HeaderIndivIdx,const char* NameIndiv,const char* VCFfileDump,int CaptureVCF,int linkage,
+    sequencing read specific stochastic indels variations - @param float IndelFuncParam[4],int DoIndel,const char* IndelDumpFile
+    */
+
+    fai_destroy(seq_ref);
     fprintf(stderr, "\t[ALL done] cpu-time used =  %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
     fprintf(stderr, "\t[ALL done] walltime used =  %.2f sec\n", (float)(time(NULL) - t2));
   }
 
   argStruct_destroy(mypars);
 }
+

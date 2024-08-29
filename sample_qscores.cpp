@@ -13,7 +13,6 @@
 
 extern int refToInt[256];
 extern char intToRef[4];
-extern char refToChar[256];
 
 double phred2Prob[256];
 

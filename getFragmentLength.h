@@ -3,6 +3,7 @@
 
 #include "mrand.h"
 
+// struct defining the various types of fragment lengths
 typedef struct{
   int type;
   int FixLength;

@@ -24,7 +24,7 @@ argStruct *getpars(int argc,char ** argv){
   // The output format, output files, and structural elements for SAM outputs
   mypars->OutFormat = unknownT;
   mypars->OutName = NULL;
-  mypars->DumpFile = NULL;
+  mypars->VCFDumpFile = NULL;
   mypars->IndelDumpFile = NULL;
   mypars->HeaderIndiv=-1;
   mypars->NameIndiv = NULL;
@@ -248,7 +248,7 @@ argStruct *getpars(int argc,char ** argv){
       mypars->Indel = strdup(*(++argv));
     }
     else if(strcasecmp("-DumpVCF",*argv)==0){
-      mypars->DumpFile = strdup(*(++argv));
+      mypars->VCFDumpFile = strdup(*(++argv));
     }
     else if(strcasecmp("-DumpIndel",*argv)==0){
       mypars->IndelDumpFile = strdup(*(++argv));
@@ -368,7 +368,7 @@ argStruct *getpars(int argc,char ** argv){
 void argStruct_destroy(argStruct *mypars){
   free(mypars->Reference);
   free(mypars->OutName);
-  free(mypars->DumpFile);
+  free(mypars->VCFDumpFile);
   free(mypars->IndelDumpFile);
   free(mypars->LengthFile);
   free(mypars->LengthDist);

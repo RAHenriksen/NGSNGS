@@ -6,6 +6,17 @@
 #include <cassert>
 
 mrand_t *mrand_alloc(int type_a,long int seedval){
+  /*
+  mrand_alloc - Allocates and initializes a random number generator structure (mrand_t) based on a specified type.
+  
+  @param type_a: The type of random number generator to use. 
+                 0 - drand48 (or erand48 if on Apple systems)
+                 1 - std::default_random_engine with uniform distribution
+                 2 - rand_r with a custom seed
+                 3 - erand48 with a custom seed
+                 4 - Custom 64-bit integer random generator
+  @param seedval: A seed value for initializing the random number generator.
+  */
   mrand_t *ret = (mrand_t *) malloc(sizeof(mrand_t));
   ret->type = type_a;
 
@@ -32,6 +43,7 @@ mrand_t *mrand_alloc(int type_a,long int seedval){
     ret->xsubi[0] = 0x330e;
   }
   if(ret->type==4){
+    // custom 64-bit integer random generator
     unsigned long long tmp = -1;
     ret->nr_inv_rec = 1/((double) tmp);//(2^64-1)^-1
     tmp = seedval;
@@ -46,6 +58,12 @@ mrand_t *mrand_alloc(int type_a,long int seedval){
 }
 
 double mrand_pop(mrand_t *mr){
+  /*
+  mrand_pop - Generates a random double value between 0 and 1 from the specified random number generator type.
+  
+  @param mr: A pointer to an mrand_t structure representing the random number generator.
+  
+  */
   double res;
   if(mr->type==0){
     #if defined(__linux__) || defined(__unix__)
@@ -53,6 +71,7 @@ double mrand_pop(mrand_t *mr){
     #endif
   }
   else if(mr->type==1){
+    // Generate random number using C++11 engine and distribution
     res =  mr->distr(mr->eng);
   }
   else if(mr->type==2){
@@ -66,6 +85,7 @@ double mrand_pop(mrand_t *mr){
     res = erand48(mr->xsubi);
   }
   else if(mr->type==4){
+    // Use custom 64-bit integer random generator if type is 4
     res = mr->nr_inv_rec * mr->nr_int64();
   }
   else{
@@ -77,6 +97,12 @@ double mrand_pop(mrand_t *mr){
   return res;
 }
 long mrand_pop_long(mrand_t *mr){
+  /*
+  mrand_pop_long - Generates a random long integer value from the specified random number generator type.
+  
+  @param mr: A pointer to an mrand_t structure representing the random number generator.
+  
+  */
   long res;
   if(mr->type==0){
     #if defined(__linux__) || defined(__unix__)
@@ -94,6 +120,7 @@ long mrand_pop_long(mrand_t *mr){
     res = abs(jrand48(mr->xsubi));
   }
   else if(mr->type==4){
+    // Use custom 64-bit integer random generator if type is 4
     res = (long) mr->nr_int64();
   }
   else{
@@ -104,8 +131,13 @@ long mrand_pop_long(mrand_t *mr){
 }
 
 
-int Random_geometric_k(const double p,mrand_t *mr)
-{
+int Random_geometric_k(const double p,mrand_t *mr){
+  /*
+  Random_geometric_k - Generates a random integer value following a geometric distribution, so number of trials.
+  
+  @param p: The probability parameter of the geometric distribution (0 ≤ p ≤ 1).
+  @param mr: A pointer to an mrand_t structure representing the random number generator.  
+  */
   double u = mrand_pop(mr);
   int k;
 
