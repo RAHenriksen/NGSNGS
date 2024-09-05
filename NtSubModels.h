@@ -10,8 +10,6 @@ void ErrorSub(double randval,char seqchar[], int pos);
 
 void MisMatchFileArray(double* freqval,const char* filename,int &mismatchcyclelength,int &elements);
 
-double* MisMatchMatrixMetagenomic(double* freqval,const char* filename,int &mismatchcyclelength);
-
 int MisMatchFile(char seq[],mrand_t *mr,double* freqval,int LEN);
 
 int MisMatchFile_kstring(kstring_t* seq,mrand_t *mr,double* freqval,int LEN);

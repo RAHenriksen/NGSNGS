@@ -42,28 +42,35 @@ extern const char *bass;
 pthread_mutex_t write_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void* Sampling_threads(void *arg) {
-  
+  /*
+  Sampling_threads - create sampling threads
+  */
+
   //casting my struct as arguments for the thread creation
   Parsarg_for_Sampling_thread *struct_obj = (Parsarg_for_Sampling_thread*) arg;
 
+  // local thread seeed ensuring each thread have a local seed 
   unsigned int loc_seed = struct_obj->threadseed+struct_obj->threadno; 
+  
+  // allocate memory for random sampling structure used for sampling with Alias method
   mrand_t *rand_alloc = mrand_alloc(struct_obj->rng_type,loc_seed);
-  // sequence reads, original, modified, with adapters, pe
+
+  // Create character array for sequence and quality scores for first and second read in paired-end reads
   char READ_ID[512];
   char *FragmentSequence = (char*) calloc(LENS,1);
   char seq_r1[LENS] = {0};
   char seq_r2[LENS] = {0};
   char qual_r1[LENS] = "\0";
   char qual_r2[LENS] = "\0";
- 
-  size_t reads = struct_obj -> reads;
 
-  size_t BufferLength = struct_obj -> BufferLength;
-
+  // change quality offset depending on output format
   int ErrProbTypeOffset = 0;
   if (struct_obj->OutputFormat==fqT || struct_obj->OutputFormat==fqgzT){ErrProbTypeOffset=33;}
+    
+  // buffer length used when storing sequencing reads in outoul files
+  size_t BufferLength = struct_obj -> BufferLength;
   
-  // This is my Kstrings i save the format files in
+  // Create my Kstrings used for saving the sequencing reads to the output files
   kstring_t *fqs[2];
   for(int i=0;i<2;i++){
     fqs[i] =(kstring_t*) calloc(1,sizeof(kstring_t));
@@ -71,34 +78,21 @@ void* Sampling_threads(void *arg) {
     fqs[i]->l = fqs[i]->m = 0;
   }
   
-  //generating kstring for potential records of the stochastic indels
+  //Generating kstring for potential records of the stochastic indels
   char INDEL_INFO[1024];
-  //  char INDEL_DUMP[2048];
   kstring_t *indel;
   
   indel =(kstring_t*) calloc(1,sizeof(kstring_t));
   indel->s = NULL;
   indel->l = indel->m = 0;
-  
+ 
+  // Desired sequencing reads
+  size_t reads = struct_obj -> reads;
+  // thread specific reads
   size_t localread = 0;
+  // global number of sequencing reads ensuring it does increase above input reads (-r)
   size_t current_reads_atom = 0;
-
-  char *chr; //this is an unallocated pointer to a chromosome name, eg chr1, chrMT etc
-
-  extern int SIG_COND;
-
-  std::default_random_engine RndGen(loc_seed);
-  
-  sim_fragment *sf;
-  if (struct_obj->LengthType==0)
-    sf = sim_fragment_alloc(struct_obj->LengthType,struct_obj->FixedSize,struct_obj->distparam2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,struct_obj->rng_type,loc_seed,RndGen);
-  else
-    sf = sim_fragment_alloc(struct_obj->LengthType,struct_obj->distparam1,struct_obj->distparam2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,struct_obj->rng_type,loc_seed,RndGen);
-  
-  int C_to_T_counter = 0;int C_total = 0;
-  int G_to_A_counter = 0;int G_total = 0;
-  int refCp1 = 0;int refCTp1 = 0;int refCp2 = 0;int refCTp2 = 0;
-
+  // calculate the value of reads for every print statement 
   int modulovalue;
   if (reads > 1000000){
     modulovalue = 10;
@@ -108,15 +102,30 @@ void* Sampling_threads(void *arg) {
   }
   size_t moduloread = reads/modulovalue;
 
+  char *chr; //this is an unallocated pointer to a chromosome name, eg chr1, chrMT etc
+
+  extern int SIG_COND;
+
+  std::default_random_engine RndGen(loc_seed);
+  
+  // sample fragments of the original molecule
+  sim_fragment *sf;
+  if (struct_obj->LengthType==0)
+    sf = sim_fragment_alloc(struct_obj->LengthType,struct_obj->FixedSize,struct_obj->distparam2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,struct_obj->rng_type,loc_seed,RndGen);
+  else
+    sf = sim_fragment_alloc(struct_obj->LengthType,struct_obj->distparam1,struct_obj->distparam2,struct_obj->No_Len_Val,struct_obj->FragFreq,struct_obj->FragLen,struct_obj->rng_type,loc_seed,RndGen);
+  
+  // PMD specific substitution counts 
+  int C_to_T_counter = 0;int C_total = 0;
+  int G_to_A_counter = 0;int G_total = 0;
+  int refCp1 = 0;int refCTp1 = 0;int refCp2 = 0;int refCTp2 = 0;
+
   int sampled_skipped = 0;
   int whileiter=0;
-  
-  //fprintf(stderr,"Test \n struct_obj->simmode %d \n",struct_obj->simmode);
+
+  // sampling DNA molecules and simulate sequencing reads  
   while (current_reads_atom < reads && SIG_COND){
-    //fprintf(stderr,"-----------\nwhile iteration %d\n-----------\n",whileiter);
     whileiter++;
-    //fprintf(stderr,"TEST FIXED QUAL SCORE %d \n",struct_obj->FixedQual_r1r2);
-    int posB = 0; int posE = 0;
 
     //sample fragmentlength
     int fraglength = 0;
@@ -133,14 +142,10 @@ void* Sampling_threads(void *arg) {
       else{
         fraglength = struct_obj->lowerlimit;
       }
-      //fprintf(stderr,"lowerlimit%d\n",struct_obj->lowerlimit);
     }
-    // Selecting genomic start position across the generated contiguous contigs for which to extract 
-    int chr_idx = -1;
+    int fragmentLength;
 
-    //maxbases is the number of nucleotides we will work with.
-    //set this to minimum of bases sequenced or fragment length.
-    //if output is fasta then length is simply the entire fragment
+    //maxbases is the number of nucleotides we will work with. set this to minimum of bases sequenced or fragment length. if output is fasta then length is simply the entire fragment
     int maxbases = 0;
     int cyclelength = 0;
     //fprintf(stderr,"Max length %d \t and cycle length %d \n",maxbases,cyclelength);
@@ -153,34 +158,27 @@ void* Sampling_threads(void *arg) {
       cyclelength = struct_obj->maxreadlength;
       maxbases = std::min(fraglength,cyclelength);
     }
-    //fprintf(stderr,"Max length %d \t and cycle length %d \n",maxbases,cyclelength);
+
+    // Selecting genomic start position across the generated contiguous contigs for which to extract 
+    int chr_idx = -1;
+    int posB = 0; int posE = 0;
     //get shallow copy of chromosome, offset into, is defined by posB, and posE
     size_t chr_end;
     char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength,chr_end,struct_obj->simmode);
     
-    /*fprintf(stderr,"index %d \n",chr_idx);
-    fprintf(stderr,"checking correct load of references\n");
-    fasta_sampler_print2(struct_obj->reffasta);
-    fprintf(stderr,"printing fasta files for thread %d\n",struct_obj->threadno);*/
-    
-    /*
-    Create some kind of bed file coordinate sampling
-    ellers lav et antal linjer og så randomly sample fra dem.
-    char *chrseq = sample(struct_obj->reffasta,rand_alloc,&chr,chr_idx,posB,posE,fraglength,chr_end,struct_obj->simmode);
-
-    */
-    int fragmentLength;
     //extracting a biological fragment of the reference genome
     if(struct_obj->simmode == 1){
+      // circular simulations, where sequencing reads can extend beyond the end chromosome end coordinate to continue at the start coordinate 
+      
       if(posE>chr_end){
         //breakpoint reads
         fragmentLength = fraglength;
         assert(fragmentLength>20);
 
         size_t segment1_start = posB;
-        size_t segment1_length = chr_end-posB; // Length of "Hello"
+        size_t segment1_length = chr_end-posB;
         size_t segment2_start = 0;
-        size_t segment2_length = posE-chr_end; // Length of "World"  
+        size_t segment2_length = posE-chr_end; 
 
         memset(FragmentSequence,0,strlen(FragmentSequence));
         // Copy first segment - end of the chromosome 
@@ -197,24 +195,22 @@ void* Sampling_threads(void *arg) {
       }
     }
     else{
-      //linear
+      //linear simulation
       fragmentLength=posE-posB;
       assert(posE>=posB&&fragmentLength>20);
       memset(FragmentSequence,0,strlen(FragmentSequence));
       strncpy(FragmentSequence,chrseq+(posB),fraglength); // same orientation as reference genome 5' -------> FWD -------> 3'
-      //fprintf(stderr,"initial sequence \n%s \n position %d to %d \n",FragmentSequence,posB,posE);
     }
 
     int skipread = 0; // Initialize skipread to 0
+
+    // assuming original fragments with N at first and last position is more likely to originate from heterochromatin regions fully consisting of N
     if(FragmentSequence[0]=='N' && FragmentSequence[(int)strlen(FragmentSequence)-1]=='N'){
       skipread = 1;
-      //std::cout << FragmentSequence << "s f" << posB << " " << posE << std::endl;
       memset(FragmentSequence,0,strlen(FragmentSequence));
       sampled_skipped++;
       continue;
     }
-    //std::cout << "Current read atom "<< current_reads_atom << std::endl;
-    //std::cout << FragmentSequence << "s f" << posB << " " << posE << std::endl;
 
     //Generating random ID unique for each read output
     double rand_val_id = mrand_pop(rand_alloc);
@@ -233,6 +229,8 @@ void* Sampling_threads(void *arg) {
 
       int ops[2] ={0,0};
       add_indel(rand_alloc,FragmentSequence,struct_obj->maxreadlength,pars,INDEL_INFO,ops);
+      
+      //create the flag illustrating the indels
       if (ops[0] > 0 && ops[1] == 0){
         has_indels = 1;
       }
@@ -259,13 +257,12 @@ void* Sampling_threads(void *arg) {
 
     char **FragRes;
 
-    //Nucleotide alteration models only on the sequence itself which holds for fa,fq,sam
+    //Simulate PMD nucleotide alteration method
     int ReadDeam = 0;
-    int Groupshift = 0; //mrand_pop(rand_alloc)>0.5?0:1; 
+    int Groupshift = 0;
     int FragTotal = 4;
     int iter = 1; //iterating through all fragments
     if(struct_obj->DoBriggs){
-      //fprintf(stderr,"Do Non-biotin deaminaiton\n");
       //For the none-biotin briggs model we need to store 4 fragments with slightly different deaminations patterns
       FragRes = new char *[FragTotal];
       for(int i=0;i<FragTotal;i++){
@@ -273,6 +270,7 @@ void* Sampling_threads(void *arg) {
         memset(FragRes[i],'\0',1024);
       }
 
+      // simulate PMD to the original fragment and return the boolean value 
       ReadDeam=SimBriggsModel2(FragmentSequence, fragmentLength, 
         struct_obj->BriggsParam[0],
         struct_obj->BriggsParam[1],
@@ -287,14 +285,15 @@ void* Sampling_threads(void *arg) {
         //keep one fragment out of the 4 possible
         Groupshift = mrand_pop_long(rand_alloc) % 4;
         FragTotal = Groupshift+1;
-        //fprintf(stderr,"group shift %d\n",Groupshift);
       }
       else if (struct_obj->Duplicates == 2){
+        // keep one pair of the deaminated fragments following blunt-end repair
         Groupshift = mrand_pop(rand_alloc)>0.5?0:1; 
         iter = 2;
       }      
     }
     else if(struct_obj->DoBriggsBiotin){
+      // use deamination with the 454 roche sequencing platform
       FragTotal = 1;
       FragRes = new char *[FragTotal];
       FragRes[0] = FragmentSequence;
@@ -306,18 +305,15 @@ void* Sampling_threads(void *arg) {
         strandR1,C_to_T_counter,G_to_A_counter,C_total,G_total);
     }
     else{
-      // This is for the none-deaminated data if we want PCR duplicates. But in theory this is for each read, whereas for the deaminated its more to show a more comprehensive deamination patteen
-      // for the none-deaminated sequences we likewise need to generate PCR duplicates but they are identical so we dont have to shift them? 
-      //Perhaps add a probability to how often we would expect to see a duplicate, and then also a probability of how many duplicates so sample from
+      // This is for the none-deaminated data if we want PCR duplicates. Consider extending this to be probability of duplicate - check it works
       FragTotal = 1;//struct_obj->Duplicates;
       FragRes = new char *[FragTotal];
       for (int i = 0; i < FragTotal; i++){
         FragRes[i] = FragmentSequence;
       }
-      //fprintf(stderr,"NON DEAMINATED %d\n",FragTotal);
-      // so for strandR1 they are in theory still reverse complemented 
     }
-   
+
+    // copy part of the DNA molecule into sequencing reads for both single-end and paired-end
     for (int FragNo = 0+Groupshift; FragNo < FragTotal; FragNo+=iter){
       qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0';
 
@@ -345,8 +341,7 @@ void* Sampling_threads(void *arg) {
         }
       }
     
-      //Remove reads which are all N, we remove both pairs if both reads are all N
-  
+      //For the copied sequencing reads from the original molecues, if reads are all N, we discard both sequencing read pair
       for(int i=0;i<(int)strlen(seq_r1);i++){
         if(seq_r1[i]=='N'){
           skipread = 1;
@@ -360,6 +355,7 @@ void* Sampling_threads(void *arg) {
         }
       }
       
+      // reset the sequencing and quality strings
       if(skipread==1){
         memset(qual_r1, 0, sizeof qual_r1); 
         memset(qual_r2, 0, sizeof qual_r2);
@@ -367,7 +363,8 @@ void* Sampling_threads(void *arg) {
         memset(seq_r2, 0, sizeof seq_r2);
         continue;
       }
-    
+
+      // discard reads below low limit
       if(strlen(seq_r1) < 20)
         continue;
       
@@ -376,7 +373,8 @@ void* Sampling_threads(void *arg) {
       if(struct_obj->DoBriggs){
         //fprintf(stderr,"SAMPLING DO BRIGGS\t FRAG %d\n",FragNo);
         if (FragNo==0||FragNo==2){
-          //fprintf(stderr,"INSIDE FRAG 0 OR 2\n");
+          // the first duplicate pair for the PCR duplicates
+
           //The sequences are equal to the reference
           if (SE==struct_obj->SeqType){
             // R1  5' |---R1-->|--FWD------------> 3'
@@ -392,7 +390,8 @@ void* Sampling_threads(void *arg) {
           }
         }
         else if (FragNo==1||FragNo==3){
-          //fprintf(stderr,"INSIDE FRAG 1 OR 3\n");
+          // the second duplicate pair for the PCR duplicates
+
           //The sequences are reverse complementary of the original reference orientation
           if (SE==struct_obj->SeqType){
             // R1  5' |-----------FWD------------> 3'
@@ -409,7 +408,7 @@ void* Sampling_threads(void *arg) {
         }
       }
       else{
-        //fprintf(stderr,"INSIDE NOT DEAMINATION BRIGGS ELSE");
+        // without any duplicates less reverse complement is necessary
         if (SE==struct_obj->SeqType){
           if (strandR1 == 0)
             SamFlags[0] = 0;
@@ -432,44 +431,23 @@ void* Sampling_threads(void *arg) {
       //so now everything is on 5->3 and some of them will be reverse complement to referene
       //now everything is the same strand as reference, which we call plus/+
 
+      // Create the sequencing read ID - and it depends on the simulate mode
       if(struct_obj->bedfilesample == 1){
-        /*fprintf(stderr,"PROVIDED BED FILE \n");
-        fprintf(stderr,"read id %s \n",READ_ID);
-        fprintf(stderr,"checking matches \t index %d \t read %s \t bed entry %s \t %d \t %d\n",chr_idx,READ_ID,
-          struct_obj->reffasta->BedReferenceEntries[chr_idx].chromosome,
-          struct_obj->reffasta->BedReferenceEntries[chr_idx].start,
-          struct_obj->reffasta->BedReferenceEntries[chr_idx].end);*/
-
         snprintf(READ_ID,512,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,
           struct_obj->reffasta->BedReferenceEntries[chr_idx].chromosome,
           struct_obj->reffasta->BedReferenceEntries[chr_idx].start+posB,
           struct_obj->reffasta->BedReferenceEntries[chr_idx].start+posE-1,
-          fraglength,ReadDeam,FragMisMatch,has_indels);
-        
-        /*
-        //checking the chromosome names
-        for(int i=0;i<struct_obj->reffasta->nref;i++){
-          fprintf(stderr,"chromosome index %d \t name %s\n",i,struct_obj->reffasta->BedReferenceEntries[i].chromosome);
-        }
-        */
+          fraglength,ReadDeam,FragMisMatch,has_indels);        
       }
       else if(struct_obj->VCFcapture == 1){
-        /*fprintf(stderr,"VCF CAPTURE READS \n");
-        for(int i=0;i<struct_obj->reffasta->nref;i++){
-          fprintf(stderr,"chromosome index %d \t name %s\n",i,struct_obj->reffasta->seqs_names[i]);
-        }*/
         snprintf(READ_ID,512,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,
           struct_obj->reffasta->seqs_names[chr_idx],posB+1,posE,
-          fraglength,ReadDeam,FragMisMatch,has_indels);
-        
-        //fprintf(stderr,"ID %s \t posB %d \t posE %d\n",READ_ID,posB,posE);
-        //exit(1);
+          fraglength,ReadDeam,FragMisMatch,has_indels);        
       }
       else{
         snprintf(READ_ID,512,"T%d_RID%d_S%d_%s:%d-%d_length:%d_mod%d%d%d", struct_obj->threadno, rand_id,strandR1,chr,posB+1,posE,fraglength,ReadDeam,FragMisMatch,has_indels);
       }
       
-      //fprintf(stderr,"read id %s \n\t %s\n",READ_ID,seq_r1);
       int nsofts[2] = {0,0}; //this will contain the softclip information to be used by sam/bam/cram output format for adapter and polytail
       //below will contain the number of bases for R1 and R2 that should align to reference before adding adapters and polytail
       int naligned[2] = {(int)strlen(seq_r1),-1};
@@ -488,7 +466,7 @@ void* Sampling_threads(void *arg) {
         }
       }
 
-      //add polytail
+      //add polytail, like Poly-G appended after the adapater if sequence+adapter is below sequencing cycle length
       if (struct_obj->PolyNt != 'F') {
         int nitems = struct_obj->maxreadlength-strlen(seq_r1);
         memset(seq_r1+strlen(seq_r1),struct_obj->PolyNt,nitems);
@@ -522,19 +500,16 @@ void* Sampling_threads(void *arg) {
       else{
         //Fastq and Sam needs quality scores
         if(struct_obj->FixedQual_r1r2 > 0){
-          //fprintf(stderr,"FIXED QUAL\n");
           has_seqerr = sample_qscores_fix(seq_r1,qual_r1,struct_obj->FixedQual_r1r2,strlen(seq_r1),rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
           if (PE==struct_obj->SeqType)
             has_seqerr = sample_qscores_fix(seq_r2,qual_r2,struct_obj->FixedQual_r1r2,strlen(seq_r2),rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
         }
         else{
-          //fprintf(stderr,"SAMPLING QUAL PROFILE\n");
           has_seqerr = sample_qscores(seq_r1,qual_r1,strlen(seq_r1),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
           if (PE==struct_obj->SeqType)
             has_seqerr = sample_qscores(seq_r2,qual_r2,strlen(seq_r2),struct_obj->QualDist_r1,struct_obj->NtQual_r1,rand_alloc,struct_obj->DoSeqErr,ErrProbTypeOffset);
         }
-        //std::cout << seq_r1 << " " << qual_r1 << std::endl;
-        //fprintf(stderr,"READ ID FRAGNO %d \n\t %s\n",FragNo,seq_r1);
+        // add boolean flag and duplicate number
         snprintf(READ_ID+strlen(READ_ID),512-strlen(READ_ID),"%d F%d",has_seqerr,FragNo);
 
         //write fq if requested
@@ -544,23 +519,22 @@ void* Sampling_threads(void *arg) {
             ksprintf(fqs[1],"@%s R2\n%s\n+\n%s\n",READ_ID,seq_r2,qual_r2);
         }
 
-        //now only sam family needs to be done, lets revcomplement the bases, and reverse the quality scores so everything is back to forward/+ strand
+        //If Sequence Alignment/Map format is desired all sequencing reads needs to be reverted back to reference orientation (+ strand)
         if(struct_obj->SAMout){
-          uint32_t AlignCigar[2][10];//cigs[0] is read1 cigs[1] is read2
+          // generate CIGAR string with different operations
+          uint32_t AlignCigar[2][10];
           size_t n_cigar[2] = {1,1};
 
           if (struct_obj->Align){
-            //std::cout << "INSIDE DO ALIGN" << std::endl;
             AlignCigar[0][0] = bam_cigar_gen(naligned[0], BAM_CMATCH);
             if(nsofts[0]>0){
               AlignCigar[0][1] = bam_cigar_gen(nsofts[0], BAM_CSOFT_CLIP);
               n_cigar[0] = 2;
             }
             if(SamFlags[0]==16||SamFlags[0]==81){
-              //std::cout << "seq_r1 "<< seq_r1 << std::endl;
+              // change reads orientation and change alignment flag
               ReversComplement(seq_r1);
               reverseChar(qual_r1,strlen(seq_r1));           
-              //std::cout << "seq_r1 "<< seq_r1 << std::endl;
               if(n_cigar[0]>1){
                 //swap softclip and match
                 uint32_t tmp= AlignCigar[0][0];
@@ -569,6 +543,7 @@ void* Sampling_threads(void *arg) {
               }
             }
             if (PE==struct_obj->SeqType){
+              // create operations for second read within a pair
               AlignCigar[1][0] = bam_cigar_gen(naligned[1], BAM_CMATCH);
               if(nsofts[1]>0){
                 AlignCigar[1][1] = bam_cigar_gen(nsofts[1], BAM_CSOFT_CLIP);
@@ -587,13 +562,13 @@ void* Sampling_threads(void *arg) {
             }
           }
           else{
-            //this is unaligned part
+            //unaligned part
             AlignCigar[0][0] = bam_cigar_gen(strlen(seq_r1), BAM_CSOFT_CLIP);
             AlignCigar[1][0] = bam_cigar_gen(strlen(seq_r2), BAM_CSOFT_CLIP);
           }
           //now reads, cigards and quals are correct 
 
-          //generating id, position and the remaining sam field information
+          //generating sam field information - id, position etc. 
           size_t l_aux = 2; uint8_t mapq = 60;
           hts_pos_t min_beg = posB;
           hts_pos_t max_end = posE;
@@ -649,9 +624,8 @@ void* Sampling_threads(void *arg) {
                 min_beg = max_end-strlen(seq_r1);
               }
             }
-            /*if(SamFlags[0]==16){
-              min_beg = chr_max_end_mate-strlen(seq_r1);
-            }*/
+
+            // store bam information
             bam_set1(struct_obj->list_of_reads[struct_obj->LengthData++],
               strlen(READ_ID),READ_ID,
               SamFlags[0],chr_idx,min_beg,mapq,
@@ -697,6 +671,7 @@ void* Sampling_threads(void *arg) {
           }
         
           if (struct_obj->LengthData < struct_obj->MaximumLength){   
+            // write the simulated sequencing reads to sam format
             pthread_mutex_lock(&write_mutex);
             for (int k = 0; k < struct_obj->LengthData; k++){
               assert(sam_write1(struct_obj->SAMout,struct_obj->SAMHeader,struct_obj->list_of_reads[k]) >=0 );
@@ -708,6 +683,7 @@ void* Sampling_threads(void *arg) {
         }
       }
       
+      // store sequencing reads and indel information to internal stochastic indel file
       if (struct_obj->DoIndel && struct_obj->IndelDumpFile != NULL){
         ksprintf(indel,"%s\t%s\n",READ_ID,INDEL_INFO);
 
@@ -721,6 +697,7 @@ void* Sampling_threads(void *arg) {
         }
       }
 
+      // write simulated sequencing reads to output file 
       if (struct_obj->bgzf_fp[0]){
         if (fqs[0]->l > BufferLength){
           pthread_mutex_lock(&write_mutex);
@@ -733,19 +710,20 @@ void* Sampling_threads(void *arg) {
         }
       }
 
-      //fprintf(stderr,"read still exist?\n\t %s \n\t %s\n",seq_r1,qual_r1);
-
+      // reset sequencing reads and quality strings
       memset(qual_r1, 0, sizeof qual_r1); 
       memset(qual_r2, 0, sizeof qual_r2);
       memset(seq_r1, 0, sizeof seq_r1);
       memset(seq_r2, 0, sizeof seq_r2);
 
+      // increment simulate read count
       localread++;
       current_reads_atom++;
-      //printing out every tenth of the runtime
+      //printing out the number of simulated reads depending on the modulo value
       if (current_reads_atom > 1 && current_reads_atom%moduloread == 0)
         fprintf(stderr,"\t-> Thread %d produced %zu reads with a current total of %zu\n",struct_obj->threadno,moduloread,current_reads_atom);
     }
+    // delete assigned memory for PCR duplicate
     chr_idx = -1;
     if(struct_obj->DoBriggs){
       for(int i=0;i<4;i++)
@@ -754,11 +732,14 @@ void* Sampling_threads(void *arg) {
     delete[] FragRes;
   }
 
+  // save the remaining reads
   if (struct_obj->bgzf_fp[0]){
     if (fqs[0]->l > 0){
       pthread_mutex_lock(&write_mutex);
       assert(bgzf_write(struct_obj->bgzf_fp[0],fqs[0]->s,fqs[0]->l)!=0);
-      if (PE==struct_obj->SeqType){assert(bgzf_write(struct_obj->bgzf_fp[1],fqs[1]->s,fqs[1]->l)!=0);}
+      if (PE==struct_obj->SeqType){
+        assert(bgzf_write(struct_obj->bgzf_fp[1],fqs[1]->s,fqs[1]->l)!=0);
+      }
       pthread_mutex_unlock(&write_mutex);
 	    fqs[0]->l = fqs[1]->l = 0;
     } 
@@ -781,7 +762,10 @@ void* Sampling_threads(void *arg) {
 
   fprintf(stderr,"\t-> Extracted fragment but skipped due to 'N' %d \n",sampled_skipped);
 
-  for(int j=0; j<struct_obj->MaximumLength;j++){bam_destroy1(struct_obj->list_of_reads[j]);}
+  // free all memory for created sequences
+  for(int j=0; j<struct_obj->MaximumLength;j++){
+    bam_destroy1(struct_obj->list_of_reads[j]);
+  }
   
   free(sf->rand_alloc);
   delete sf;
