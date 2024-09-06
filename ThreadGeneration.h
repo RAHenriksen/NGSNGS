@@ -25,7 +25,7 @@ void* ThreadInitialization(const char* version,char CommandArray[LENS],int threa
                         int DoSeqErr,const char* QualStringFlag,int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int FixedQual,int readcycle,int readcycle_fix,
                         int doMisMatchErr,const char* SubProfile,int MisLength,const char* MisMatchMatrix,const char* M3outname,
                         float BriggsParam[4],int DoBriggs,int DoBriggsBiotin,int Duplicates,
-                        double mutationrate, size_t referencevariations, int generations,
+                        double mutationrate, size_t referencevariations, int generations,char* VariationfileDump,
                         const char *VariantFile,int HeaderIndivIdx,const char* NameIndiv,const char* VCFfileDump,int CaptureVCF,int linkage,
                         float IndelFuncParam[4],int DoIndel,const char* IndelDumpFile);
 

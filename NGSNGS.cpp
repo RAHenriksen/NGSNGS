@@ -416,7 +416,7 @@ int main(int argc,char **argv){
       mypars->DoSeqErr,QualStringFlag,qualstringoffset,mypars->QualProfile1,mypars->QualProfile2,mypars->FixedQual,readcycle,mypars->CycleLength,
       doMisMatchErr,mypars->SubProfile,MisMatchLength,mypars->MisMatchMatrix_bdam,mypars->M3outname,
       PMDParam,DoBriggs,DoBriggsBiotin,mypars->Duplicates,
-      mypars->mutationrate,mypars->referencevariations,mypars->generations,
+      mypars->mutationrate,mypars->referencevariations,mypars->generations,mypars->VariantDumpFile,
       mypars->vcffile,mypars->HeaderIndiv,mypars->NameIndiv,mypars->VCFDumpFile,mypars->CaptureVCF,mypars->linkage,
       IndelFuncParam,DoIndel,mypars->IndelDumpFile);
 

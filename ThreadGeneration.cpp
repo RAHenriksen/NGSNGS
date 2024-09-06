@@ -55,7 +55,7 @@ void* ThreadInitialization(const char* version,char CommandArray[LENS],int threa
                         int DoSeqErr,const char* QualStringFlag,int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int FixedQual,int readcycle,int readcycle_fix,
                         int doMisMatchErr,const char* SubProfile,int MisLength,const char* MisMatchMatrix,const char* M3outname,
                         float BriggsParam[4],int DoBriggs,int DoBriggsBiotin,int Duplicates,
-                        double mutationrate, size_t referencevariations, int generations,
+                        double mutationrate, size_t referencevariations, int generations,char* VariationfileDump,
                         const char *VariantFile,int HeaderIndivIdx,const char* NameIndiv,const char* VCFfileDump,int CaptureVCF,int linkage,
                         float IndelFuncParam[4],int DoIndel,const char* IndelDumpFile){
 
@@ -195,6 +195,31 @@ void* ThreadInitialization(const char* version,char CommandArray[LENS],int threa
       num_variations = referencevariations;
     }
 
+    kstring_t *stochasticvariant;
+    BGZF *bgzf_fp;
+    if(VariationfileDump!=NULL){
+    
+      stochasticvariant =(kstring_t*) calloc(1,sizeof(kstring_t));
+      stochasticvariant->s = NULL;
+      stochasticvariant->l = stochasticvariant->m = 0;
+      
+    
+      char vardumpfile[512];
+      const char* vardumpfileprefix = VariationfileDump;
+      const char* vardumpfilesuffix = ".txt";
+      strcpy(vardumpfile,vardumpfileprefix);
+      strcat(vardumpfile,vardumpfilesuffix);
+      const char* vardumpfilefull = vardumpfile;
+
+      const char* modefp2 = "wu";
+      bgzf_fp = bgzf_open(vardumpfilefull,modefp2); //w
+      if (!bgzf_fp) {
+        fprintf(stderr, "Failed to open BGZF file: %s\n", vardumpfilefull);
+        exit(1);
+      }
+      bgzf_mt(bgzf_fp,2,256);
+    }
+
     for (size_t i = 0; i < num_variations;){
       int chr_idx = 0; //(int)(mrand_pop_long(mr) % (reffasta->nref));
       //Choose random chromosome index each time
@@ -214,10 +239,28 @@ void* ThreadInitialization(const char* version,char CommandArray[LENS],int threa
         }
         reffasta->seqs[chr_idx][pos] = altered;
         i++;
+        if(VariationfileDump!=NULL){
+          ksprintf(stochasticvariant,"%s\t%lu\t%c\t%c\n",reffasta->seqs_names[chr_idx],pos,previous,altered);
+        }
       }
       else{
         continue;
       }
+    }
+
+    if(VariationfileDump!=NULL){
+      if (stochasticvariant->l > 0){
+        assert(bgzf_write(bgzf_fp,stochasticvariant->s,stochasticvariant->l)!=0);
+        stochasticvariant->l = 0;
+      }
+
+      free(stochasticvariant->s);
+      free(stochasticvariant);
+
+      // close the output files
+      if(bgzf_fp!=NULL){
+        bgzf_close(bgzf_fp);
+      }    
     }
 
     free(mutation_rand);

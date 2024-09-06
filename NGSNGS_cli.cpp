@@ -66,7 +66,8 @@ argStruct *getpars(int argc,char ** argv){
   mypars->mutationrate = 0.0;
   mypars->generations = 1;
   mypars->referencevariations = 0;
-
+  mypars->VariantDumpFile = NULL;
+  
   // Fragment lengths
   mypars->CycleLength = 0; 
   mypars->LowerLimit=30;
@@ -261,6 +262,9 @@ argStruct *getpars(int argc,char ** argv){
     }
     else if(strcasecmp("-v",*argv)==0 || strcasecmp("--variations",*argv)==0){
       mypars->referencevariations = atol(*(++argv));
+    }
+    else if(strcasecmp("-DumpVar",*argv)==0){
+      mypars->VariantDumpFile = strdup(*(++argv));
     }
     else if(strcasecmp("-circ",*argv)==0 || strcasecmp("--circular",*argv)==0){
       mypars->simmode = 1;

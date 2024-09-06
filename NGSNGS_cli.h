@@ -19,8 +19,9 @@ typedef struct{
   int Glob_seed_binary;       //Local seeds are computed from the global. Only one seed needs to be supplied
   outputformat_e OutFormat;  //fq, fq.gz, fa, fa.gz, sam, bam, cram
   char *OutName;              //prefix for output name
-  char *VCFDumpFile;             //prefix for internal file recording potential variations to reference genome
+  char *VCFDumpFile;          //prefix for internal file recording potential variations to reference genome
   char *IndelDumpFile;        //prefix for internal file recording of sequencing errors specific for indels
+  char *VariantDumpFile;      //prefix for internal file recording the stochastic variations added to reference genome
   char *Reference;            //full filename for reference fasta
   seqtype_e seq_type;         //singleend or paired end.
   char *Adapter1;             //actual adapter sequence, R1, not flipped, reversed or completemented
