@@ -56,7 +56,7 @@ fasta_sampler *fasta_sampler_alloc_maskbedentry(const char *fa,const char *bedfi
 fasta_sampler *fasta_sampler_alloc_vcf(const char *fa, const char *bcffilename,int id,const char* Name,size_t flanking);
 fasta_sampler *fasta_sampler_alloc_vcf_LD(const char *fa, const char *bcffilename,int id,const char* Name,size_t flanking);
 
-int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy);
+int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy,const char* Name);
 
 void fasta_sampler_destroy(fasta_sampler *fs);
 void fasta_sampler_destroy_captureLD(fasta_sampler *fs);

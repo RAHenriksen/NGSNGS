@@ -757,7 +757,7 @@ void fasta_sampler_destroy_captureLD(fasta_sampler *fs){
   delete fs;
 }
 
-int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
+int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy,const char* sample_name){
   /*
   extend_fasta_sampler - Extends the `fasta_sampler` instance to accommodate additional ploidy levels for a given chromosome. 
     By modifying the object in place, creating internal copies of the chromosome containing the alleles from a provided vcf file 
@@ -788,7 +788,7 @@ int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
   int isThere  = 1;
   char buf[1024];
   for(int i=1;i<ploidy;i++){
-    snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[fs_chr_idx],i);
+    snprintf(buf,1024,"%s_%s_allele_%d",fs->seqs_names[fs_chr_idx],sample_name,i);
     char2int::iterator it= fs->char2idx.find(buf);
     if(it==fs->char2idx.end())
       isThere  = 0;
@@ -827,7 +827,7 @@ int extend_fasta_sampler(fasta_sampler *fs,int fs_chr_idx,int ploidy){
     assert(it==fs->pldmap.end());
     pldmap[0] = fs_chr_idx;
     for(int i=1;i<ploidy;i++) {
-      snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[fs_chr_idx],i);
+      snprintf(buf,1024,"%s_%s_allele_%d",fs->seqs_names[fs_chr_idx],sample_name,i);
       fs->seqs[fs->nref+i-1] = strdup(seqs[fs_chr_idx]);
       fs->seqs_names[fs->nref+i-1] = strdup(buf);
       fs->seqs_l[fs->nref+i-1] = fs->seqs_l[fs_chr_idx];

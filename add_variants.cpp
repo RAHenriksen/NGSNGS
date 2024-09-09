@@ -360,7 +360,7 @@ void add_ins_complex(fasta_sampler *fs,bcfmap &mybcfmap,bcf_hdr_t *hdr,int ploid
 }
 
 //fasta sampler struct, index for chromosomenaem, position, the alleles, the genotypes and the ploidy. 
-void add_snp(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32_t *gts, int ploidy){
+void add_snp(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32_t *gts, int ploidy,const char* sample_name){
   /*
     add_snp - Adds single nucleotide polymorphisms (SNPs) to sequences based on genotype information.
       
@@ -382,7 +382,7 @@ void add_snp(fasta_sampler *fs, int fs_chr_idx,int pos,char **alleles, int32_t *
     }
     else{
       // create internal copies of the allele and alter that creating another entry in the fasta_sampler structure representing the reference contig with alternative genotypes
-      snprintf(buf,1024,"%s_ngsngs%d",fs->seqs_names[fs_chr_idx],i);
+      snprintf(buf,1024,"%s_%s_allele_%d",fs->seqs_names[fs_chr_idx],sample_name,i);
       char2int::iterator it = fs->char2idx.find(buf);
       assert(it!=fs->char2idx.end());
 
@@ -411,6 +411,9 @@ int add_vcf_variants(fasta_sampler *fs,const char *bcffilename,int id,const char
 
   if(bcffilename==NULL)
     return 0;
+
+  // store the original fasta file entries, as the number is altered during sequence alteration and duplication
+  int OrigFastaEntry = fs->nref;
 
   // Open VCF file and read header and initialize all information stored within
 
@@ -488,7 +491,7 @@ int add_vcf_variants(fasta_sampler *fs,const char *bcffilename,int id,const char
     }
 
     //check if internal copy of chromosomes with alternative alleles exists otherwise extend the fasta_sampler structure them
-    extend_fasta_sampler(fs,fai_chr,inferred_ploidy);
+    extend_fasta_sampler(fs,fai_chr,inferred_ploidy,sample_name);
 
     bcfkey key;
     key.gt = new int[inferred_ploidy];
@@ -504,7 +507,7 @@ int add_vcf_variants(fasta_sampler *fs,const char *bcffilename,int id,const char
       if(ref_length == 1 && alt_length == 1){
         //snp
         issnp = 1;
-        add_snp(fs,fai_chr,brec->pos,brec->d.allele,mygt,inferred_ploidy);
+        add_snp(fs,fai_chr,brec->pos,brec->d.allele,mygt,inferred_ploidy,sample_name);
       }
       else if(ref_length > alt_length){
         //deletion
@@ -554,38 +557,28 @@ int add_vcf_variants(fasta_sampler *fs,const char *bcffilename,int id,const char
     add_ins_complex(fs,complex_insertions,bcf_head,inferred_ploidy);
   }
 
+  
   /*
   rename chromosomes
+  int new_length = snprintf(NULL, 0, "%sallele%d:%d-%d", fs->BedReferenceEntries[i].chromosome, j+1, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
+  fs->seqs_names[nref_entry] = (char*) realloc(fs->seqs_names[nref_entry], (new_length + 1) * sizeof(char));
+  fs->char2idx[fs->seqs_names[nref_entry]] = nref_entry;
 
-        int new_length = snprintf(NULL, 0, "%sallele%d:%d-%d", fs->BedReferenceEntries[i].chromosome, j+1, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);
-      fs->seqs_names[nref_entry] = (char*) realloc(fs->seqs_names[nref_entry], (new_length + 1) * sizeof(char));
-      fs->char2idx[fs->seqs_names[nref_entry]] = nref_entry;
-
-      snprintf(fs->seqs_names[nref_entry], new_length + 1, "%sallele%d:%d-%d", fs->BedReferenceEntries[i].chromosome, j+1, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);   
-      nref_entry++;
-  */  
+  snprintf(fs->seqs_names[nref_entry], new_length + 1, "%sallele%d:%d-%d", fs->BedReferenceEntries[i].chromosome, j+1, fs->BedReferenceEntries[i].start, fs->BedReferenceEntries[i].end);   
+  nref_entry++;
+  */
   
   // Update sequence names with sample information
-  for(int i = 0; i < fs->nref;){
-    for(int j = 0; j < inferred_ploidy; j++) {
-      char *position = strstr(fs->seqs_names[j], "_ngsngs");
-      // If the match is found, shift the string to start from this match
-      if (position != NULL) {
-        *position = '\0';
-      }
-      char chr_reg_tmp[128];
-      snprintf(chr_reg_tmp,sizeof(chr_reg_tmp),"%s",fs->seqs_names[j]);      
+  for(int i = 0; i < OrigFastaEntry;i++){
+    char chr_reg_tmp[128];
+    snprintf(chr_reg_tmp,sizeof(chr_reg_tmp),"%s",fs->seqs_names[i]);      
 
-      int new_length = snprintf(NULL, 0, "%s_%s_allele_%d",fs->seqs_names[j],sample_name,j);
-      //fprintf(stderr,"number of ref %d \t ref name %s_%s_allele_%d \t pos %s\n",i,fs->seqs_names[j],sample_name,j,position);
-      fs->seqs_names[j] = (char*) realloc(fs->seqs_names[j], (new_length + 1) * sizeof(char));
-      fs->char2idx[fs->seqs_names[j]] = j;
-      snprintf(fs->seqs_names[j], new_length + 1, "%s_%s_allele_%d",chr_reg_tmp,sample_name,j);
-      //fprintf(stderr,"i val %d \t j val %d\n",i,j+i);
-    }
-    i=i+inferred_ploidy;
+    int new_length = snprintf(NULL, 0, "%s_%s_allele_0",fs->seqs_names[i],sample_name);
+    //fprintf(stderr,"number of ref %d \t ref name %s_%s_allele_%d \t pos %s\n",i,fs->seqs_names[j],sample_name,j,position);
+    fs->seqs_names[i] = (char*) realloc(fs->seqs_names[i], (new_length + 1) * sizeof(char));
+    fs->char2idx[fs->seqs_names[i]] = i;
+    snprintf(fs->seqs_names[i], new_length + 1, "%s_%s_allele_0",chr_reg_tmp,sample_name);
   }
-  
   
   free(gt_arr);
   delete[] bcf_idx_2_fasta_idx;
