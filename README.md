@@ -72,6 +72,8 @@ The following features has been added since its publication in January 2023. See
 * Added capture (-cap|--capture) simulations of regions solely containing variants provided by the vcf or bcf file (-vcf|-bcf)
 * Added simulation of variants in LD (-linkage), by merging those regions in vcf which overlaps with each other after adding number of flanking (-fl) nucleotide to the variant position
 * Added -name | --headername option to provide an individuals name when simulating variants from vcf files, with the name defined in vcf header
+* Simulate mismatches from a provided mismatch matrix (-m3 || --mismatchmatrix) created from a metagenomic datasets from metaDMG https://github.com/metaDMG-dev/metaDMG-cpp
+* Store (-Dumpm3) the converted mismatch matrix (provided with -m3) into a NGSNGS format which can be used for mismatch files -mf 
 * Added an amplicon simulation mode: simulate sequencing errors, mutations or deamination on your empirical data, while allowing for file conversion, see [NGSNGS - amplicon alteration](#AMPLICON)
 ## GENERAL
 Next Generation Simulator for Next Generator Sequencing Data version 0.9.2.1 
@@ -192,6 +194,8 @@ Nucleotide Alterations:
 
 -mf  | --mismatch: 		 Nucleotide substitution frequency file.
 -ne  | --noerror: 		 Disabling the nucleotide substitutions based on nucleotide qualities.
+-m3  | --mismatchmatrix: Nucleotide mismatch matrix from metagenomic datasets.
+-Dumpm3: 		 		 The prefix of an internally converted mismatch matrix from -m3 into a NGSNGS format which can be used for -mf input.
 
 Read Specific:
 -na  | --noalign: 		 Using the SAM output as a sequence containing without alignment information.

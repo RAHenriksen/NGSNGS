@@ -84,7 +84,8 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\nNucleotide Alterations: \n\n");
   fprintf(fp,"\t-mf  | --mismatch: \t\t Nucleotide substitution frequency file.\n");
   fprintf(fp,"\t-ne  | --noerror: \t\t Disabling the sequencing error substitutions based on nucleotide qualities from the provided quality profiles -q1 and -q2.\n");
-  
+  fprintf(fp,"\t-m3  | --mismatchmatrix: \t\t Nucleotide mismatch matrix from metagenomic datasets.\n");
+  fprintf(fp,"\t-Dumpm3: \t\t The prefix of an internally converted mismatch matrix from -m3 into a NGSNGS format which can be used for -mf input\n");
   fprintf(fp,"\nRead Specific: \n\n");
   fprintf(fp,"\t-na  | --noalign: \t\t Using the SAM output as a sequence container without alignment information.\n");
   fprintf(fp,"\t-cl  | --cycle: \t\t Read cycle length, the maximum length of sequence reads, if not provided the cycle length will be inferred from quality profiles (q1,q2).\n");
