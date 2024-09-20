@@ -51,8 +51,8 @@ argStruct *getpars(int argc,char ** argv){
   mypars->DoSeqErr = 1;
 
   // 2) briggs model
-  mypars->Briggs = NULL;
-  mypars->BriggsBiotin = NULL;
+  mypars->PMD_NonBiotin = NULL;
+  mypars->PMD_Biotin = NULL;
   mypars->Duplicates = 1;
   
   // 3) misincorporation matrix
@@ -194,14 +194,14 @@ argStruct *getpars(int argc,char ** argv){
       ++argv;
       char *tok = *argv;
       char* ModelString = strdup(tok);
-      char* BriggsModel;
-      BriggsModel = strtok(ModelString,",");
+      char* PMD_Model;
+      PMD_Model = strtok(ModelString,",");
       char* ModelParam =  strdup(strtok (NULL, ""));
-      if(strcasecmp("b",BriggsModel)==0 || strcasecmp("briggs",BriggsModel)==0){
-	      mypars->Briggs = ModelParam;
+      if(strcasecmp("Illumina",PMD_Model)==0 || strcasecmp("nonbiotin",PMD_Model)==0){
+	      mypars->PMD_NonBiotin = ModelParam;
       }
-      if(strcasecmp("b7",BriggsModel)==0 || strcasecmp("briggs07",BriggsModel)==0)
-	      mypars->BriggsBiotin = ModelParam;
+      if(strcasecmp("Roche454",PMD_Model)==0 || strcasecmp("biotin",PMD_Model)==0)
+	      mypars->PMD_Biotin = ModelParam;
       free(ModelString);
     }
     else if(strcasecmp("-dup",*argv)==0 || strcasecmp("--duplicates",*argv)==0){
@@ -391,8 +391,8 @@ void argStruct_destroy(argStruct *mypars){
   free(mypars->SubProfile);
   free(mypars->MisMatchMatrix_bdam);
   free(mypars->M3outname);
-  free(mypars->Briggs);
-  free(mypars->BriggsBiotin);
+  free(mypars->PMD_NonBiotin);
+  free(mypars->PMD_Biotin);
   free(mypars->Poly);
   delete mypars;
 }

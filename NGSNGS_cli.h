@@ -33,8 +33,8 @@ typedef struct{
   char *MisMatchMatrix_bdam;
   char *M3outname;
   int DoSeqErr;               //adding potential sequencing errors
-  char *Briggs;               //the four briggs parameters for the none biotin model
-  char *BriggsBiotin;         //the four briggs parameters in relation to Biotin
+  char *PMD_NonBiotin;               //the four briggs parameters for the none biotin model
+  char *PMD_Biotin;         //the four briggs parameters in relation to Biotin
   int Duplicates;             //for the none biotin model, four potential fragments with independent deamination pattern are possible to generate, default PCR=1
   int CycleLength;            //cycle length with the maximum number of nucleotides to be generated, independent of the fragment length
   int LowerLimit;             //lower limit of fragment lengths, with some distributions perhaps having values in the pdf below 0, default of 30 due to the deamination

@@ -262,7 +262,7 @@ void* Sampling_threads(void *arg) {
     int Groupshift = 0;
     int FragTotal = 4;
     int iter = 1; //iterating through all fragments
-    if(struct_obj->DoBriggs){
+    if(struct_obj->DoNonBiotin){
       //For the none-biotin briggs model we need to store 4 fragments with slightly different deaminations patterns
       FragRes = new char *[FragTotal];
       for(int i=0;i<FragTotal;i++){
@@ -292,7 +292,7 @@ void* Sampling_threads(void *arg) {
         iter = 2;
       }      
     }
-    else if(struct_obj->DoBriggsBiotin){
+    else if(struct_obj->DoBiotin){
       // use deamination with the 454 roche sequencing platform
       FragTotal = 1;
       FragRes = new char *[FragTotal];
@@ -318,7 +318,7 @@ void* Sampling_threads(void *arg) {
       qual_r1[0] = qual_r2[0] = seq_r1[0] = seq_r2[0] = '\0';
 
       if(SE==struct_obj->SeqType){
-        if(struct_obj->DoBriggs){
+        if(struct_obj->DoNonBiotin){
           strncpy(seq_r1,FragRes[FragNo],maxbases);
         }
         else{
@@ -370,7 +370,7 @@ void* Sampling_threads(void *arg) {
       
       //generating sam output information
       int SamFlags[2] = {-1,-1}; //flag[0] is for read1, flag[1] is for read2
-      if(struct_obj->DoBriggs){
+      if(struct_obj->DoNonBiotin){
         //fprintf(stderr,"SAMPLING DO BRIGGS\t FRAG %d\n",FragNo);
         if (FragNo==0||FragNo==2){
           // the first duplicate pair for the PCR duplicates
@@ -619,7 +619,7 @@ void* Sampling_threads(void *arg) {
           //we have set the parameters accordingly above for no align and PE
           if (SE==struct_obj->SeqType){
             mpos = -1;
-            if (struct_obj->DoBriggs){
+            if (struct_obj->DoNonBiotin){
               if (FragNo==1||FragNo==3){
                 min_beg = max_end-strlen(seq_r1);
               }
@@ -637,7 +637,7 @@ void* Sampling_threads(void *arg) {
           
           //write PE also
           if (PE==struct_obj->SeqType){
-            if (struct_obj->DoBriggs){
+            if (struct_obj->DoNonBiotin){
               if (strandR1 == 0){
                 if (FragNo==1||FragNo==3){
                   // sam flags 81 and 161 
@@ -725,7 +725,7 @@ void* Sampling_threads(void *arg) {
     }
     // delete assigned memory for PCR duplicate
     chr_idx = -1;
-    if(struct_obj->DoBriggs){
+    if(struct_obj->DoNonBiotin){
       for(int i=0;i<4;i++)
         delete[] FragRes[i];
     }
@@ -754,7 +754,7 @@ void* Sampling_threads(void *arg) {
     } 
   }
 
-  if(struct_obj->DoBriggs){
+  if(struct_obj->DoNonBiotin){
     double Pair1 = (double) refCTp1/(double)refCp1;
     double Pair2 = (double) refCTp2/(double)refCp2;
     fprintf(stderr,"\t-> Global deamination frequency of C>T and G>A deamination at posiiton 1 is %f and %f\n",Pair1,Pair2);

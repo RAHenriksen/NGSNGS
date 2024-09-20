@@ -11,7 +11,7 @@
   Additional nucleotide post simulation specific - @param int AddAdapt,const char* Adapter_1,const char* Adapter_2,const char* Polynt,
   Sequencing error (fastq,sam,bam,cram) specific - @param int DoSeqErr,const char* QualStringFlag,int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int FixedQual,int readcycle,int readcycle_fix,
   Nucleotide misincorporation specific - @param int doMisMatchErr,const char* SubProfile,int MisLength,const char* MisMatchMatrix,const char* M3outname,
-  PMD specific - @param float BriggsParam[4],int DoBriggs,int DoBriggsBiotin,int Duplicates,
+  PMD specific - @param float BriggsParam[4],int DoNonBiotin,int DoBiotin,int Duplicates,
   Reference specific stochastic variation - @param double mutationrate, size_t referencevariations, int generations,
   Allele specific variations - @param const char *VariantFile,int HeaderIndivIdx,const char* NameIndiv,const char* VCFfileDump,int CaptureVCF,int linkage,
   sequencing read specific stochastic indels variations - @param float IndelFuncParam[4],int DoIndel,const char* IndelDumpFile
@@ -24,7 +24,7 @@ void* ThreadInitialization(const char* version,char CommandArray[LENS],int threa
                         int AddAdapt,const char* Adapter_1,const char* Adapter_2,const char* Polynt,
                         int DoSeqErr,const char* QualStringFlag,int qualstringoffset,const char* QualProfile1,const char* QualProfile2,int FixedQual,int readcycle,int readcycle_fix,
                         int doMisMatchErr,const char* SubProfile,int MisLength,const char* MisMatchMatrix,const char* M3outname,
-                        float BriggsParam[4],int DoBriggs,int DoBriggsBiotin,int Duplicates,
+                        float BriggsParam[4],int DoNonBiotin,int DoBiotin,int Duplicates,
                         double mutationrate, size_t referencevariations, int generations,char* VariationfileDump,
                         const char *VariantFile,int HeaderIndivIdx,const char* NameIndiv,const char* VCFfileDump,int CaptureVCF,int linkage,
                         float IndelFuncParam[4],int DoIndel,const char* IndelDumpFile);

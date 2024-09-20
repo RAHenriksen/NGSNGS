@@ -47,8 +47,8 @@ struct Parsarg_for_Sampling_thread{
   const char* Adapter_1;
   const char* Adapter_2;
 
-  int DoBriggs;
-  int DoBriggsBiotin;
+  int DoNonBiotin;
+  int DoBiotin;
   float *BriggsParam;
   int Duplicates;
   
