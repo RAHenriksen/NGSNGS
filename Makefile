@@ -93,10 +93,20 @@ cleantest:
 	rm -f test/*.fa test/*.fq* test/*.*am test/*.txt
 
 test:
-	echo "Subprograms is being tested"
-	cd test; ./testAll.sh; ./testVariants.sh
+	echo "All subprograms is being tested"
+	cd test; ./testFiles.sh; ./testVariants.sh; ./testSub.sh
+
+testfiles:
+	echo "Subprograms simulating file structure is being tested"
+	cd test; ./testFiles.sh
+
+testsub:
+	echo "Subprograms simulating nucleotide substitution models is being tested"
+	cd test; ./testSub.sh
 
 testvariants:
 	echo "Subprograms simulating variants is being tested"
 	cd test; ./testVariants.sh
+
 force:
+

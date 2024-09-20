@@ -111,13 +111,6 @@ handle_error
 
 echo " "
 echo "---------------------------------------------------------------------------------------------------------------"
-echo "2) Testing Single-end, length distributions, reads, sequencing error, misincorporation file, fa"
-echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 1000 -t 1 -s 1 -ld Pois,78 -seq SE -mf ${MF} -f fa -o MycoBactFaSEOut
-handle_error
-
-echo " "
-echo "---------------------------------------------------------------------------------------------------------------"
 echo "3) Testing Single-end, fixed length, reads, sequencing error, adapters, poly-G tail"
 echo "---------------------------------------------------------------------------------------------------------------"
 ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -l 70 -seq SE -q1 ${Q1} -a1 ${A1} -p G -f fq -o MycoBactFqSEPolyOut
@@ -135,32 +128,6 @@ if [ $Mean_read_length -ne 90 ]; then
 echo "Warning the mean read length isn't in accorandance with the cycle length"; exit 1;
 fi
 
-echo " "
-echo "---------------------------------------------------------------------------------------------------------------"
-echo "------------------------- III) Testing Stochastic-, genetic- and reference variations -------------------------"
-echo "---------------------------------------------------------------------------------------------------------------"
-
-echo " "
-echo "---------------------------------------------------------------------------------------------------------------"
-echo "4) Testing Single-end, simulating fixed quality score of 30, with fragment lower-limit"
-echo "---------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ll 50 -qs 30 -f fq -o MycoBactQSLLSEOUT
-handle_error
-
-No_SeqErr=$(cat MycoBactQSLLSEOUT.fq|grep 'mod0001'|wc -l)
-if [ $No_SeqErr -ne 62 ]; then 
-    echo "Warning different number of reads containing sequencing error with a fixed quality score of 30"; exit 1;
-fi
-
-echo " "
-echo "---------------------------------------------------------------------------------------------------------------"
-echo "5) Testing mutation rate (reference genome 1.9%), sampling with replacement when below lower limit (30), 
-        adapters and poly G for fixed sequencing error "
-echo "---------------------------------------------------------------------------------------------------------------"
-
-${PRG} -i ${IN} -r 1000 -f fq.gz -seq PE -s 34532 -t 1 -ld Gam,20,2 -mr 0.019 -cl 100 -p G -a1 ${A1} -a2 ${A2} -qs 30 -o MutationRateSeqErrAdapters
-handle_error
-
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "------------ IV) Testing MD tags to ensure accurate flags and position with- or without deamination -----------"
 echo "---------------------------------------------------------------------------------------------------------------"
@@ -169,7 +136,7 @@ echo " "
 echo "-----------------------------------------------------------------------------------------------------------------------"
 echo "1) Testing single-end alignments with cycle length below fragment length with deamination and position in terms of MD:Z"
 echo "-----------------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 1000 -t 1 -s 1 -l 1000 -seq SE -q1 ${Q1} -m b,0.024,0.36,0.68,0.0097 -f bam -o L1000SEDeamin
+${PRG} -i ${IN} -r 1000 -t 1 -s 1 -l 1000 -seq SE -q1 ${Q1} -m Illumina,0.024,0.36,0.68,0.0097 -f bam -o L1000SEDeamin
 handle_error
 
 samtools sort -n L1000SEDeamin.bam -o L1000SEDeaminSort.bam;samtools calmd -@ 10 -r -b L1000SEDeaminSort.bam ${IN} > L1000SEDeaminSortMD.bam
@@ -188,7 +155,7 @@ echo " "
 echo "-----------------------------------------------------------------------------------------------------------------------"
 echo "2) Testing paired-end alignments with cycle length above fragment length with deamination and position in terms of MD:Z"
 echo "-----------------------------------------------------------------------------------------------------------------------"
-${PRG} -i ${IN} -r 1000 -t 1 -s 1 -l 1000 -seq PE -q1 ${Q1} -q2 ${Q2} -m b,0.024,0.36,0.68,0.0097 -f bam -o L1000PEDeamin
+${PRG} -i ${IN} -r 1000 -t 1 -s 1 -l 1000 -seq PE -q1 ${Q1} -q2 ${Q2} -m Illumina,0.024,0.36,0.68,0.0097 -f bam -o L1000PEDeamin
 handle_error
 
 samtools sort -n L1000PEDeamin.bam -o L1000PEDeaminSort.bam;samtools calmd -@ 10 -r -b L1000PEDeaminSort.bam ${IN} > L1000PEDeaminSortMD.bam
@@ -386,4 +353,4 @@ echo "--------------------------------------------------------------------------
 echo "--------------------------------------------------- MD5SUM ----------------------------------------------------"
 echo "---------------------------------------------------------------------------------------------------------------"
 echo " "
-md5sum -c TestAll.md5 || exit 2;
+md5sum -c TestFiles.md5 || exit 2;
