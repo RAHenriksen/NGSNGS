@@ -86,7 +86,7 @@ Usage
 ./ngsngs [options] -i <input_reference.fa> -r/-c <Number of reads or depth of coverage> -l/-lf/-ld <fixed length, length file or length distribution> -seq <SE/PE> -f <output format> -o <output name prefix>
 
 Example 
-./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 2 -s 1 -lf Test_Examples/Size_dist_sampling.txt -seq SE -m b,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut
+./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 2 -s 1 -lf Test_Examples/Size_dist_sampling.txt -seq SE -m Illumina,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut
 
 ./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut
 
@@ -180,14 +180,14 @@ Stochastic Variations:
 Postmortem damage (PMD) - Deamination:
 
 -m | --model:			 Choice of deamination model.
-	 <b,nv,Lambda,Delta_s,Delta_d>  || <briggs,nv,Lambda,Delta_s,Delta_d>	Parameters for the damage patterns using the Briggs model altered to suit modern day library preparation.
-	 <b7,nv,Lambda,Delta_s,Delta_d> || <briggs07,nv,Lambda,Delta_s,Delta_d>  Parameters for the damage patterns using the Briggs model 2007.
+	 <Illumina,nv,Lambda,Delta_s,Delta_d> 	Parameters for the damage patterns using the Briggs model altered to suit modern day library preparation.
+	 <Roche454,nv,Lambda,Delta_s,Delta_d>   Parameters for the damage patterns using the Briggs model 2007.
 	 nv: Nick rate pr site.
 	 Lambda: Geometric distribution parameter for overhang length.
 	 Delta_s: PMD rate in single-strand regions.
 	 Delta_d: PMD rate in double-strand regions.
-	 e.g -m b,0.024,0.36,0.68,0.0097
--dup | --duplicates:	 	 Number of PCR duplicates, used in conjunction with briggs modern library prep -m <b,nv,Lambda,Delta_s,Delta_d>
+	 e.g -m Illumina,0.024,0.36,0.68,0.0097
+-dup | --duplicates:	 	 Number of PCR duplicates, used in conjunction with briggs modern library prep -m <Illumina,nv,Lambda,Delta_s,Delta_d>
 	 <1,2,4>, Default = 1.
 
 Nucleotide Alterations:
@@ -260,12 +260,12 @@ Sequencing errors:
 Postmortem damage (PMD) - Deamination: 
 
 -m   | --model: 	 Deamination model.
-	 <b,nv,Lambda,Delta_s,Delta_d>  || <briggs,nv,Lambda,Delta_s,Delta_d> 	 Parameters for the damage patterns using the Briggs model.
+	 <Illumina,nv,Lambda,Delta_s,Delta_d>  || <Roche454,nv,Lambda,Delta_s,Delta_d> 	 Parameters for the damage patterns using the Briggs model.
 	 nv: Nick rate per site. 
  	 Lambda: Geometric distribution parameter for overhang length.
  	 Delta_s: PMD rate in single-strand regions.
  	 Delta_d: PMD rate in double-strand regions.
-	 e.g -m b,0.024,0.36,0.68,0.0097
+	 e.g -m Illumina,0.024,0.36,0.68,0.0097
 
 
 Stochastic Variations: 
@@ -281,7 +281,7 @@ Nucleotide Alterations:
 -mf  | --mismatch: 	 Nucleotide substitution frequency file.
 
 Example
-./amplicon --amplicon Test_Examples/Amplicon_in.fq -m b,0.024,0.36,0.68,0.0097 --format fq.gz --output Amplicon_deamination
+./amplicon --amplicon Test_Examples/Amplicon_in.fq -m Illumina,0.024,0.36,0.68,0.0097 --format fq.gz --output Amplicon_deamination
 ./amplicon --amplicon Test_Examples/Amplicon_in.fq -indel 0.05,0.1,0.1,0.2 --output Amplicon_indel
 ./amplicon --amplicon Test_Examples/Amplicon_in.fa --format fq -q Test_Examples/AccFreqL150R1.txt --output Amplicon_seqerr
 ./amplicon --amplicon Test_Examples/Amplicon_in.bam -mf ../Test_Examples/MisincorpFile.txt --format fa.gz --output Amplicon_deamination
@@ -302,9 +302,9 @@ Examples of which parameters to include depending on the desired simulations
 ~~~~bash
 ./ngsngs -i hg19.fa -r 1000 -f bam -ld norm,350,20 -cl 100 -seq PE -t 1 -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -o HgSim
 ~~~~
-### Disable platform specific errors (-ne), adding deamination pattern with Briggs 2007 model (-m b7,...), with ancient fragment length distribution (-lf), using seed 4 (-s)
+### Disable platform specific errors (-ne), adding deamination pattern with Briggs 2007 model (-m Roche454,...), with ancient fragment length distribution (-lf), using seed 4 (-s)
 ~~~~bash
-./ngsngs -i hg19.fa -r 1000 -f fq -s 4 -ne -lf Test_Examples/Size_dist_sampling.txt -seq SE -m b7,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
+./ngsngs -i hg19.fa -r 1000 -f fq -s 4 -ne -lf Test_Examples/Size_dist_sampling.txt -seq SE -m Roche454,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -o HgSim
 ~~~~
 ### Paired end reads, inferred cycle length from the distribution of quality profile (-q1) to be 150, fragment length (-l) 400, inner distance of 100 (400-150*2), while adding adapters
 ~~~~bash
