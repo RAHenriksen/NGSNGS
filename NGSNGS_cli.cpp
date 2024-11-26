@@ -200,8 +200,12 @@ argStruct *getpars(int argc,char ** argv){
       if(strcasecmp("Illumina",PMD_Model)==0 || strcasecmp("nonbiotin",PMD_Model)==0){
 	      mypars->PMD_NonBiotin = ModelParam;
       }
-      if(strcasecmp("Roche454",PMD_Model)==0 || strcasecmp("biotin",PMD_Model)==0)
-	      mypars->PMD_Biotin = ModelParam;
+      else if(strcasecmp("Roche454",PMD_Model)==0 || strcasecmp("biotin",PMD_Model)==0)
+	mypars->PMD_Biotin = ModelParam;
+      else{
+	fprintf(stderr,"\t-> Unknown paramter for -m/--model option: %s will exit\n",PMD_Model);
+	exit(0);
+      }
       free(ModelString);
     }
     else if(strcasecmp("-dup",*argv)==0 || strcasecmp("--duplicates",*argv)==0){
