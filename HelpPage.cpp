@@ -12,7 +12,7 @@
 int HelpPage(FILE *fp){
   fprintf(fp,"Next Generation Simulator for Next Generation Sequencing Data version %s: %s\n\n",NGSNGS_RELEASE,NGSNGS_VERSION);
   fprintf(fp,"Usage\n./ngsngs [options] -i <input_reference.fa> -r/-c <Number of reads or depth of coverage> -l/-lf/-ld <fixed length, length file or length distribution> -seq <SE/PE> -f <output format> -o <output name prefix>\n");
-  fprintf(fp,"\nExample \n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 2 -s 1 -lf Test_Examples/Size_dist_sampling.txt -seq SE -m b,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut\n");
+  fprintf(fp,"\nExample \n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 2 -s 1 -lf Test_Examples/Size_dist_sampling.txt -seq SE -m Illumina,0.024,0.36,0.68,0.0097 -q1 Test_Examples/AccFreqL150R1.txt -f bam -o MycoBactBamSEOut\n");
   fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -c 3 -t 2 -s 1 -l 100 -seq PE -ne -a1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT -q1 Test_Examples/AccFreqL150R1.txt -q2 Test_Examples/AccFreqL150R2.txt -f fq -o MycoBactFqPEOut\n");  
   fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 1 -s 1 -ld Pois,78 -seq SE -mf Test_Examples/MisincorpFile.txt -f fa -o MycoBactFaSEOut\n");  
   fprintf(fp,"\n./ngsngs -i Test_Examples/Mycobacterium_leprae.fa.gz -r 100000 -t 1 -s 1 -lf Test_Examples/Size_dist_sampling.txt -ll 50 -seq SE -qs 40 -f fq -o MycoBactFqQsLlSEOut\n");  
@@ -78,7 +78,7 @@ int HelpPage(FILE *fp){
   fprintf(fp,"\t\t <b,nv,Lambda,Delta_s,Delta_d>  || <briggs,nv,Lambda,Delta_s,Delta_d> \t Parameters for the damage patterns using the Briggs model altered to suit modern day library preparation.\n");
   fprintf(fp,"\t\t <b7,nv,Lambda,Delta_s,Delta_d> || <briggs07,nv,Lambda,Delta_s,Delta_d>  Parameters for the damage patterns using the Briggs model 2007.\n");
   fprintf(fp,"\t\t nv: Nick rate per site. \n \t\t Lambda: Geometric distribution parameter for overhang length.\n \t\t Delta_s: PMD rate in single-strand regions.\n \t\t Delta_d: PMD rate in double-strand regions.\n");
-  fprintf(fp,"\t\t e.g -m b,0.024,0.36,0.68,0.0097\n\n");
+  fprintf(fp,"\t\t e.g -m Illumina,0.024,0.36,0.68,0.0097\n\n");
   fprintf(fp,"\t-dup | --duplicates: \t\t Number of PCR duplicates, used in conjunction with briggs modern library prep -m <b,nv,Lambda,Delta_s,Delta_d>\n");
   fprintf(fp,"\t\t <1,2,4> \t\t Default = 1\n"); 
   fprintf(fp,"\nNucleotide Alterations: \n\n");
@@ -189,7 +189,7 @@ int AmpliconHelpPage(FILE *fp){
   fprintf(fp,"-m   | --model: \t Deamination model.\n");
   fprintf(fp,"\t <b,nv,Lambda,Delta_s,Delta_d>  || <briggs,nv,Lambda,Delta_s,Delta_d> \t Parameters for the damage patterns using the Briggs model.\n");
   fprintf(fp,"\t nv: Nick rate per site. \n \t Lambda: Geometric distribution parameter for overhang length.\n \t Delta_s: PMD rate in single-strand regions.\n \t Delta_d: PMD rate in double-strand regions.\n");
-  fprintf(fp,"\t e.g -m b,0.024,0.36,0.68,0.0097\n\n");  
+  fprintf(fp,"\t e.g -m Illumina,0.024,0.36,0.68,0.0097\n\n");  
   fprintf(fp,"\nStochastic Variations: \n\n");
   fprintf(fp,"-indel: \t\t Input probabilities and lambda values for a geometric distribution randomly generating insertions and deletions of a random length.\n");
   fprintf(fp,"\t <InsProb,DelProb,InsParam,DelParam> \t \n");
@@ -200,7 +200,7 @@ int AmpliconHelpPage(FILE *fp){
   fprintf(fp,"-mf  | --mismatch: \t Nucleotide substitution frequency file.\n");
 
   fprintf(fp,"\nExample\n");
-  fprintf(fp,"./amplicon --amplicon Test_Examples/Amplicon_in.fq -m b,0.024,0.36,0.68,0.0097 --format fq.gz --output Amplicon_deamination\n");
+  fprintf(fp,"./amplicon --amplicon Test_Examples/Amplicon_in.fq -m Illumina,0.024,0.36,0.68,0.0097 --format fq.gz --output Amplicon_deamination\n");
   fprintf(fp,"./amplicon --amplicon Test_Examples/Amplicon_in.fq -indel 0.05,0.1,0.1,0.2 --output Amplicon_indel\n");
   fprintf(fp,"./amplicon --amplicon Test_Examples/Amplicon_in.fa --format fq -q Test_Examples/AccFreqL150R1.txt --output Amplicon_seqerr\n");
   fprintf(fp,"./amplicon --amplicon Test_Examples/Amplicon_in.bam -mf Test_Examples/MisincorpFile.txt --format fa.gz --output Amplicon_deamination\n");
