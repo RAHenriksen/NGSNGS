@@ -458,7 +458,7 @@ int main(){
     delete[] results;
   }
 
-  free(mr);
+  mrand_destroy(mr);
 
   double C_Deam = (double)C_to_T_counter/(double)C_total;
   double G_Deam = (double)G_to_A_counter/(double)C_total;

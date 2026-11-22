@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <climits>
+#include <cstdint>
 
 /*
 struct Ran {
@@ -25,12 +26,11 @@ struct Ran {
 	inline Uint int32() { return (Uint)int64(); }
 };
 */
-typedef struct{
+typedef struct mrand_t{
   int type;
   #if defined(__linux__) || defined(__unix__)
     struct drand48_data buf0;
   #endif
-  std::random_device rd;
   std::default_random_engine eng;
   std::uniform_real_distribution<double> distr;
   std::uniform_int_distribution<> distrInt;
@@ -57,6 +57,7 @@ typedef struct{
 //type=3 is erand, the most recent member of the family.
 //type=4 is ran from nr
 mrand_t *mrand_alloc(int type_a, long int seedval);
+void mrand_destroy(mrand_t *mr);
 double mrand_pop(mrand_t *mr);
 long mrand_pop_long(mrand_t *mr);
 int Random_geometric_k(const double p,mrand_t *mr);
