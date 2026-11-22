@@ -54,7 +54,7 @@ void add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_IN
       }
       // Insert random bases into the fragment at the current position
       for(int i=0;i<len;i++){
-        frag[beg+i] =  bas[mrand_pop_long(mr) %5];
+        frag[beg+i] =  bas[(int)(mrand_pop(mr) * 5)];
       }
       beg += len; // Move the start position forward by the length of the insertion
       end += len; // Increase the end position to account for the new bases
@@ -142,7 +142,7 @@ void add_indel_amplicon_fa(mrand_t *mr,kstring_t* seq,double *pars,int* ops){
 
       // Insert new characters
       for (int i = 0; i < len; i++) {
-        seq->s[beg + i] = bas[mrand_pop_long(mr) %5];
+        seq->s[beg + i] = bas[(int)(mrand_pop(mr) * 5)];
       }
 
       //memset(seq->s + beg, 'Q', len);
@@ -228,7 +228,7 @@ void add_indel_amplicon_fqbam(mrand_t *mr,kstring_t* seq,kstring_t* qual,double 
 
       // Insert new characters
       for (int i = 0; i < len; i++) {
-        seq->s[beg + i] = bas[mrand_pop_long(mr) %5];
+        seq->s[beg + i] = bas[(int)(mrand_pop(mr) * 5)];
         int quality_val = (int)(mrand_pop(mr) * 39 + 1);
         qual->s[beg + i] = (char)(quality_val + ErrProbTypeOffset);
       }
@@ -287,7 +287,7 @@ int main(int argc,char **argv){
     memset(fragment,'\0',1024);
     int flen = 100; //mrand_pop_long(mr) % 32;
     for(int i=0;i<flen;i++)
-      fragment[i] = bas[mrand_pop_long(mr) %5];
+      fragment[i] = bas[(int)(mrand_pop(mr) * 5)];
     fprintf(stderr,"1) %s len: %lu\n",fragment,strlen(fragment));
     add_indel(mr,fragment,100,pars,INDEL_INFO);
     fprintf(stderr,"2) %s len: %lu\n",fragment,strlen(fragment));

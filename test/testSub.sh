@@ -67,7 +67,7 @@ ${PRG} -i ${IN} -r 1000 -t 1 -s 1 -lf ${LF} -seq SE -ll 50 -qs 30 -f fq -o MycoB
 handle_error
 
 No_SeqErr=$(cat MycoBactQSLLSEOUT.fq|grep 'mod0001'|wc -l)
-if [ $No_SeqErr -ne 62 ]; then 
+if [ $No_SeqErr -ne 88 ]; then 
     echo "Warning different number of reads containing sequencing error with a fixed quality score of 30"; exit 1;
 fi
 

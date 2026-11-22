@@ -7,6 +7,7 @@
 #include <htslib/thread_pool.h>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 #include <math.h>
 
 #include <pthread.h>
@@ -226,8 +227,10 @@ void* ThreadInitialization(const char* version,char CommandArray[LENS],int threa
       if(reffasta->nref>1)
         chr_idx = ransampl_draw2(reffasta->ws,mrand_pop(mutation_rand),mrand_pop(mutation_rand));
 
-      long rand_val = mrand_pop_long(mutation_rand);
-      size_t pos = (size_t)(abs(rand_val) % reffasta->seqs_l[chr_idx]);
+      // uniform position in [0, seqs_l); uses the upper bits of the generator and avoids
+      // the modulo bias of (rand % len). min() guards against u*len rounding up to len.
+      size_t chr_len = (size_t) reffasta->seqs_l[chr_idx];
+      size_t pos = std::min((size_t)(mrand_pop(mutation_rand) * chr_len), chr_len-1);
 
       // Alter nucleotide within reference
       if (reffasta->seqs[chr_idx][pos] != 'N'){  
@@ -263,7 +266,7 @@ void* ThreadInitialization(const char* version,char CommandArray[LENS],int threa
       }    
     }
 
-    free(mutation_rand);
+    mrand_destroy(mutation_rand);
     fprintf(stderr, "\t-> Done adding %zu stochastic variants to reference genome, walltime used =  %.2f sec\n", num_variations,(float)(time(NULL) - t_mutation));
   }
 
