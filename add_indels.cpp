@@ -1,9 +1,24 @@
+#include <algorithm>
 #include "add_indels.h"
 #include "fasta_sampler.h"
 #include <htslib/kstring.h>
 
 const char *bas = "ACGTN";
 const char *bas2 = "QWERY"; //bases used for testing to see alterations
+
+static void append_indel_op(char *buf,size_t bufsize,int *offset,int a,int b,int len){
+  /*
+  append_indel_op - Appends "[a,b:len]," to buf at *offset without writing past bufsize.
+  The size passed to snprintf is the space left in the buffer (bufsize - *offset), not
+  the full buffer size; if the buffer is full the record is truncated and *offset is
+  clamped so later calls stay inside the buffer.
+  */
+  if(*offset >= (int)bufsize-1)
+    return;
+  int n = snprintf(buf+*offset,bufsize-*offset,"[%d,%d:%d],",a,b,len);
+  if(n>0)
+    *offset = std::min(*offset+n,(int)bufsize-1);
+}
 
 void add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_INFO,int* ops){
   /*
@@ -44,7 +59,7 @@ void add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_IN
       // pars[0] Creates insertions based on insertion rate (prob) and alters the fragment
       ops[0]++;
       int len = Random_geometric_k(pars[2],mr)+1; //insertion length parameter pars[2]
-      offsetIns+=snprintf(InsOps+offsetIns,512,"[%d,%d:%d],",beg-cumlen,beg,len);
+      append_indel_op(InsOps,sizeof(InsOps),&offsetIns,beg-cumlen,beg,len);
       cumlen = cumlen+len;
       //alters the original DNA molecule
 
@@ -64,7 +79,7 @@ void add_indel(mrand_t *mr,char *frag,int readlength,double *pars,char *INDEL_IN
       // pars[1] Creates deletions based on insertion rate (prob) and alters the fragment
       ops[1]++;
       int len = Random_geometric_k(pars[3],mr)+1; //deletion length parameter pars[3]
-      offsetDel+=snprintf(DelOps+offsetDel,512,"[%d,%d:%d],",beg+offset,beg-cumlen+offset,len);
+      append_indel_op(DelOps,sizeof(DelOps),&offsetDel,beg+offset,beg-cumlen+offset,len);
       cumlen = cumlen+len;
         /*
         Handle two deletion cases:
